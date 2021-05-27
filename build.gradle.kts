@@ -17,7 +17,13 @@ group = "uk.gov.justice.hmpps"
 version = "0.0.1-SNAPSHOT"
 
 dependencies {
+  implementation("org.springframework.boot:spring-boot-starter")
   implementation("com.amazonaws:amazon-sqs-java-messaging-lib:1.0.8")
+
+  testImplementation("org.assertj:assertj-core:3.18.1")
+  testImplementation("org.junit.jupiter:junit-jupiter:5.7.1")
+  testImplementation("org.mockito:mockito-junit-jupiter:3.7.7")
+  testImplementation("com.nhaarman.mockitokotlin2:mockito-kotlin:2.2.0")
 }
 
 java.sourceCompatibility = JavaVersion.VERSION_16
