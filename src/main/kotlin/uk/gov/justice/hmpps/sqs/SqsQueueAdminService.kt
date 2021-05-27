@@ -4,10 +4,8 @@ import com.amazonaws.services.sqs.AmazonSQS
 import com.amazonaws.services.sqs.model.DeleteMessageRequest
 import com.amazonaws.services.sqs.model.Message
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest
-import org.springframework.stereotype.Service
 
-@Service
-class QueueAdminService {
+class SqsQueueAdminService {
 
     fun transferAllMessages(request: TransferMessagesRequest): TransferMessagesResult {
         val messageCount = request.from.countMessagesOnQueue(request.fromUrl)

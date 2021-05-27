@@ -20,9 +20,9 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.mockito.ArgumentMatchers.anyString
 
-internal class QueueAdminServiceTest {
+internal class SqsQueueAdminServiceTest {
 
-    private val queueAdminService = QueueAdminService()
+    private val queueAdminService = SqsQueueAdminService()
 
     @Nested
     inner class TransferAllMessages() {
