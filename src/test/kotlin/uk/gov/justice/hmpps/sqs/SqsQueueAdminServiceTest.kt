@@ -1,11 +1,13 @@
 package uk.gov.justice.hmpps.sqs
 
 import com.amazonaws.services.sqs.AmazonSQS
+import com.amazonaws.services.sqs.model.DeleteMessageRequest
 import com.amazonaws.services.sqs.model.GetQueueAttributesResult
 import com.amazonaws.services.sqs.model.Message
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest
 import com.amazonaws.services.sqs.model.ReceiveMessageResult
 import com.nhaarman.mockitokotlin2.any
+import com.nhaarman.mockitokotlin2.argumentCaptor
 import com.nhaarman.mockitokotlin2.check
 import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
@@ -151,18 +153,11 @@ internal class SqsQueueAdminServiceTest {
       fun `Deletes message from the dlq`() {
         queueAdminService.transferAllMessages(TransferMessagesRequest(dlqSqs, "dlqUrl", queueSqs, "queueUrl"))
 
-        verify(dlqSqs).deleteMessage(
-          check {
-            assertThat(it.queueUrl).isEqualTo("dlqUrl")
-            assertThat(it.receiptHandle).isEqualTo("message-1-receipt-handle")
-          }
-        )
-        verify(dlqSqs).deleteMessage(
-          check {
-            assertThat(it.queueUrl).isEqualTo("dlqUrl")
-            assertThat(it.receiptHandle).isEqualTo("message-2-receipt-handle")
-          }
-        )
+        val captor = argumentCaptor<DeleteMessageRequest>()
+        verify(dlqSqs, times(2)).deleteMessage(captor.capture())
+
+        assertThat(captor.firstValue.receiptHandle).isEqualTo("message-1-receipt-handle")
+        assertThat(captor.secondValue.receiptHandle).isEqualTo("message-2-receipt-handle")
       }
 
       @Test
