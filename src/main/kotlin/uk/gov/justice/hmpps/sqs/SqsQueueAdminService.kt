@@ -7,23 +7,23 @@ import com.amazonaws.services.sqs.model.ReceiveMessageRequest
 
 class SqsQueueAdminService {
 
-    fun transferAllMessages(request: TransferMessagesRequest): TransferMessagesResult {
-        val messageCount = request.from.countMessagesOnQueue(request.fromUrl)
-        var messages = mutableListOf<Message>()
-        repeat(messageCount) {
-            request.from.receiveMessage(ReceiveMessageRequest(request.fromUrl).withMaxNumberOfMessages(1)).messages.firstOrNull()
-                ?.let { msg ->
-                    request.to.sendMessage(request.toUrl, msg.body)
-                    request.from.deleteMessage(DeleteMessageRequest(request.fromUrl, msg.receiptHandle))
-                    messages += msg
-                }
+  fun transferAllMessages(request: TransferMessagesRequest): TransferMessagesResult {
+    val messageCount = request.from.countMessagesOnQueue(request.fromUrl)
+    val messages = mutableListOf<Message>()
+    repeat(messageCount) {
+      request.from.receiveMessage(ReceiveMessageRequest(request.fromUrl).withMaxNumberOfMessages(1)).messages.firstOrNull()
+        ?.let { msg ->
+          request.to.sendMessage(request.toUrl, msg.body)
+          request.from.deleteMessage(DeleteMessageRequest(request.fromUrl, msg.receiptHandle))
+          messages += msg
         }
-        return TransferMessagesResult(messageCount, messages.toList())
     }
+    return TransferMessagesResult(messageCount, messages.toList())
+  }
 
-    private fun AmazonSQS.countMessagesOnQueue(queueUrl: String): Int =
-        this.getQueueAttributes(queueUrl, listOf("ApproximateNumberOfMessages"))
-            .let { it.attributes["ApproximateNumberOfMessages"]?.toInt() ?: 0 }
+  private fun AmazonSQS.countMessagesOnQueue(queueUrl: String): Int =
+    this.getQueueAttributes(queueUrl, listOf("ApproximateNumberOfMessages"))
+      .let { it.attributes["ApproximateNumberOfMessages"]?.toInt() ?: 0 }
 }
 
 data class TransferMessagesRequest(val from: AmazonSQS, val fromUrl: String, val to: AmazonSQS, val toUrl: String)

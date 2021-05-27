@@ -6,6 +6,6 @@ import org.springframework.context.annotation.Configuration
 @Configuration
 class HmppsSqsConfiguration {
 
-    @Bean
-    fun sqsQueueAdminService() = SqsQueueAdminService()
+  @Bean
+  fun sqsQueueAdminService() = SqsQueueAdminService()
 }

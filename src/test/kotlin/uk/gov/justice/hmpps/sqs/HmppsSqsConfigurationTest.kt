@@ -9,19 +9,19 @@ import org.springframework.boot.test.context.SpringBootTest
 
 @SpringBootApplication
 class HmppsSqsConfigurationApplication {
-    fun main(args: Array<String>) {
-        runApplication<HmppsSqsConfigurationApplication>(*args)
-    }
+  fun main(args: Array<String>) {
+    runApplication<HmppsSqsConfigurationApplication>(*args)
+  }
 }
 
 @SpringBootTest(classes = [HmppsSqsConfigurationApplication::class])
 class HmppsSqsConfigurationTest {
 
-    @Autowired
-    private lateinit var sqsQueueAdminService: SqsQueueAdminService
+  @Autowired
+  private lateinit var sqsQueueAdminService: SqsQueueAdminService
 
-    @Test
-    fun `the sqs queue admin service is loaded`() {
-        assertThat(sqsQueueAdminService).isNotNull
-    }
+  @Test
+  fun `the sqs queue admin service is loaded`() {
+    assertThat(sqsQueueAdminService).isNotNull
+  }
 }
