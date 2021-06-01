@@ -13,8 +13,8 @@ plugins {
   id("se.patrikerdes.use-latest-versions") version "0.2.16"
 }
 
-group = "uk.gov.justice.hmpps"
-version = "0.0.1-SNAPSHOT"
+group = "uk.gov.justice.service.hmpps"
+version = "0.0.1"
 
 dependencies {
   implementation("org.springframework.boot:spring-boot-starter")
@@ -48,9 +48,9 @@ publishing {
   }
   publications {
     create<MavenPublication>("maven") {
-      groupId = "uk.gov.justice.hmpps"
+      groupId = "uk.gov.justice.service.hmpps"
       artifactId = "hmpps-spring-boot-sqs"
-      version = "0.0.1-SNAPSHOT"
+      version = "0.0.1"
 
       from(components["java"])
     }
