@@ -4,6 +4,7 @@ plugins {
   kotlin("jvm") version "1.5.10"
   kotlin("plugin.spring") version "1.5.10"
   id("maven-publish")
+  id("signing")
   id("com.adarshr.test-logger") version "3.0.0"
   id("com.github.ben-manes.versions") version "0.38.0"
   id("io.spring.dependency-management") version "1.0.11.RELEASE"
@@ -40,21 +41,50 @@ repositories {
 
 java {
   withSourcesJar()
+  withJavadocJar()
 }
 
 publishing {
   repositories {
     mavenLocal()
+    maven {
+      name = "sonatype"
+      setUrl("https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/")
+      credentials {
+        username = System.getenv("OSSRH_USERNAME")
+        password = System.getenv("OSSRH_PASSWORD")
+      }
+    }
   }
   publications {
     create<MavenPublication>("maven") {
-      groupId = "uk.gov.justice.service.hmpps"
-      artifactId = "hmpps-spring-boot-sqs"
-      version = "0.0.1"
-
-      from(components["java"])
+      pom {
+        name.set("hmpps-spring-boot-sqs ")
+        description.set("A helper library providing utilities for using amazon-sqs-java-messaging-lib")
+        url.set("https://github.com/ministryofjustice/hmpps-spring-boot-sqs")
+        licenses {
+          license {
+            name.set("MIT")
+            url.set("https://opensource.org/licenses/MIT")
+          }
+        }
+        developers {
+          developer {
+            id.set("mikehalmamoj")
+            name.set("Mike Halma")
+            email.set("mike.halma@digital.justice.gov.uk")
+          }
+        }
+        scm {
+          url.set("https://github.com/ministryofjustice/hmpps-spring-boot-sqs")
+        }
+      }
     }
   }
+}
+
+signing {
+  sign(publishing.publications["maven"])
 }
 
 fun isNonStable(version: String): Boolean {
