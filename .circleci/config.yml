@@ -1,0 +1,89 @@
+version: 2.1
+
+orbs:
+  hmpps: ministryofjustice/hmpps@3.0
+
+jobs:
+  validate:
+    executor: hmpps/java
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - gradle-{{ checksum "build.gradle.kts" }}
+            - gradle-
+      - run:
+          command: ./gradlew check
+      - save_cache:
+          paths:
+            - ~/.gradle
+          key: gradle-{{ checksum "build.gradle.kts" }}
+      - store_test_results:
+          path: build/test-results
+      - store_artifacts:
+          path: build/reports/tests
+      - persist_to_workspace:
+          root: .
+          paths:
+            - build/libs
+            - build.gradle.kts
+
+  publish:
+    executor: hmpps/java
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - gradle-{{ checksum "build.gradle.kts" }}
+            - gradle-
+      - run:
+          command: ./gradlew publish
+      - save_cache:
+          paths:
+            - ~/.gradle
+          key: gradle-{{ checksum "build.gradle.kts" }}
+      - store_test_results:
+          path: build/test-results
+      - store_artifacts:
+          path: build/reports/tests
+      - persist_to_workspace:
+          root: .
+          paths:
+            - build.gradle.kts
+
+workflows:
+  version: 2
+  build-and-test:
+    jobs:
+      - validate:
+          filters:
+            tags:
+              ignore: /.*/
+      - publish-approval:
+          type: approval
+          requires:
+            - validate
+          filters:
+            branches:
+              only:
+                - main
+      - publish:
+          requires:
+            - publish-approval
+          filters:
+            branches:
+              only:
+                - main
+
+  security:
+    triggers:
+      - schedule:
+          cron: "0 7 * * 1-5"
+          filters:
+            branches:
+              only:
+                - main
+    jobs:
+      - hmpps/gradle_owasp_dependency_check:
+          context:
+            - hmpps-common-vars
