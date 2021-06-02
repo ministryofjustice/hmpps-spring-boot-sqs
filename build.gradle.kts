@@ -58,6 +58,7 @@ publishing {
   }
   publications {
     create<MavenPublication>("maven") {
+      from(components["java"])
       pom {
         name.set("hmpps-spring-boot-sqs ")
         description.set("A helper library providing utilities for using amazon-sqs-java-messaging-lib")
