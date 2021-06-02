@@ -6,6 +6,7 @@ orbs:
 jobs:
   validate:
     executor: hmpps/java
+    tag: "16.0"
     steps:
       - checkout
       - restore_cache:
