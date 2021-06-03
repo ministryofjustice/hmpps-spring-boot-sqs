@@ -1,11 +1,13 @@
 version: 2.1
 
 orbs:
-  hmpps: ministryofjustice/hmpps@3.0
+  hmpps: ministryofjustice/hmpps@3.2.2
 
 jobs:
   validate:
-    executor: hmpps/java
+    executor:
+      name: hmpps/java
+      tag: "16.0"
     steps:
       - checkout
       - restore_cache:
@@ -13,7 +15,7 @@ jobs:
             - gradle-{{ checksum "build.gradle.kts" }}
             - gradle-
       - run:
-          command: ./gradlew check
+          command: ./gradlew -Dorg.gradle.jvmargs="--illegal-access=permit" -Dkotlin.daemon.jvm.options="--illegal-access=permit" check
       - save_cache:
           paths:
             - ~/.gradle
@@ -29,7 +31,9 @@ jobs:
             - build.gradle.kts
 
   publish:
-    executor: hmpps/java
+    executor:
+      name: hmpps/java
+      tag: "16.0"
     steps:
       - checkout
       - restore_cache:
@@ -37,7 +41,7 @@ jobs:
             - gradle-{{ checksum "build.gradle.kts" }}
             - gradle-
       - run:
-          command: ./gradlew publish
+          command: ./gradlew -Dorg.gradle.jvmargs="--illegal-access=permit" -Dkotlin.daemon.jvm.options="--illegal-access=permit" publish
       - save_cache:
           paths:
             - ~/.gradle
