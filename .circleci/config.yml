@@ -41,7 +41,9 @@ jobs:
             - gradle-{{ checksum "build.gradle.kts" }}
             - gradle-
       - run:
-          command: ./gradlew -Dorg.gradle.jvmargs="--illegal-access=permit" -Dkotlin.daemon.jvm.options="--illegal-access=permit" publish
+          command: |
+            ORG_GRADLE_PROJECT_signingKey=$(echo -e "$ORG_GRADLE_PROJECT_signingKey")
+            ./gradlew -Dorg.gradle.jvmargs="--illegal-access=permit" -Dkotlin.daemon.jvm.options="--illegal-access=permit" publish
       - save_cache:
           paths:
             - ~/.gradle
