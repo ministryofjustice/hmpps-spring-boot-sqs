@@ -43,7 +43,7 @@ jobs:
       - run:
           command: |
             ORG_GRADLE_PROJECT_signingKey=$(echo -e "$ORG_GRADLE_PROJECT_signingKey")
-            ./gradlew -Dorg.gradle.jvmargs="--illegal-access=permit" -Dkotlin.daemon.jvm.options="--illegal-access=permit" publish
+            ./gradlew -Dorg.gradle.jvmargs="--illegal-access=permit" -Dkotlin.daemon.jvm.options="--illegal-access=permit" publishToSonatype closeAndReleaseSonatypeStagingRepository
       - save_cache:
           paths:
             - ~/.gradle
@@ -61,25 +61,26 @@ workflows:
   version: 2
   build-and-test:
     jobs:
-      - validate:
-          filters:
-            tags:
-              ignore: /.*/
-      - publish-approval:
-          type: approval
-          requires:
-            - validate
-          filters:
-            branches:
-              only:
-                - main
-      - publish:
-          requires:
-            - publish-approval
-          filters:
-            branches:
-              only:
-                - main
+      - publish
+  #      - validate:
+  #          filters:
+  #            tags:
+  #              ignore: /.*/
+  #      - publish-approval:
+  #          type: approval
+  #          requires:
+  #            - validate
+  #          filters:
+  #            branches:
+  #              only:
+  #                - main
+  #      - publish:
+  #          requires:
+  #            - publish-approval
+  #          filters:
+  #            branches:
+  #              only:
+  #                - main
 
   security:
     triggers:
