@@ -15,7 +15,7 @@ plugins {
 }
 
 group = "uk.gov.justice.service.hmpps"
-version = "0.0.2"
+version = "0.1.0"
 
 dependencies {
   implementation("org.springframework.boot:spring-boot-starter")
