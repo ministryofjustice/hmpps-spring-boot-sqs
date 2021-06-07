@@ -6,8 +6,9 @@ orbs:
 jobs:
   validate:
     executor:
-      name: hmpps/java
-      tag: "16.0"
+      name: hmpps/localstack
+      jdk_tag: "16.0"
+      services: "sqs,sns"
     steps:
       - checkout
       - restore_cache:
