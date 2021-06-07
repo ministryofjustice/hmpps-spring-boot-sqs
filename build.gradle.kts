@@ -5,6 +5,7 @@ plugins {
   kotlin("plugin.spring") version "1.5.10"
   id("maven-publish")
   id("signing")
+  id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
   id("com.adarshr.test-logger") version "3.0.0"
   id("com.github.ben-manes.versions") version "0.39.0"
   id("io.spring.dependency-management") version "1.0.11.RELEASE"
@@ -15,7 +16,7 @@ plugins {
 }
 
 group = "uk.gov.justice.service.hmpps"
-version = "0.1.0"
+version = "0.1.2"
 
 dependencies {
   implementation("org.springframework.boot:spring-boot-starter")
@@ -47,14 +48,6 @@ java {
 publishing {
   repositories {
     mavenLocal()
-    maven {
-      name = "sonatype"
-      setUrl("https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/")
-      credentials {
-        username = System.getenv("OSSRH_USERNAME")
-        password = System.getenv("OSSRH_PASSWORD")
-      }
-    }
   }
   publications {
     create<MavenPublication>("maven") {
@@ -84,6 +77,16 @@ publishing {
   }
 }
 
+nexusPublishing {
+  repositories {
+    create("sonatype") {
+      nexusUrl.set(uri("https://s01.oss.sonatype.org/service/local/"))
+      snapshotRepositoryUrl.set(uri("https://s01.oss.sonatype.org/content/repositories/snapshots/"))
+      username.set(System.getenv("OSSRH_USERNAME"))
+      password.set(System.getenv("OSSRH_PASSWORD"))
+    }
+  }
+}
 signing {
   val signingKey: String? by project
   val signingPassword: String? by project
