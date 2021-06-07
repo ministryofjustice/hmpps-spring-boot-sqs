@@ -14,9 +14,8 @@ plugins {
   id("se.patrikerdes.use-latest-versions") version "0.2.17"
 }
 
-group = "uk.gov.justice.service.hmpps"
 base.archivesBaseName = "hmpps-spring-boot-sqs"
-version = "0.1.2"
+version = "0.1.4"
 
 dependencies {
   api("org.springframework.boot:spring-boot-starter")
