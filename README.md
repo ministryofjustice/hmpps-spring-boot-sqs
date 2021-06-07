@@ -84,7 +84,7 @@ Note that this is the place to look for clues if the publish fails. ^^^
 To get access to the Sonatype domain `uk.org.justice.service.hmpps`:
 
 * [Create a Sonatype user accout](https://issues.sonatype.org/secure/Signup!default.jspa)
-* Get an existing Sonatype user with access to the domain to [raise a ticket](https://issues.sonatype.org/secure/CreateIssue!enticatingdefault.jspa) requesting access for the new user account.
+* Get an existing Sonatype user with access to the domain to [raise a ticket](https://issues.sonatype.org/secure/CreateIssue.jspa) requesting access for the new user account.
 
 #### Adding Credentials to a Publish Request
 

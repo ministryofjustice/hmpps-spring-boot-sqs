@@ -44,7 +44,7 @@ jobs:
       - run:
           command: |
             ORG_GRADLE_PROJECT_signingKey=$(echo -e "$ORG_GRADLE_PROJECT_signingKey")
-            ./gradlew -Dorg.gradle.jvmargs="--illegal-access=permit" -Dkotlin.daemon.jvm.options="--illegal-access=permit" publishToSonatype closeAndReleaseSonatypeStagingRepository
+            ./gradlew -Dorg.gradle.jvmargs="--illegal-access=permit" -Dkotlin.daemon.jvm.options="--illegal-access=permit" lib:publishToSonatype closeAndReleaseSonatypeStagingRepository
       - save_cache:
           paths:
             - ~/.gradle

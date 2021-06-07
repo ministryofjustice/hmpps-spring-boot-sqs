@@ -2,6 +2,10 @@ plugins {
   id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
 }
 
+allprojects {
+  group = "uk.gov.justice.service.hmpps"
+}
+
 nexusPublishing {
   repositories {
     create("sonatype") {
