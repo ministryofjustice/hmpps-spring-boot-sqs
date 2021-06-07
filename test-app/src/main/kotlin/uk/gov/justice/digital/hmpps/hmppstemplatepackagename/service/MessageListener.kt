@@ -2,10 +2,9 @@ package uk.gov.justice.digital.hmpps.hmppstemplatepackagename.service
 
 import org.springframework.jms.annotation.JmsListener
 import org.springframework.stereotype.Service
-import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.config.SqsConfigProperties
 
 @Service
-class MessageListener(private val messageService: MessageService, private val sqsConfigProperties: SqsConfigProperties) {
+class MessageListener(private val messageService: MessageService) {
 
   @JmsListener(destination = "#{@'hmpps.sqs-uk.gov.justice.digital.hmpps.hmppstemplatepackagename.config.SqsConfigProperties'.queueName}", containerFactory = "jmsListenerContainerFactory")
   fun processMessage(message: String?) {

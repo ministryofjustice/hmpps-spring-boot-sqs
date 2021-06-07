@@ -49,9 +49,3 @@ management:
     info:
       cache:
         time-to-live: 2000ms
-hmpps:
-  sqs:
-    localstack-endpoint: http://localhost:4566
-    region: eu-west-2
-    dlqName: ${random.uuid}
-    queueName: ${random.uuid}

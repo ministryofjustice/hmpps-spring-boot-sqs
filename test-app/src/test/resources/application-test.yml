@@ -4,3 +4,10 @@ server:
 management.endpoint:
   health.cache.time-to-live: 0
   info.cache.time-to-live: 0
+
+hmpps:
+  sqs:
+    localstack-endpoint: http://localhost:4566
+    region: eu-west-2
+    dlqName: ${random.uuid}
+    queueName: ${random.uuid}

@@ -42,12 +42,12 @@ class SqsConfig {
   ) =
     dlqSqsClient.getQueueUrl(sqsConfigProperties.dlqName).queueUrl
       .let { dlqQueueUrl -> dlqSqsClient.getQueueAttributes(dlqQueueUrl, listOf(QueueAttributeName.QueueArn.toString())).attributes["QueueArn"]!! }
-      .run {
+      .also { queueArn ->
         queueSqsClient.createQueue(
           CreateQueueRequest(sqsConfigProperties.queueName).withAttributes(
             mapOf(
               QueueAttributeName.RedrivePolicy.toString() to
-                """{"deadLetterTargetArn":"$this","maxReceiveCount":"5"}"""
+                """{"deadLetterTargetArn":"$queueArn","maxReceiveCount":"5"}"""
             )
           )
         )

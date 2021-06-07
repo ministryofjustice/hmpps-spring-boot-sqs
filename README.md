@@ -28,7 +28,7 @@ And this command to run the tests:
 
 ### test-app
 
-This module contains a copy of the [Koktlin template project](https://github.com/ministryofjustice/hmpps-template-kotlin) with the library included as a dependency.
+This module contains a copy of the [Koktlin template project](https://github.com/ministryofjustice/hmpps-template-kotlin) with the library included as a dependency. This means there is a lot of stuff in the `test-app` that isn't needed for the tests, such as the Circle config.yml - these have been left on purpose so that it is easier to compare the test app with the template project when attempting to keep the test app up to date.
 
 Various queue related functionality has been added to the template project so that we can run tests against the library.
 
