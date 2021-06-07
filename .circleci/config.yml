@@ -61,26 +61,25 @@ workflows:
   version: 2
   build-and-test:
     jobs:
-      - publish
-  #      - validate:
-  #          filters:
-  #            tags:
-  #              ignore: /.*/
-  #      - publish-approval:
-  #          type: approval
-  #          requires:
-  #            - validate
-  #          filters:
-  #            branches:
-  #              only:
-  #                - main
-  #      - publish:
-  #          requires:
-  #            - publish-approval
-  #          filters:
-  #            branches:
-  #              only:
-  #                - main
+      - validate:
+          filters:
+            tags:
+              ignore: /.*/
+      - publish-approval:
+          type: approval
+          requires:
+            - validate
+          filters:
+            branches:
+              only:
+                - main
+      - publish:
+          requires:
+            - publish-approval
+          filters:
+            branches:
+              only:
+                - main
 
   security:
     triggers:
