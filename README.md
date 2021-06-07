@@ -8,8 +8,7 @@ A helper library providing utilities for using `amazon-sqs-java-messaging-lib`
 
 [This guide](https://central.sonatype.org/publish/publish-guide/) was used as a basis for publishing to Maven Central.
 
-However please note that document above seems a little outdated and a couple of things have changed.
-
+However, please note that the document above is old and a couple of things have changed.
 * The Gradle plugin used in that document - `maven` - is out of date and we use the [maven-publish plugin](https://docs.gradle.org/current/userguide/publishing_maven.html) instead.
 * The process described in the document above requires a manual step to release the library from the Nexus staging repository - we have implemented the  [Nexus Publish Plugin](https://github.com/gradle-nexus/publish-plugin) to automate this step.
 
@@ -17,8 +16,7 @@ However please note that document above seems a little outdated and a couple of 
 
 When publishing to Maven Central we authenticate with a username and password.
 
-In order to use groupId (
-see [Maven coordinates](https://maven.apache.org/pom.html#Maven_Coordinates)) `uk.org.justice.service.hmpps` we claimed the domain `uk.org.justice.service.hmpps` with Sonatype [see this PR](https://github.com/ministryofjustice/cloud-platform-environments/pull/4872) and registered this against my personal Sonatype username (service accounts not suported :( ). By the time you read this several members of the `hmpps-tech-team` will also have accounts associated with that domain.
+In order to use groupId (see [Maven coordinates](https://maven.apache.org/pom.html#Maven_Coordinates)) `uk.org.justice.service.hmpps` we claimed the domain `uk.org.justice.service.hmpps` with Sonatype [see this PR](https://github.com/ministryofjustice/cloud-platform-environments/pull/4872) and registered this against my personal Sonatype username (service accounts not suported :( ). By the time you read this several members of the `hmpps-tech-team` will also have accounts associated with that domain.
 
 An account also gives us access to the [Staging repository](https://s01.oss.sonatype.org/#stagingRepositories) which is used to validate Maven publications before they are published.
 
