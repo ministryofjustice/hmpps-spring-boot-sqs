@@ -6,7 +6,12 @@ A helper library providing utilities for using `amazon-sqs-java-messaging-lib`
 
 ## Publishing to Maven Central
 
-[This guide](https://central.sonatype.org/publish/publish-guide/) was used to publish to Maven Central. However please note that the Gradle plugin used in that document - `maven` - is out of date and we had to switch to the [maven-publish plugin](https://docs.gradle.org/current/userguide/publishing_maven.html) instead.
+[This guide](https://central.sonatype.org/publish/publish-guide/) was used as a basis for publishing to Maven Central.
+
+However please note that document above seems a little outdated and a couple of things have changed.
+
+* The Gradle plugin used in that document - `maven` - is out of date and we use the [maven-publish plugin](https://docs.gradle.org/current/userguide/publishing_maven.html) instead.
+* The process described in the document above requires a manual step to release the library from the Nexus staging repository - we have implemented the  [Nexus Publish Plugin](https://github.com/gradle-nexus/publish-plugin) to automate this step.
 
 ### Authenticating with Sonatype
 
