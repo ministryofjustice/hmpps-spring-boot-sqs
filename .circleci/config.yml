@@ -74,7 +74,7 @@ workflows:
             branches:
               only:
                 - main
-                - mh-DT-1581-multi-project-versio
+                - mh-DT-1581-publish-wrong-name
       - publish:
           requires:
             - publish-approval
@@ -82,7 +82,7 @@ workflows:
             branches:
               only:
                 - main
-                - mh-DT-1581-multi-project-versio
+                - mh-DT-1581-publish-wrong-name
 
   security:
     triggers:
