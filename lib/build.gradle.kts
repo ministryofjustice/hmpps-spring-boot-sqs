@@ -15,7 +15,7 @@ plugins {
 }
 
 base.archivesBaseName = "hmpps-spring-boot-sqs"
-version = "0.1.4"
+version = "0.1.4.1"
 
 dependencies {
   api("org.springframework.boot:spring-boot-starter")
