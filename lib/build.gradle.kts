@@ -15,7 +15,7 @@ plugins {
 }
 
 base.archivesBaseName = "hmpps-spring-boot-sqs"
-version = "0.1.4"
+version = "0.1.5"
 
 dependencies {
   api("org.springframework.boot:spring-boot-starter")
@@ -36,7 +36,8 @@ publishing {
     create<MavenPublication>("maven") {
       from(components["java"])
       pom {
-        name.set("hmpps-spring-boot-sqs")
+        name.set(base.archivesBaseName)
+        artifactId = base.archivesBaseName
         description.set("A helper library providing utilities for using amazon-sqs-java-messaging-lib")
         url.set("https://github.com/ministryofjustice/hmpps-spring-boot-sqs")
         licenses {
