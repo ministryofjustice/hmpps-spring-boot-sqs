@@ -7,7 +7,7 @@ import com.amazonaws.services.sqs.model.ReceiveMessageRequest
 
 class SqsQueueAdminService {
 
-  fun retryDlqMessages(request: TransferMessagesRequest): TransferMessagesResult =
+  fun retryDlqMessages(request: RetryDlqRequest): RetryDlqResult =
     with(request.hmppsQueue) {
       val messageCount = sqsAwsDlqClient.countMessagesOnQueue(dlqUrl)
       val messages = mutableListOf<Message>()
@@ -19,12 +19,12 @@ class SqsQueueAdminService {
             messages += msg
           }
       }
-      return TransferMessagesResult(messageCount, messages.toList())
+      return RetryDlqResult(messageCount, messages.toList())
     }
 }
 
-data class TransferMessagesRequest(val hmppsQueue: HmppsQueue)
-data class TransferMessagesResult(val messagesFoundCount: Int, val messages: List<Message>)
+data class RetryDlqRequest(val hmppsQueue: HmppsQueue)
+data class RetryDlqResult(val messagesFoundCount: Int, val messages: List<Message>)
 
 fun AmazonSQS.countMessagesOnQueue(queueUrl: String): Int =
   this.getQueueAttributes(queueUrl, listOf("ApproximateNumberOfMessages"))

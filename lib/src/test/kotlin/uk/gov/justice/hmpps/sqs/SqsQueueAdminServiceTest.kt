@@ -49,7 +49,7 @@ internal class SqsQueueAdminServiceTest {
 
       @Test
       fun `No messages does not attempt any transfer`() {
-        queueAdminService.retryDlqMessages(TransferMessagesRequest(HmppsQueue(queueSqs, "some queue name", dlqSqs, "some dlq name")))
+        queueAdminService.retryDlqMessages(RetryDlqRequest(HmppsQueue(queueSqs, "some queue name", dlqSqs, "some dlq name")))
 
         verify(dlqSqs).getQueueAttributes("dlqUrl", listOf("ApproximateNumberOfMessages"))
         verify(dlqSqs, times(0)).receiveMessage(any<ReceiveMessageRequest>())
@@ -58,7 +58,7 @@ internal class SqsQueueAdminServiceTest {
       @Test
       fun `No messages returns empty result`() {
         val result =
-          queueAdminService.retryDlqMessages(TransferMessagesRequest(HmppsQueue(queueSqs, "some queue name", dlqSqs, "some dlq name")))
+          queueAdminService.retryDlqMessages(RetryDlqRequest(HmppsQueue(queueSqs, "some queue name", dlqSqs, "some dlq name")))
 
         assertThat(result.messagesFoundCount).isEqualTo(0)
         assertThat(result.messages).isEmpty()
@@ -82,7 +82,7 @@ internal class SqsQueueAdminServiceTest {
 
       @Test
       fun `Receives message from the dlq`() {
-        queueAdminService.retryDlqMessages(TransferMessagesRequest(HmppsQueue(queueSqs, "some queue name", dlqSqs, "some dlq name")))
+        queueAdminService.retryDlqMessages(RetryDlqRequest(HmppsQueue(queueSqs, "some queue name", dlqSqs, "some dlq name")))
 
         verify(dlqSqs).receiveMessage(
           check<ReceiveMessageRequest> {
@@ -94,7 +94,7 @@ internal class SqsQueueAdminServiceTest {
 
       @Test
       fun `Deletes message from the dlq`() {
-        queueAdminService.retryDlqMessages(TransferMessagesRequest(HmppsQueue(queueSqs, "some queue name", dlqSqs, "some dlq name")))
+        queueAdminService.retryDlqMessages(RetryDlqRequest(HmppsQueue(queueSqs, "some queue name", dlqSqs, "some dlq name")))
 
         verify(dlqSqs).deleteMessage(
           check {
@@ -106,14 +106,14 @@ internal class SqsQueueAdminServiceTest {
 
       @Test
       fun `Sends message to the main queue`() {
-        queueAdminService.retryDlqMessages(TransferMessagesRequest(HmppsQueue(queueSqs, "some queue name", dlqSqs, "some dlq name")))
+        queueAdminService.retryDlqMessages(RetryDlqRequest(HmppsQueue(queueSqs, "some queue name", dlqSqs, "some dlq name")))
 
         verify(queueSqs).sendMessage("queueUrl", "message-body")
       }
 
       @Test
       fun `Returns the message`() {
-        val result = queueAdminService.retryDlqMessages(TransferMessagesRequest(HmppsQueue(queueSqs, "some queue name", dlqSqs, "some dlq name")))
+        val result = queueAdminService.retryDlqMessages(RetryDlqRequest(HmppsQueue(queueSqs, "some queue name", dlqSqs, "some dlq name")))
 
         assertThat(result.messagesFoundCount).isEqualTo(1)
         assertThat(result.messages)
@@ -144,7 +144,7 @@ internal class SqsQueueAdminServiceTest {
 
       @Test
       fun `Receives message from the dlq`() {
-        queueAdminService.retryDlqMessages(TransferMessagesRequest(HmppsQueue(queueSqs, "some queue name", dlqSqs, "some dlq name")))
+        queueAdminService.retryDlqMessages(RetryDlqRequest(HmppsQueue(queueSqs, "some queue name", dlqSqs, "some dlq name")))
 
         verify(dlqSqs, times(2)).receiveMessage(
           check<ReceiveMessageRequest> {
@@ -156,7 +156,7 @@ internal class SqsQueueAdminServiceTest {
 
       @Test
       fun `Deletes message from the dlq`() {
-        queueAdminService.retryDlqMessages(TransferMessagesRequest(HmppsQueue(queueSqs, "some queue name", dlqSqs, "some dlq name")))
+        queueAdminService.retryDlqMessages(RetryDlqRequest(HmppsQueue(queueSqs, "some queue name", dlqSqs, "some dlq name")))
 
         val captor = argumentCaptor<DeleteMessageRequest>()
         verify(dlqSqs, times(2)).deleteMessage(captor.capture())
@@ -167,7 +167,7 @@ internal class SqsQueueAdminServiceTest {
 
       @Test
       fun `Sends message to the main queue`() {
-        queueAdminService.retryDlqMessages(TransferMessagesRequest(HmppsQueue(queueSqs, "some queue name", dlqSqs, "some dlq name")))
+        queueAdminService.retryDlqMessages(RetryDlqRequest(HmppsQueue(queueSqs, "some queue name", dlqSqs, "some dlq name")))
 
         verify(queueSqs).sendMessage("queueUrl", "message-1-body")
         verify(queueSqs).sendMessage("queueUrl", "message-2-body")
@@ -175,7 +175,7 @@ internal class SqsQueueAdminServiceTest {
 
       @Test
       fun `Returns the message`() {
-        val result = queueAdminService.retryDlqMessages(TransferMessagesRequest(HmppsQueue(queueSqs, "some queue name", dlqSqs, "some dlq name")))
+        val result = queueAdminService.retryDlqMessages(RetryDlqRequest(HmppsQueue(queueSqs, "some queue name", dlqSqs, "some dlq name")))
 
         assertThat(result.messagesFoundCount).isEqualTo(2)
         assertThat(result.messages)
@@ -202,7 +202,7 @@ internal class SqsQueueAdminServiceTest {
 
       @Test
       fun `Receives message from the dlq`() {
-        queueAdminService.retryDlqMessages(TransferMessagesRequest(HmppsQueue(queueSqs, "some queue name", dlqSqs, "some dlq name")))
+        queueAdminService.retryDlqMessages(RetryDlqRequest(HmppsQueue(queueSqs, "some queue name", dlqSqs, "some dlq name")))
 
         verify(dlqSqs, times(2)).receiveMessage(
           check<ReceiveMessageRequest> {
@@ -214,7 +214,7 @@ internal class SqsQueueAdminServiceTest {
 
       @Test
       fun `Deletes message from the dlq`() {
-        queueAdminService.retryDlqMessages(TransferMessagesRequest(HmppsQueue(queueSqs, "some queue name", dlqSqs, "some dlq name")))
+        queueAdminService.retryDlqMessages(RetryDlqRequest(HmppsQueue(queueSqs, "some queue name", dlqSqs, "some dlq name")))
 
         verify(dlqSqs).deleteMessage(
           check {
@@ -226,14 +226,14 @@ internal class SqsQueueAdminServiceTest {
 
       @Test
       fun `Sends message to the main queue`() {
-        queueAdminService.retryDlqMessages(TransferMessagesRequest(HmppsQueue(queueSqs, "some queue name", dlqSqs, "some dlq name")))
+        queueAdminService.retryDlqMessages(RetryDlqRequest(HmppsQueue(queueSqs, "some queue name", dlqSqs, "some dlq name")))
 
         verify(queueSqs).sendMessage("queueUrl", "message-1-body")
       }
 
       @Test
       fun `Returns the message`() {
-        val result = queueAdminService.retryDlqMessages(TransferMessagesRequest(HmppsQueue(queueSqs, "some queue name", dlqSqs, "some dlq name")))
+        val result = queueAdminService.retryDlqMessages(RetryDlqRequest(HmppsQueue(queueSqs, "some queue name", dlqSqs, "some dlq name")))
 
         assertThat(result.messagesFoundCount).isEqualTo(2)
         assertThat(result.messages)

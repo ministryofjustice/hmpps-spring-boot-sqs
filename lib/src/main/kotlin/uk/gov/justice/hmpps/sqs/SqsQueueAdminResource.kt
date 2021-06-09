@@ -22,7 +22,7 @@ class SqsQueueAdminResource(private val sqsQueueAdminService: SqsQueueAdminServi
     val hmppsQueue = hmppsQueueService.findByDlqName(dlqName) ?: throw ResponseStatusException(
       HttpStatus.NOT_FOUND, "$dlqName not found"
     )
-    val result = sqsQueueAdminService.retryDlqMessages(TransferMessagesRequest(hmppsQueue))
+    val result = sqsQueueAdminService.retryDlqMessages(RetryDlqRequest(hmppsQueue))
     log.info("Found ${result.messagesFoundCount} messages, attempted to retry ${result.messages.size}")
   }
 }

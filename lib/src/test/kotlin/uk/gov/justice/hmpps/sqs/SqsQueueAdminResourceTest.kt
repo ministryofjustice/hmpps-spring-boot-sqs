@@ -31,7 +31,7 @@ class SqsQueueAdminResourceTest {
   @Test
   fun `should return ok`() {
     val hmppsQueue = mock<HmppsQueue>()
-    val transferMessagesResult = mock<TransferMessagesResult>()
+    val transferMessagesResult = mock<RetryDlqResult>()
     whenever(hmppsQueueService.findByDlqName("some dlq name")).thenReturn(hmppsQueue)
     whenever(sqsQueueAdminService.retryDlqMessages(any())).thenReturn(transferMessagesResult)
 
