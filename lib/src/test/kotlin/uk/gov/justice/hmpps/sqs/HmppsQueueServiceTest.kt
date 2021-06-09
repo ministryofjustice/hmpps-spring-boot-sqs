@@ -19,8 +19,8 @@ class HmppsQueueServiceTest {
   fun `add test data`() {
     whenever(sqsAwsClient.getQueueUrl(anyString())).thenReturn(GetQueueUrlResult().withQueueUrl("some queue url"))
     whenever(sqsAwsDlqClient.getQueueUrl(anyString())).thenReturn(GetQueueUrlResult().withQueueUrl("some dlq url"))
-    hmppsQueueService.addHmppsQueue(HmppsQueue(sqsAwsClient, "some queue name", sqsAwsDlqClient, "some dlq name"))
-    hmppsQueueService.addHmppsQueue(HmppsQueue(mock(), "another queue name", mock(), "another dlq name"))
+    hmppsQueueService.registerHmppsQueue(HmppsQueue(sqsAwsClient, "some queue name", sqsAwsDlqClient, "some dlq name"))
+    hmppsQueueService.registerHmppsQueue(HmppsQueue(mock(), "another queue name", mock(), "another dlq name"))
   }
 
   @Test

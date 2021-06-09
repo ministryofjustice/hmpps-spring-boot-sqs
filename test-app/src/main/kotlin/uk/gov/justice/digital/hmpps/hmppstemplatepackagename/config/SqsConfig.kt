@@ -35,7 +35,7 @@ class SqsConfig() {
   fun sqsClient(sqsConfigProperties: SqsConfigProperties, dlqSqsClient: AmazonSQS, hmppsQueueService: HmppsQueueService): AmazonSQS =
     amazonSQS(sqsConfigProperties.localstackEndpoint, sqsConfigProperties.region)
       .also { sqsClient -> createQueue(sqsClient, dlqSqsClient, sqsConfigProperties) }
-      .also { hmppsQueueService.addHmppsQueue(HmppsQueue(it, sqsConfigProperties.queueName, dlqSqsClient, sqsConfigProperties.dlqName)) }
+      .also { hmppsQueueService.registerHmppsQueue(HmppsQueue(it, sqsConfigProperties.queueName, dlqSqsClient, sqsConfigProperties.dlqName)) }
       .also { logger.info("Created sqs client for queue ${sqsConfigProperties.queueName}") }
 
   private fun createQueue(

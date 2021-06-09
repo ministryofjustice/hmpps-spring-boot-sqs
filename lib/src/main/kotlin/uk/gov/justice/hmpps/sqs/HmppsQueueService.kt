@@ -10,7 +10,7 @@ class HmppsQueueService {
   fun findByQueueName(queueName: String) = hmppsQueues.associateBy { it.queueName }.getOrDefault(queueName, null)
   fun findByDlqName(dlqName: String) = hmppsQueues.associateBy { it.dlqName }.getOrDefault(dlqName, null)
 
-  fun addHmppsQueue(hmppsQueue: HmppsQueue) {
+  fun registerHmppsQueue(hmppsQueue: HmppsQueue) {
     hmppsQueues += hmppsQueue
   }
 }
