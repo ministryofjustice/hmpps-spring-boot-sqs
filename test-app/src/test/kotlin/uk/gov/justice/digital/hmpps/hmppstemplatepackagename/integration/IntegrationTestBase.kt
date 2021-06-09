@@ -27,7 +27,7 @@ abstract class IntegrationTestBase {
   protected lateinit var messageServiceSpy: MessageService
 
   @SpyBean
-  private lateinit var sqsConfigProperties: SqsConfigProperties
+  protected lateinit var sqsConfigProperties: SqsConfigProperties
 
   @Suppress("SpringJavaInjectionPointsAutowiringInspection")
   @Autowired

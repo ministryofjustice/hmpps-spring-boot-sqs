@@ -17,7 +17,7 @@ class QueueAdminResourceTest : IntegrationTestBase() {
     await untilCallTo { sqsDlqClient.countMessagesOnQueue(dlqUrl) } matches { it == 2 }
 
     webTestClient.put()
-      .uri("/queues/retry-dlq")
+      .uri("/queue-admin/retry-dlq/${sqsConfigProperties.dlqName}")
       .accept(MediaType.APPLICATION_JSON)
       .exchange()
       .expectStatus().isOk

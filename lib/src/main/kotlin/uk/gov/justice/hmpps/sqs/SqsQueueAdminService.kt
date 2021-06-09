@@ -7,22 +7,23 @@ import com.amazonaws.services.sqs.model.ReceiveMessageRequest
 
 class SqsQueueAdminService {
 
-  fun transferAllMessages(request: TransferMessagesRequest): TransferMessagesResult {
-    val messageCount = request.from.countMessagesOnQueue(request.fromUrl)
-    val messages = mutableListOf<Message>()
-    repeat(messageCount) {
-      request.from.receiveMessage(ReceiveMessageRequest(request.fromUrl).withMaxNumberOfMessages(1)).messages.firstOrNull()
-        ?.let { msg ->
-          request.to.sendMessage(request.toUrl, msg.body)
-          request.from.deleteMessage(DeleteMessageRequest(request.fromUrl, msg.receiptHandle))
-          messages += msg
-        }
+  fun retryDlqMessages(request: TransferMessagesRequest): TransferMessagesResult =
+    with(request.hmppsQueue) {
+      val messageCount = sqsAwsDlqClient.countMessagesOnQueue(dlqUrl)
+      val messages = mutableListOf<Message>()
+      repeat(messageCount) {
+        sqsAwsDlqClient.receiveMessage(ReceiveMessageRequest(dlqUrl).withMaxNumberOfMessages(1)).messages.firstOrNull()
+          ?.let { msg ->
+            sqsAwsClient.sendMessage(queueUrl, msg.body)
+            sqsAwsDlqClient.deleteMessage(DeleteMessageRequest(dlqUrl, msg.receiptHandle))
+            messages += msg
+          }
+      }
+      return TransferMessagesResult(messageCount, messages.toList())
     }
-    return TransferMessagesResult(messageCount, messages.toList())
-  }
 }
 
-data class TransferMessagesRequest(val from: AmazonSQS, val fromUrl: String, val to: AmazonSQS, val toUrl: String)
+data class TransferMessagesRequest(val hmppsQueue: HmppsQueue)
 data class TransferMessagesResult(val messagesFoundCount: Int, val messages: List<Message>)
 
 fun AmazonSQS.countMessagesOnQueue(queueUrl: String): Int =

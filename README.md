@@ -60,6 +60,17 @@ The configuration class `SqsConfig` then takes the queue names from `SqsConfigPr
 
 The JMS message listener defined in class `MessageListener` sets the destination queue name from the `SqsConfigProperties` bean. Note that due to the way Spring loads `@ConfigurationProperties` beans some complicated `SpEL` is required to define the queue name in the `@JmsListener` annotation. See the note about the convention `<prefix>-<fqn>` in [the Spring documentation](https://docs.spring.io/spring-boot/docs/2.1.13.RELEASE/reference/html/boot-features-external-config.html#boot-features-external-config-typesafe-configuration-properties).
 
+## Publishing Locally (to test against other projects)
+
+* Firstly bump the version of this project in `lib/build.gradle.kts`.
+* Then publish the plugin to local maven
+
+```
+./gradlew publishToMavenLocal -x :lib:signMavenPublication
+```
+
+In the other project's Gradle build script change the version to match and it should now be pulled into the project.
+
 ## Publishing to Maven Central
 
 [This guide](https://central.sonatype.org/publish/publish-guide/) was used as a basis for publishing to Maven Central.

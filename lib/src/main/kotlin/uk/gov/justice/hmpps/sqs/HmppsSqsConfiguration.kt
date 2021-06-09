@@ -8,4 +8,10 @@ class HmppsSqsConfiguration {
 
   @Bean
   fun sqsQueueAdminService() = SqsQueueAdminService()
+
+  @Bean
+  fun hmppsQueueService() = HmppsQueueService()
+
+  @Bean
+  fun sqsQueueAdminResource(sqsQueueAdminService: SqsQueueAdminService, hmppsQueueService: HmppsQueueService) = SqsQueueAdminResource(sqsQueueAdminService, hmppsQueueService)
 }
