@@ -4,10 +4,15 @@ import com.amazonaws.services.sqs.AmazonSQS
 import com.amazonaws.services.sqs.model.DeleteMessageRequest
 import com.amazonaws.services.sqs.model.Message
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 
 @Service
 class HmppsQueueService {
+
+  companion object {
+    private val log = LoggerFactory.getLogger(this::class.java)
+  }
 
   private val hmppsQueues: MutableList<HmppsQueue> = mutableListOf()
 
@@ -20,18 +25,29 @@ class HmppsQueueService {
 
   fun retryDlqMessages(request: RetryDlqRequest): RetryDlqResult =
     with(request.hmppsQueue) {
-      val messageCount = sqsAwsDlqClient.countMessagesOnQueue(dlqUrl)
-      val messages = mutableListOf<Message>()
-      repeat(messageCount) {
-        sqsAwsDlqClient.receiveMessage(ReceiveMessageRequest(dlqUrl).withMaxNumberOfMessages(1)).messages.firstOrNull()
-          ?.let { msg ->
-            sqsAwsClient.sendMessage(queueUrl, msg.body)
-            sqsAwsDlqClient.deleteMessage(DeleteMessageRequest(dlqUrl, msg.receiptHandle))
-            messages += msg
-          }
-      }
+      val (messageCount, messages) = retryDlqMessages()
       return RetryDlqResult(messageCount, messages.toList())
     }
+
+  fun retryAllDlqs() =
+    hmppsQueues
+      .map { hmppsQueue -> RetryDlqRequest(hmppsQueue) }
+      .map { retryDlqRequest -> retryDlqMessages(retryDlqRequest) }
+
+  private fun HmppsQueue.retryDlqMessages(): RetryDlqResult {
+    val messageCount = sqsAwsDlqClient.countMessagesOnQueue(dlqUrl)
+    val messages = mutableListOf<Message>()
+    repeat(messageCount) {
+      sqsAwsDlqClient.receiveMessage(ReceiveMessageRequest(dlqUrl).withMaxNumberOfMessages(1)).messages.firstOrNull()
+        ?.let { msg ->
+          sqsAwsClient.sendMessage(queueUrl, msg.body)
+          sqsAwsDlqClient.deleteMessage(DeleteMessageRequest(dlqUrl, msg.receiptHandle))
+          messages += msg
+        }
+    }
+    log.info("For dlq ${this.dlqName} we found $messageCount messages, attempted to retry ${messages.size}")
+    return RetryDlqResult(messageCount, messages.toList())
+  }
 }
 
 data class RetryDlqRequest(val hmppsQueue: HmppsQueue)
