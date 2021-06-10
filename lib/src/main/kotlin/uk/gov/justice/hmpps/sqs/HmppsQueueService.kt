@@ -37,6 +37,6 @@ class HmppsQueueService {
 data class RetryDlqRequest(val hmppsQueue: HmppsQueue)
 data class RetryDlqResult(val messagesFoundCount: Int, val messages: List<Message>)
 
-private fun AmazonSQS.countMessagesOnQueue(queueUrl: String): Int =
+internal fun AmazonSQS.countMessagesOnQueue(queueUrl: String): Int =
   this.getQueueAttributes(queueUrl, listOf("ApproximateNumberOfMessages"))
     .let { it.attributes["ApproximateNumberOfMessages"]?.toInt() ?: 0 }
