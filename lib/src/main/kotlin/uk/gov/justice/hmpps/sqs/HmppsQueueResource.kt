@@ -10,7 +10,7 @@ import org.springframework.web.server.ResponseStatusException
 
 @RestController
 @RequestMapping("/queue-admin")
-class SqsQueueAdminResource(private val sqsQueueAdminService: SqsQueueAdminService, private val hmppsQueueService: HmppsQueueService) {
+class HmppsQueueResource(private val hmppsQueueService: HmppsQueueService) {
 
   companion object {
     private val log = LoggerFactory.getLogger(this::class.java)
@@ -22,7 +22,7 @@ class SqsQueueAdminResource(private val sqsQueueAdminService: SqsQueueAdminServi
     val hmppsQueue = hmppsQueueService.findByDlqName(dlqName) ?: throw ResponseStatusException(
       HttpStatus.NOT_FOUND, "$dlqName not found"
     )
-    val result = sqsQueueAdminService.retryDlqMessages(RetryDlqRequest(hmppsQueue))
+    val result = hmppsQueueService.retryDlqMessages(RetryDlqRequest(hmppsQueue))
     log.info("Found ${result.messagesFoundCount} messages, attempted to retry ${result.messages.size}")
   }
 }

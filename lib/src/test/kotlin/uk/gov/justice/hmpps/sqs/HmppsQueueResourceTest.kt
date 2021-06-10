@@ -3,8 +3,8 @@ package uk.gov.justice.hmpps.sqs
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.check
 import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
 import com.nhaarman.mockitokotlin2.whenever
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -17,7 +17,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
 @WebMvcTest
-class SqsQueueAdminResourceTest {
+class HmppsQueueResourceTest {
 
   @Autowired
   private lateinit var mockMvc: MockMvc
@@ -25,20 +25,17 @@ class SqsQueueAdminResourceTest {
   @MockBean
   private lateinit var hmppsQueueService: HmppsQueueService
 
-  @MockBean
-  private lateinit var sqsQueueAdminService: SqsQueueAdminService
-
   @Test
   fun `should return ok`() {
     val hmppsQueue = mock<HmppsQueue>()
     val transferMessagesResult = mock<RetryDlqResult>()
     whenever(hmppsQueueService.findByDlqName("some dlq name")).thenReturn(hmppsQueue)
-    whenever(sqsQueueAdminService.retryDlqMessages(any())).thenReturn(transferMessagesResult)
+    whenever(hmppsQueueService.retryDlqMessages(any())).thenReturn(transferMessagesResult)
 
     mockMvc.perform(put("/queue-admin/retry-dlq/some dlq name"))
       .andExpect(status().isOk)
 
-    verify(sqsQueueAdminService).retryDlqMessages(
+    verify(hmppsQueueService).retryDlqMessages(
       check {
         it.hmppsQueue == hmppsQueue
       }
@@ -52,7 +49,7 @@ class SqsQueueAdminResourceTest {
     mockMvc.perform(put("/queue-admin/retry-dlq/some dlq name"))
       .andExpect(status().isNotFound)
 
-    verifyNoMoreInteractions(sqsQueueAdminService)
+    verify(hmppsQueueService, times(0)).retryDlqMessages(any())
   }
 }
 

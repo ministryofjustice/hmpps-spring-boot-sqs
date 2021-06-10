@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test
 import org.springframework.http.MediaType
 import uk.gov.justice.hmpps.sqs.countMessagesOnQueue
 
-class QueueAdminResourceTest : IntegrationTestBase() {
+class HmppsQueueResourceTest : IntegrationTestBase() {
 
   @Test
   fun `should transfer messages from DLQ to main queue and process them`() {
