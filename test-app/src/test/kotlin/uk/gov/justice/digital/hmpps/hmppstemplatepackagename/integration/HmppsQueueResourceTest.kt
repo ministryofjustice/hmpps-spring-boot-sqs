@@ -6,7 +6,6 @@ import org.awaitility.kotlin.matches
 import org.awaitility.kotlin.untilCallTo
 import org.junit.jupiter.api.Test
 import org.springframework.http.MediaType
-import uk.gov.justice.hmpps.sqs.countMessagesOnQueue
 
 class HmppsQueueResourceTest : IntegrationTestBase() {
 
