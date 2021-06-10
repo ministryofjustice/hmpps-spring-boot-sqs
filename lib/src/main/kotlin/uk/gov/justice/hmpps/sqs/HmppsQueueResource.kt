@@ -2,6 +2,7 @@ package uk.gov.justice.hmpps.sqs
 
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestMapping
@@ -17,6 +18,7 @@ class HmppsQueueResource(private val hmppsQueueService: HmppsQueueService) {
   }
 
   @PutMapping("/retry-dlq/{dlqName}")
+  @PreAuthorize("hasRole('ROLE_QUEUE_ADMIN')")
   fun retryDlq(@PathVariable("dlqName") dlqName: String) =
     hmppsQueueService.findByDlqName(dlqName)
       ?.let { hmppsQueue -> hmppsQueueService.retryDlqMessages(RetryDlqRequest(hmppsQueue)) }

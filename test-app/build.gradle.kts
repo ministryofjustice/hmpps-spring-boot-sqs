@@ -10,6 +10,8 @@ configurations {
 dependencies {
   annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
   implementation("org.springframework.boot:spring-boot-starter-webflux")
+  implementation("org.springframework.boot:spring-boot-starter-security")
+  implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
 
   implementation(project(":lib"))
   implementation(platform("com.amazonaws:aws-java-sdk-bom:1.11.942"))
@@ -22,6 +24,8 @@ dependencies {
   testImplementation("com.nhaarman.mockitokotlin2:mockito-kotlin:2.2.0")
   testImplementation("org.mockito:mockito-inline:3.10.0")
   testImplementation("org.awaitility:awaitility-kotlin:4.1.0")
+  testImplementation("io.jsonwebtoken:jjwt:0.9.1")
+  testImplementation("com.github.tomakehurst:wiremock-standalone:2.27.2")
 }
 
 tasks {
