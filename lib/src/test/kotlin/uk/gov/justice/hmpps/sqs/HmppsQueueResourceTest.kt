@@ -6,6 +6,7 @@ import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.autoconfigure.SpringBootApplication
@@ -27,27 +28,43 @@ class HmppsQueueResourceTest {
   @MockBean
   private lateinit var hmppsQueueService: HmppsQueueService
 
-  @Test
-  fun `should call the service`() {
-    val hmppsQueue = mock<HmppsQueue>()
-    val transferMessagesResult = mock<RetryDlqResult>()
-    whenever(hmppsQueueService.findByDlqName("some dlq name")).thenReturn(hmppsQueue)
-    whenever(hmppsQueueService.retryDlqMessages(any())).thenReturn(transferMessagesResult)
+  @Nested
+  inner class RetryDlq {
+    @Test
+    fun `should call the service`() {
+      val hmppsQueue = mock<HmppsQueue>()
+      val transferMessagesResult = mock<RetryDlqResult>()
+      whenever(hmppsQueueService.findByDlqName("some dlq name")).thenReturn(hmppsQueue)
+      whenever(hmppsQueueService.retryDlqMessages(any())).thenReturn(transferMessagesResult)
 
-    mockMvc.perform(put("/queue-admin/retry-dlq/some dlq name"))
-      .andExpect(status().isOk)
+      mockMvc.perform(put("/queue-admin/retry-dlq/some dlq name"))
+        .andExpect(status().isOk)
 
-    verify(hmppsQueueService).retryDlqMessages(check { it.hmppsQueue === hmppsQueue })
+      verify(hmppsQueueService).retryDlqMessages(check { it.hmppsQueue === hmppsQueue })
+    }
+
+    @Test
+    fun `should return not found`() {
+      whenever(hmppsQueueService.findByDlqName("some dlq name")).thenReturn(null)
+
+      mockMvc.perform(put("/queue-admin/retry-dlq/some dlq name"))
+        .andExpect(status().isNotFound)
+
+      verify(hmppsQueueService, times(0)).retryDlqMessages(any())
+    }
   }
 
-  @Test
-  fun `should return not found`() {
-    whenever(hmppsQueueService.findByDlqName("some dlq name")).thenReturn(null)
+  @Nested
+  inner class RetryAllDlqs {
+    @Test
+    fun `should call the service`() {
+      whenever(hmppsQueueService.retryAllDlqs()).thenReturn(listOf())
 
-    mockMvc.perform(put("/queue-admin/retry-dlq/some dlq name"))
-      .andExpect(status().isNotFound)
+      mockMvc.perform(put("/queue-admin/retry-all-dlqs"))
+        .andExpect(status().isOk)
 
-    verify(hmppsQueueService, times(0)).retryDlqMessages(any())
+      verify(hmppsQueueService).retryAllDlqs()
+    }
   }
 }
 

@@ -22,6 +22,9 @@ class HmppsQueueResource(private val hmppsQueueService: HmppsQueueService) {
   fun retryDlq(@PathVariable("dlqName") dlqName: String) =
     hmppsQueueService.findByDlqName(dlqName)
       ?.let { hmppsQueue -> hmppsQueueService.retryDlqMessages(RetryDlqRequest(hmppsQueue)) }
-      ?.also { retryDlqResult -> log.info("Found ${retryDlqResult.messagesFoundCount} messages, attempted to retry ${retryDlqResult.messages.size}") }
       ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "$dlqName not found")
+
+  @PutMapping("/retry-all-dlqs")
+  @PreAuthorize("hasRole('ROLE_QUEUE_ADMIN')")
+  fun retryAllDlqs() = hmppsQueueService.retryAllDlqs()
 }
