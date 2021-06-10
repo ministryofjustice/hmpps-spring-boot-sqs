@@ -24,10 +24,7 @@ class HmppsQueueService {
   fun findByDlqName(dlqName: String) = hmppsQueues.associateBy { it.dlqName }.getOrDefault(dlqName, null)
 
   fun retryDlqMessages(request: RetryDlqRequest): RetryDlqResult =
-    with(request.hmppsQueue) {
-      val (messageCount, messages) = retryDlqMessages()
-      return RetryDlqResult(messageCount, messages.toList())
-    }
+    request.hmppsQueue.retryDlqMessages()
 
   fun retryAllDlqs() =
     hmppsQueues
