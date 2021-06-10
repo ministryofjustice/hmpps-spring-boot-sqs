@@ -15,17 +15,18 @@ plugins {
 }
 
 base.archivesBaseName = "hmpps-spring-boot-sqs"
-version = "0.1.5"
+version = "0.2.0"
 
 dependencies {
-  api("org.springframework.boot:spring-boot-starter")
   api("com.amazonaws:amazon-sqs-java-messaging-lib:1.0.8")
+  implementation("org.springframework.boot:spring-boot-starter-web")
 
-  api("org.springframework.boot:spring-boot-starter-test")
   testImplementation("org.assertj:assertj-core:3.19.0")
   testImplementation("org.junit.jupiter:junit-jupiter:5.8.0-M1")
   testImplementation("org.mockito:mockito-junit-jupiter:3.10.0")
   testImplementation("com.nhaarman.mockitokotlin2:mockito-kotlin:2.2.0")
+  testImplementation("org.springframework.boot:spring-boot-starter-test")
+  testImplementation("org.mockito:mockito-inline:3.10.0")
 }
 
 publishing {

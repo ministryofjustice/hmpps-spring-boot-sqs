@@ -6,9 +6,8 @@ import org.awaitility.kotlin.matches
 import org.awaitility.kotlin.untilCallTo
 import org.junit.jupiter.api.Test
 import org.springframework.http.MediaType
-import uk.gov.justice.hmpps.sqs.countMessagesOnQueue
 
-class QueueAdminResourceTest : IntegrationTestBase() {
+class HmppsQueueResourceTest : IntegrationTestBase() {
 
   @Test
   fun `should transfer messages from DLQ to main queue and process them`() {
@@ -17,7 +16,7 @@ class QueueAdminResourceTest : IntegrationTestBase() {
     await untilCallTo { sqsDlqClient.countMessagesOnQueue(dlqUrl) } matches { it == 2 }
 
     webTestClient.put()
-      .uri("/queues/retry-dlq")
+      .uri("/queue-admin/retry-dlq/${sqsConfigProperties.dlqName}")
       .accept(MediaType.APPLICATION_JSON)
       .exchange()
       .expectStatus().isOk

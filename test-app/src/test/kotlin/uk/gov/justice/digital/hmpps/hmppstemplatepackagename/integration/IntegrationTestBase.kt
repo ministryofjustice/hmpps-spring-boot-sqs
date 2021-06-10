@@ -27,9 +27,13 @@ abstract class IntegrationTestBase {
   protected lateinit var messageServiceSpy: MessageService
 
   @SpyBean
-  private lateinit var sqsConfigProperties: SqsConfigProperties
+  protected lateinit var sqsConfigProperties: SqsConfigProperties
 
   @Suppress("SpringJavaInjectionPointsAutowiringInspection")
   @Autowired
   lateinit var webTestClient: WebTestClient
+
+  internal fun AmazonSQS.countMessagesOnQueue(queueUrl: String): Int =
+    this.getQueueAttributes(queueUrl, listOf("ApproximateNumberOfMessages"))
+      .let { it.attributes["ApproximateNumberOfMessages"]?.toInt() ?: 0 }
 }
