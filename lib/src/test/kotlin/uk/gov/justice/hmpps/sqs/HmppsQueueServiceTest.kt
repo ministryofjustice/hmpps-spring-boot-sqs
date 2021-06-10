@@ -9,13 +9,14 @@ import com.amazonaws.services.sqs.model.ReceiveMessageRequest
 import com.amazonaws.services.sqs.model.ReceiveMessageResult
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.argumentCaptor
+import com.nhaarman.mockitokotlin2.check
 import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import org.assertj.core.api.Assertions.assertThat
-import org.assertj.core.groups.Tuple
+import org.assertj.core.groups.Tuple.tuple
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -119,7 +120,7 @@ class HmppsQueueServiceTest {
         hmppsQueueService.retryDlqMessages(RetryDlqRequest(HmppsQueue(queueSqs, "some queue name", dlqSqs, "some dlq name")))
 
         verify(dlqSqs).receiveMessage(
-          com.nhaarman.mockitokotlin2.check<ReceiveMessageRequest> {
+          check<ReceiveMessageRequest> {
             assertThat(it.queueUrl).isEqualTo("dlqUrl")
             assertThat(it.maxNumberOfMessages).isEqualTo(1)
           }
@@ -131,7 +132,7 @@ class HmppsQueueServiceTest {
         hmppsQueueService.retryDlqMessages(RetryDlqRequest(HmppsQueue(queueSqs, "some queue name", dlqSqs, "some dlq name")))
 
         verify(dlqSqs).deleteMessage(
-          com.nhaarman.mockitokotlin2.check {
+          check {
             assertThat(it.queueUrl).isEqualTo("dlqUrl")
             assertThat(it.receiptHandle).isEqualTo("message-receipt-handle")
           }
@@ -152,7 +153,7 @@ class HmppsQueueServiceTest {
         assertThat(result.messagesFoundCount).isEqualTo(1)
         assertThat(result.messages)
           .extracting(Message::getBody, Message::getReceiptHandle)
-          .containsExactly(Tuple.tuple("message-body", "message-receipt-handle"))
+          .containsExactly(tuple("message-body", "message-receipt-handle"))
       }
     }
 
@@ -181,7 +182,7 @@ class HmppsQueueServiceTest {
         hmppsQueueService.retryDlqMessages(RetryDlqRequest(HmppsQueue(queueSqs, "some queue name", dlqSqs, "some dlq name")))
 
         verify(dlqSqs, times(2)).receiveMessage(
-          com.nhaarman.mockitokotlin2.check<ReceiveMessageRequest> {
+          check<ReceiveMessageRequest> {
             assertThat(it.queueUrl).isEqualTo("dlqUrl")
             assertThat(it.maxNumberOfMessages).isEqualTo(1)
           }
@@ -214,7 +215,7 @@ class HmppsQueueServiceTest {
         assertThat(result.messagesFoundCount).isEqualTo(2)
         assertThat(result.messages)
           .extracting(Message::getBody, Message::getReceiptHandle)
-          .containsExactly(Tuple.tuple("message-1-body", "message-1-receipt-handle"), Tuple.tuple("message-2-body", "message-2-receipt-handle"))
+          .containsExactly(tuple("message-1-body", "message-1-receipt-handle"), tuple("message-2-body", "message-2-receipt-handle"))
       }
     }
 
@@ -239,7 +240,7 @@ class HmppsQueueServiceTest {
         hmppsQueueService.retryDlqMessages(RetryDlqRequest(HmppsQueue(queueSqs, "some queue name", dlqSqs, "some dlq name")))
 
         verify(dlqSqs, times(2)).receiveMessage(
-          com.nhaarman.mockitokotlin2.check<ReceiveMessageRequest> {
+          check<ReceiveMessageRequest> {
             assertThat(it.queueUrl).isEqualTo("dlqUrl")
             assertThat(it.maxNumberOfMessages).isEqualTo(1)
           }
@@ -251,7 +252,7 @@ class HmppsQueueServiceTest {
         hmppsQueueService.retryDlqMessages(RetryDlqRequest(HmppsQueue(queueSqs, "some queue name", dlqSqs, "some dlq name")))
 
         verify(dlqSqs).deleteMessage(
-          com.nhaarman.mockitokotlin2.check {
+          check {
             assertThat(it.queueUrl).isEqualTo("dlqUrl")
             assertThat(it.receiptHandle).isEqualTo("message-1-receipt-handle")
           }
@@ -272,7 +273,7 @@ class HmppsQueueServiceTest {
         assertThat(result.messagesFoundCount).isEqualTo(2)
         assertThat(result.messages)
           .extracting(Message::getBody, Message::getReceiptHandle)
-          .containsExactly(Tuple.tuple("message-1-body", "message-1-receipt-handle"))
+          .containsExactly(tuple("message-1-body", "message-1-receipt-handle"))
       }
     }
   }
