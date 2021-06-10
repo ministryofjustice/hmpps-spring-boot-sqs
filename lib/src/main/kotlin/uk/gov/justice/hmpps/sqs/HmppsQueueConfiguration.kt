@@ -7,11 +7,8 @@ import org.springframework.context.annotation.Configuration
 class HmppsQueueConfiguration {
 
   @Bean
-  fun sqsQueueAdminService() = HmppsQueueService()
-
-  @Bean
   fun hmppsQueueService() = HmppsQueueService()
 
   @Bean
-  fun sqsQueueAdminResource(hmppsQueueService: HmppsQueueService) = HmppsQueueResource(hmppsQueueService)
+  fun hmppsQueueResource(hmppsQueueService: HmppsQueueService) = HmppsQueueResource(hmppsQueueService)
 }

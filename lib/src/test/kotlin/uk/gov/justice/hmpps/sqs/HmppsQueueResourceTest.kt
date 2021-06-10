@@ -35,11 +35,7 @@ class HmppsQueueResourceTest {
     mockMvc.perform(put("/queue-admin/retry-dlq/some dlq name"))
       .andExpect(status().isOk)
 
-    verify(hmppsQueueService).retryDlqMessages(
-      check {
-        it.hmppsQueue == hmppsQueue
-      }
-    )
+    verify(hmppsQueueService).retryDlqMessages(check { it.hmppsQueue === hmppsQueue })
   }
 
   @Test
@@ -54,8 +50,8 @@ class HmppsQueueResourceTest {
 }
 
 @SpringBootApplication
-class SqsQueueAdminResourceTestApplication
+class HmppsQueueResourceTestApplication
 
 fun main(args: Array<String>) {
-  runApplication<SqsQueueAdminResourceTestApplication>(*args)
+  runApplication<HmppsQueueResourceTestApplication>(*args)
 }

@@ -11,11 +11,12 @@ class HmppsQueueService {
 
   private val hmppsQueues: MutableList<HmppsQueue> = mutableListOf()
 
-  fun findByQueueName(queueName: String) = hmppsQueues.associateBy { it.queueName }.getOrDefault(queueName, null)
-  fun findByDlqName(dlqName: String) = hmppsQueues.associateBy { it.dlqName }.getOrDefault(dlqName, null)
   fun registerHmppsQueue(hmppsQueue: HmppsQueue) {
     hmppsQueues += hmppsQueue
   }
+
+  fun findByQueueName(queueName: String) = hmppsQueues.associateBy { it.queueName }.getOrDefault(queueName, null)
+  fun findByDlqName(dlqName: String) = hmppsQueues.associateBy { it.dlqName }.getOrDefault(dlqName, null)
 
   fun retryDlqMessages(request: RetryDlqRequest): RetryDlqResult =
     with(request.hmppsQueue) {
