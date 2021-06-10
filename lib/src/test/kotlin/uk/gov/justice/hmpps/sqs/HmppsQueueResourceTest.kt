@@ -10,13 +10,15 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
-@WebMvcTest
+@WebMvcTest(HmppsQueueResource::class)
+@AutoConfigureMockMvc(addFilters = false)
 class HmppsQueueResourceTest {
 
   @Autowired
@@ -26,7 +28,7 @@ class HmppsQueueResourceTest {
   private lateinit var hmppsQueueService: HmppsQueueService
 
   @Test
-  fun `should return ok`() {
+  fun `should call the service`() {
     val hmppsQueue = mock<HmppsQueue>()
     val transferMessagesResult = mock<RetryDlqResult>()
     whenever(hmppsQueueService.findByDlqName("some dlq name")).thenReturn(hmppsQueue)

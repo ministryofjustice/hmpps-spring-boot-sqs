@@ -18,6 +18,12 @@ spring:
       test:
         - "stdout"
 
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${oauth.endpoint.url}/.well-known/jwks.json
+
 server:
   port: 8080
   servlet:
@@ -49,3 +55,6 @@ management:
     info:
       cache:
         time-to-live: 2000ms
+
+oauth:
+  endpoint.url: http://localhost:8090/auth
