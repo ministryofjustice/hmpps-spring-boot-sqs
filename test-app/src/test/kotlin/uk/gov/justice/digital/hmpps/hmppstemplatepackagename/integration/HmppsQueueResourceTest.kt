@@ -6,31 +6,47 @@ import org.awaitility.kotlin.matches
 import org.awaitility.kotlin.untilCallTo
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.TestInstance
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.MethodSource
 import org.springframework.http.MediaType
 
 class HmppsQueueResourceTest : IntegrationTestBase() {
 
   @Nested
-  inner class RetryDlq {
-    @Test
-    fun `should fail if no auth token`() {
+  @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+  inner class SecureEndpoints {
+    private fun secureEndpoints() =
+      listOf(
+        "/queue-admin/retry-dlq/any-queue",
+        "/queue-admin/retry-all-dlqs",
+        "/queue-admin/purge-queue/any-queue",
+      )
+
+    @ParameterizedTest
+    @MethodSource("secureEndpoints")
+    internal fun `requires a valid authentication token`(uri: String) {
       webTestClient.put()
-        .uri("/queue-admin/retry-dlq/${sqsConfigProperties.dlqName}")
+        .uri(uri)
         .accept(MediaType.APPLICATION_JSON)
         .exchange()
         .expectStatus().isUnauthorized
     }
 
-    @Test
-    fun `should fail if required role not present`() {
+    @ParameterizedTest
+    @MethodSource("secureEndpoints")
+    internal fun `requires the correct role`(uri: String) {
       webTestClient.put()
-        .uri("/queue-admin/retry-dlq/${sqsConfigProperties.dlqName}")
+        .uri(uri)
         .headers { it.authToken(roles = listOf("WRONG_ROLE")) }
         .accept(MediaType.APPLICATION_JSON)
         .exchange()
         .expectStatus().isForbidden
     }
+  }
 
+  @Nested
+  inner class RetryDlq {
     @Test
     fun `should fail if dlq not found`() {
       webTestClient.put()
@@ -64,25 +80,6 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
 
   @Nested
   inner class RetryAllDlqs {
-    @Test
-    fun `should fail if no auth token`() {
-      webTestClient.put()
-        .uri("/queue-admin/retry-all-dlqs")
-        .accept(MediaType.APPLICATION_JSON)
-        .exchange()
-        .expectStatus().isUnauthorized
-    }
-
-    @Test
-    fun `should fail if required role not present`() {
-      webTestClient.put()
-        .uri("/queue-admin/retry-all-dlqs")
-        .headers { it.authToken(roles = listOf("WRONG_ROLE")) }
-        .accept(MediaType.APPLICATION_JSON)
-        .exchange()
-        .expectStatus().isForbidden
-    }
-
     // TODO when we start handling multiple queues add another queue/dlq combination to this test
     @Test
     fun `should transfer messages from DLQ to main queue and process them`() {
@@ -102,6 +99,25 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
 
       verify(messageServiceSpy).handleMessage("message1")
       verify(messageServiceSpy).handleMessage("message2")
+    }
+  }
+
+  @Nested
+  inner class PurgeQueue {
+    @Test
+    fun `should purge the dlq`() {
+      sqsDlqClient.sendMessage(dlqUrl, "message1")
+      sqsDlqClient.sendMessage(dlqUrl, "message2")
+      await untilCallTo { sqsDlqClient.countMessagesOnQueue(dlqUrl) } matches { it == 2 }
+
+      webTestClient.put()
+        .uri("/queue-admin/purge-queue/${sqsConfigProperties.dlqName}")
+        .headers { it.authToken() }
+        .accept(MediaType.APPLICATION_JSON)
+        .exchange()
+        .expectStatus().isOk
+
+      await untilCallTo { sqsDlqClient.countMessagesOnQueue(dlqUrl) } matches { it == 0 }
     }
   }
 }
