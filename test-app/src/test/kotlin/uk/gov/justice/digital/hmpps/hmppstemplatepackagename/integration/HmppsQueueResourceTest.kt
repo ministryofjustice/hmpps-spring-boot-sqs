@@ -19,7 +19,6 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
     private fun secureEndpoints() =
       listOf(
         "/queue-admin/retry-dlq/any-queue",
-        "/queue-admin/retry-all-dlqs",
         "/queue-admin/purge-queue/any-queue",
       )
 

@@ -11,4 +11,7 @@ class HmppsQueueConfiguration {
 
   @Bean
   fun hmppsQueueResource(hmppsQueueService: HmppsQueueService) = HmppsQueueResource(hmppsQueueService)
+
+  @Bean
+  fun hmppsQueueAdminConfig() = HmppsQueueAdminConfig()
 }
