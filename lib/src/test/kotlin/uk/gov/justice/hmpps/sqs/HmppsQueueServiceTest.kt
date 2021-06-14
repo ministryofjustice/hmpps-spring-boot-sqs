@@ -21,6 +21,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.mockito.ArgumentMatchers.anyString
+import com.amazonaws.services.sqs.model.PurgeQueueRequest as AwsPurgeQueueRequest
 
 class HmppsQueueServiceTest {
 
@@ -275,6 +276,82 @@ class HmppsQueueServiceTest {
           .extracting(Message::getBody, Message::getReceiptHandle)
           .containsExactly(tuple("message-1-body", "message-1-receipt-handle"))
       }
+    }
+  }
+
+  @Nested
+  inner class FindQueueToPurge {
+
+    private val sqsAwsClient = mock<AmazonSQS>()
+    private val sqsAwsDlqClient = mock<AmazonSQS>()
+
+    @BeforeEach
+    fun `add test data`() {
+      whenever(sqsAwsClient.getQueueUrl(anyString())).thenReturn(GetQueueUrlResult().withQueueUrl("some queue url"))
+      whenever(sqsAwsDlqClient.getQueueUrl(anyString())).thenReturn(GetQueueUrlResult().withQueueUrl("some dlq url"))
+      hmppsQueueService.registerHmppsQueue(HmppsQueue(sqsAwsClient, "some queue name", sqsAwsDlqClient, "some dlq name"))
+      hmppsQueueService.registerHmppsQueue(HmppsQueue(mock(), "another queue name", mock(), "another dlq name"))
+    }
+
+    @Test
+    fun `finds the main queue`() {
+      val request = hmppsQueueService.findQueueToPurge("some queue name")
+
+      assertThat(request?.queueName).isEqualTo("some queue name")
+    }
+
+    @Test
+    fun `finds the dlq`() {
+      val request = hmppsQueueService.findQueueToPurge("some dlq name")
+
+      assertThat(request?.queueName).isEqualTo("some dlq name")
+    }
+
+    @Test
+    fun `return null if not queue or dlq`() {
+      val request = hmppsQueueService.findQueueToPurge("unknown queue name")
+
+      assertThat(request).isNull()
+    }
+  }
+
+  @Nested
+  inner class PurgeQueue {
+
+    private val sqsAwsClient = mock<AmazonSQS>()
+
+    @Test
+    fun `No messages found, does not attempt to purge queue`() {
+      stubMessagesOnQueue(0)
+
+      hmppsQueueService.purgeQueue(PurgeQueueRequest("some queue", sqsAwsClient, "some queue url"))
+
+      verify(sqsAwsClient, times(0)).purgeQueue(any())
+    }
+
+    @Test
+    fun `Messages found, attempts to purge queue`() {
+      stubMessagesOnQueue(1)
+
+      hmppsQueueService.purgeQueue(PurgeQueueRequest("some queue", sqsAwsClient, "some queue url"))
+
+      verify(sqsAwsClient).purgeQueue(AwsPurgeQueueRequest("some queue url"))
+    }
+
+    @Test
+    fun `Returns number of messages found to purge`() {
+      stubMessagesOnQueue(5)
+
+      val result = hmppsQueueService.purgeQueue(PurgeQueueRequest("some queue", sqsAwsClient, "some queue url"))
+
+      assertThat(result.messagesFoundCount).isEqualTo(5)
+    }
+
+    private fun stubMessagesOnQueue(messageCount: Int) {
+      whenever(sqsAwsClient.getQueueUrl(anyString()))
+        .thenReturn(GetQueueUrlResult().withQueueUrl("some queue url"))
+      whenever(sqsAwsClient.getQueueAttributes(anyString(), eq(listOf("ApproximateNumberOfMessages"))))
+        .thenReturn(GetQueueAttributesResult().withAttributes(mapOf("ApproximateNumberOfMessages" to "$messageCount")))
     }
   }
 }

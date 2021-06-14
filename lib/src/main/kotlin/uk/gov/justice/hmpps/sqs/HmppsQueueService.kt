@@ -6,6 +6,7 @@ import com.amazonaws.services.sqs.model.Message
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
+import com.amazonaws.services.sqs.model.PurgeQueueRequest as AwsPurgeQueueRequest
 
 @Service
 class HmppsQueueService {
@@ -42,13 +43,31 @@ class HmppsQueueService {
           messages += msg
         }
     }
-    log.info("For dlq ${this.dlqName} we found $messageCount messages, attempted to retry ${messages.size}")
+    messageCount.takeIf { it > 0 }
+      ?.also { log.info("For dlq ${this.dlqName} we found $messageCount messages, attempted to retry ${messages.size}") }
     return RetryDlqResult(messageCount, messages.toList())
   }
+
+  fun purgeQueue(request: PurgeQueueRequest): PurgeQueueResult =
+    request.sqsClient.countMessagesOnQueue(request.queueUrl)
+      .takeIf { it > 0 }
+      ?.also { request.sqsClient.purgeQueue(AwsPurgeQueueRequest(request.queueUrl)) }
+      ?.also { log.info("For queue ${request.queueName} attempted to purge $it messages from queue") }
+      ?.let { PurgeQueueResult(it) }
+      ?: PurgeQueueResult(0)
+
+  fun findQueueToPurge(queueName: String): PurgeQueueRequest? =
+    findByQueueName(queueName)
+      ?.let { hmppsQueue -> PurgeQueueRequest(hmppsQueue.queueName, hmppsQueue.sqsAwsClient, hmppsQueue.queueUrl) }
+      ?: findByDlqName(queueName)
+        ?.let { hmppsQueue -> PurgeQueueRequest(hmppsQueue.dlqName, hmppsQueue.sqsAwsDlqClient, hmppsQueue.dlqUrl) }
 }
 
 data class RetryDlqRequest(val hmppsQueue: HmppsQueue)
 data class RetryDlqResult(val messagesFoundCount: Int, val messages: List<Message>)
+
+data class PurgeQueueRequest(val queueName: String, val sqsClient: AmazonSQS, val queueUrl: String)
+data class PurgeQueueResult(val messagesFoundCount: Int)
 
 internal fun AmazonSQS.countMessagesOnQueue(queueUrl: String): Int =
   this.getQueueAttributes(queueUrl, listOf("ApproximateNumberOfMessages"))
