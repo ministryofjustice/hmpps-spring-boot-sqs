@@ -27,4 +27,11 @@ class HmppsQueueResource(private val hmppsQueueService: HmppsQueueService) {
   @PutMapping("/retry-all-dlqs")
   @PreAuthorize("hasRole('ROLE_QUEUE_ADMIN')")
   fun retryAllDlqs() = hmppsQueueService.retryAllDlqs()
+
+  @PutMapping("/purge-queue/{queueName}")
+  @PreAuthorize("hasRole('ROLE_QUEUE_ADMIN')")
+  fun purgeQueue(@PathVariable("queueName") queueName: String) =
+    hmppsQueueService.findQueueToPurge(queueName)
+      ?.let { request -> hmppsQueueService.purgeQueue(request) }
+      ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "$queueName not found")
 }
