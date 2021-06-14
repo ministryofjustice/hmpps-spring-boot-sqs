@@ -1,5 +1,6 @@
 package uk.gov.justice.hmpps.sqs
 
+import com.microsoft.applicationinsights.TelemetryClient
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 
@@ -7,7 +8,7 @@ import org.springframework.context.annotation.Configuration
 class HmppsQueueConfiguration {
 
   @Bean
-  fun hmppsQueueService() = HmppsQueueService()
+  fun hmppsQueueService(telemertyClient: TelemetryClient?) = HmppsQueueService(telemertyClient)
 
   @Bean
   fun hmppsQueueResource(hmppsQueueService: HmppsQueueService) = HmppsQueueResource(hmppsQueueService)

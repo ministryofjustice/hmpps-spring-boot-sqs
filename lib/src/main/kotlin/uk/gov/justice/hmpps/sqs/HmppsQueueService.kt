@@ -4,12 +4,13 @@ import com.amazonaws.services.sqs.AmazonSQS
 import com.amazonaws.services.sqs.model.DeleteMessageRequest
 import com.amazonaws.services.sqs.model.Message
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest
+import com.microsoft.applicationinsights.TelemetryClient
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import com.amazonaws.services.sqs.model.PurgeQueueRequest as AwsPurgeQueueRequest
 
 @Service
-class HmppsQueueService {
+class HmppsQueueService(private val telemetryClient: TelemetryClient?) {
 
   companion object {
     private val log = LoggerFactory.getLogger(this::class.java)
@@ -45,16 +46,20 @@ class HmppsQueueService {
     }
     messageCount.takeIf { it > 0 }
       ?.also { log.info("For dlq ${this.dlqName} we found $messageCount messages, attempted to retry ${messages.size}") }
+      ?.also { telemetryClient?.trackEvent("RETRY-DLQ", mapOf("dlq-name" to dlqName, "messages-found" to "$messageCount", "messages-retried" to "${messages.size}"), null) }
     return RetryDlqResult(messageCount, messages.toList())
   }
 
   fun purgeQueue(request: PurgeQueueRequest): PurgeQueueResult =
-    request.sqsClient.countMessagesOnQueue(request.queueUrl)
-      .takeIf { it > 0 }
-      ?.also { request.sqsClient.purgeQueue(AwsPurgeQueueRequest(request.queueUrl)) }
-      ?.also { log.info("For queue ${request.queueName} attempted to purge $it messages from queue") }
-      ?.let { PurgeQueueResult(it) }
-      ?: PurgeQueueResult(0)
+    with(request) {
+      sqsClient.countMessagesOnQueue(queueUrl)
+        .takeIf { it > 0 }
+        ?.also { sqsClient.purgeQueue(AwsPurgeQueueRequest(queueUrl)) }
+        ?.also { log.info("For queue $queueName attempted to purge $it messages from queue") }
+        ?.also { telemetryClient?.trackEvent("PURGE-QUEUE", mapOf("queue-name" to queueName, "messages-found" to "$it"), null) }
+        ?.let { PurgeQueueResult(it) }
+        ?: PurgeQueueResult(0)
+    }
 
   fun findQueueToPurge(queueName: String): PurgeQueueRequest? =
     findByQueueName(queueName)
