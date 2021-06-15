@@ -2,7 +2,76 @@
 
 A helper library providing utilities for using `amazon-sqs-java-messaging-lib`
 
-## THIS IS A WORK IN PROGRESS
+## :construction: THIS IS A WORK IN PROGRESS :construction:
+
+This library currently being developed and tested within the HMPPS Tech Team and is not currently intended for wider consumption. Please wait for an official v1.0.0.
+
+## Overview
+
+We have many services that use AWS SQS queues and various patterns for managing queues have evolved over time. These patterns have been duplicated widely and thus are subject to the usual problems associated with a lack of DRY such as drift, the proliferation of 'boilerplate' code and some over-complicated configuration (particularly around testing).
+
+This library is intended to capture the most common patterns and make them easy to distribute among other projects. The goal is to provide various queue management and configuration tasks 'out of the box'.
+
+## How To Use This Library
+
+Find the latest published version of the library by searching on Maven Central for `hmpps-spring-boot-sqs`.
+
+Add the following dependency to your Gradle build script:
+
+*Kotlin*
+
+``` kotlin
+implementation("uk.gov.justice.service.hmpps:hmpps-spring-boot-sqs:<library-version>")
+```
+
+*Groovy*
+
+``` groovy
+implementation 'uk.gov.justice.service.hmpps:hmpps-spring-boot-sqs:<library-version>'
+```
+
+Then register your queues with the `HmppsQueueService`, e.g. see [Admin API AWS config](https://github.com/ministryofjustice/hmpps-audit-api/blob/main/src/main/kotlin/uk/gov/justice/digital/hmpps/hmppsauditapi/config/SqsConfig.kt) and [Admin API Localstack config.](https://github.com/ministryofjustice/hmpps-audit-api/blob/main/src/main/kotlin/uk/gov/justice/digital/hmpps/hmppsauditapi/config/LocalStackConfig.kt)
+
+## How To Contribute To This Library
+
+Raise a PR and ask for a review in the MOJ Slack channel `#dps_dev`.
+
+If accepted make sure that the version number in `lib/build.gradle.kts` has been upgraded according to [Semver rules](https://semver.org/spec/v2.0.0.html) and ask in `#dps_tech_team` to publish the library.
+
+### Contribution Guidelines
+
+Please fix bugs :)
+
+For new features we are only interested if they have proven benefits to the wider HMPPS community.
+
+As a rule of thumb new features must:
+
+* Be used in several HMPPS services, i.e. at least 3
+* Have been running stably in a production environment, i.e. for at least 3 months
+* Provide value to all consumers, i.e. this isn't the place to handle obscure edge cases
+
+## Features
+
+### Queue Admin Endpoints
+
+When messages fail to be processed by the main queue they are sent to the Dead Letter Queue (DLQ). We then find ourselves in one of the following scenarios:
+
+* The failure was transient and a retry will allow the message to be processed
+* The failure was due to an unrecoverable error and we want to discard the message
+
+Class `HmppsQueueResource` provides endpoints to retry or purge all messages on a DLQ.
+
+#### Securing Endpoints
+
+Most endpoints in `HmppsQueueResource` will have a default role required to access them which is overridable by a configuration property.
+
+Note that any endpoints defined in `HmppsQueueResource` that are not secured by a role are only intended for use within the Kubernetes namespace and must not be left wide open - instead they should be secured in the Kubernetes ingress. See the [example ingress](https://github.com/ministryofjustice/hmpps-spring-boot-sqs/blob/main/test-app/helm_deploy/hmpps-template-kotlin/example/housekeeping-cronjob.yaml) for how to block the endpoints from outside the namespace and the corresponding [Kuberenetes Cronjob](https://github.com/ministryofjustice/hmpps-spring-boot-sqs/blob/main/test-app/helm_deploy/hmpps-template-kotlin/example/housekeeping-cronjob.yaml) for how to call them from inside the namespace.
+
+#### Open API Docs
+
+We do not provide any detailed Open API documentation for these endpoints. This is because there is a variety of Open API document generators being used at different versions and catering for them all would require a complicated solution for little benefit.
+
+Hopefully your Open API document generator can find the endpoints automatically and includes them in the Open API docs. If not you may have to introduce some configuration to point the generator at the endpoints, for example using the Springfox [ApiSelectorBuilder#apis method](https://springfox.github.io/springfox/docs/snapshot/#springfox-spring-mvc-and-spring-boot).
 
 ## Modules
 
