@@ -46,7 +46,7 @@ For new features we are only interested if they have proven benefits to the wide
 
 As a rule of thumb new features must:
 
-* Be used in several HMPPS services, i.e. at least 3
+* Already be implemented in several HMPPS services, i.e. at least 3
 * Have been running stably in a production environment, i.e. for at least 3 months
 * Provide value to all consumers, i.e. this isn't the place to handle obscure edge cases
 
@@ -54,12 +54,16 @@ As a rule of thumb new features must:
 
 ### Queue Admin Endpoints
 
-When messages fail to be processed by the main queue they are sent to the Dead Letter Queue (DLQ). We then find ourselves in one of the following scenarios:
+When SQS messages fail to be processed by the main queue they are sent to the Dead Letter Queue (DLQ). We then find ourselves in one of the following scenarios:
 
 * The failure was transient and a retry will allow the message to be processed
 * The failure was due to an unrecoverable error and we want to discard the message
 
-Class `HmppsQueueResource` provides endpoints to retry or purge all messages on a DLQ.
+Class `HmppsQueueResource` provides endpoints to retry and purge messages on a DLQ.
+
+For transient errors we would typically create a Kubernetes Cronjob to automatically retry all DLQ messages. The Cronjob should be configured to run before [an alert triggers for the age of the DLQ message](https://github.com/ministryofjustice/cloud-platform-environments/blob/main/namespaces/live-1.cloud-platform.service.justice.gov.uk/offender-events-prod/09-prometheus-sqs-sns.yaml#L13) - typically every 10 minutes.
+
+Unrecoverable errors should be 'fixed' such that they no longer fail and are not sent to the DLQ. In the meantime these can be removed by purging the DLQ to prevent the alert from firing.
 
 #### Securing Endpoints
 
