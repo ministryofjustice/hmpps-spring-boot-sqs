@@ -2,6 +2,12 @@ plugins {
   id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
 }
 
+/*
+ * This build script only handles publishing to the Sonatype Nexus repository (a.k.a. Maven Central).
+ *
+ * The build script that produces the published library can be found at `/lib/build.gradle.kts`.
+ */
+
 allprojects {
   group = "uk.gov.justice.service.hmpps"
 }
