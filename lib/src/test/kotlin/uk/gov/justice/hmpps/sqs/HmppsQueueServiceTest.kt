@@ -7,13 +7,16 @@ import com.amazonaws.services.sqs.model.GetQueueUrlResult
 import com.amazonaws.services.sqs.model.Message
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest
 import com.amazonaws.services.sqs.model.ReceiveMessageResult
+import com.microsoft.applicationinsights.TelemetryClient
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.argumentCaptor
 import com.nhaarman.mockitokotlin2.check
 import com.nhaarman.mockitokotlin2.eq
+import com.nhaarman.mockitokotlin2.isNull
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
+import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
 import com.nhaarman.mockitokotlin2.whenever
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.groups.Tuple.tuple
@@ -25,7 +28,8 @@ import com.amazonaws.services.sqs.model.PurgeQueueRequest as AwsPurgeQueueReques
 
 class HmppsQueueServiceTest {
 
-  private val hmppsQueueService = HmppsQueueService()
+  private val telemetryClient = mock<TelemetryClient>()
+  private val hmppsQueueService = HmppsQueueService(telemetryClient)
 
   @Nested
   inner class HmppsQueues {
@@ -84,7 +88,7 @@ class HmppsQueueServiceTest {
       }
 
       @Test
-      fun `No messages does not attempt any transfer`() {
+      fun `should not attempt any transfer`() {
         hmppsQueueService.retryDlqMessages(RetryDlqRequest(HmppsQueue(queueSqs, "some queue name", dlqSqs, "some dlq name")))
 
         verify(dlqSqs).getQueueAttributes("dlqUrl", listOf("ApproximateNumberOfMessages"))
@@ -92,12 +96,19 @@ class HmppsQueueServiceTest {
       }
 
       @Test
-      fun `No messages returns empty result`() {
+      fun `should return empty result`() {
         val result =
           hmppsQueueService.retryDlqMessages(RetryDlqRequest(HmppsQueue(queueSqs, "some queue name", dlqSqs, "some dlq name")))
 
         assertThat(result.messagesFoundCount).isEqualTo(0)
         assertThat(result.messages).isEmpty()
+      }
+
+      @Test
+      fun `should not create telemetry event`() {
+        hmppsQueueService.retryDlqMessages(RetryDlqRequest(HmppsQueue(queueSqs, "some queue name", dlqSqs, "some dlq name")))
+
+        verifyNoMoreInteractions(telemetryClient)
       }
     }
 
@@ -117,7 +128,7 @@ class HmppsQueueServiceTest {
       }
 
       @Test
-      fun `Receives message from the dlq`() {
+      fun `should receive message from the dlq`() {
         hmppsQueueService.retryDlqMessages(RetryDlqRequest(HmppsQueue(queueSqs, "some queue name", dlqSqs, "some dlq name")))
 
         verify(dlqSqs).receiveMessage(
@@ -129,7 +140,7 @@ class HmppsQueueServiceTest {
       }
 
       @Test
-      fun `Deletes message from the dlq`() {
+      fun `should delete message from the dlq`() {
         hmppsQueueService.retryDlqMessages(RetryDlqRequest(HmppsQueue(queueSqs, "some queue name", dlqSqs, "some dlq name")))
 
         verify(dlqSqs).deleteMessage(
@@ -141,20 +152,35 @@ class HmppsQueueServiceTest {
       }
 
       @Test
-      fun `Sends message to the main queue`() {
+      fun `should send message to the main queue`() {
         hmppsQueueService.retryDlqMessages(RetryDlqRequest(HmppsQueue(queueSqs, "some queue name", dlqSqs, "some dlq name")))
 
         verify(queueSqs).sendMessage("queueUrl", "message-body")
       }
 
       @Test
-      fun `Returns the message`() {
+      fun `should return the message`() {
         val result = hmppsQueueService.retryDlqMessages(RetryDlqRequest(HmppsQueue(queueSqs, "some queue name", dlqSqs, "some dlq name")))
 
         assertThat(result.messagesFoundCount).isEqualTo(1)
         assertThat(result.messages)
           .extracting(Message::getBody, Message::getReceiptHandle)
           .containsExactly(tuple("message-body", "message-receipt-handle"))
+      }
+
+      @Test
+      fun `should create telemetry event`() {
+        hmppsQueueService.retryDlqMessages(RetryDlqRequest(HmppsQueue(queueSqs, "some queue name", dlqSqs, "some dlq name")))
+
+        verify(telemetryClient).trackEvent(
+          eq("RETRY-DLQ"),
+          check {
+            assertThat(it).containsEntry("dlq-name", "some dlq name")
+            assertThat(it).containsEntry("messages-found", "1")
+            assertThat(it).containsEntry("messages-retried", "1")
+          },
+          isNull()
+        )
       }
     }
 
@@ -179,7 +205,7 @@ class HmppsQueueServiceTest {
       }
 
       @Test
-      fun `Receives message from the dlq`() {
+      fun `should receive message from the dlq`() {
         hmppsQueueService.retryDlqMessages(RetryDlqRequest(HmppsQueue(queueSqs, "some queue name", dlqSqs, "some dlq name")))
 
         verify(dlqSqs, times(2)).receiveMessage(
@@ -191,7 +217,7 @@ class HmppsQueueServiceTest {
       }
 
       @Test
-      fun `Deletes message from the dlq`() {
+      fun `should delete message from the dlq`() {
         hmppsQueueService.retryDlqMessages(RetryDlqRequest(HmppsQueue(queueSqs, "some queue name", dlqSqs, "some dlq name")))
 
         val captor = argumentCaptor<DeleteMessageRequest>()
@@ -202,7 +228,7 @@ class HmppsQueueServiceTest {
       }
 
       @Test
-      fun `Sends message to the main queue`() {
+      fun `should send message to the main queue`() {
         hmppsQueueService.retryDlqMessages(RetryDlqRequest(HmppsQueue(queueSqs, "some queue name", dlqSqs, "some dlq name")))
 
         verify(queueSqs).sendMessage("queueUrl", "message-1-body")
@@ -210,7 +236,7 @@ class HmppsQueueServiceTest {
       }
 
       @Test
-      fun `Returns the message`() {
+      fun `should return the message`() {
         val result = hmppsQueueService.retryDlqMessages(RetryDlqRequest(HmppsQueue(queueSqs, "some queue name", dlqSqs, "some dlq name")))
 
         assertThat(result.messagesFoundCount).isEqualTo(2)
@@ -237,7 +263,7 @@ class HmppsQueueServiceTest {
       }
 
       @Test
-      fun `Receives message from the dlq`() {
+      fun `should receive message from the dlq`() {
         hmppsQueueService.retryDlqMessages(RetryDlqRequest(HmppsQueue(queueSqs, "some queue name", dlqSqs, "some dlq name")))
 
         verify(dlqSqs, times(2)).receiveMessage(
@@ -249,7 +275,7 @@ class HmppsQueueServiceTest {
       }
 
       @Test
-      fun `Deletes message from the dlq`() {
+      fun `should delete message from the dlq`() {
         hmppsQueueService.retryDlqMessages(RetryDlqRequest(HmppsQueue(queueSqs, "some queue name", dlqSqs, "some dlq name")))
 
         verify(dlqSqs).deleteMessage(
@@ -261,20 +287,35 @@ class HmppsQueueServiceTest {
       }
 
       @Test
-      fun `Sends message to the main queue`() {
+      fun `should send message to the main queue`() {
         hmppsQueueService.retryDlqMessages(RetryDlqRequest(HmppsQueue(queueSqs, "some queue name", dlqSqs, "some dlq name")))
 
         verify(queueSqs).sendMessage("queueUrl", "message-1-body")
       }
 
       @Test
-      fun `Returns the message`() {
+      fun `should return the message`() {
         val result = hmppsQueueService.retryDlqMessages(RetryDlqRequest(HmppsQueue(queueSqs, "some queue name", dlqSqs, "some dlq name")))
 
         assertThat(result.messagesFoundCount).isEqualTo(2)
         assertThat(result.messages)
           .extracting(Message::getBody, Message::getReceiptHandle)
           .containsExactly(tuple("message-1-body", "message-1-receipt-handle"))
+      }
+
+      @Test
+      fun `should create telemetry event`() {
+        hmppsQueueService.retryDlqMessages(RetryDlqRequest(HmppsQueue(queueSqs, "some queue name", dlqSqs, "some dlq name")))
+
+        verify(telemetryClient).trackEvent(
+          eq("RETRY-DLQ"),
+          check {
+            assertThat(it).containsEntry("dlq-name", "some dlq name")
+            assertThat(it).containsEntry("messages-found", "2")
+            assertThat(it).containsEntry("messages-retried", "1")
+          },
+          isNull()
+        )
       }
     }
   }
@@ -294,21 +335,21 @@ class HmppsQueueServiceTest {
     }
 
     @Test
-    fun `finds the main queue`() {
+    fun `should find the main queue`() {
       val request = hmppsQueueService.findQueueToPurge("some queue name")
 
       assertThat(request?.queueName).isEqualTo("some queue name")
     }
 
     @Test
-    fun `finds the dlq`() {
+    fun `should find the dlq`() {
       val request = hmppsQueueService.findQueueToPurge("some dlq name")
 
       assertThat(request?.queueName).isEqualTo("some dlq name")
     }
 
     @Test
-    fun `return null if not queue or dlq`() {
+    fun `should return null if not queue or dlq`() {
       val request = hmppsQueueService.findQueueToPurge("unknown queue name")
 
       assertThat(request).isNull()
@@ -321,7 +362,7 @@ class HmppsQueueServiceTest {
     private val sqsAwsClient = mock<AmazonSQS>()
 
     @Test
-    fun `No messages found, does not attempt to purge queue`() {
+    fun `no messages found, should not attempt to purge queue`() {
       stubMessagesOnQueue(0)
 
       hmppsQueueService.purgeQueue(PurgeQueueRequest("some queue", sqsAwsClient, "some queue url"))
@@ -330,7 +371,16 @@ class HmppsQueueServiceTest {
     }
 
     @Test
-    fun `Messages found, attempts to purge queue`() {
+    fun `no messages found, should not create telemetry event`() {
+      stubMessagesOnQueue(0)
+
+      hmppsQueueService.purgeQueue(PurgeQueueRequest("some queue", sqsAwsClient, "some queue url"))
+
+      verifyNoMoreInteractions(telemetryClient)
+    }
+
+    @Test
+    fun `messages found, should attempt to purge queue`() {
       stubMessagesOnQueue(1)
 
       hmppsQueueService.purgeQueue(PurgeQueueRequest("some queue", sqsAwsClient, "some queue url"))
@@ -339,7 +389,23 @@ class HmppsQueueServiceTest {
     }
 
     @Test
-    fun `Returns number of messages found to purge`() {
+    fun `messages found, should create telemetry event`() {
+      stubMessagesOnQueue(1)
+
+      hmppsQueueService.purgeQueue(PurgeQueueRequest("some queue", sqsAwsClient, "some queue url"))
+
+      verify(telemetryClient).trackEvent(
+        eq("PURGE-QUEUE"),
+        check {
+          assertThat(it).containsEntry("queue-name", "some queue")
+          assertThat(it).containsEntry("messages-found", "1")
+        },
+        isNull()
+      )
+    }
+
+    @Test
+    fun `should return number of messages found to purge`() {
       stubMessagesOnQueue(5)
 
       val result = hmppsQueueService.purgeQueue(PurgeQueueRequest("some queue", sqsAwsClient, "some queue url"))

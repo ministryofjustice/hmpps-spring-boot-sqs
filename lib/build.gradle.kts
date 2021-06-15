@@ -21,6 +21,7 @@ dependencies {
   api("com.amazonaws:amazon-sqs-java-messaging-lib:1.0.8")
   implementation("org.springframework.boot:spring-boot-starter-web")
   implementation("org.springframework.boot:spring-boot-starter-security")
+  implementation("com.microsoft.azure:applicationinsights-core:2.6.3")
 
   testImplementation("org.assertj:assertj-core:3.19.0")
   testImplementation("org.junit.jupiter:junit-jupiter:5.8.0-M1")
