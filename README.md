@@ -8,13 +8,13 @@ This library currently being developed and tested within the HMPPS Tech Team and
 
 ## Overview
 
-We have many services that use AWS SQS queues and various patterns for managing queues have evolved over time. These patterns have been duplicated widely and thus are subject to the usual problems associated with a lack of DRY such as drift, the proliferation of 'boilerplate' code and some over-complicated configuration (particularly around testing).
+We have many services that use AWS SQS queues and various patterns for managing queues have evolved over time. These patterns have been duplicated widely and thus are subject to the usual problems associated with a lack of DRY such as code drift and the proliferation of 'boilerplate' code.
 
 This library is intended to capture the most common patterns and make them easy to distribute among other projects. The goal is to provide various queue management and configuration tasks 'out of the box'.
 
 ## How To Use This Library
 
-Find the latest published version of the library by searching on Maven Central for `hmpps-spring-boot-sqs`.
+Find the latest published version of the library by searching on Maven Central for `hmpps-spring-boot-sqs`.  (If you can't find the version mentioned in `/lib/build.gradle.kts` please be patient, it takes a few hours to publish to Maven Cental).
 
 Add the following dependency to your Gradle build script:
 
@@ -40,7 +40,7 @@ If accepted make sure that the version number in `lib/build.gradle.kts` has been
 
 ### Contribution Guidelines
 
-Please fix bugs :)
+Please fix bugs. :smiley:
 
 For new features we are only interested if they have proven benefits to the wider HMPPS community.
 
@@ -48,7 +48,7 @@ As a rule of thumb new features must:
 
 * Already be implemented in several HMPPS services, i.e. at least 3
 * Have been running stably in a production environment, i.e. for at least 3 months
-* Provide value to all consumers, i.e. this isn't the place to handle obscure edge cases
+* Provide value to all library consumers, i.e. this isn't the place to handle obscure edge cases
 
 ## Features
 
@@ -61,21 +61,27 @@ When SQS messages fail to be processed by the main queue they are sent to the De
 
 Class `HmppsQueueResource` provides endpoints to retry and purge messages on a DLQ.
 
-For transient errors we would typically create a Kubernetes Cronjob to automatically retry all DLQ messages. The Cronjob should be configured to run before [an alert triggers for the age of the DLQ message](https://github.com/ministryofjustice/cloud-platform-environments/blob/main/namespaces/live-1.cloud-platform.service.justice.gov.uk/offender-events-prod/09-prometheus-sqs-sns.yaml#L13) - typically every 10 minutes.
+For transient errors we would typically create a Kubernetes Cronjob to automatically retry all DLQ messages. The Cronjob should be configured to run before [an alert triggers for the age of the DLQ message](https://github.com/ministryofjustice/cloud-platform-environments/blob/main/namespaces/live-1.cloud-platform.service.justice.gov.uk/offender-events-prod/09-prometheus-sqs-sns.yaml#L13) - typically every 10 minutes. See the [example Cronjob]( and the corresponding [Kuberenetes Cronjob](https://github.com/ministryofjustice/hmpps-spring-boot-sqs/blob/main/test-app/helm_deploy/hmpps-template-kotlin/example/housekeeping-cronjob.yaml) for more details.
 
 Unrecoverable errors should be 'fixed' such that they no longer fail and are not sent to the DLQ. In the meantime these can be removed by purging the DLQ to prevent the alert from firing.
+
+#### How Do I find The DLQ/Queue Name?
+
+The queue names are generally defined in Kubernetes secrets for the namespace which are then mapped into the Spring Boot application as configuration properties.
+
+TODO Update this section when queue names appear in the generic queue health indicator.
 
 #### Securing Endpoints
 
 Most endpoints in `HmppsQueueResource` will have a default role required to access them which is overridable by a configuration property.
 
-Note that any endpoints defined in `HmppsQueueResource` that are not secured by a role are only intended for use within the Kubernetes namespace and must not be left wide open - instead they should be secured in the Kubernetes ingress. See the [example ingress](https://github.com/ministryofjustice/hmpps-spring-boot-sqs/blob/main/test-app/helm_deploy/hmpps-template-kotlin/example/housekeeping-cronjob.yaml) for how to block the endpoints from outside the namespace and the corresponding [Kuberenetes Cronjob](https://github.com/ministryofjustice/hmpps-spring-boot-sqs/blob/main/test-app/helm_deploy/hmpps-template-kotlin/example/housekeeping-cronjob.yaml) for how to call them from inside the namespace.
+Note that any endpoints defined in `HmppsQueueResource` that are not secured by a role are only intended for use within the Kubernetes namespace and must not be left wide open - instead they should be secured in the Kubernetes ingress. See the [example ingress](https://github.com/ministryofjustice/hmpps-spring-boot-sqs/blob/main/test-app/helm_deploy/hmpps-template-kotlin/example/housekeeping-cronjob.yaml) for how to block the endpoints from outside the namespace.
 
 #### Open API Docs
 
 We do not provide any detailed Open API documentation for these endpoints. This is because there is a variety of Open API document generators being used at different versions and catering for them all would require a complicated solution for little benefit.
 
-Hopefully your Open API document generator can find the endpoints automatically and includes them in the Open API docs. If not you may have to introduce some configuration to point the generator at the endpoints, for example using the Springfox [ApiSelectorBuilder#apis method](https://springfox.github.io/springfox/docs/snapshot/#springfox-spring-mvc-and-spring-boot).
+Hopefully your Open API document generator can find the endpoints automatically and includes them in the Open API docs. If not you may have to introduce some configuration to point the generator at the endpoints, for example using the Springfox [ApiSelectorBuilder#apis method](https://springfox.github.io/springfox/docs/snapshot/#springfox-spring-mvc-and-spring-boot) to add the base package `uk.gov.justice.hmpps.sqs`.
 
 ## Modules
 
