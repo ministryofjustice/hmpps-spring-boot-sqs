@@ -8,13 +8,13 @@ This library currently being developed and tested within the HMPPS Tech Team and
 
 ## Overview
 
-We have many services that use AWS SQS queues and various patterns for managing queues have evolved over time. These patterns have been duplicated widely and thus are subject to the usual problems associated with a lack of DRY such as code drift and the proliferation of 'boilerplate' code.
+We have many services that use AWS SQS queues and various patterns for managing queues have evolved over time. These patterns have been duplicated widely and thus are subject to the usual problems associated with a lack of DRY such as code drift and the proliferation of boilerplate code.
 
-This library is intended to capture the most common patterns and make them easy to distribute among other projects. The goal is to provide various queue management and configuration tasks 'out of the box'.
+This library is intended to capture the most common patterns and make them easy to distribute among other projects. The goal is to provide various queue management and configuration tasks out of the box.
 
 ## How To Use This Library
 
-Find the latest published version of the library by searching on Maven Central for `hmpps-spring-boot-sqs`.  (If you can't find the version mentioned in `/lib/build.gradle.kts` please be patient, it takes a few hours to publish to Maven Cental).
+Find the latest published version of the library by searching on Maven Central for `hmpps-spring-boot-sqs`.  (If you can't find the version mentioned in `/lib/build.gradle.kts` please be patient, it takes a few hours to publish to Maven Central).
 
 Add the following dependency to your Gradle build script:
 
@@ -61,9 +61,11 @@ When SQS messages fail to be processed by the main queue they are sent to the De
 
 Class `HmppsQueueResource` provides endpoints to retry and purge messages on a DLQ.
 
+#### Usage
+
 For transient errors we would typically create a Kubernetes Cronjob to automatically retry all DLQ messages. The Cronjob should be configured to run before [an alert triggers for the age of the DLQ message](https://github.com/ministryofjustice/cloud-platform-environments/blob/main/namespaces/live-1.cloud-platform.service.justice.gov.uk/offender-events-prod/09-prometheus-sqs-sns.yaml#L13) - typically every 10 minutes. See the [example Cronjob]( and the corresponding [Kuberenetes Cronjob](https://github.com/ministryofjustice/hmpps-spring-boot-sqs/blob/main/test-app/helm_deploy/hmpps-template-kotlin/example/housekeeping-cronjob.yaml) for more details.
 
-Unrecoverable errors should be 'fixed' such that they no longer fail and are not sent to the DLQ. In the meantime these can be removed by purging the DLQ to prevent the alert from firing.
+Unrecoverable errors should be fixed such that they no longer fail and are not sent to the DLQ. In the meantime these can be removed by purging the DLQ to prevent the alert from firing.
 
 #### How Do I find The DLQ/Queue Name?
 
