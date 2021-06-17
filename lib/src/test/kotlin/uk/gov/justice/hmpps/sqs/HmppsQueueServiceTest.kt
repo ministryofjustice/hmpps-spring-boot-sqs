@@ -395,7 +395,7 @@ class HmppsQueueServiceTest {
       hmppsQueueService.purgeQueue(PurgeQueueRequest("some queue", sqsAwsClient, "some queue url"))
 
       verify(telemetryClient).trackEvent(
-        eq("PurgerQueue"),
+        eq("PurgeQueue"),
         check {
           assertThat(it).containsEntry("queue-name", "some queue")
           assertThat(it).containsEntry("messages-found", "1")
