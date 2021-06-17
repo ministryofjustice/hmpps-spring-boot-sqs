@@ -173,7 +173,7 @@ class HmppsQueueServiceTest {
         hmppsQueueService.retryDlqMessages(RetryDlqRequest(HmppsQueue(queueSqs, "some queue name", dlqSqs, "some dlq name")))
 
         verify(telemetryClient).trackEvent(
-          eq("RETRY-DLQ"),
+          eq("RetryDLQ"),
           check {
             assertThat(it).containsEntry("dlq-name", "some dlq name")
             assertThat(it).containsEntry("messages-found", "1")
@@ -308,7 +308,7 @@ class HmppsQueueServiceTest {
         hmppsQueueService.retryDlqMessages(RetryDlqRequest(HmppsQueue(queueSqs, "some queue name", dlqSqs, "some dlq name")))
 
         verify(telemetryClient).trackEvent(
-          eq("RETRY-DLQ"),
+          eq("RetryDLQ"),
           check {
             assertThat(it).containsEntry("dlq-name", "some dlq name")
             assertThat(it).containsEntry("messages-found", "2")
@@ -395,7 +395,7 @@ class HmppsQueueServiceTest {
       hmppsQueueService.purgeQueue(PurgeQueueRequest("some queue", sqsAwsClient, "some queue url"))
 
       verify(telemetryClient).trackEvent(
-        eq("PURGE-QUEUE"),
+        eq("PurgeQueue"),
         check {
           assertThat(it).containsEntry("queue-name", "some queue")
           assertThat(it).containsEntry("messages-found", "1")

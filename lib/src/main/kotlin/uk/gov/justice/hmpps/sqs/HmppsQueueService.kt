@@ -46,7 +46,7 @@ class HmppsQueueService(private val telemetryClient: TelemetryClient?) {
     }
     messageCount.takeIf { it > 0 }
       ?.also { log.info("For dlq ${this.dlqName} we found $messageCount messages, attempted to retry ${messages.size}") }
-      ?.also { telemetryClient?.trackEvent("RETRY-DLQ", mapOf("dlq-name" to dlqName, "messages-found" to "$messageCount", "messages-retried" to "${messages.size}"), null) }
+      ?.also { telemetryClient?.trackEvent("RetryDLQ", mapOf("dlq-name" to dlqName, "messages-found" to "$messageCount", "messages-retried" to "${messages.size}"), null) }
     return RetryDlqResult(messageCount, messages.toList())
   }
 
@@ -56,7 +56,7 @@ class HmppsQueueService(private val telemetryClient: TelemetryClient?) {
         .takeIf { it > 0 }
         ?.also { sqsClient.purgeQueue(AwsPurgeQueueRequest(queueUrl)) }
         ?.also { log.info("For queue $queueName attempted to purge $it messages from queue") }
-        ?.also { telemetryClient?.trackEvent("PURGE-QUEUE", mapOf("queue-name" to queueName, "messages-found" to "$it"), null) }
+        ?.also { telemetryClient?.trackEvent("PurgeQueue", mapOf("queue-name" to queueName, "messages-found" to "$it"), null) }
         ?.let { PurgeQueueResult(it) }
         ?: PurgeQueueResult(0)
     }
