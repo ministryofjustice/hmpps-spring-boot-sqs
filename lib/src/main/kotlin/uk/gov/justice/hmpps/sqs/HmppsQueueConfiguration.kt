@@ -8,7 +8,7 @@ import org.springframework.context.annotation.Configuration
 class HmppsQueueConfiguration {
 
   @Bean
-  fun hmppsQueueService(telemertyClient: TelemetryClient?) = HmppsQueueService(telemertyClient)
+  fun hmppsQueueService(telemetryClient: TelemetryClient?) = HmppsQueueService(telemetryClient)
 
   @Bean
   fun hmppsQueueResource(hmppsQueueService: HmppsQueueService) = HmppsQueueResource(hmppsQueueService)
