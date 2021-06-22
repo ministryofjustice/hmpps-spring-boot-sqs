@@ -18,8 +18,13 @@ class HmppsQueueService(private val telemetryClient: TelemetryClient?) {
 
   private val hmppsQueues: MutableList<HmppsQueue> = mutableListOf()
 
+  @Deprecated(message = "Prefer queues to be constructed by this service", replaceWith = ReplaceWith("registerHmppsQueue(sqsAwsClient, queueName, sqsAwsDlqClient, dlqName)"))
   fun registerHmppsQueue(hmppsQueue: HmppsQueue) {
     hmppsQueues += hmppsQueue
+  }
+
+  fun registerHmppsQueue(sqsAwsClient: AmazonSQS, queueName: String, sqsAwsDlqClient: AmazonSQS, dlqName: String) {
+    hmppsQueues += HmppsQueue(sqsAwsClient, queueName, sqsAwsDlqClient, dlqName)
   }
 
   fun findByQueueName(queueName: String) = hmppsQueues.associateBy { it.queueName }.getOrDefault(queueName, null)

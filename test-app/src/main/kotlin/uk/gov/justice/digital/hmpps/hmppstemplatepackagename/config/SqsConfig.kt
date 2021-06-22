@@ -12,7 +12,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.ConstructorBinding
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import uk.gov.justice.hmpps.sqs.HmppsQueue
 import uk.gov.justice.hmpps.sqs.HmppsQueueService
 
 @ConstructorBinding
@@ -35,7 +34,7 @@ class SqsConfig() {
   fun sqsClient(sqsConfigProperties: SqsConfigProperties, dlqSqsClient: AmazonSQS, hmppsQueueService: HmppsQueueService): AmazonSQS =
     amazonSQS(sqsConfigProperties.localstackEndpoint, sqsConfigProperties.region)
       .also { sqsClient -> createQueue(sqsClient, dlqSqsClient, sqsConfigProperties) }
-      .also { hmppsQueueService.registerHmppsQueue(HmppsQueue(it, sqsConfigProperties.queueName, dlqSqsClient, sqsConfigProperties.dlqName)) }
+      .also { hmppsQueueService.registerHmppsQueue(it, sqsConfigProperties.queueName, dlqSqsClient, sqsConfigProperties.dlqName) }
       .also { logger.info("Created sqs client for queue ${sqsConfigProperties.queueName}") }
 
   private fun createQueue(
