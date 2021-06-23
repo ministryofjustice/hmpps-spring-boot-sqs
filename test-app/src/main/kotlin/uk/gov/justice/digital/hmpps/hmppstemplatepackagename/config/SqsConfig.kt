@@ -19,6 +19,7 @@ import uk.gov.justice.hmpps.sqs.HmppsQueueService
 data class SqsConfigProperties(
   val localstackEndpoint: String,
   val region: String,
+  val id: String,
   val dlqName: String,
   val queueName: String,
 )
@@ -32,10 +33,12 @@ class SqsConfig() {
 
   @Bean
   fun sqsClient(sqsConfigProperties: SqsConfigProperties, dlqSqsClient: AmazonSQS, hmppsQueueService: HmppsQueueService): AmazonSQS =
-    amazonSQS(sqsConfigProperties.localstackEndpoint, sqsConfigProperties.region)
-      .also { sqsClient -> createQueue(sqsClient, dlqSqsClient, sqsConfigProperties) }
-      .also { hmppsQueueService.registerHmppsQueue(it, sqsConfigProperties.queueName, dlqSqsClient, sqsConfigProperties.dlqName) }
-      .also { logger.info("Created sqs client for queue ${sqsConfigProperties.queueName}") }
+    with(sqsConfigProperties) {
+      amazonSQS(localstackEndpoint, region)
+        .also { sqsClient -> createQueue(sqsClient, dlqSqsClient, sqsConfigProperties) }
+        .also { hmppsQueueService.registerHmppsQueue(id, it, queueName, dlqSqsClient, dlqName) }
+        .also { logger.info("Created sqs client for queue $queueName") }
+    }
 
   private fun createQueue(
     queueSqsClient: AmazonSQS,

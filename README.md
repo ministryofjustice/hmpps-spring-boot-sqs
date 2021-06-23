@@ -14,7 +14,7 @@ This library is intended to capture the most common patterns and make them easy 
 
 ## How To Use This Library
 
-Find the latest published version of the library by searching on Maven Central for `hmpps-spring-boot-sqs`.  (If you can't find the version mentioned in `/lib/build.gradle.kts` please be patient, it takes a few hours to publish to Maven Central).
+Find the latest published version of the library by searching on Maven Central for `hmpps-spring-boot-sqs`.  (If you can't find the version mentioned in `/lib/build.gradle.kts` please be patient, it can take a while to publish to Maven Central).
 
 Add the following dependency to your Gradle build script:
 
@@ -52,6 +52,21 @@ As a rule of thumb new features must:
 
 ## Features
 
+### Queue Health
+
+All queues should be included on an application's health page. An unhealthy queue indicates an unhealthy service.
+
+Class `HmppsQueueService` creates a standard `HmppsQueueHealth` bean for each registered `HmppsQueue`.
+
+#### Testing Queue Health
+
+Unit tests for the generic queue health exist in this library so there is no need to add more.
+
+You should however create a couple of integration tests for your queue health in case your implementation has problems. Examples are available in the `test-app` - see classes:
+
+* happy path - `QueueHealthCheckTest`
+* negative path - `QueueHealthCheckNegativeTest`
+
 ### Queue Admin Endpoints
 
 When SQS messages fail to be processed by the main queue they are sent to the Dead Letter Queue (DLQ). We then find ourselves in one of the following scenarios:
@@ -71,7 +86,7 @@ Unrecoverable errors should be fixed such that they no longer fail and are not s
 
 The queue names are generally defined in Kubernetes secrets for the namespace which are then mapped into the Spring Boot application as configuration properties.
 
-TODO Update this section when queue names appear in the generic queue health indicator.
+The queue names should also appear on the `/health` page if using this library for queue health.
 
 #### Securing Endpoints
 
@@ -124,6 +139,16 @@ The tests require that localstack is running. To start localstack use command:
 From the root of the project run the following command to test only the test-app tests:
 
 `./gradlew test-app:test`
+
+### Running the `test-app`
+
+Running the `test-app` locally can be useful for debugging features provided by this library.
+
+Start localstack with command:
+
+`docker-compose -f docker-compose-test.yml up localstack`
+
+Then run the `test-app` in your IDE from main class `HmppsTemplateKotlin`.
 
 #### Managing Queues in Tests
 
