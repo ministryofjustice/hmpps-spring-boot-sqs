@@ -5,10 +5,11 @@ management.endpoint:
   health.cache.time-to-live: 0
   info.cache.time-to-live: 0
 
-hmpps:
-  sqs:
-    id: offender-events
-    localstack-endpoint: http://localhost:4566
-    region: eu-west-2
-    dlqName: ${random.uuid}
-    queueName: ${random.uuid}
+hmpps.sqs:
+  id: offender-events
+  localstack-endpoint: http://localhost:4566
+  region: eu-west-2
+  queues:
+    main:
+      dlqName: ${random.uuid}
+      queueName: ${random.uuid}

@@ -59,9 +59,10 @@ management:
 oauth:
   endpoint.url: http://localhost:8090/auth
 
-hmpps:
-  sqs:
-    localstack-endpoint: http://localhost:4566
-    region: eu-west-2
-    dlqName: dlq
-    queueName: queue
+hmpps.sqs:
+  localstack-endpoint: http://localhost:4566
+  region: eu-west-2
+  queues:
+    main:
+      dlqName: dlq
+      queueName: queue

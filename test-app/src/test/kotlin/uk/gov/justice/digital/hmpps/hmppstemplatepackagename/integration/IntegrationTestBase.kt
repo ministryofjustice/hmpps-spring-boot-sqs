@@ -11,6 +11,7 @@ import org.springframework.http.HttpHeaders
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.config.SqsConfigProperties
+import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.config.mainQueue
 import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.integration.mocks.OAuthExtension
 import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.service.MessageService
 
@@ -20,8 +21,8 @@ import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.service.MessageServ
 @ActiveProfiles("test")
 abstract class IntegrationTestBase {
 
-  protected val queueUrl: String by lazy { sqsClient.getQueueUrl(sqsConfigProperties.queueName).queueUrl }
-  protected val dlqUrl: String by lazy { sqsDlqClient.getQueueUrl(sqsConfigProperties.dlqName).queueUrl }
+  protected val queueUrl: String by lazy { sqsClient.getQueueUrl(sqsConfigProperties.mainQueue().queueName).queueUrl }
+  protected val dlqUrl: String by lazy { sqsDlqClient.getQueueUrl(sqsConfigProperties.mainQueue().dlqName).queueUrl }
 
   @Autowired
   protected lateinit var jwtAuthHelper: JwtAuthHelper
