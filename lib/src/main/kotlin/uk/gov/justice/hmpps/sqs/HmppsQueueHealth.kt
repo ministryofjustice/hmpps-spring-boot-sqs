@@ -73,7 +73,10 @@ class HmppsQueueHealth(private val hmppsQueue: HmppsQueue) : HealthIndicator {
   private fun Builder.addHealthResult(result: Result<HealthDetail>) =
     result
       .onSuccess { healthDetail -> withDetail(healthDetail.key(), healthDetail.value()) }
-      .onFailure { throwable -> withException(throwable) }
+      .onFailure { throwable ->
+        withException(throwable)
+          .also { log.error("Queue health failed due to exception", throwable) }
+      }
 
   private fun getQueueAttributes(): Result<GetQueueAttributesResult> {
     return runCatching {
