@@ -3,6 +3,7 @@ package uk.gov.justice.hmpps.sqs
 import com.amazonaws.services.sqs.AmazonSQS
 
 class HmppsQueue(
+  val id: String,
   val sqsAwsClient: AmazonSQS,
   val queueName: String,
   val sqsAwsDlqClient: AmazonSQS,

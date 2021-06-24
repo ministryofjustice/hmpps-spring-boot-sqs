@@ -24,12 +24,20 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.mockito.ArgumentMatchers.anyString
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory
+import org.springframework.context.ConfigurableApplicationContext
 import com.amazonaws.services.sqs.model.PurgeQueueRequest as AwsPurgeQueueRequest
 
 class HmppsQueueServiceTest {
 
   private val telemetryClient = mock<TelemetryClient>()
-  private val hmppsQueueService = HmppsQueueService(telemetryClient)
+  private val context = mock<ConfigurableApplicationContext>()
+  private val beanFactory = mock<ConfigurableListableBeanFactory>()
+  private val hmppsQueueService = HmppsQueueService(telemetryClient, context)
+
+  init {
+    whenever(context.beanFactory).thenReturn(beanFactory)
+  }
 
   @Nested
   inner class HmppsQueues {
@@ -41,8 +49,8 @@ class HmppsQueueServiceTest {
     fun `add test data`() {
       whenever(sqsAwsClient.getQueueUrl(anyString())).thenReturn(GetQueueUrlResult().withQueueUrl("some queue url"))
       whenever(sqsAwsDlqClient.getQueueUrl(anyString())).thenReturn(GetQueueUrlResult().withQueueUrl("some dlq url"))
-      hmppsQueueService.registerHmppsQueue(sqsAwsClient, "some queue name", sqsAwsDlqClient, "some dlq name")
-      hmppsQueueService.registerHmppsQueue(mock(), "another queue name", mock(), "another dlq name")
+      hmppsQueueService.registerHmppsQueue("some queue id", sqsAwsClient, "some queue name", sqsAwsDlqClient, "some dlq name")
+      hmppsQueueService.registerHmppsQueue("another queue id", mock(), "another queue name", mock(), "another dlq name")
     }
 
     @Test
@@ -89,7 +97,7 @@ class HmppsQueueServiceTest {
 
       @Test
       fun `should not attempt any transfer`() {
-        hmppsQueueService.retryDlqMessages(RetryDlqRequest(HmppsQueue(queueSqs, "some queue name", dlqSqs, "some dlq name")))
+        hmppsQueueService.retryDlqMessages(RetryDlqRequest(HmppsQueue("some queue id", queueSqs, "some queue name", dlqSqs, "some dlq name")))
 
         verify(dlqSqs).getQueueAttributes("dlqUrl", listOf("ApproximateNumberOfMessages"))
         verify(dlqSqs, times(0)).receiveMessage(any<ReceiveMessageRequest>())
@@ -98,7 +106,7 @@ class HmppsQueueServiceTest {
       @Test
       fun `should return empty result`() {
         val result =
-          hmppsQueueService.retryDlqMessages(RetryDlqRequest(HmppsQueue(queueSqs, "some queue name", dlqSqs, "some dlq name")))
+          hmppsQueueService.retryDlqMessages(RetryDlqRequest(HmppsQueue("some queue id", queueSqs, "some queue name", dlqSqs, "some dlq name")))
 
         assertThat(result.messagesFoundCount).isEqualTo(0)
         assertThat(result.messages).isEmpty()
@@ -106,7 +114,7 @@ class HmppsQueueServiceTest {
 
       @Test
       fun `should not create telemetry event`() {
-        hmppsQueueService.retryDlqMessages(RetryDlqRequest(HmppsQueue(queueSqs, "some queue name", dlqSqs, "some dlq name")))
+        hmppsQueueService.retryDlqMessages(RetryDlqRequest(HmppsQueue("some queue id", queueSqs, "some queue name", dlqSqs, "some dlq name")))
 
         verifyNoMoreInteractions(telemetryClient)
       }
@@ -129,7 +137,7 @@ class HmppsQueueServiceTest {
 
       @Test
       fun `should receive message from the dlq`() {
-        hmppsQueueService.retryDlqMessages(RetryDlqRequest(HmppsQueue(queueSqs, "some queue name", dlqSqs, "some dlq name")))
+        hmppsQueueService.retryDlqMessages(RetryDlqRequest(HmppsQueue("some queue id", queueSqs, "some queue name", dlqSqs, "some dlq name")))
 
         verify(dlqSqs).receiveMessage(
           check<ReceiveMessageRequest> {
@@ -141,7 +149,7 @@ class HmppsQueueServiceTest {
 
       @Test
       fun `should delete message from the dlq`() {
-        hmppsQueueService.retryDlqMessages(RetryDlqRequest(HmppsQueue(queueSqs, "some queue name", dlqSqs, "some dlq name")))
+        hmppsQueueService.retryDlqMessages(RetryDlqRequest(HmppsQueue("some queue id", queueSqs, "some queue name", dlqSqs, "some dlq name")))
 
         verify(dlqSqs).deleteMessage(
           check {
@@ -153,14 +161,14 @@ class HmppsQueueServiceTest {
 
       @Test
       fun `should send message to the main queue`() {
-        hmppsQueueService.retryDlqMessages(RetryDlqRequest(HmppsQueue(queueSqs, "some queue name", dlqSqs, "some dlq name")))
+        hmppsQueueService.retryDlqMessages(RetryDlqRequest(HmppsQueue("some queue id", queueSqs, "some queue name", dlqSqs, "some dlq name")))
 
         verify(queueSqs).sendMessage("queueUrl", "message-body")
       }
 
       @Test
       fun `should return the message`() {
-        val result = hmppsQueueService.retryDlqMessages(RetryDlqRequest(HmppsQueue(queueSqs, "some queue name", dlqSqs, "some dlq name")))
+        val result = hmppsQueueService.retryDlqMessages(RetryDlqRequest(HmppsQueue("some queue id", queueSqs, "some queue name", dlqSqs, "some dlq name")))
 
         assertThat(result.messagesFoundCount).isEqualTo(1)
         assertThat(result.messages)
@@ -170,7 +178,7 @@ class HmppsQueueServiceTest {
 
       @Test
       fun `should create telemetry event`() {
-        hmppsQueueService.retryDlqMessages(RetryDlqRequest(HmppsQueue(queueSqs, "some queue name", dlqSqs, "some dlq name")))
+        hmppsQueueService.retryDlqMessages(RetryDlqRequest(HmppsQueue("some queue id", queueSqs, "some queue name", dlqSqs, "some dlq name")))
 
         verify(telemetryClient).trackEvent(
           eq("RetryDLQ"),
@@ -206,7 +214,7 @@ class HmppsQueueServiceTest {
 
       @Test
       fun `should receive message from the dlq`() {
-        hmppsQueueService.retryDlqMessages(RetryDlqRequest(HmppsQueue(queueSqs, "some queue name", dlqSqs, "some dlq name")))
+        hmppsQueueService.retryDlqMessages(RetryDlqRequest(HmppsQueue("some queue id", queueSqs, "some queue name", dlqSqs, "some dlq name")))
 
         verify(dlqSqs, times(2)).receiveMessage(
           check<ReceiveMessageRequest> {
@@ -218,7 +226,7 @@ class HmppsQueueServiceTest {
 
       @Test
       fun `should delete message from the dlq`() {
-        hmppsQueueService.retryDlqMessages(RetryDlqRequest(HmppsQueue(queueSqs, "some queue name", dlqSqs, "some dlq name")))
+        hmppsQueueService.retryDlqMessages(RetryDlqRequest(HmppsQueue("some queue id", queueSqs, "some queue name", dlqSqs, "some dlq name")))
 
         val captor = argumentCaptor<DeleteMessageRequest>()
         verify(dlqSqs, times(2)).deleteMessage(captor.capture())
@@ -229,7 +237,7 @@ class HmppsQueueServiceTest {
 
       @Test
       fun `should send message to the main queue`() {
-        hmppsQueueService.retryDlqMessages(RetryDlqRequest(HmppsQueue(queueSqs, "some queue name", dlqSqs, "some dlq name")))
+        hmppsQueueService.retryDlqMessages(RetryDlqRequest(HmppsQueue("some queue id", queueSqs, "some queue name", dlqSqs, "some dlq name")))
 
         verify(queueSqs).sendMessage("queueUrl", "message-1-body")
         verify(queueSqs).sendMessage("queueUrl", "message-2-body")
@@ -237,7 +245,7 @@ class HmppsQueueServiceTest {
 
       @Test
       fun `should return the message`() {
-        val result = hmppsQueueService.retryDlqMessages(RetryDlqRequest(HmppsQueue(queueSqs, "some queue name", dlqSqs, "some dlq name")))
+        val result = hmppsQueueService.retryDlqMessages(RetryDlqRequest(HmppsQueue("some queue id", queueSqs, "some queue name", dlqSqs, "some dlq name")))
 
         assertThat(result.messagesFoundCount).isEqualTo(2)
         assertThat(result.messages)
@@ -264,7 +272,7 @@ class HmppsQueueServiceTest {
 
       @Test
       fun `should receive message from the dlq`() {
-        hmppsQueueService.retryDlqMessages(RetryDlqRequest(HmppsQueue(queueSqs, "some queue name", dlqSqs, "some dlq name")))
+        hmppsQueueService.retryDlqMessages(RetryDlqRequest(HmppsQueue("some queue id", queueSqs, "some queue name", dlqSqs, "some dlq name")))
 
         verify(dlqSqs, times(2)).receiveMessage(
           check<ReceiveMessageRequest> {
@@ -276,7 +284,7 @@ class HmppsQueueServiceTest {
 
       @Test
       fun `should delete message from the dlq`() {
-        hmppsQueueService.retryDlqMessages(RetryDlqRequest(HmppsQueue(queueSqs, "some queue name", dlqSqs, "some dlq name")))
+        hmppsQueueService.retryDlqMessages(RetryDlqRequest(HmppsQueue("some queue id", queueSqs, "some queue name", dlqSqs, "some dlq name")))
 
         verify(dlqSqs).deleteMessage(
           check {
@@ -288,14 +296,14 @@ class HmppsQueueServiceTest {
 
       @Test
       fun `should send message to the main queue`() {
-        hmppsQueueService.retryDlqMessages(RetryDlqRequest(HmppsQueue(queueSqs, "some queue name", dlqSqs, "some dlq name")))
+        hmppsQueueService.retryDlqMessages(RetryDlqRequest(HmppsQueue("some queue id", queueSqs, "some queue name", dlqSqs, "some dlq name")))
 
         verify(queueSqs).sendMessage("queueUrl", "message-1-body")
       }
 
       @Test
       fun `should return the message`() {
-        val result = hmppsQueueService.retryDlqMessages(RetryDlqRequest(HmppsQueue(queueSqs, "some queue name", dlqSqs, "some dlq name")))
+        val result = hmppsQueueService.retryDlqMessages(RetryDlqRequest(HmppsQueue("some queue id", queueSqs, "some queue name", dlqSqs, "some dlq name")))
 
         assertThat(result.messagesFoundCount).isEqualTo(2)
         assertThat(result.messages)
@@ -305,7 +313,7 @@ class HmppsQueueServiceTest {
 
       @Test
       fun `should create telemetry event`() {
-        hmppsQueueService.retryDlqMessages(RetryDlqRequest(HmppsQueue(queueSqs, "some queue name", dlqSqs, "some dlq name")))
+        hmppsQueueService.retryDlqMessages(RetryDlqRequest(HmppsQueue("some queue id", queueSqs, "some queue name", dlqSqs, "some dlq name")))
 
         verify(telemetryClient).trackEvent(
           eq("RetryDLQ"),
@@ -330,8 +338,8 @@ class HmppsQueueServiceTest {
     fun `add test data`() {
       whenever(sqsAwsClient.getQueueUrl(anyString())).thenReturn(GetQueueUrlResult().withQueueUrl("some queue url"))
       whenever(sqsAwsDlqClient.getQueueUrl(anyString())).thenReturn(GetQueueUrlResult().withQueueUrl("some dlq url"))
-      hmppsQueueService.registerHmppsQueue(sqsAwsClient, "some queue name", sqsAwsDlqClient, "some dlq name")
-      hmppsQueueService.registerHmppsQueue(mock(), "another queue name", mock(), "another dlq name")
+      hmppsQueueService.registerHmppsQueue("some queue id", sqsAwsClient, "some queue name", sqsAwsDlqClient, "some dlq name")
+      hmppsQueueService.registerHmppsQueue("another queue id", mock(), "another queue name", mock(), "another dlq name")
     }
 
     @Test

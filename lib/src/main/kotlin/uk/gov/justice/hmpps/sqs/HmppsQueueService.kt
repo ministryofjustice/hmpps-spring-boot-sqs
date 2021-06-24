@@ -6,11 +6,10 @@ import com.amazonaws.services.sqs.model.Message
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest
 import com.microsoft.applicationinsights.TelemetryClient
 import org.slf4j.LoggerFactory
-import org.springframework.stereotype.Service
+import org.springframework.context.ConfigurableApplicationContext
 import com.amazonaws.services.sqs.model.PurgeQueueRequest as AwsPurgeQueueRequest
 
-@Service
-class HmppsQueueService(private val telemetryClient: TelemetryClient?) {
+class HmppsQueueService(private val telemetryClient: TelemetryClient?, private val context: ConfigurableApplicationContext) {
 
   companion object {
     private val log = LoggerFactory.getLogger(this::class.java)
@@ -18,13 +17,10 @@ class HmppsQueueService(private val telemetryClient: TelemetryClient?) {
 
   private val hmppsQueues: MutableList<HmppsQueue> = mutableListOf()
 
-  @Deprecated(message = "Prefer queues to be constructed by this service", replaceWith = ReplaceWith("registerHmppsQueue(sqsAwsClient, queueName, sqsAwsDlqClient, dlqName)"))
-  fun registerHmppsQueue(hmppsQueue: HmppsQueue) {
+  fun registerHmppsQueue(id: String, sqsAwsClient: AmazonSQS, queueName: String, sqsAwsDlqClient: AmazonSQS, dlqName: String) {
+    val hmppsQueue = HmppsQueue(id, sqsAwsClient, queueName, sqsAwsDlqClient, dlqName)
     hmppsQueues += hmppsQueue
-  }
-
-  fun registerHmppsQueue(sqsAwsClient: AmazonSQS, queueName: String, sqsAwsDlqClient: AmazonSQS, dlqName: String) {
-    hmppsQueues += HmppsQueue(sqsAwsClient, queueName, sqsAwsDlqClient, dlqName)
+    context.beanFactory.registerSingleton("${hmppsQueue.id}-health", HmppsQueueHealth(hmppsQueue))
   }
 
   fun findByQueueName(queueName: String) = hmppsQueues.associateBy { it.queueName }.getOrDefault(queueName, null)

@@ -15,12 +15,13 @@ plugins {
 }
 
 base.archivesBaseName = "hmpps-spring-boot-sqs"
-version = "0.3.2"
+version = "0.4.0"
 
 dependencies {
   api("com.amazonaws:amazon-sqs-java-messaging-lib:1.0.8")
   implementation("org.springframework.boot:spring-boot-starter-web")
   implementation("org.springframework.boot:spring-boot-starter-security")
+  implementation("org.springframework.boot:spring-boot-starter-actuator")
   implementation("com.microsoft.azure:applicationinsights-core:2.6.3")
 
   testImplementation("org.assertj:assertj-core:3.19.0")
