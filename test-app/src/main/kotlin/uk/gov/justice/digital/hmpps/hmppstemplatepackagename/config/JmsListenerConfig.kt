@@ -22,6 +22,9 @@ class JmsListenerConfig {
   @Bean
   fun jmsListenerContainerFactory(@Qualifier("sqsClient") sqsClient: AmazonSQS) = defaultJmsListenerContainerFactory(sqsClient)
 
+  @Bean
+  fun anotherJmsListenerContainerFactory(@Qualifier("anotherSqsClient") anotherSqsClient: AmazonSQS) = defaultJmsListenerContainerFactory(anotherSqsClient)
+
   private fun defaultJmsListenerContainerFactory(awsSqsClient: AmazonSQS): DefaultJmsListenerContainerFactory {
     val factory = DefaultJmsListenerContainerFactory()
     factory.setConnectionFactory(SQSConnectionFactory(ProviderConfiguration(), awsSqsClient))

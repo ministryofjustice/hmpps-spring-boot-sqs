@@ -10,6 +10,7 @@ import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import org.springframework.http.MediaType
+import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.config.anotherQueue
 import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.config.mainQueue
 
 class HmppsQueueResourceTest : IntegrationTestBase() {
@@ -58,13 +59,13 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
     }
 
     @Test
-    fun `should transfer messages from DLQ to main queue and process them`() {
+    fun `should transfer messages from main DLQ to main queue and process them`() {
       sqsDlqClient.sendMessage(dlqUrl, "message1")
       sqsDlqClient.sendMessage(dlqUrl, "message2")
       await untilCallTo { sqsDlqClient.countMessagesOnQueue(dlqUrl) } matches { it == 2 }
 
       webTestClient.put()
-        .uri("/queue-admin/retry-dlq/${sqsConfigProperties.mainQueue().dlqName}")
+        .uri("/queue-admin/retry-dlq/${hmppsQueueProperties.mainQueue().dlqName}")
         .headers { it.authToken() }
         .accept(MediaType.APPLICATION_JSON)
         .exchange()
@@ -76,16 +77,36 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
       verify(messageServiceSpy).handleMessage("message1")
       verify(messageServiceSpy).handleMessage("message2")
     }
+
+    @Test
+    fun `should transfer messages from another DLQ to another queue and process them`() {
+      anotherSqsDlqClient.sendMessage(anotherDlqUrl, "message3")
+      anotherSqsDlqClient.sendMessage(anotherDlqUrl, "message4")
+      await untilCallTo { anotherSqsDlqClient.countMessagesOnQueue(anotherDlqUrl) } matches { it == 2 }
+
+      webTestClient.put()
+        .uri("/queue-admin/retry-dlq/${hmppsQueueProperties.anotherQueue().dlqName}")
+        .headers { it.authToken() }
+        .accept(MediaType.APPLICATION_JSON)
+        .exchange()
+        .expectStatus().isOk
+
+      await untilCallTo { anotherSqsDlqClient.countMessagesOnQueue(anotherDlqUrl) } matches { it == 0 }
+      await untilCallTo { anotherSqsClient.countMessagesOnQueue(anotherQueueUrl) } matches { it == 0 }
+
+      verify(anotherMessageServiceSpy).handleMessage("message3")
+      verify(anotherMessageServiceSpy).handleMessage("message4")
+    }
   }
 
   @Nested
   inner class RetryAllDlqs {
-    // TODO when we start handling multiple queues add another queue/dlq combination to this test
     @Test
     fun `should transfer messages from DLQ to main queue and process them`() {
       sqsDlqClient.sendMessage(dlqUrl, "message1")
-      sqsDlqClient.sendMessage(dlqUrl, "message2")
-      await untilCallTo { sqsDlqClient.countMessagesOnQueue(dlqUrl) } matches { it == 2 }
+      anotherSqsDlqClient.sendMessage(anotherDlqUrl, "message2")
+      await untilCallTo { sqsDlqClient.countMessagesOnQueue(dlqUrl) } matches { it == 1 }
+      await untilCallTo { anotherSqsDlqClient.countMessagesOnQueue(anotherDlqUrl) } matches { it == 1 }
 
       webTestClient.put()
         .uri("/queue-admin/retry-all-dlqs")
@@ -96,28 +117,46 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
 
       await untilCallTo { sqsDlqClient.countMessagesOnQueue(dlqUrl) } matches { it == 0 }
       await untilCallTo { sqsClient.countMessagesOnQueue(queueUrl) } matches { it == 0 }
+      await untilCallTo { anotherSqsDlqClient.countMessagesOnQueue(anotherDlqUrl) } matches { it == 0 }
+      await untilCallTo { anotherSqsClient.countMessagesOnQueue(anotherQueueUrl) } matches { it == 0 }
 
       verify(messageServiceSpy).handleMessage("message1")
-      verify(messageServiceSpy).handleMessage("message2")
+      verify(anotherMessageServiceSpy).handleMessage("message2")
     }
   }
 
   @Nested
   inner class PurgeQueue {
     @Test
-    fun `should purge the dlq`() {
+    fun `should purge the main dlq`() {
       sqsDlqClient.sendMessage(dlqUrl, "message1")
       sqsDlqClient.sendMessage(dlqUrl, "message2")
       await untilCallTo { sqsDlqClient.countMessagesOnQueue(dlqUrl) } matches { it == 2 }
 
       webTestClient.put()
-        .uri("/queue-admin/purge-queue/${sqsConfigProperties.mainQueue().dlqName}")
+        .uri("/queue-admin/purge-queue/${hmppsQueueProperties.mainQueue().dlqName}")
         .headers { it.authToken() }
         .accept(MediaType.APPLICATION_JSON)
         .exchange()
         .expectStatus().isOk
 
       await untilCallTo { sqsDlqClient.countMessagesOnQueue(dlqUrl) } matches { it == 0 }
+    }
+
+    @Test
+    fun `should purge the another dlq`() {
+      anotherSqsDlqClient.sendMessage(anotherDlqUrl, "message3")
+      anotherSqsDlqClient.sendMessage(anotherDlqUrl, "message4")
+      await untilCallTo { anotherSqsDlqClient.countMessagesOnQueue(anotherDlqUrl) } matches { it == 2 }
+
+      webTestClient.put()
+        .uri("/queue-admin/purge-queue/${hmppsQueueProperties.anotherQueue().dlqName}")
+        .headers { it.authToken() }
+        .accept(MediaType.APPLICATION_JSON)
+        .exchange()
+        .expectStatus().isOk
+
+      await untilCallTo { anotherSqsDlqClient.countMessagesOnQueue(anotherDlqUrl) } matches { it == 0 }
     }
   }
 }

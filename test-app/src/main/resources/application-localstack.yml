@@ -1,0 +1,8 @@
+hmpps.sqs:
+  queues:
+    mainQueue:
+      queueName: queue
+      dlqName: dlq
+    anotherQueue:
+      queueName: another-queue
+      dlqName: another-dlq

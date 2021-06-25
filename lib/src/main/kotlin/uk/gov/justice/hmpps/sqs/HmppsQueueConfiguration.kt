@@ -1,11 +1,13 @@
 package uk.gov.justice.hmpps.sqs
 
 import com.microsoft.applicationinsights.TelemetryClient
+import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.ConfigurableApplicationContext
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 
 @Configuration
+@EnableConfigurationProperties(HmppsQueueProperties::class)
 class HmppsQueueConfiguration {
 
   @Bean

@@ -8,11 +8,11 @@ import org.junit.jupiter.api.Test
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Import
-import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.config.SqsConfigProperties
 import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.integration.mocks.OAuthExtension.Companion.oAuthApi
 import uk.gov.justice.hmpps.sqs.HmppsQueue
 import uk.gov.justice.hmpps.sqs.HmppsQueueHealth
+import uk.gov.justice.hmpps.sqs.HmppsQueueProperties
 
 @Import(QueueHealthCheckNegativeTest.TestConfig::class)
 class QueueHealthCheckNegativeTest : IntegrationTestBase() {
@@ -20,9 +20,9 @@ class QueueHealthCheckNegativeTest : IntegrationTestBase() {
   @TestConfiguration
   class TestConfig {
     @Bean
-    fun badQueueHealth(sqsConfigProperties: SqsConfigProperties): HmppsQueueHealth {
+    fun badQueueHealth(hmppsConfigProperties: HmppsQueueProperties): HmppsQueueHealth {
       val sqsClient = AmazonSQSClientBuilder.standard()
-        .withEndpointConfiguration(AwsClientBuilder.EndpointConfiguration(sqsConfigProperties.localstackEndpoint, sqsConfigProperties.region))
+        .withEndpointConfiguration(AwsClientBuilder.EndpointConfiguration(hmppsConfigProperties.localstackUrl, hmppsConfigProperties.region))
         .withCredentials(AWSStaticCredentialsProvider(AnonymousAWSCredentials()))
         .build()
       return HmppsQueueHealth(HmppsQueue("missingQueueId", sqsClient, "missingQueue", sqsClient, "missingDlq"))
@@ -43,6 +43,7 @@ class QueueHealthCheckNegativeTest : IntegrationTestBase() {
       .jsonPath("components.badQueueHealth.status").isEqualTo("DOWN")
       .jsonPath("components.badQueueHealth.details.queueName").isEqualTo("missingQueue")
       .jsonPath("components.badQueueHealth.details.dlqName").isEqualTo("missingDlq")
+      .jsonPath("components.badQueueHealth.details.dlqStatus").isEqualTo("DOWN")
       .jsonPath("components.badQueueHealth.details.error").exists()
   }
 }
