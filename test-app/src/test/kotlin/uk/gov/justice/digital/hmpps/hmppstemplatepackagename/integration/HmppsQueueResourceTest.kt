@@ -10,8 +10,6 @@ import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import org.springframework.http.MediaType
-import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.config.anotherQueue
-import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.config.mainQueue
 
 class HmppsQueueResourceTest : IntegrationTestBase() {
 

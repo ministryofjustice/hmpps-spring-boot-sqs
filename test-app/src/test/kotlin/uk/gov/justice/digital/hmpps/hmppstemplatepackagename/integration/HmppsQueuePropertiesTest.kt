@@ -2,8 +2,6 @@ package uk.gov.justice.digital.hmpps.hmppstemplatepackagename.integration
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
-import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.config.anotherQueue
-import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.config.mainQueue
 
 class HmppsQueuePropertiesTest : IntegrationTestBase() {
 

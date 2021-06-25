@@ -1,8 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppstemplatepackagename.integration.health
 
 import org.junit.jupiter.api.Test
-import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.config.anotherQueue
-import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.config.mainQueue
 import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.integration.mocks.OAuthExtension.Companion.oAuthApi
 

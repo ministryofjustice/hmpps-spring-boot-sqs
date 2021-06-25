@@ -80,13 +80,13 @@ class HmppsQueueHealth(private val hmppsQueue: HmppsQueue) : HealthIndicator {
 
   private fun getQueueAttributes(): Result<GetQueueAttributesResult> {
     return runCatching {
-      hmppsQueue.sqsAwsClient.getQueueAttributes(GetQueueAttributesRequest(hmppsQueue.queueUrl).withAttributeNames(All))
+      hmppsQueue.sqsClient.getQueueAttributes(GetQueueAttributesRequest(hmppsQueue.queueUrl).withAttributeNames(All))
     }
   }
 
   private fun getDlqAttributes(): Result<GetQueueAttributesResult> =
     runCatching {
-      hmppsQueue.sqsAwsDlqClient.getQueueAttributes(GetQueueAttributesRequest(hmppsQueue.dlqUrl).withAttributeNames(All))
+      hmppsQueue.sqsDlqClient.getQueueAttributes(GetQueueAttributesRequest(hmppsQueue.dlqUrl).withAttributeNames(All))
     }
 }
 

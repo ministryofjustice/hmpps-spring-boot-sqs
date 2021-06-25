@@ -7,11 +7,13 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.DependsOn
 import org.springframework.jms.annotation.EnableJms
 import org.springframework.jms.config.DefaultJmsListenerContainerFactory
 import org.springframework.jms.support.destination.DynamicDestinationResolver
 import javax.jms.Session
 
+@Suppress("SpringJavaInjectionPointsAutowiringInspection")
 @Configuration
 @EnableJms
 class JmsListenerConfig {
@@ -20,10 +22,12 @@ class JmsListenerConfig {
   }
 
   @Bean
-  fun jmsListenerContainerFactory(@Qualifier("sqsClient") sqsClient: AmazonSQS) = defaultJmsListenerContainerFactory(sqsClient)
+  @DependsOn("hmppsQueueService") // TODO I don't like asking library consumers to do this.  But it will go away once the container factories are also wired in by the library
+  fun jmsListenerContainerFactory(@Qualifier("mainQueue-sqs-client") sqsClient: AmazonSQS) = defaultJmsListenerContainerFactory(sqsClient)
 
   @Bean
-  fun anotherJmsListenerContainerFactory(@Qualifier("anotherSqsClient") anotherSqsClient: AmazonSQS) = defaultJmsListenerContainerFactory(anotherSqsClient)
+  @DependsOn("hmppsQueueService")
+  fun anotherJmsListenerContainerFactory(@Qualifier("anotherQueue-sqs-client") anotherSqsClient: AmazonSQS) = defaultJmsListenerContainerFactory(anotherSqsClient)
 
   private fun defaultJmsListenerContainerFactory(awsSqsClient: AmazonSQS): DefaultJmsListenerContainerFactory {
     val factory = DefaultJmsListenerContainerFactory()
