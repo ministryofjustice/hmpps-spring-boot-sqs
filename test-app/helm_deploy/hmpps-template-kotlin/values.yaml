@@ -30,6 +30,14 @@ generic-service:
   namespace_secrets:
     hmpps-template-kotlin:
       APPINSIGHTS_INSTRUMENTATIONKEY: "APPINSIGHTS_INSTRUMENTATIONKEY"
+    main-queue-sqs-instance-output:
+      HMPPS_SQS_QUEUES_MAINQUEUE_ACCESS_KEY_ID: "access_key_id"
+      HMPPS_SQS_QUEUES_MAINQUEUE_SECRET_ACCESS_KEY: "secret_access_key"
+      HMPPS_SQS_QUEUES_MAINQUEUE_QUEUE_NAME: "mainQueue"
+    main-queue-sqs-dl-instance-output:
+      HMPPS_SQS_QUEUES_MAINQUEUE_DLQ_ACCESS_KEY_ID: "access_key_id"
+      HMPPS_SQS_QUEUES_MAINQUEUE_DLQ_SECRET_ACCESS_KEY: "secret_access_key"
+      HMPPS_SQS_QUEUES_MAINQUEUE_DLQ_NAME: "mainDlq"
 
   allowlist:
     office: "217.33.148.210/32"

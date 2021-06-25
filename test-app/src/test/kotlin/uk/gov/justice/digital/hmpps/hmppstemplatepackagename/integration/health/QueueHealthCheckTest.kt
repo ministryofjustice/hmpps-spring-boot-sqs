@@ -18,11 +18,11 @@ class QueueHealthCheckTest : IntegrationTestBase() {
       .isOk
       .expectBody()
       .jsonPath("status").isEqualTo("UP")
-      .jsonPath("components.main-health.status").isEqualTo("UP")
-      .jsonPath("components.main-health.details.queueName").isEqualTo(sqsConfigProperties.mainQueue().queueName)
-      .jsonPath("components.main-health.details.messagesOnQueue").isEqualTo(0)
-      .jsonPath("components.main-health.details.messagesInFlight").isEqualTo(0)
-      .jsonPath("components.main-health.details.dlqStatus").isEqualTo("UP")
-      .jsonPath("components.main-health.details.messagesOnDlq").isEqualTo(0)
+      .jsonPath("components.mainQueue-health.status").isEqualTo("UP")
+      .jsonPath("components.mainQueue-health.details.queueName").isEqualTo(hmppsQueueProperties.mainQueue().queueName)
+      .jsonPath("components.mainQueue-health.details.messagesOnQueue").isEqualTo(0)
+      .jsonPath("components.mainQueue-health.details.messagesInFlight").isEqualTo(0)
+      .jsonPath("components.mainQueue-health.details.dlqStatus").isEqualTo("UP")
+      .jsonPath("components.mainQueue-health.details.messagesOnDlq").isEqualTo(0)
   }
 }

@@ -10,10 +10,10 @@ import org.springframework.context.annotation.Import
 import org.springframework.http.HttpHeaders
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.web.reactive.server.WebTestClient
-import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.config.SqsConfigProperties
 import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.config.mainQueue
 import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.integration.mocks.OAuthExtension
 import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.service.MessageService
+import uk.gov.justice.hmpps.sqs.HmppsQueueProperties
 
 @SpringBootTest(webEnvironment = RANDOM_PORT)
 @Import(JwtAuthHelper::class)
@@ -21,8 +21,8 @@ import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.service.MessageServ
 @ActiveProfiles("test")
 abstract class IntegrationTestBase {
 
-  protected val queueUrl: String by lazy { sqsClient.getQueueUrl(sqsConfigProperties.mainQueue().queueName).queueUrl }
-  protected val dlqUrl: String by lazy { sqsDlqClient.getQueueUrl(sqsConfigProperties.mainQueue().dlqName).queueUrl }
+  protected val queueUrl: String by lazy { sqsClient.getQueueUrl(hmppsQueueProperties.mainQueue().queueName).queueUrl }
+  protected val dlqUrl: String by lazy { sqsDlqClient.getQueueUrl(hmppsQueueProperties.mainQueue().dlqName).queueUrl }
 
   @Autowired
   protected lateinit var jwtAuthHelper: JwtAuthHelper
@@ -37,7 +37,7 @@ abstract class IntegrationTestBase {
   protected lateinit var messageServiceSpy: MessageService
 
   @SpyBean
-  protected lateinit var sqsConfigProperties: SqsConfigProperties
+  protected lateinit var hmppsQueueProperties: HmppsQueueProperties
 
   @Suppress("SpringJavaInjectionPointsAutowiringInspection")
   @Autowired

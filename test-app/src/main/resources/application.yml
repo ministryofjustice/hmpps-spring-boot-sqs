@@ -60,9 +60,11 @@ oauth:
   endpoint.url: http://localhost:8090/auth
 
 hmpps.sqs:
-  localstack-endpoint: http://localhost:4566
-  region: eu-west-2
   queues:
-    main:
-      dlqName: dlq
-      queueName: queue
+    mainQueue:
+      queueName: aws-queue
+      queueAccessKeyId: queue-access-key-id
+      queueSecretAccessKey: queue-secret-access-key
+      dlqName: aws-dlq
+      dlqAccessKeyId: dlq-access-key-id
+      dlqSecretAccessKey: dlq-secret-access-key

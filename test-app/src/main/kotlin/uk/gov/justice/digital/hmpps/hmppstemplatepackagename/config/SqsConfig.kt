@@ -8,32 +8,13 @@ import com.amazonaws.services.sqs.AmazonSQSClientBuilder
 import com.amazonaws.services.sqs.model.CreateQueueRequest
 import com.amazonaws.services.sqs.model.QueueAttributeName
 import org.slf4j.LoggerFactory
-import org.springframework.boot.context.properties.ConfigurationProperties
-import org.springframework.boot.context.properties.ConstructorBinding
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import uk.gov.justice.hmpps.sqs.HmppsQueueProperties
 import uk.gov.justice.hmpps.sqs.HmppsQueueService
 
-@ConstructorBinding
-@ConfigurationProperties(prefix = "hmpps.sqs")
-data class SqsConfigProperties(
-  val localstackEndpoint: String,
-  val region: String,
-  val queues: Map<String, QueueConfig>,
-) {
-  data class QueueConfig(
-    val topicName: String = "",
-    val queueName: String,
-    val queueAccessKeyId: String = "",
-    val queueSecretAccessKey: String = "",
-    val dlqName: String,
-    val dlqAccessKeyId: String = "",
-    val dlqSecretAccessKey: String = "",
-  )
-}
-
-fun SqsConfigProperties.mainQueue() =
-  queues["main"] ?: throw MissingQueueException("main queue has not been loaded from configuration properties")
+fun HmppsQueueProperties.mainQueue() =
+  queues["mainQueue"] ?: throw MissingQueueException("main queue has not been loaded from configuration properties")
 
 class MissingQueueException(message: String) : RuntimeException(message)
 
@@ -45,24 +26,24 @@ class SqsConfig() {
   }
 
   @Bean
-  fun sqsClient(sqsConfigProperties: SqsConfigProperties, dlqSqsClient: AmazonSQS, hmppsQueueService: HmppsQueueService): AmazonSQS =
-    with(sqsConfigProperties) {
-      amazonSQS(localstackEndpoint, region)
-        .also { sqsClient -> createQueue(sqsClient, dlqSqsClient, sqsConfigProperties) }
-        .also { hmppsQueueService.registerHmppsQueue("main", it, mainQueue().queueName, dlqSqsClient, mainQueue().dlqName) }
+  fun sqsClient(hmppsQueueProperties: HmppsQueueProperties, dlqSqsClient: AmazonSQS, hmppsQueueService: HmppsQueueService): AmazonSQS =
+    with(hmppsQueueProperties) {
+      amazonSQS(localstackUrl, region)
+        .also { sqsClient -> createQueue(sqsClient, dlqSqsClient, hmppsQueueProperties) }
+        .also { hmppsQueueService.registerHmppsQueue("mainQueue", it, mainQueue().queueName, dlqSqsClient, mainQueue().dlqName) }
         .also { logger.info("Created sqs client for queue ${mainQueue().queueName}") }
     }
 
   private fun createQueue(
     queueSqsClient: AmazonSQS,
     dlqSqsClient: AmazonSQS,
-    sqsConfigProperties: SqsConfigProperties,
+    hmppsQueueProperties: HmppsQueueProperties,
   ) =
-    dlqSqsClient.getQueueUrl(sqsConfigProperties.mainQueue().dlqName).queueUrl
+    dlqSqsClient.getQueueUrl(hmppsQueueProperties.mainQueue().dlqName).queueUrl
       .let { dlqQueueUrl -> dlqSqsClient.getQueueAttributes(dlqQueueUrl, listOf(QueueAttributeName.QueueArn.toString())).attributes["QueueArn"]!! }
       .also { queueArn ->
         queueSqsClient.createQueue(
-          CreateQueueRequest(sqsConfigProperties.mainQueue().queueName).withAttributes(
+          CreateQueueRequest(hmppsQueueProperties.mainQueue().queueName).withAttributes(
             mapOf(
               QueueAttributeName.RedrivePolicy.toString() to
                 """{"deadLetterTargetArn":"$queueArn","maxReceiveCount":"5"}"""
@@ -72,10 +53,10 @@ class SqsConfig() {
       }
 
   @Bean
-  fun sqsDlqClient(sqsConfigProperties: SqsConfigProperties): AmazonSQS =
-    amazonSQS(sqsConfigProperties.localstackEndpoint, sqsConfigProperties.region)
-      .also { dlqSqsClient -> dlqSqsClient.createQueue(sqsConfigProperties.mainQueue().dlqName) }
-      .also { logger.info("Created dlq sqs client for dlq ${sqsConfigProperties.mainQueue().dlqName}") }
+  fun sqsDlqClient(hmppsQueueProperties: HmppsQueueProperties): AmazonSQS =
+    amazonSQS(hmppsQueueProperties.localstackUrl, hmppsQueueProperties.region)
+      .also { dlqSqsClient -> dlqSqsClient.createQueue(hmppsQueueProperties.mainQueue().dlqName) }
+      .also { logger.info("Created dlq sqs client for dlq ${hmppsQueueProperties.mainQueue().dlqName}") }
 
   private fun amazonSQS(serviceEndpoint: String, region: String): AmazonSQS =
     AmazonSQSClientBuilder.standard()
