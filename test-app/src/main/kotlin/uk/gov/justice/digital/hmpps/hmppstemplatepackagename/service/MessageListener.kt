@@ -11,3 +11,12 @@ class MessageListener(private val messageService: MessageService) {
     messageService.handleMessage(message ?: "empty message received")
   }
 }
+
+@Service
+class AnotherMessageListener(private val anotherMessageService: AnotherMessageService) {
+
+  @JmsListener(destination = "#{@'hmpps.sqs-uk.gov.justice.hmpps.sqs.HmppsQueueProperties'.queues['anotherQueue'].queueName}", containerFactory = "anotherJmsListenerContainerFactory")
+  fun processMessage(message: String?) {
+    anotherMessageService.handleMessage(message ?: "empty message received")
+  }
+}

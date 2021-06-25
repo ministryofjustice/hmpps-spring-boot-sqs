@@ -43,6 +43,7 @@ class QueueHealthCheckNegativeTest : IntegrationTestBase() {
       .jsonPath("components.badQueueHealth.status").isEqualTo("DOWN")
       .jsonPath("components.badQueueHealth.details.queueName").isEqualTo("missingQueue")
       .jsonPath("components.badQueueHealth.details.dlqName").isEqualTo("missingDlq")
+      .jsonPath("components.badQueueHealth.details.dlqStatus").isEqualTo("DOWN")
       .jsonPath("components.badQueueHealth.details.error").exists()
   }
 }

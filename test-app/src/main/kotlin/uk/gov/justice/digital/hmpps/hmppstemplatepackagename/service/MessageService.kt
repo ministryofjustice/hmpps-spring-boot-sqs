@@ -14,3 +14,14 @@ class MessageService {
     log.info("processed message: $message")
   }
 }
+
+@Service
+class AnotherMessageService {
+  companion object {
+    val log: Logger = LoggerFactory.getLogger(this::class.java)
+  }
+
+  fun handleMessage(message: String) {
+    log.info("processed message: $message")
+  }
+}

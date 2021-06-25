@@ -3,3 +3,6 @@ hmpps.sqs:
     mainQueue:
       queueName: queue
       dlqName: dlq
+    anotherQueue:
+      queueName: another-queue
+      dlqName: another-dlq

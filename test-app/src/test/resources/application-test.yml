@@ -11,3 +11,6 @@ hmpps.sqs:
     mainQueue:
       dlqName: ${random.uuid}
       queueName: ${random.uuid}
+    anotherQueue:
+      dlqName: ${random.uuid}
+      queueName: ${random.uuid}
