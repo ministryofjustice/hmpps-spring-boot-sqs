@@ -18,5 +18,6 @@ data class HmppsQueueProperties(
     val dlqName: String,
     val dlqAccessKeyId: String = "",
     val dlqSecretAccessKey: String = "",
+    val asyncClient: Boolean = false,
   )
 }

@@ -1,6 +1,7 @@
 package uk.gov.justice.hmpps.sqs
 
 import com.amazonaws.services.sqs.AmazonSQS
+import com.amazonaws.services.sqs.AmazonSQSAsync
 import com.amazonaws.services.sqs.model.CreateQueueRequest
 import com.amazonaws.services.sqs.model.GetQueueAttributesResult
 import com.amazonaws.services.sqs.model.GetQueueUrlResult
@@ -314,6 +315,94 @@ class HmppsQueueFactoryTest {
     fun `should register multiple health indicators`() {
       verify(beanFactory).registerSingleton(eq("someQueueId-health"), any<HmppsQueueHealth>())
       verify(beanFactory).registerSingleton(eq("anotherQueueId-health"), any<HmppsQueueHealth>())
+    }
+  }
+
+  @Nested
+  inner class RegisterQueueWithAsyncClient {
+    private val someQueueConfig = QueueConfig(asyncClient = true, queueName = "some queue name", queueAccessKeyId = "some access key id", queueSecretAccessKey = "some secret access key", dlqName = "some dlq name", dlqAccessKeyId = "dlq access key id", dlqSecretAccessKey = "dlq secret access key")
+    private val hmppsQueueProperties = HmppsQueueProperties(queues = mapOf("someQueueId" to someQueueConfig))
+    private val sqsClient = mock<AmazonSQSAsync>()
+    private val sqsDlqClient = mock<AmazonSQSAsync>()
+    private lateinit var hmppsQueues: List<HmppsQueue>
+
+    @BeforeEach
+    fun `configure mocks and register queues`() {
+      whenever(sqsFactory.awsAmazonSQSAsync(any(), any(), any()))
+        .thenReturn(sqsDlqClient)
+        .thenReturn(sqsClient)
+      whenever(sqsClient.getQueueUrl("some queue name")).thenReturn(GetQueueUrlResult().withQueueUrl("some queue url"))
+      whenever(sqsDlqClient.getQueueUrl("some dlq name")).thenReturn(GetQueueUrlResult().withQueueUrl("some dlq url"))
+
+      hmppsQueues = hmppsQueueFactory.registerHmppsQueues(hmppsQueueProperties)
+    }
+
+    @Test
+    fun `should create async clients from sqs factory`() {
+      verify(sqsFactory).awsAmazonSQSAsync("dlq access key id", "dlq secret access key", "eu-west-2")
+      verify(sqsFactory).awsAmazonSQSAsync("some access key id", "some secret access key", "eu-west-2")
+    }
+
+    @Test
+    fun `should return async clients`() {
+      assertThat(hmppsQueues[0].sqsClient).isInstanceOf(AmazonSQSAsync::class.java)
+      assertThat(hmppsQueues[0].sqsDlqClient).isInstanceOf(AmazonSQSAsync::class.java)
+    }
+
+    @Test
+    fun `should return queue details`() {
+      assertThat(hmppsQueues[0].id).isEqualTo("someQueueId")
+      assertThat(hmppsQueues[0].queueName).isEqualTo("some queue name")
+      assertThat(hmppsQueues[0].dlqName).isEqualTo("some dlq name")
+    }
+
+    @Test
+    fun `should register a health indicator`() {
+      verify(beanFactory).registerSingleton(eq("someQueueId-health"), any<HmppsQueueHealth>())
+    }
+  }
+
+  @Nested
+  inner class RegisterQueueWithAsyncClientForLocalStack {
+    private val someQueueConfig = QueueConfig(asyncClient = true, queueName = "some queue name", dlqName = "some dlq name")
+    private val hmppsQueueProperties = HmppsQueueProperties(provider = "localstack", queues = mapOf("someQueueId" to someQueueConfig))
+    private val sqsClient = mock<AmazonSQSAsync>()
+    private val sqsDlqClient = mock<AmazonSQSAsync>()
+    private lateinit var hmppsQueues: List<HmppsQueue>
+
+    @BeforeEach
+    fun `configure mocks and register queues`() {
+      whenever(sqsFactory.localStackAmazonSQSAsync(any(), any()))
+        .thenReturn(sqsDlqClient)
+        .thenReturn(sqsClient)
+      whenever(sqsClient.getQueueUrl("some queue name")).thenReturn(GetQueueUrlResult().withQueueUrl("some queue url"))
+      whenever(sqsDlqClient.getQueueUrl("some dlq name")).thenReturn(GetQueueUrlResult().withQueueUrl("some dlq url"))
+      whenever(sqsDlqClient.getQueueAttributes(anyString(), anyList())).thenReturn(GetQueueAttributesResult().withAttributes(mapOf("QueueArn" to "some dlq arn")))
+
+      hmppsQueues = hmppsQueueFactory.registerHmppsQueues(hmppsQueueProperties)
+    }
+
+    @Test
+    fun `should create async clients from sqs factory`() {
+      verify(sqsFactory, times(2)).localStackAmazonSQSAsync("http://localhost:4566", "eu-west-2")
+    }
+
+    @Test
+    fun `should return async clients`() {
+      assertThat(hmppsQueues[0].sqsClient).isInstanceOf(AmazonSQSAsync::class.java)
+      assertThat(hmppsQueues[0].sqsDlqClient).isInstanceOf(AmazonSQSAsync::class.java)
+    }
+
+    @Test
+    fun `should return queue details`() {
+      assertThat(hmppsQueues[0].id).isEqualTo("someQueueId")
+      assertThat(hmppsQueues[0].queueName).isEqualTo("some queue name")
+      assertThat(hmppsQueues[0].dlqName).isEqualTo("some dlq name")
+    }
+
+    @Test
+    fun `should register a health indicator`() {
+      verify(beanFactory).registerSingleton(eq("someQueueId-health"), any<HmppsQueueHealth>())
     }
   }
 }
