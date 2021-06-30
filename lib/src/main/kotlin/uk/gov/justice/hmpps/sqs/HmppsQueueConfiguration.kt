@@ -11,11 +11,14 @@ import org.springframework.context.annotation.Configuration
 class HmppsQueueConfiguration {
 
   @Bean
+  fun hmppsQueueFactory(applicationContext: ConfigurableApplicationContext) = HmppsQueueFactory(applicationContext, AmazonSqsFactory())
+
+  @Bean
   fun hmppsQueueService(
     telemetryClient: TelemetryClient?,
-    applicationContext: ConfigurableApplicationContext,
+    hmppsQueueFactory: HmppsQueueFactory,
     hmppsQueueProperties: HmppsQueueProperties,
-  ) = HmppsQueueService(telemetryClient, HmppsQueueFactory(applicationContext, AmazonSqsFactory()), hmppsQueueProperties)
+  ) = HmppsQueueService(telemetryClient, hmppsQueueFactory, hmppsQueueProperties)
 
   @Bean
   fun hmppsQueueResource(hmppsQueueService: HmppsQueueService) = HmppsQueueResource(hmppsQueueService)

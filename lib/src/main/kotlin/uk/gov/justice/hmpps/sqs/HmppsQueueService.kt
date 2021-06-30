@@ -8,9 +8,11 @@ import com.microsoft.applicationinsights.TelemetryClient
 import org.slf4j.LoggerFactory
 import com.amazonaws.services.sqs.model.PurgeQueueRequest as AwsPurgeQueueRequest
 
+class MissingQueueException(message: String) : RuntimeException(message)
+
 class HmppsQueueService(
   private val telemetryClient: TelemetryClient?,
-  private val hmppsQueueFactory: HmppsQueueFactory,
+  hmppsQueueFactory: HmppsQueueFactory,
   hmppsQueueProperties: HmppsQueueProperties,
 ) {
 
@@ -21,15 +23,8 @@ class HmppsQueueService(
   private val hmppsQueues: MutableList<HmppsQueue> = mutableListOf()
 
   init {
-    hmppsQueues.addAll(hmppsQueueFactory.registerHmppsQueues(hmppsQueueProperties))
+    hmppsQueues.addAll(hmppsQueueFactory.createHmppsQueues(hmppsQueueProperties))
   }
-
-  /*
-   * This method is for creating a queue outside of HmppsQueueProperties, for example if you wish to customise your AmazonSQS instances but still receive the benefits of registering with the queue library.
-   * Note that beans will be created for the AmazonSQS clients you pass in.
-   */
-  fun createHmppsQueue(id: String, sqsClient: AmazonSQS, queueName: String, sqsDlqClient: AmazonSQS, dlqName: String) =
-    hmppsQueues.add(hmppsQueueFactory.registerHmppsQueue(id, sqsClient, queueName, sqsDlqClient, dlqName))
 
   fun findByQueueId(queueId: String) = hmppsQueues.associateBy { it.id }.getOrDefault(queueId, null)
   fun findByQueueName(queueName: String) = hmppsQueues.associateBy { it.queueName }.getOrDefault(queueName, null)

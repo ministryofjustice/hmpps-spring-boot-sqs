@@ -34,73 +34,7 @@ class HmppsQueueFactoryTest {
   }
 
   @Nested
-  inner class RegisterSingleHmppsQueue {
-
-    private lateinit var hmppsQueue: HmppsQueue
-    private val sqsClient = mock<AmazonSQS>()
-    private val sqsDlqClient = mock<AmazonSQS>()
-
-    @BeforeEach
-    fun `configure mocks and register queue`() {
-      whenever(sqsClient.getQueueUrl(anyString())).thenReturn(GetQueueUrlResult().withQueueUrl("some queue url"))
-      whenever(sqsDlqClient.getQueueUrl(anyString())).thenReturn(GetQueueUrlResult().withQueueUrl("some dlq url"))
-
-      hmppsQueue = hmppsQueueFactory.registerHmppsQueue("someQueueId", sqsClient, "some queue name", sqsDlqClient, "some dlq name")
-    }
-
-    @Test
-    fun `should return the queue details`() {
-      assertThat(hmppsQueue.id).isEqualTo("someQueueId")
-    }
-
-    @Test
-    fun `should return the queue AmazonSQS client`() {
-      assertThat(hmppsQueue.sqsClient).isEqualTo(sqsClient)
-    }
-
-    @Test
-    fun `should return the queue name`() {
-      assertThat(hmppsQueue.queueName).isEqualTo("some queue name")
-    }
-
-    @Test
-    fun `should return the queue url`() {
-      assertThat(hmppsQueue.queueUrl).isEqualTo("some queue url")
-    }
-
-    @Test
-    fun `should return the dlq client`() {
-      assertThat(hmppsQueue.sqsDlqClient).isEqualTo(sqsDlqClient)
-    }
-
-    @Test
-    fun `should return the dlq name`() {
-      assertThat(hmppsQueue.dlqName).isEqualTo("some dlq name")
-    }
-
-    @Test
-    fun `should return the dlq url`() {
-      assertThat(hmppsQueue.dlqUrl).isEqualTo("some dlq url")
-    }
-
-    @Test
-    fun `should register a health indicator`() {
-      verify(beanFactory).registerSingleton(eq("someQueueId-health"), any<HmppsQueueHealth>())
-    }
-
-    @Test
-    fun `should register the sqs client`() {
-      verify(beanFactory).registerSingleton("someQueueId-sqs-client", sqsClient)
-    }
-
-    @Test
-    fun `should register the sqs dlq client`() {
-      verify(beanFactory).registerSingleton("someQueueId-sqs-dlq-client", sqsDlqClient)
-    }
-  }
-
-  @Nested
-  inner class RegisterSingleAwsQueueFromProperties {
+  inner class `Create single AWS HmppsQueue` {
     private val someQueueConfig = QueueConfig(queueName = "some queue name", queueAccessKeyId = "some access key id", queueSecretAccessKey = "some secret access key", dlqName = "some dlq name", dlqAccessKeyId = "dlq access key id", dlqSecretAccessKey = "dlq secret access key")
     private val hmppsQueueProperties = HmppsQueueProperties(queues = mapOf("someQueueId" to someQueueConfig))
     private val sqsClient = mock<AmazonSQS>()
@@ -115,7 +49,7 @@ class HmppsQueueFactoryTest {
       whenever(sqsDlqClient.getQueueUrl(anyString())).thenReturn(GetQueueUrlResult().withQueueUrl("some dlq url"))
       whenever(sqsClient.getQueueUrl(anyString())).thenReturn(GetQueueUrlResult().withQueueUrl("some queue url"))
 
-      hmppsQueues = hmppsQueueFactory.registerHmppsQueues(hmppsQueueProperties)
+      hmppsQueues = hmppsQueueFactory.createHmppsQueues(hmppsQueueProperties)
     }
 
     @Test
@@ -180,7 +114,7 @@ class HmppsQueueFactoryTest {
   }
 
   @Nested
-  inner class RegisterSingleLocalStackQueueFromProperties {
+  inner class `Create single LocalStack HmppsQueue` {
     private val someQueueConfig = QueueConfig(queueName = "some queue name", dlqName = "some dlq name")
     private val hmppsQueueProperties = HmppsQueueProperties(provider = "localstack", queues = mapOf("someQueueId" to someQueueConfig))
     private val sqsClient = mock<AmazonSQS>()
@@ -196,7 +130,7 @@ class HmppsQueueFactoryTest {
       whenever(sqsDlqClient.getQueueUrl(anyString())).thenReturn(GetQueueUrlResult().withQueueUrl("some dlq url"))
       whenever(sqsDlqClient.getQueueAttributes(anyString(), anyList())).thenReturn(GetQueueAttributesResult().withAttributes(mapOf("QueueArn" to "some dlq arn")))
 
-      hmppsQueues = hmppsQueueFactory.registerHmppsQueues(hmppsQueueProperties)
+      hmppsQueues = hmppsQueueFactory.createHmppsQueues(hmppsQueueProperties)
     }
 
     @Test
@@ -270,7 +204,7 @@ class HmppsQueueFactoryTest {
   }
 
   @Nested
-  inner class RegisterMultipleQueuesFromProperties {
+  inner class `Create multiple AWS HmppsQueues` {
     private val someQueueConfig = QueueConfig(queueName = "some queue name", queueAccessKeyId = "some access key id", queueSecretAccessKey = "some secret access key", dlqName = "some dlq name", dlqAccessKeyId = "dlq access key id", dlqSecretAccessKey = "dlq secret access key")
     private val anotherQueueConfig = QueueConfig(queueName = "another queue name", queueAccessKeyId = "another access key id", queueSecretAccessKey = "another secret access key", dlqName = "another dlq name", dlqAccessKeyId = "another dlq access key id", dlqSecretAccessKey = "another dlq secret access key")
     private val hmppsQueueProperties = HmppsQueueProperties(queues = mapOf("someQueueId" to someQueueConfig, "anotherQueueId" to anotherQueueConfig))
@@ -290,7 +224,7 @@ class HmppsQueueFactoryTest {
       whenever(sqsClient.getQueueUrl("another queue name")).thenReturn(GetQueueUrlResult().withQueueUrl("another queue url"))
       whenever(sqsDlqClient.getQueueUrl("another dlq name")).thenReturn(GetQueueUrlResult().withQueueUrl("another dlq url"))
 
-      hmppsQueues = hmppsQueueFactory.registerHmppsQueues(hmppsQueueProperties)
+      hmppsQueues = hmppsQueueFactory.createHmppsQueues(hmppsQueueProperties)
     }
 
     @Test
@@ -319,8 +253,8 @@ class HmppsQueueFactoryTest {
   }
 
   @Nested
-  inner class RegisterQueueWithAsyncClient {
-    private val someQueueConfig = QueueConfig(asyncClient = true, queueName = "some queue name", queueAccessKeyId = "some access key id", queueSecretAccessKey = "some secret access key", dlqName = "some dlq name", dlqAccessKeyId = "dlq access key id", dlqSecretAccessKey = "dlq secret access key")
+  inner class `Create AWS HmppsQueue with asynchronous SQS clients` {
+    private val someQueueConfig = QueueConfig(asyncQueueClient = true, asyncDlqClient = true, queueName = "some queue name", queueAccessKeyId = "some access key id", queueSecretAccessKey = "some secret access key", dlqName = "some dlq name", dlqAccessKeyId = "dlq access key id", dlqSecretAccessKey = "dlq secret access key")
     private val hmppsQueueProperties = HmppsQueueProperties(queues = mapOf("someQueueId" to someQueueConfig))
     private val sqsClient = mock<AmazonSQSAsync>()
     private val sqsDlqClient = mock<AmazonSQSAsync>()
@@ -334,7 +268,7 @@ class HmppsQueueFactoryTest {
       whenever(sqsClient.getQueueUrl("some queue name")).thenReturn(GetQueueUrlResult().withQueueUrl("some queue url"))
       whenever(sqsDlqClient.getQueueUrl("some dlq name")).thenReturn(GetQueueUrlResult().withQueueUrl("some dlq url"))
 
-      hmppsQueues = hmppsQueueFactory.registerHmppsQueues(hmppsQueueProperties)
+      hmppsQueues = hmppsQueueFactory.createHmppsQueues(hmppsQueueProperties)
     }
 
     @Test
@@ -363,8 +297,8 @@ class HmppsQueueFactoryTest {
   }
 
   @Nested
-  inner class RegisterQueueWithAsyncClientForLocalStack {
-    private val someQueueConfig = QueueConfig(asyncClient = true, queueName = "some queue name", dlqName = "some dlq name")
+  inner class `Create LocalStack HmppsQueue with asynchronous SQS clients` {
+    private val someQueueConfig = QueueConfig(asyncQueueClient = true, asyncDlqClient = true, queueName = "some queue name", dlqName = "some dlq name")
     private val hmppsQueueProperties = HmppsQueueProperties(provider = "localstack", queues = mapOf("someQueueId" to someQueueConfig))
     private val sqsClient = mock<AmazonSQSAsync>()
     private val sqsDlqClient = mock<AmazonSQSAsync>()
@@ -379,7 +313,7 @@ class HmppsQueueFactoryTest {
       whenever(sqsDlqClient.getQueueUrl("some dlq name")).thenReturn(GetQueueUrlResult().withQueueUrl("some dlq url"))
       whenever(sqsDlqClient.getQueueAttributes(anyString(), anyList())).thenReturn(GetQueueAttributesResult().withAttributes(mapOf("QueueArn" to "some dlq arn")))
 
-      hmppsQueues = hmppsQueueFactory.registerHmppsQueues(hmppsQueueProperties)
+      hmppsQueues = hmppsQueueFactory.createHmppsQueues(hmppsQueueProperties)
     }
 
     @Test
@@ -401,8 +335,10 @@ class HmppsQueueFactoryTest {
     }
 
     @Test
-    fun `should register a health indicator`() {
+    fun `should register all beans created`() {
       verify(beanFactory).registerSingleton(eq("someQueueId-health"), any<HmppsQueueHealth>())
+      verify(beanFactory).registerSingleton(eq("someQueueId-sqs-client"), any<AmazonSQS>())
+      verify(beanFactory).registerSingleton(eq("someQueueId-sqs-dlq-client"), any<AmazonSQS>())
     }
   }
 }

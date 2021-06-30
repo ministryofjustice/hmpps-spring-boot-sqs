@@ -15,9 +15,10 @@ data class HmppsQueueProperties(
     val queueName: String,
     val queueAccessKeyId: String = "",
     val queueSecretAccessKey: String = "",
+    val asyncQueueClient: Boolean = false,
     val dlqName: String,
     val dlqAccessKeyId: String = "",
     val dlqSecretAccessKey: String = "",
-    val asyncClient: Boolean = false,
+    val asyncDlqClient: Boolean = false,
   )
 }

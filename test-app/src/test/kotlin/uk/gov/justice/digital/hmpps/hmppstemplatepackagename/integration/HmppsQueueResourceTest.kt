@@ -63,7 +63,7 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
       await untilCallTo { sqsDlqClient.countMessagesOnQueue(dlqUrl) } matches { it == 2 }
 
       webTestClient.put()
-        .uri("/queue-admin/retry-dlq/${hmppsQueueProperties.mainQueue().dlqName}")
+        .uri("/queue-admin/retry-dlq/${hmppsQueueProperties.mainQueueConfig().dlqName}")
         .headers { it.authToken() }
         .accept(MediaType.APPLICATION_JSON)
         .exchange()
@@ -83,7 +83,7 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
       await untilCallTo { anotherSqsDlqClient.countMessagesOnQueue(anotherDlqUrl) } matches { it == 2 }
 
       webTestClient.put()
-        .uri("/queue-admin/retry-dlq/${hmppsQueueProperties.anotherQueue().dlqName}")
+        .uri("/queue-admin/retry-dlq/${hmppsQueueProperties.anotherQueueConfig().dlqName}")
         .headers { it.authToken() }
         .accept(MediaType.APPLICATION_JSON)
         .exchange()
@@ -132,7 +132,7 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
       await untilCallTo { sqsDlqClient.countMessagesOnQueue(dlqUrl) } matches { it == 2 }
 
       webTestClient.put()
-        .uri("/queue-admin/purge-queue/${hmppsQueueProperties.mainQueue().dlqName}")
+        .uri("/queue-admin/purge-queue/${hmppsQueueProperties.mainQueueConfig().dlqName}")
         .headers { it.authToken() }
         .accept(MediaType.APPLICATION_JSON)
         .exchange()
@@ -148,7 +148,7 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
       await untilCallTo { anotherSqsDlqClient.countMessagesOnQueue(anotherDlqUrl) } matches { it == 2 }
 
       webTestClient.put()
-        .uri("/queue-admin/purge-queue/${hmppsQueueProperties.anotherQueue().dlqName}")
+        .uri("/queue-admin/purge-queue/${hmppsQueueProperties.anotherQueueConfig().dlqName}")
         .headers { it.authToken() }
         .accept(MediaType.APPLICATION_JSON)
         .exchange()
