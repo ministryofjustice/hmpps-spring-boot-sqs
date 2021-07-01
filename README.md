@@ -4,7 +4,7 @@ A helper library providing utilities for using `amazon-sqs-java-messaging-lib`
 
 ## :construction: THIS IS A WORK IN PROGRESS :construction:
 
-This library currently being developed and tested within the HMPPS Tech Team and is not currently intended for wider consumption. Please wait for an official v1.0.0.
+This library is currently being developed and tested within the HMPPS Tech Team and is not currently intended for wider consumption. Please wait for an official v1.0.0.
 
 ## Overview
 
@@ -30,7 +30,7 @@ implementation("uk.gov.justice.service.hmpps:hmpps-spring-boot-sqs:<library-vers
 implementation 'uk.gov.justice.service.hmpps:hmpps-spring-boot-sqs:<library-version>'
 ```
 
-Then register your queues with the `HmppsQueueService`, e.g. see [Admin API AWS config](https://github.com/ministryofjustice/hmpps-audit-api/blob/main/src/main/kotlin/uk/gov/justice/digital/hmpps/hmppsauditapi/config/SqsConfig.kt) and [Admin API Localstack config.](https://github.com/ministryofjustice/hmpps-audit-api/blob/main/src/main/kotlin/uk/gov/justice/digital/hmpps/hmppsauditapi/config/LocalStackConfig.kt)
+Then define some queues in the properties - see the test application in `test-app` which is a living example.
 
 ## How To Contribute To This Library
 
@@ -52,11 +52,90 @@ As a rule of thumb new features must:
 
 ## Features
 
+### HMPPS Queue Properties
+
+This library is driven by some configuration properties prefixed `hmpps.sqs` that are loaded into class `HmppsQueueProperties`. Based on the properties defined the library will attempt to:
+
+* create `AmazonSQS` beans for each queue defined
+* create a `HealthIndicator` for each queue which is registered with Spring Boot Actuator and appears on your `/health` page
+* add `HmpspQueueResource` to the project which provides endpoints for retrying DLQ messages and purging queues
+* create LocalStack queues for testing against
+
+Examples of property usage can be found in the test project in the following places:
+
+* Production: [test-app/.../values.yaml](https://github.com/ministryofjustice/hmpps-spring-boot-sqs/blob/main/test-app/helm_deploy/hmpps-template-kotlin/values.yaml#L33)
+* Running locally with LocalStack: [test-app/.../application-localstack.yml](https://github.com/ministryofjustice/hmpps-spring-boot-sqs/blob/main/test-app/src/main/resources/application-localstack.yml)
+* Integration Test: [test-app/.../application-test.yml#L8](https://github.com/ministryofjustice/hmpps-spring-boot-sqs/blob/main/test-app/src/test/resources/application-test.yml#L8)
+
+#### HmppsQueueProperties Definitions
+
+| Property | Default | Description |
+| -------- | ------- | ----------- |
+| provider | `aws` | `aws` for production or `localstack for` running locally / integration tests. (Testcontainers is not yet supported. Possibly coming soon). |
+| region   | `eu-west-2` | The AWS region where the queues live. |
+| localstackUrl | `http://localhost:4566` | Only used for `provider=localstack`. The location of the running LocalStack instance. |
+| queues   | | A map of `queueId` to `QueueConfig`. One entry is required for each queue. In production these are derived from environment variables with the prefix `HMPPS_SQS_QUEUES_` that should be populated from Kubernetes secrets (see below).
+
+Each queue defined in the `queues` map is defined in the `QueueConfig` property class
+
+| Property | Default | Description |
+| -------- | ------- | ----------- |
+| queueId | | The key to the `queues` map. A unique name for the queue configuration, used heavily when automatically creating Spring beans. |
+| queueName | | The name of the queue as recognised by AWS or LocalStack. |
+| queueAccessKeyId | | Only used for `provider=aws`. The AWS access key ID, should be derived from an environment variable of format `HMPPS_SQS_QUEUEU_<queueName>_ACCESS_KEY_ID`. |
+| queueSecretAccessKey | | Only used for `provider=aws`. The AWS secret access key ID, should be derived from an environment variable of format `HMPPS_SQS_QUEUEU_<queueName>_SECRET_ACCESS_KEY`. |
+| asyncQueueClient | false | If true then the `AmazonSQS` bean created will be an `AmazonSQSAsync` instance. |
+| dlqName | | The name of the queue's dead letter queue (DLQ) as recognised by AWS or LocalStack. |
+| dlqAccessKeyId | | Only used for `provider=aws`. The AWS access key ID of the DLQ, should be derived from an environment variable of format `HMPPS_SQS_QUEUEU_<queueName>_DLQ_ACCESS_KEY_ID`. |
+| dlqSecretAccessKey | | Only used for `provider=aws`. The AWS secret access key ID of the DLQ, should be derived from an environment variable of format `HMPPS_SQS_QUEUEU_<queueName>_DLQ_SECRET_ACCESS_KEY`. |
+| asyncDlqClient | false | If true then the `AmazonSQS` bean created will be an `AmazonSQSAsync` instance. |
+
+### AmazonSQS Beans
+
+Each queue defined in `HmppsQueueProperties` should have an `AmazonSQS` created for both the main queue and the associated dead letter queue (DLQ).
+
+The bean names have the following format and can be used with `@Qualifier` to inject the beans into another `@Component`:
+
+* main queue - `<queueId>-sqs-client`
+* DLQ - `<queueId>-sqs-dlq-client`
+
+If you provide your own beans with those names then this library will not create one.
+
+#### But I Don't Need a DLQ!
+
+This is currently unsupported as it is considered an edge case based on current practises in HMPPS.
+
+If this is a blocker to you using this library contact `#dps_tech_team` on MOJDT Slack.
+
+#### SpyBeans
+
+It is only possible to use the `@SpyBean` annotation for beans declared in a `@Configuration` class (unless you do some hacking with the Spring lifercycle support). As the library creates these beans on an ad hoc basis it is not possible to create spies for them.
+
+However, as mentioned above you can override the automatically generated beans with your own bean, e.g. with bean name `<queueId>-sqs-client` or `<queueId>-sqs-dlq-client`. If you do this in a `@TestConfiguration` using the `@Bean` annotation then it is possible to declare a corresponding SpyBean. `HmppsQueueFactory` provides factory methods to assist in creating such beans.
+
+See an example in the `test-app` clas [IntegratinTestBase](https://github.com/ministryofjustice/hmpps-spring-boot-sqs/blob/main/test-app/src/test/kotlin/uk/gov/justice/digital/hmpps/hmppstemplatepackagename/integration/IntegrationTestBase.kt).
+
+#### MockBeans
+
+MockBeans have no benefit over SpyBeans but they cause Spring to reload the application with a fresh context slowing down your tests. They probably work with this library in a similar way to SpyBeans but haven't been tested.
+
+Consider using a SpyBean instead and declaring it in the base IntegrationTest class which then allows you to mock and/or verify or neither depending upon the requirements of each test.
+
+#### Random Queue Names
+
+If you look in the `test-app`'s [application properties](https://github.com/ministryofjustice/hmpps-spring-boot-sqs/blob/main/test-app/src/test/resources/application-test.yml) you can see that it uses random queue names.
+
+When `provider=localstack` the queues are created in LocalStack as soon as the `AmazonSQS` beans are created. By using random queue names we can ensure that if Spring loads a new context during integration testing then the new context gets new queues which cannot interfere with tests from another context.
+
+If you need to know the actual queue names used you can find them in the Spring logs.
+
 ### Queue Health
 
 All queues should be included on an application's health page. An unhealthy queue indicates an unhealthy service.
 
-Class `HmppsQueueService` creates a standard `HmppsQueueHealth` bean for each registered `HmppsQueue`.
+For each queue defined in `HmppsQueueProperties` we create a `HmppsQueueHealth` bean.
+
+The Sprng beans produced have names of format `<queueId>-health`. If you provide your own bean of that name then this library will not create one.
 
 #### Testing Queue Health
 
@@ -78,7 +157,7 @@ Class `HmppsQueueResource` provides endpoints to retry and purge messages on a D
 
 #### Usage
 
-For transient errors we would typically create a Kubernetes Cronjob to automatically retry all DLQ messages. The Cronjob should be configured to run before [an alert triggers for the age of the DLQ message](https://github.com/ministryofjustice/cloud-platform-environments/blob/main/namespaces/live-1.cloud-platform.service.justice.gov.uk/offender-events-prod/09-prometheus-sqs-sns.yaml#L13) - typically every 10 minutes. See the [example Cronjob]( and the corresponding [Kuberenetes Cronjob](https://github.com/ministryofjustice/hmpps-spring-boot-sqs/blob/main/test-app/helm_deploy/hmpps-template-kotlin/example/housekeeping-cronjob.yaml) for more details.
+For transient errors we would typically create a Kubernetes Cronjob to automatically retry all DLQ messages. The Cronjob should be configured to run before [an alert triggers for the age of the DLQ message](https://github.com/ministryofjustice/cloud-platform-environments/blob/main/namespaces/live-1.cloud-platform.service.justice.gov.uk/offender-events-prod/09-prometheus-sqs-sns.yaml#L13) - typically every 10 minutes. See the [example Cronjob](https://github.com/ministryofjustice/hmpps-spring-boot-sqs/blob/main/test-app/helm_deploy/hmpps-template-kotlin/example/housekeeping-cronjob.yaml) for more details.
 
 Unrecoverable errors should be fixed such that they no longer fail and are not sent to the DLQ. In the meantime these can be removed by purging the DLQ to prevent the alert from firing.
 
@@ -154,17 +233,17 @@ Then run the `test-app` in your IDE from main class `HmppsTemplateKotlin`.
 
 You will find that this project doesn't contain a set-up script to create localstack resources. This is because there's an issue with using `@SpringBootTest` where if tests running in different Spring contexts share the same queue, the message listener carries on reading from the queue even when the context is not currently active. This results in contamination between tests - sometimes testB fails because the message it was expecting has been processed by testA's message listener.
 
-To make sure that each Spring context works in isolation we create the localstack resources when starting the application.
+To make sure that each Spring context works in isolation we create the localstack resources with randome names when starting the application.
 
 ##### Mechanism
 
-The application configuration properties in `application.yml` set the queue and DLQ names to `${random.uuid}`. This means every time the property is read it generates a random queue/DLQ name.
+The application configuration properties in `application-test.yml` set the queue and DLQ names to `${random.uuid}`. This means every time the property is read it generates a random queue/DLQ name.
 
-The configuration properties are loaded into class `SqsConfigProperties`. This is to guarantee that the queue names are only generated once per context, in the properties bean.
+The configuration properties are loaded into class `HmppsQueueProperties`. This is to guarantee that the queue names are only generated once per context, in the properties bean.
 
-The configuration class `SqsConfig` then takes the queue names from `SqsConfigProperties` and creates the queues during application startup.
+The class `HmpspQueueFactory` then takes the queue names from `HmpspQueueProperties` and creates the queues during application startup.
 
-The JMS message listener defined in class `MessageListener` sets the destination queue name from the `SqsConfigProperties` bean. Note that due to the way Spring loads `@ConfigurationProperties` beans some complicated `SpEL` is required to define the queue name in the `@JmsListener` annotation. See the note about the convention `<prefix>-<fqn>` in [the Spring documentation](https://docs.spring.io/spring-boot/docs/2.1.13.RELEASE/reference/html/boot-features-external-config.html#boot-features-external-config-typesafe-configuration-properties).
+The JMS message listener defined in class `MessageListener` sets the destination queue name from the `HmppsQueueProperties` bean. Note that due to the way Spring loads `@ConfigurationProperties` beans some complicated `SpEL` is required to define the queue name in the `@JmsListener` annotation. See the note about the convention `<prefix>-<fqn>` in [the Spring documentation](https://docs.spring.io/spring-boot/docs/2.1.13.RELEASE/reference/html/boot-features-external-config.html#boot-features-external-config-typesafe-configuration-properties).
 
 ## Publishing Locally (to test against other projects)
 
