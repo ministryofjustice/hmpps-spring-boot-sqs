@@ -24,33 +24,39 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.mockito.ArgumentMatchers.anyString
-import org.springframework.beans.factory.config.ConfigurableListableBeanFactory
-import org.springframework.context.ConfigurableApplicationContext
 import com.amazonaws.services.sqs.model.PurgeQueueRequest as AwsPurgeQueueRequest
 
 class HmppsQueueServiceTest {
 
   private val telemetryClient = mock<TelemetryClient>()
-  private val context = mock<ConfigurableApplicationContext>()
-  private val beanFactory = mock<ConfigurableListableBeanFactory>()
-  private val hmppsQueueService = HmppsQueueService(telemetryClient, context)
-
-  init {
-    whenever(context.beanFactory).thenReturn(beanFactory)
-  }
+  private val hmppsQueueFactory = mock<HmppsQueueFactory>()
+  private val hmppsQueueProperties = mock<HmppsQueueProperties>()
+  private lateinit var hmppsQueueService: HmppsQueueService
 
   @Nested
   inner class HmppsQueues {
 
-    private val sqsAwsClient = mock<AmazonSQS>()
-    private val sqsAwsDlqClient = mock<AmazonSQS>()
+    private val sqsClient = mock<AmazonSQS>()
+    private val sqsDlqClient = mock<AmazonSQS>()
 
     @BeforeEach
     fun `add test data`() {
-      whenever(sqsAwsClient.getQueueUrl(anyString())).thenReturn(GetQueueUrlResult().withQueueUrl("some queue url"))
-      whenever(sqsAwsDlqClient.getQueueUrl(anyString())).thenReturn(GetQueueUrlResult().withQueueUrl("some dlq url"))
-      hmppsQueueService.registerHmppsQueue("some queue id", sqsAwsClient, "some queue name", sqsAwsDlqClient, "some dlq name")
-      hmppsQueueService.registerHmppsQueue("another queue id", mock(), "another queue name", mock(), "another dlq name")
+      whenever(sqsClient.getQueueUrl(anyString())).thenReturn(GetQueueUrlResult().withQueueUrl("some queue url"))
+      whenever(sqsDlqClient.getQueueUrl(anyString())).thenReturn(GetQueueUrlResult().withQueueUrl("some dlq url"))
+      whenever(hmppsQueueFactory.createHmppsQueues(any()))
+        .thenReturn(
+          listOf(
+            HmppsQueue("some queue id", sqsClient, "some queue name", sqsDlqClient, "some dlq name"),
+            HmppsQueue("another queue id", mock(), "another queue name", mock(), "another dlq name"),
+          )
+        )
+
+      hmppsQueueService = HmppsQueueService(telemetryClient, hmppsQueueFactory, hmppsQueueProperties)
+    }
+
+    @Test
+    fun `finds an hmpps queue by queue id`() {
+      assertThat(hmppsQueueService.findByQueueId("some queue id")?.queueUrl).isEqualTo("some queue url")
     }
 
     @Test
@@ -61,6 +67,11 @@ class HmppsQueueServiceTest {
     @Test
     fun `finds an hmpps queue by dlq name`() {
       assertThat(hmppsQueueService.findByDlqName("some dlq name")?.dlqUrl).isEqualTo("some dlq url")
+    }
+
+    @Test
+    fun `returns null if queue id not found`() {
+      assertThat(hmppsQueueService.findByQueueId("unknown")).isNull()
     }
 
     @Test
@@ -84,6 +95,8 @@ class HmppsQueueServiceTest {
     fun `stub getting of queue url`() {
       whenever(queueSqs.getQueueUrl(anyString())).thenReturn(GetQueueUrlResult().withQueueUrl("queueUrl"))
       whenever(dlqSqs.getQueueUrl(anyString())).thenReturn(GetQueueUrlResult().withQueueUrl("dlqUrl"))
+
+      hmppsQueueService = HmppsQueueService(telemetryClient, hmppsQueueFactory, hmppsQueueProperties)
     }
 
     @Nested
@@ -133,6 +146,8 @@ class HmppsQueueServiceTest {
               Message().withBody("message-body").withReceiptHandle("message-receipt-handle")
             )
           )
+
+        hmppsQueueService = HmppsQueueService(telemetryClient, hmppsQueueFactory, hmppsQueueProperties)
       }
 
       @Test
@@ -210,6 +225,8 @@ class HmppsQueueServiceTest {
               Message().withBody("message-2-body").withReceiptHandle("message-2-receipt-handle")
             )
           )
+
+        hmppsQueueService = HmppsQueueService(telemetryClient, hmppsQueueFactory, hmppsQueueProperties)
       }
 
       @Test
@@ -268,6 +285,8 @@ class HmppsQueueServiceTest {
             )
           )
           .thenReturn(ReceiveMessageResult())
+
+        hmppsQueueService = HmppsQueueService(telemetryClient, hmppsQueueFactory, hmppsQueueProperties)
       }
 
       @Test
@@ -331,15 +350,22 @@ class HmppsQueueServiceTest {
   @Nested
   inner class FindQueueToPurge {
 
-    private val sqsAwsClient = mock<AmazonSQS>()
-    private val sqsAwsDlqClient = mock<AmazonSQS>()
+    private val sqsClient = mock<AmazonSQS>()
+    private val sqsDlqClient = mock<AmazonSQS>()
 
     @BeforeEach
     fun `add test data`() {
-      whenever(sqsAwsClient.getQueueUrl(anyString())).thenReturn(GetQueueUrlResult().withQueueUrl("some queue url"))
-      whenever(sqsAwsDlqClient.getQueueUrl(anyString())).thenReturn(GetQueueUrlResult().withQueueUrl("some dlq url"))
-      hmppsQueueService.registerHmppsQueue("some queue id", sqsAwsClient, "some queue name", sqsAwsDlqClient, "some dlq name")
-      hmppsQueueService.registerHmppsQueue("another queue id", mock(), "another queue name", mock(), "another dlq name")
+      whenever(sqsClient.getQueueUrl(anyString())).thenReturn(GetQueueUrlResult().withQueueUrl("some queue url"))
+      whenever(sqsDlqClient.getQueueUrl(anyString())).thenReturn(GetQueueUrlResult().withQueueUrl("some dlq url"))
+      whenever(hmppsQueueFactory.createHmppsQueues(any()))
+        .thenReturn(
+          listOf(
+            HmppsQueue("some queue id", sqsClient, "some queue name", sqsDlqClient, "some dlq name"),
+            HmppsQueue("another queue id", mock(), "another queue name", mock(), "another dlq name"),
+          )
+        )
+
+      hmppsQueueService = HmppsQueueService(telemetryClient, hmppsQueueFactory, hmppsQueueProperties)
     }
 
     @Test
@@ -367,22 +393,23 @@ class HmppsQueueServiceTest {
   @Nested
   inner class PurgeQueue {
 
-    private val sqsAwsClient = mock<AmazonSQS>()
+    private val sqsClient = mock<AmazonSQS>()
+    private val hmppsQueueService = HmppsQueueService(telemetryClient, hmppsQueueFactory, hmppsQueueProperties)
 
     @Test
     fun `no messages found, should not attempt to purge queue`() {
       stubMessagesOnQueue(0)
 
-      hmppsQueueService.purgeQueue(PurgeQueueRequest("some queue", sqsAwsClient, "some queue url"))
+      hmppsQueueService.purgeQueue(PurgeQueueRequest("some queue", sqsClient, "some queue url"))
 
-      verify(sqsAwsClient, times(0)).purgeQueue(any())
+      verify(sqsClient, times(0)).purgeQueue(any())
     }
 
     @Test
     fun `no messages found, should not create telemetry event`() {
       stubMessagesOnQueue(0)
 
-      hmppsQueueService.purgeQueue(PurgeQueueRequest("some queue", sqsAwsClient, "some queue url"))
+      hmppsQueueService.purgeQueue(PurgeQueueRequest("some queue", sqsClient, "some queue url"))
 
       verifyNoMoreInteractions(telemetryClient)
     }
@@ -391,16 +418,16 @@ class HmppsQueueServiceTest {
     fun `messages found, should attempt to purge queue`() {
       stubMessagesOnQueue(1)
 
-      hmppsQueueService.purgeQueue(PurgeQueueRequest("some queue", sqsAwsClient, "some queue url"))
+      hmppsQueueService.purgeQueue(PurgeQueueRequest("some queue", sqsClient, "some queue url"))
 
-      verify(sqsAwsClient).purgeQueue(AwsPurgeQueueRequest("some queue url"))
+      verify(sqsClient).purgeQueue(AwsPurgeQueueRequest("some queue url"))
     }
 
     @Test
     fun `messages found, should create telemetry event`() {
       stubMessagesOnQueue(1)
 
-      hmppsQueueService.purgeQueue(PurgeQueueRequest("some queue", sqsAwsClient, "some queue url"))
+      hmppsQueueService.purgeQueue(PurgeQueueRequest("some queue", sqsClient, "some queue url"))
 
       verify(telemetryClient).trackEvent(
         eq("PurgeQueue"),
@@ -416,15 +443,15 @@ class HmppsQueueServiceTest {
     fun `should return number of messages found to purge`() {
       stubMessagesOnQueue(5)
 
-      val result = hmppsQueueService.purgeQueue(PurgeQueueRequest("some queue", sqsAwsClient, "some queue url"))
+      val result = hmppsQueueService.purgeQueue(PurgeQueueRequest("some queue", sqsClient, "some queue url"))
 
       assertThat(result.messagesFoundCount).isEqualTo(5)
     }
 
     private fun stubMessagesOnQueue(messageCount: Int) {
-      whenever(sqsAwsClient.getQueueUrl(anyString()))
+      whenever(sqsClient.getQueueUrl(anyString()))
         .thenReturn(GetQueueUrlResult().withQueueUrl("some queue url"))
-      whenever(sqsAwsClient.getQueueAttributes(anyString(), eq(listOf("ApproximateNumberOfMessages"))))
+      whenever(sqsClient.getQueueAttributes(anyString(), eq(listOf("ApproximateNumberOfMessages"))))
         .thenReturn(GetQueueAttributesResult().withAttributes(mapOf("ApproximateNumberOfMessages" to "$messageCount")))
     }
   }

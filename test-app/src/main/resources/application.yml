@@ -59,6 +59,7 @@ management:
 oauth:
   endpoint.url: http://localhost:8090/auth
 
+# These should not be required in your main application and should instead be provided by helm values referencing Kuberentes secrets - these are only here for unit tests
 hmpps.sqs:
   queues:
     mainQueue:

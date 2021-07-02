@@ -6,10 +6,15 @@ import com.amazonaws.services.sqs.model.Message
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest
 import com.microsoft.applicationinsights.TelemetryClient
 import org.slf4j.LoggerFactory
-import org.springframework.context.ConfigurableApplicationContext
 import com.amazonaws.services.sqs.model.PurgeQueueRequest as AwsPurgeQueueRequest
 
-class HmppsQueueService(private val telemetryClient: TelemetryClient?, private val context: ConfigurableApplicationContext) {
+class MissingQueueException(message: String) : RuntimeException(message)
+
+class HmppsQueueService(
+  private val telemetryClient: TelemetryClient?,
+  hmppsQueueFactory: HmppsQueueFactory,
+  hmppsQueueProperties: HmppsQueueProperties,
+) {
 
   companion object {
     private val log = LoggerFactory.getLogger(this::class.java)
@@ -17,12 +22,11 @@ class HmppsQueueService(private val telemetryClient: TelemetryClient?, private v
 
   private val hmppsQueues: MutableList<HmppsQueue> = mutableListOf()
 
-  fun registerHmppsQueue(id: String, sqsAwsClient: AmazonSQS, queueName: String, sqsAwsDlqClient: AmazonSQS, dlqName: String) {
-    val hmppsQueue = HmppsQueue(id, sqsAwsClient, queueName, sqsAwsDlqClient, dlqName)
-    hmppsQueues += hmppsQueue
-    context.beanFactory.registerSingleton("${hmppsQueue.id}-health", HmppsQueueHealth(hmppsQueue))
+  init {
+    hmppsQueues.addAll(hmppsQueueFactory.createHmppsQueues(hmppsQueueProperties))
   }
 
+  fun findByQueueId(queueId: String) = hmppsQueues.associateBy { it.id }.getOrDefault(queueId, null)
   fun findByQueueName(queueName: String) = hmppsQueues.associateBy { it.queueName }.getOrDefault(queueName, null)
   fun findByDlqName(dlqName: String) = hmppsQueues.associateBy { it.dlqName }.getOrDefault(dlqName, null)
 
@@ -35,13 +39,13 @@ class HmppsQueueService(private val telemetryClient: TelemetryClient?, private v
       .map { retryDlqRequest -> retryDlqMessages(retryDlqRequest) }
 
   private fun HmppsQueue.retryDlqMessages(): RetryDlqResult {
-    val messageCount = sqsAwsDlqClient.countMessagesOnQueue(dlqUrl)
+    val messageCount = sqsDlqClient.countMessagesOnQueue(dlqUrl)
     val messages = mutableListOf<Message>()
     repeat(messageCount) {
-      sqsAwsDlqClient.receiveMessage(ReceiveMessageRequest(dlqUrl).withMaxNumberOfMessages(1)).messages.firstOrNull()
+      sqsDlqClient.receiveMessage(ReceiveMessageRequest(dlqUrl).withMaxNumberOfMessages(1)).messages.firstOrNull()
         ?.let { msg ->
-          sqsAwsClient.sendMessage(queueUrl, msg.body)
-          sqsAwsDlqClient.deleteMessage(DeleteMessageRequest(dlqUrl, msg.receiptHandle))
+          sqsClient.sendMessage(queueUrl, msg.body)
+          sqsDlqClient.deleteMessage(DeleteMessageRequest(dlqUrl, msg.receiptHandle))
           messages += msg
         }
     }
@@ -64,9 +68,9 @@ class HmppsQueueService(private val telemetryClient: TelemetryClient?, private v
 
   fun findQueueToPurge(queueName: String): PurgeQueueRequest? =
     findByQueueName(queueName)
-      ?.let { hmppsQueue -> PurgeQueueRequest(hmppsQueue.queueName, hmppsQueue.sqsAwsClient, hmppsQueue.queueUrl) }
+      ?.let { hmppsQueue -> PurgeQueueRequest(hmppsQueue.queueName, hmppsQueue.sqsClient, hmppsQueue.queueUrl) }
       ?: findByDlqName(queueName)
-        ?.let { hmppsQueue -> PurgeQueueRequest(hmppsQueue.dlqName, hmppsQueue.sqsAwsDlqClient, hmppsQueue.dlqUrl) }
+        ?.let { hmppsQueue -> PurgeQueueRequest(hmppsQueue.dlqName, hmppsQueue.sqsDlqClient, hmppsQueue.dlqUrl) }
 }
 
 data class RetryDlqRequest(val hmppsQueue: HmppsQueue)
