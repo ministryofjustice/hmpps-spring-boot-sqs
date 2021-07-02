@@ -73,11 +73,11 @@ Each queue defined in the `queues` map is defined in the `QueueConfig` property 
 | queueId | | The key to the `queues` map. A unique name for the queue configuration, used heavily when automatically creating Spring beans. |
 | queueName | | The name of the queue as recognised by AWS or LocalStack. |
 | queueAccessKeyId | | Only used for `provider=aws`. The AWS access key ID, should be derived from an environment variable of format `HMPPS_SQS_QUEUE_<queueName>_ACCESS_KEY_ID`. |
-| queueSecretAccessKey | | Only used for `provider=aws`. The AWS secret access key ID, should be derived from an environment variable of format `HMPPS_SQS_QUEUE_<queueName>_SECRET_ACCESS_KEY`. |
+| queueSecretAccessKey | | Only used for `provider=aws`. The AWS secret access key, should be derived from an environment variable of format `HMPPS_SQS_QUEUE_<queueName>_SECRET_ACCESS_KEY`. |
 | asyncQueueClient | false | If true then the `AmazonSQS` bean created will be an `AmazonSQSAsync` instance. |
 | dlqName | | The name of the queue's dead letter queue (DLQ) as recognised by AWS or LocalStack. |
 | dlqAccessKeyId | | Only used for `provider=aws`. The AWS access key ID of the DLQ, should be derived from an environment variable of format `HMPPS_SQS_QUEUE_<queueName>_DLQ_ACCESS_KEY_ID`. |
-| dlqSecretAccessKey | | Only used for `provider=aws`. The AWS secret access key ID of the DLQ, should be derived from an environment variable of format `HMPPS_SQS_QUEUE_<queueName>_DLQ_SECRET_ACCESS_KEY`. |
+| dlqSecretAccessKey | | Only used for `provider=aws`. The AWS secret access key of the DLQ, should be derived from an environment variable of format `HMPPS_SQS_QUEUE_<queueName>_DLQ_SECRET_ACCESS_KEY`. |
 | asyncDlqClient | false | If true then the `AmazonSQS` bean created will be an `AmazonSQSAsync` instance. |
 
 ### AmazonSQS Beans
@@ -95,7 +95,7 @@ If for any reason you don't want to use the `AmazonSQS` beans automatically crea
 
 At the point this library attempts to generate any bean and register with the `ApplicationContext` if it finds an existing bean with the same name then it does nothing and uses the existing bean.
 
-Ao first find the bean names you wish to override as mentioned in [AmazonSQS Beans](#amazonsqs-beans). Then create your own AmazonSQS bean with the same name.
+So first find the bean names you wish to override as mentioned in [AmazonSQS Beans](#amazonsqs-beans). Then create your own AmazonSQS bean with the same name.
 
 #### I Don't Need a DLQ. Why Is It Mandatory?
 
@@ -123,7 +123,9 @@ If you look in the `test-app`'s [application properties](https://github.com/mini
 
 When `provider=localstack` the queues are created in LocalStack as soon as the `AmazonSQS` beans are created. By using random queue names we can ensure that if Spring loads a new context during integration testing then the new context gets new queues which cannot interfere with tests from another context.
 
-If you need to know the actual queue names used you can find them in the Spring logs.
+If you need to know the actual queue names used you can find them in the Spring logs. You can also see them in LocalStack with command:
+
+`AWS_ACCESS_KEY_ID=foobar AWS_SECRET_ACCESS_KEY=foobar aws --endpoint-url=http://localhost:4566 --region=eu-west-2 sqs list-queues`
 
 ### Queue Health
 
