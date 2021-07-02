@@ -46,6 +46,7 @@ class HmppsQueueFactoryTest {
       whenever(sqsFactory.awsAmazonSQS(any(), any(), any()))
         .thenReturn(sqsDlqClient)
         .thenReturn(sqsClient)
+        .thenReturn(sqsClient)
       whenever(sqsDlqClient.getQueueUrl(anyString())).thenReturn(GetQueueUrlResult().withQueueUrl("some dlq url"))
       whenever(sqsClient.getQueueUrl(anyString())).thenReturn(GetQueueUrlResult().withQueueUrl("some queue url"))
 
@@ -110,6 +111,11 @@ class HmppsQueueFactoryTest {
     @Test
     fun `should register the sqs dlq client`() {
       verify(beanFactory).registerSingleton("someQueueId-sqs-dlq-client", sqsDlqClient)
+    }
+
+    @Test
+    fun `should register the jms listener factory`() {
+      verify(beanFactory).registerSingleton(eq("someQueueId-jms-listener-factory"), any<HmppsQueueJmsListenerContainerFactory>())
     }
   }
 
@@ -293,6 +299,9 @@ class HmppsQueueFactoryTest {
     @Test
     fun `should register a health indicator`() {
       verify(beanFactory).registerSingleton(eq("someQueueId-health"), any<HmppsQueueHealth>())
+      verify(beanFactory).registerSingleton(eq("someQueueId-sqs-client"), any<AmazonSQS>())
+      verify(beanFactory).registerSingleton(eq("someQueueId-sqs-dlq-client"), any<AmazonSQS>())
+      verify(beanFactory).registerSingleton(eq("someQueueId-jms-listener-factory"), any<HmppsQueueJmsListenerContainerFactory>())
     }
   }
 
@@ -339,6 +348,7 @@ class HmppsQueueFactoryTest {
       verify(beanFactory).registerSingleton(eq("someQueueId-health"), any<HmppsQueueHealth>())
       verify(beanFactory).registerSingleton(eq("someQueueId-sqs-client"), any<AmazonSQS>())
       verify(beanFactory).registerSingleton(eq("someQueueId-sqs-dlq-client"), any<AmazonSQS>())
+      verify(beanFactory).registerSingleton(eq("someQueueId-jms-listener-factory"), any<HmppsQueueJmsListenerContainerFactory>())
     }
   }
 }

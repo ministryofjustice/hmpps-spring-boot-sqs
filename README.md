@@ -127,6 +127,22 @@ If you need to know the actual queue names used you can find them in the Spring 
 
 `AWS_ACCESS_KEY_ID=foobar AWS_SECRET_ACCESS_KEY=foobar aws --endpoint-url=http://localhost:4566 --region=eu-west-2 sqs list-queues`
 
+### JmsListenerContainerFactory
+
+To read from a queue with JMS we need a `JmsListenerContainerFactory` for each queue which can then be referenced in the `@JmsListener` annotation on the `containerFactory` attribute.
+
+This library will create a container factory for each queue defined in `HmppsQueueProperties` and save them in proxy class `HmppsQueueContainerFactoryProxy`. The proxy can then be defined as the `containerFactory`.
+
+It should also be noted that the `@EnableJms` annotation is also included by this library.
+
+This means that the only thing you need to do to get a JMS listener working for each queue in `HmppsQueueProperties` is use the `HmppsQueueContainerFactoryProxy` container factory.
+
+An example is available in the `test-app`'s (listeners)[https://github.com/ministryofjustice/hmpps-spring-boot-sqs/blob/main/test-app/src/main/kotlin/uk/gov/justice/digital/hmpps/hmppstemplatepackagename/service/MessageListener.kt].
+
+#### Overriding the JmsListenerContainerFactory
+
+If you don't wish to use the `HmppsQueueContainerFactoryProxy` because you want to configure your listener in a different way then simply create your own `DefaultJmsListenerContainerFactory` and reference it on the `@JmsListener` annotation.
+
 ### Queue Health
 
 All queues should be included on an application's health page. An unhealthy queue indicates an unhealthy service.

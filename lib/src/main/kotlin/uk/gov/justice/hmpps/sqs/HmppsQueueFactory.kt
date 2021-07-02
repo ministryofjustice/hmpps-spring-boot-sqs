@@ -1,5 +1,7 @@
 package uk.gov.justice.hmpps.sqs
 
+import com.amazon.sqs.javamessaging.ProviderConfiguration
+import com.amazon.sqs.javamessaging.SQSConnectionFactory
 import com.amazonaws.services.sqs.AmazonSQS
 import com.amazonaws.services.sqs.model.CreateQueueRequest
 import com.amazonaws.services.sqs.model.QueueAttributeName
@@ -7,7 +9,10 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.boot.actuate.health.HealthIndicator
 import org.springframework.context.ConfigurableApplicationContext
+import org.springframework.jms.config.DefaultJmsListenerContainerFactory
+import org.springframework.jms.support.destination.DynamicDestinationResolver
 import uk.gov.justice.hmpps.sqs.HmppsQueueProperties.QueueConfig
+import javax.jms.Session
 
 class HmppsQueueFactory(
   private val context: ConfigurableApplicationContext,
@@ -24,34 +29,34 @@ class HmppsQueueFactory(
         val sqsClient = getOrDefaultSqsClient(queueId, queueConfig, hmppsQueueProperties, sqsDlqClient)
         HmppsQueue(queueId, sqsClient, queueConfig.queueName, sqsDlqClient, queueConfig.dlqName)
           .also { getOrDefaultHealthIndicator(it) }
+          .also { createJmsListenerContainerFactory(it) }
       }.toList()
 
   private fun getOrDefaultSqsDlqClient(queueId: String, queueConfig: QueueConfig, hmppsQueueProperties: HmppsQueueProperties): AmazonSQS =
-    "$queueId-sqs-dlq-client".let { beanName ->
-      runCatching { context.beanFactory.getBean(beanName) as AmazonSQS }
-        .getOrElse {
-          createSqsDlqClient(queueConfig, hmppsQueueProperties)
-            .also { context.beanFactory.registerSingleton(beanName, it) }
-        }
+    getOrDefaultBean("$queueId-sqs-dlq-client") {
+      createSqsDlqClient(queueConfig, hmppsQueueProperties)
     }
 
   private fun getOrDefaultSqsClient(queueId: String, queueConfig: QueueConfig, hmppsQueueProperties: HmppsQueueProperties, sqsDlqClient: AmazonSQS): AmazonSQS =
-    "$queueId-sqs-client".let { beanName ->
-      runCatching { context.beanFactory.getBean(beanName) as AmazonSQS }
-        .getOrElse {
-          createSqsClient(queueConfig, hmppsQueueProperties, sqsDlqClient)
-            .also { context.beanFactory.registerSingleton(beanName, it) }
-        }
+    getOrDefaultBean("$queueId-sqs-client") {
+      createSqsClient(queueConfig, hmppsQueueProperties, sqsDlqClient)
     }
 
   private fun getOrDefaultHealthIndicator(hmppsQueue: HmppsQueue): HealthIndicator =
-    "${hmppsQueue.id}-health".let { beanName ->
-      runCatching { context.beanFactory.getBean(beanName) as HealthIndicator }
-        .getOrElse {
-          HmppsQueueHealth(hmppsQueue)
-            .also { context.beanFactory.registerSingleton(beanName, it) }
-        }
+    getOrDefaultBean("${hmppsQueue.id}-health") {
+      HmppsQueueHealth(hmppsQueue)
     }
+
+  private fun createJmsListenerContainerFactory(hmppsQueue: HmppsQueue): HmppsQueueJmsListenerContainerFactory =
+    getOrDefaultBean("${hmppsQueue.id}-jms-listener-factory") {
+      HmppsQueueJmsListenerContainerFactory(hmppsQueue.queueName, createJmsListenerContainerFactory(hmppsQueue.sqsClient))
+    }
+
+  private inline fun <reified T> getOrDefaultBean(beanName: String, createDefaultBean: () -> T) =
+    runCatching { context.beanFactory.getBean(beanName) as T }
+      .getOrElse {
+        createDefaultBean().also { bean -> context.beanFactory.registerSingleton(beanName, bean) }
+      }
 
   private fun createSqsDlqClient(queueConfig: QueueConfig, hmppsQueueProperties: HmppsQueueProperties): AmazonSQS =
     with(hmppsQueueProperties) {
@@ -118,4 +123,13 @@ class HmppsQueueFactory(
           )
         )
       }
+
+  fun createJmsListenerContainerFactory(awsSqsClient: AmazonSQS): DefaultJmsListenerContainerFactory =
+    DefaultJmsListenerContainerFactory().apply {
+      setConnectionFactory(SQSConnectionFactory(ProviderConfiguration(), awsSqsClient))
+      setDestinationResolver(DynamicDestinationResolver())
+      setConcurrency("1-1")
+      setSessionAcknowledgeMode(Session.CLIENT_ACKNOWLEDGE)
+      setErrorHandler { t: Throwable? -> log.error("Error caught in jms listener", t) }
+    }
 }
