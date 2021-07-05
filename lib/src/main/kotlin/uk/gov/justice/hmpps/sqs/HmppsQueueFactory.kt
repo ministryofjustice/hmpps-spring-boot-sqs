@@ -10,7 +10,6 @@ import org.slf4j.LoggerFactory
 import org.springframework.boot.actuate.health.HealthIndicator
 import org.springframework.context.ConfigurableApplicationContext
 import org.springframework.jms.config.DefaultJmsListenerContainerFactory
-import org.springframework.jms.support.destination.DynamicDestinationResolver
 import uk.gov.justice.hmpps.sqs.HmppsQueueProperties.QueueConfig
 import javax.jms.Session
 
@@ -29,7 +28,7 @@ class HmppsQueueFactory(
         val sqsClient = getOrDefaultSqsClient(queueId, queueConfig, hmppsQueueProperties, sqsDlqClient)
         HmppsQueue(queueId, sqsClient, queueConfig.queueName, sqsDlqClient, queueConfig.dlqName)
           .also { getOrDefaultHealthIndicator(it) }
-          .also { createJmsListenerContainerFactory(it) }
+          .also { createJmsListenerContainerFactory(it, hmppsQueueProperties) }
       }.toList()
 
   private fun getOrDefaultSqsDlqClient(queueId: String, queueConfig: QueueConfig, hmppsQueueProperties: HmppsQueueProperties): AmazonSQS =
@@ -47,11 +46,12 @@ class HmppsQueueFactory(
       HmppsQueueHealth(hmppsQueue)
     }
 
-  private fun createJmsListenerContainerFactory(hmppsQueue: HmppsQueue): HmppsQueueJmsListenerContainerFactory =
+  private fun createJmsListenerContainerFactory(hmppsQueue: HmppsQueue, hmppsQueueProperties: HmppsQueueProperties): HmppsQueueJmsListenerContainerFactory =
     getOrDefaultBean("${hmppsQueue.id}-jms-listener-factory") {
-      HmppsQueueJmsListenerContainerFactory(hmppsQueue.queueName, createJmsListenerContainerFactory(hmppsQueue.sqsClient))
+      HmppsQueueJmsListenerContainerFactory(hmppsQueue.id, createJmsListenerContainerFactory(hmppsQueue.sqsClient, hmppsQueueProperties))
     }
 
+  @Suppress("NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
   private inline fun <reified T> getOrDefaultBean(beanName: String, createDefaultBean: () -> T) =
     runCatching { context.beanFactory.getBean(beanName) as T }
       .getOrElse {
@@ -124,10 +124,10 @@ class HmppsQueueFactory(
         )
       }
 
-  fun createJmsListenerContainerFactory(awsSqsClient: AmazonSQS): DefaultJmsListenerContainerFactory =
+  fun createJmsListenerContainerFactory(awsSqsClient: AmazonSQS, hmppsQueueProperties: HmppsQueueProperties): DefaultJmsListenerContainerFactory =
     DefaultJmsListenerContainerFactory().apply {
       setConnectionFactory(SQSConnectionFactory(ProviderConfiguration(), awsSqsClient))
-      setDestinationResolver(DynamicDestinationResolver())
+      setDestinationResolver(HmppsQueueDestinationResolver(hmppsQueueProperties))
       setConcurrency("1-1")
       setSessionAcknowledgeMode(Session.CLIENT_ACKNOWLEDGE)
       setErrorHandler { t: Throwable? -> log.error("Error caught in jms listener", t) }

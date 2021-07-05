@@ -139,6 +139,14 @@ This means that the only thing you need to do to get a JMS listener working for 
 
 An example is available in the `test-app`'s (listeners)[https://github.com/ministryofjustice/hmpps-spring-boot-sqs/blob/main/test-app/src/main/kotlin/uk/gov/justice/digital/hmpps/hmppstemplatepackagename/service/MessageListener.kt].
 
+#### @JmsListener destination
+
+Usually on the `@JmsListenener` annotation the `destination` property refers to a queue name. However, our queue name is defined in configuration properties so the `destination` property would require some horrible SpEL to extract the queue name.
+
+To get around this we have created a custom destination resolver called `HmppSqueueDestinationResolver` which accepts the destination as `queueId` from the [queue configuration properties](#hmppsqueueproperties-definitions) and transforms it into the queue name. This makes the `destination` property much simpler and expresses the listeners intent better.
+
+For an example see class `MessageListener` in the `test-app`.
+
 #### Overriding the JmsListenerContainerFactory
 
 If you don't wish to use the `HmppsQueueContainerFactoryProxy` because you want to configure your listener in a different way then simply create your own `DefaultJmsListenerContainerFactory` and reference it on the `@JmsListener` annotation.
@@ -258,8 +266,6 @@ The application configuration properties in `application-test.yml` set the queue
 The configuration properties are loaded into class `HmppsQueueProperties`. This is to guarantee that the queue names are only generated once per context, in the properties bean.
 
 The class `HmpspQueueFactory` then takes the queue names from `HmpspQueueProperties` and creates the queues during application startup.
-
-The JMS message listener defined in class `MessageListener` sets the destination queue name from the `HmppsQueueProperties` bean. Note that due to the way Spring loads `@ConfigurationProperties` beans some complicated `SpEL` is required to define the queue name in the `@JmsListener` annotation. See the note about the convention `<prefix>-<fqn>` in [the Spring documentation](https://docs.spring.io/spring-boot/docs/2.1.13.RELEASE/reference/html/boot-features-external-config.html#boot-features-external-config-typesafe-configuration-properties).
 
 ## How To Contribute To This Library
 
