@@ -15,7 +15,7 @@ plugins {
 }
 
 base.archivesBaseName = "hmpps-spring-boot-sqs"
-version = "0.5.1"
+version = "0.5.2"
 
 dependencies {
   api("com.amazonaws:amazon-sqs-java-messaging-lib:1.0.8")
