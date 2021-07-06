@@ -24,45 +24,45 @@ class HmppsQueueSpyBeanTest : IntegrationTestBase() {
       .expectBody()
       .jsonPath("status").isEqualTo("UP")
 
-    verify(anotherSqsClient).getQueueAttributes(any())
+    verify(anotherSqsClientSpy).getQueueAttributes(any())
   }
 
   @Test
   fun `Can verify usage of spy bean for retry-dlq endpoint`() {
-    anotherSqsDlqClient.sendMessage(anotherDlqUrl, "message1")
-    await untilCallTo { anotherSqsDlqClient.countMessagesOnQueue(anotherDlqUrl) } matches { it == 1 }
+    anotherSqsDlqClientSpy.sendMessage(anotherDlqUrl, "message1")
+    await untilCallTo { anotherSqsDlqClientSpy.countMessagesOnQueue(anotherDlqUrl) } matches { it == 1 }
 
     webTestClient.put()
-      .uri("/queue-admin/retry-dlq/${hmppsSqsProperties.anotherQueueConfig().dlqName}")
+      .uri("/queue-admin/retry-dlq/${hmppsSqsPropertiesSpy.anotherQueueConfig().dlqName}")
       .headers { it.authToken() }
       .accept(MediaType.APPLICATION_JSON)
       .exchange()
       .expectStatus().isOk
 
-    await untilCallTo { anotherSqsDlqClient.countMessagesOnQueue(anotherDlqUrl) } matches { it == 0 }
-    await untilCallTo { anotherSqsClient.countMessagesOnQueue(anotherQueueUrl) } matches { it == 0 }
+    await untilCallTo { anotherSqsDlqClientSpy.countMessagesOnQueue(anotherDlqUrl) } matches { it == 0 }
+    await untilCallTo { anotherSqsClientSpy.countMessagesOnQueue(anotherQueueUrl) } matches { it == 0 }
 
     verify(anotherMessageServiceSpy).handleMessage("message1")
-    verify(anotherSqsDlqClient).receiveMessage(ReceiveMessageRequest(anotherDlqUrl).withMaxNumberOfMessages(1))
-    verify(anotherSqsClient).sendMessage(eq(anotherQueueUrl), anyString())
-    verify(anotherSqsDlqClient).deleteMessage(any())
+    verify(anotherSqsDlqClientSpy).receiveMessage(ReceiveMessageRequest(anotherDlqUrl).withMaxNumberOfMessages(1))
+    verify(anotherSqsClientSpy).sendMessage(eq(anotherQueueUrl), anyString())
+    verify(anotherSqsDlqClientSpy).deleteMessage(any())
   }
 
   @Test
   fun `Can verify usage of spy bean for purge-queue endpoint`() {
-    anotherSqsDlqClient.sendMessage(anotherDlqUrl, "message1")
-    await untilCallTo { anotherSqsDlqClient.countMessagesOnQueue(anotherDlqUrl) } matches { it == 1 }
+    anotherSqsDlqClientSpy.sendMessage(anotherDlqUrl, "message1")
+    await untilCallTo { anotherSqsDlqClientSpy.countMessagesOnQueue(anotherDlqUrl) } matches { it == 1 }
 
     webTestClient.put()
-      .uri("/queue-admin/purge-queue/${hmppsSqsProperties.anotherQueueConfig().dlqName}")
+      .uri("/queue-admin/purge-queue/${hmppsSqsPropertiesSpy.anotherQueueConfig().dlqName}")
       .headers { it.authToken() }
       .accept(MediaType.APPLICATION_JSON)
       .exchange()
       .expectStatus().isOk
 
-    await untilCallTo { anotherSqsDlqClient.countMessagesOnQueue(anotherDlqUrl) } matches { it == 0 }
+    await untilCallTo { anotherSqsDlqClientSpy.countMessagesOnQueue(anotherDlqUrl) } matches { it == 0 }
 
     // One of these was in the @BeforeEach!
-    verify(anotherSqsDlqClient, times(2)).purgeQueue(any())
+    verify(anotherSqsDlqClientSpy, times(2)).purgeQueue(any())
   }
 }

@@ -33,8 +33,8 @@ abstract class IntegrationTestBase {
   fun `clear queues`() {
     sqsClient.purgeQueue(PurgeQueueRequest(queueUrl))
     sqsDlqClient.purgeQueue(PurgeQueueRequest(dlqUrl))
-    anotherSqsClient.purgeQueue(PurgeQueueRequest(anotherQueueUrl))
-    anotherSqsDlqClient.purgeQueue(PurgeQueueRequest(anotherDlqUrl))
+    anotherSqsClientSpy.purgeQueue(PurgeQueueRequest(anotherQueueUrl))
+    anotherSqsDlqClientSpy.purgeQueue(PurgeQueueRequest(anotherDlqUrl))
   }
 
   fun HmppsSqsProperties.mainQueueConfig() =
@@ -51,11 +51,11 @@ abstract class IntegrationTestBase {
 
   @SpyBean
   @Qualifier("anotherqueue-sqs-client")
-  protected lateinit var anotherSqsClient: AmazonSQS
+  protected lateinit var anotherSqsClientSpy: AmazonSQS
 
   @SpyBean
   @Qualifier("anotherqueue-sqs-dlq-client")
-  protected lateinit var anotherSqsDlqClient: AmazonSQS
+  protected lateinit var anotherSqsDlqClientSpy: AmazonSQS
 
   protected val queueUrl: String by lazy { mainQueue.queueUrl }
   protected val dlqUrl: String by lazy { mainQueue.dlqUrl }
@@ -75,7 +75,7 @@ abstract class IntegrationTestBase {
   protected lateinit var anotherMessageServiceSpy: AnotherMessageService
 
   @SpyBean
-  protected lateinit var hmppsSqsProperties: HmppsSqsProperties
+  protected lateinit var hmppsSqsPropertiesSpy: HmppsSqsProperties
 
   @Suppress("SpringJavaInjectionPointsAutowiringInspection")
   @Autowired
