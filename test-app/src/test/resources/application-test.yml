@@ -8,9 +8,9 @@ management.endpoint:
 hmpps.sqs:
   provider: localstack
   queues:
-    mainQueue:
+    mainqueue:
       dlqName: ${random.uuid}
       queueName: ${random.uuid}
-    anotherQueue:
+    anotherqueue:
       dlqName: ${random.uuid}
       queueName: ${random.uuid}

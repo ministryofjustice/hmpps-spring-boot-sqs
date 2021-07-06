@@ -12,7 +12,7 @@ import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.integration.Integra
 import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.integration.mocks.OAuthExtension.Companion.oAuthApi
 import uk.gov.justice.hmpps.sqs.HmppsQueue
 import uk.gov.justice.hmpps.sqs.HmppsQueueHealth
-import uk.gov.justice.hmpps.sqs.HmppsQueueProperties
+import uk.gov.justice.hmpps.sqs.HmppsSqsProperties
 
 @Import(QueueHealthCheckNegativeTest.TestConfig::class)
 class QueueHealthCheckNegativeTest : IntegrationTestBase() {
@@ -20,7 +20,7 @@ class QueueHealthCheckNegativeTest : IntegrationTestBase() {
   @TestConfiguration
   class TestConfig {
     @Bean
-    fun badQueueHealth(hmppsConfigProperties: HmppsQueueProperties): HmppsQueueHealth {
+    fun badQueueHealth(hmppsConfigProperties: HmppsSqsProperties): HmppsQueueHealth {
       val sqsClient = AmazonSQSClientBuilder.standard()
         .withEndpointConfiguration(AwsClientBuilder.EndpointConfiguration(hmppsConfigProperties.localstackUrl, hmppsConfigProperties.region))
         .withCredentials(AWSStaticCredentialsProvider(AnonymousAWSCredentials()))

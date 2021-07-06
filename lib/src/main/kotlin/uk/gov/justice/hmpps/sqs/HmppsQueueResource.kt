@@ -1,6 +1,5 @@
 package uk.gov.justice.hmpps.sqs
 
-import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.PathVariable
@@ -12,10 +11,6 @@ import org.springframework.web.server.ResponseStatusException
 @RestController
 @RequestMapping("/queue-admin")
 class HmppsQueueResource(private val hmppsQueueService: HmppsQueueService) {
-
-  companion object {
-    private val log = LoggerFactory.getLogger(this::class.java)
-  }
 
   @PutMapping("/retry-dlq/{dlqName}")
   @PreAuthorize("hasRole(@environment.getProperty('hmpps.sqs.queueAdminRole', 'ROLE_QUEUE_ADMIN'))")

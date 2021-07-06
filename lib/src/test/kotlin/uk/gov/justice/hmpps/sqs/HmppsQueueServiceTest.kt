@@ -30,7 +30,7 @@ class HmppsQueueServiceTest {
 
   private val telemetryClient = mock<TelemetryClient>()
   private val hmppsQueueFactory = mock<HmppsQueueFactory>()
-  private val hmppsQueueProperties = mock<HmppsQueueProperties>()
+  private val hmppsSqsProperties = mock<HmppsSqsProperties>()
   private lateinit var hmppsQueueService: HmppsQueueService
 
   @Nested
@@ -51,7 +51,7 @@ class HmppsQueueServiceTest {
           )
         )
 
-      hmppsQueueService = HmppsQueueService(telemetryClient, hmppsQueueFactory, hmppsQueueProperties)
+      hmppsQueueService = HmppsQueueService(telemetryClient, hmppsQueueFactory, hmppsSqsProperties)
     }
 
     @Test
@@ -96,7 +96,7 @@ class HmppsQueueServiceTest {
       whenever(queueSqs.getQueueUrl(anyString())).thenReturn(GetQueueUrlResult().withQueueUrl("queueUrl"))
       whenever(dlqSqs.getQueueUrl(anyString())).thenReturn(GetQueueUrlResult().withQueueUrl("dlqUrl"))
 
-      hmppsQueueService = HmppsQueueService(telemetryClient, hmppsQueueFactory, hmppsQueueProperties)
+      hmppsQueueService = HmppsQueueService(telemetryClient, hmppsQueueFactory, hmppsSqsProperties)
     }
 
     @Nested
@@ -147,7 +147,7 @@ class HmppsQueueServiceTest {
             )
           )
 
-        hmppsQueueService = HmppsQueueService(telemetryClient, hmppsQueueFactory, hmppsQueueProperties)
+        hmppsQueueService = HmppsQueueService(telemetryClient, hmppsQueueFactory, hmppsSqsProperties)
       }
 
       @Test
@@ -226,7 +226,7 @@ class HmppsQueueServiceTest {
             )
           )
 
-        hmppsQueueService = HmppsQueueService(telemetryClient, hmppsQueueFactory, hmppsQueueProperties)
+        hmppsQueueService = HmppsQueueService(telemetryClient, hmppsQueueFactory, hmppsSqsProperties)
       }
 
       @Test
@@ -286,7 +286,7 @@ class HmppsQueueServiceTest {
           )
           .thenReturn(ReceiveMessageResult())
 
-        hmppsQueueService = HmppsQueueService(telemetryClient, hmppsQueueFactory, hmppsQueueProperties)
+        hmppsQueueService = HmppsQueueService(telemetryClient, hmppsQueueFactory, hmppsSqsProperties)
       }
 
       @Test
@@ -365,7 +365,7 @@ class HmppsQueueServiceTest {
           )
         )
 
-      hmppsQueueService = HmppsQueueService(telemetryClient, hmppsQueueFactory, hmppsQueueProperties)
+      hmppsQueueService = HmppsQueueService(telemetryClient, hmppsQueueFactory, hmppsSqsProperties)
     }
 
     @Test
@@ -394,7 +394,7 @@ class HmppsQueueServiceTest {
   inner class PurgeQueue {
 
     private val sqsClient = mock<AmazonSQS>()
-    private val hmppsQueueService = HmppsQueueService(telemetryClient, hmppsQueueFactory, hmppsQueueProperties)
+    private val hmppsQueueService = HmppsQueueService(telemetryClient, hmppsQueueFactory, hmppsSqsProperties)
 
     @Test
     fun `no messages found, should not attempt to purge queue`() {

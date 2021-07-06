@@ -59,20 +59,3 @@ management:
 oauth:
   endpoint.url: http://localhost:8090/auth
 
-# These should not be required in your main application and should instead be provided by helm values referencing Kuberentes secrets - these are only here for unit tests
-hmpps.sqs:
-  queues:
-    mainQueue:
-      queueName: aws-queue
-      queueAccessKeyId: queue-access-key-id
-      queueSecretAccessKey: queue-secret-access-key
-      dlqName: aws-dlq
-      dlqAccessKeyId: dlq-access-key-id
-      dlqSecretAccessKey: dlq-secret-access-key
-    anotherQueue:
-      queueName: another-aws-queue
-      queueAccessKeyId: another-queue-access-key-id
-      queueSecretAccessKey: another-queue-secret-access-key
-      dlqName: another-aws-dlq
-      dlqAccessKeyId: another-dlq-access-key-id
-      dlqSecretAccessKey: another-dlq-secret-access-key

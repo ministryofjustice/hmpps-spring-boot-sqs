@@ -13,18 +13,14 @@ class MissingQueueException(message: String) : RuntimeException(message)
 class HmppsQueueService(
   private val telemetryClient: TelemetryClient?,
   hmppsQueueFactory: HmppsQueueFactory,
-  hmppsQueueProperties: HmppsQueueProperties,
+  hmppsSqsProperties: HmppsSqsProperties,
 ) {
 
   companion object {
     private val log = LoggerFactory.getLogger(this::class.java)
   }
 
-  private val hmppsQueues: MutableList<HmppsQueue> = mutableListOf()
-
-  init {
-    hmppsQueues.addAll(hmppsQueueFactory.createHmppsQueues(hmppsQueueProperties))
-  }
+  private val hmppsQueues: List<HmppsQueue> = hmppsQueueFactory.createHmppsQueues(hmppsSqsProperties)
 
   fun findByQueueId(queueId: String) = hmppsQueues.associateBy { it.id }.getOrDefault(queueId, null)
   fun findByQueueName(queueName: String) = hmppsQueues.associateBy { it.queueName }.getOrDefault(queueName, null)
@@ -43,7 +39,7 @@ class HmppsQueueService(
     val messages = mutableListOf<Message>()
     repeat(messageCount) {
       sqsDlqClient.receiveMessage(ReceiveMessageRequest(dlqUrl).withMaxNumberOfMessages(1)).messages.firstOrNull()
-        ?.let { msg ->
+        ?.also { msg ->
           sqsClient.sendMessage(queueUrl, msg.body)
           sqsDlqClient.deleteMessage(DeleteMessageRequest(dlqUrl, msg.receiptHandle))
           messages += msg

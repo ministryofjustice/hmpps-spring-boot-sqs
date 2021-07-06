@@ -9,9 +9,9 @@ import org.springframework.context.annotation.DependsOn
 import org.springframework.jms.annotation.EnableJms
 
 @Configuration
-@EnableConfigurationProperties(HmppsQueueProperties::class)
+@EnableConfigurationProperties(HmppsSqsProperties::class)
 @EnableJms
-class HmppsQueueConfiguration {
+class HmppsSqsConfiguration {
 
   @Bean
   fun hmppsQueueFactory(applicationContext: ConfigurableApplicationContext) = HmppsQueueFactory(applicationContext, AmazonSqsFactory())
@@ -20,13 +20,13 @@ class HmppsQueueConfiguration {
   fun hmppsQueueService(
     telemetryClient: TelemetryClient?,
     hmppsQueueFactory: HmppsQueueFactory,
-    hmppsQueueProperties: HmppsQueueProperties,
-  ) = HmppsQueueService(telemetryClient, hmppsQueueFactory, hmppsQueueProperties)
+    hmppsSqsProperties: HmppsSqsProperties,
+  ) = HmppsQueueService(telemetryClient, hmppsQueueFactory, hmppsSqsProperties)
 
   @Bean
   fun hmppsQueueResource(hmppsQueueService: HmppsQueueService) = HmppsQueueResource(hmppsQueueService)
 
   @Bean
   @DependsOn("hmppsQueueService")
-  fun hmppsQueueContainerFactoryProxy(factories: List<HmppsQueueJmsListenerContainerFactory>) = HmppsQueueContainerFactoryProxy(factories)
+  fun hmppsQueueContainerFactoryProxy(factories: List<HmppsQueueDestinationContainerFactory>) = HmppsQueueJmsListenerContainerFactory(factories)
 }
