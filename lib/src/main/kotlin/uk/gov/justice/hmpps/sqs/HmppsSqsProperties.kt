@@ -5,7 +5,7 @@ import org.springframework.boot.context.properties.ConstructorBinding
 
 @ConstructorBinding
 @ConfigurationProperties(prefix = "hmpps.sqs")
-data class HmppsQueueProperties(
+data class HmppsSqsProperties(
   val provider: String = "aws",
   val region: String = "eu-west-2",
   val localstackUrl: String = "http://localhost:4566",

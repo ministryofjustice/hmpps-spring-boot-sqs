@@ -11,7 +11,7 @@ import org.springframework.web.server.ResponseStatusException
 
 @RestController
 @RequestMapping("/queue-admin")
-class HmppsQueueResource(private val hmppsQueueService: HmppsQueueService) {
+class HmppsSqsResource(private val hmppsQueueService: HmppsQueueService) {
 
   companion object {
     private val log = LoggerFactory.getLogger(this::class.java)

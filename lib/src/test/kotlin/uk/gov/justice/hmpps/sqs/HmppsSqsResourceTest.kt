@@ -22,9 +22,9 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
-@WebMvcTest(HmppsQueueResource::class)
+@WebMvcTest(HmppsSqsResource::class)
 @AutoConfigureMockMvc(addFilters = false)
-class HmppsQueueResourceTest {
+class HmppsSqsResourceTest {
 
   @Autowired
   private lateinit var mockMvc: MockMvc

@@ -13,7 +13,7 @@ class MissingQueueException(message: String) : RuntimeException(message)
 class HmppsQueueService(
   private val telemetryClient: TelemetryClient?,
   hmppsQueueFactory: HmppsQueueFactory,
-  hmppsQueueProperties: HmppsQueueProperties,
+  hmppsSqsProperties: HmppsSqsProperties,
 ) {
 
   companion object {
@@ -23,7 +23,7 @@ class HmppsQueueService(
   private val hmppsQueues: MutableList<HmppsQueue> = mutableListOf()
 
   init {
-    hmppsQueues.addAll(hmppsQueueFactory.createHmppsQueues(hmppsQueueProperties))
+    hmppsQueues.addAll(hmppsQueueFactory.createHmppsQueues(hmppsSqsProperties))
   }
 
   fun findByQueueId(queueId: String) = hmppsQueues.associateBy { it.id }.getOrDefault(queueId, null)

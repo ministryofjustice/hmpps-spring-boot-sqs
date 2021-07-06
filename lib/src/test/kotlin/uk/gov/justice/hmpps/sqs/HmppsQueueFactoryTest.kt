@@ -20,7 +20,7 @@ import org.mockito.ArgumentMatchers.anyList
 import org.mockito.ArgumentMatchers.anyString
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory
 import org.springframework.context.ConfigurableApplicationContext
-import uk.gov.justice.hmpps.sqs.HmppsQueueProperties.QueueConfig
+import uk.gov.justice.hmpps.sqs.HmppsSqsProperties.QueueConfig
 
 class HmppsQueueFactoryTest {
 
@@ -36,7 +36,7 @@ class HmppsQueueFactoryTest {
   @Nested
   inner class `Create single AWS HmppsQueue` {
     private val someQueueConfig = QueueConfig(queueName = "some queue name", queueAccessKeyId = "some access key id", queueSecretAccessKey = "some secret access key", dlqName = "some dlq name", dlqAccessKeyId = "dlq access key id", dlqSecretAccessKey = "dlq secret access key")
-    private val hmppsQueueProperties = HmppsQueueProperties(queues = mapOf("somequeueid" to someQueueConfig))
+    private val hmppsQueueProperties = HmppsSqsProperties(queues = mapOf("somequeueid" to someQueueConfig))
     private val sqsClient = mock<AmazonSQS>()
     private val sqsDlqClient = mock<AmazonSQS>()
     private lateinit var hmppsQueues: List<HmppsQueue>
@@ -115,14 +115,14 @@ class HmppsQueueFactoryTest {
 
     @Test
     fun `should register the jms listener factory`() {
-      verify(beanFactory).registerSingleton(eq("somequeueid-jms-listener-factory"), any<HmppsQueueJmsListenerContainerFactory>())
+      verify(beanFactory).registerSingleton(eq("somequeueid-jms-listener-factory"), any<HmppsQueueDestinationContainerFactory>())
     }
   }
 
   @Nested
   inner class `Create single LocalStack HmppsQueue` {
     private val someQueueConfig = QueueConfig(queueName = "some queue name", dlqName = "some dlq name")
-    private val hmppsQueueProperties = HmppsQueueProperties(provider = "localstack", queues = mapOf("somequeueid" to someQueueConfig))
+    private val hmppsQueueProperties = HmppsSqsProperties(provider = "localstack", queues = mapOf("somequeueid" to someQueueConfig))
     private val sqsClient = mock<AmazonSQS>()
     private val sqsDlqClient = mock<AmazonSQS>()
     private lateinit var hmppsQueues: List<HmppsQueue>
@@ -219,7 +219,7 @@ class HmppsQueueFactoryTest {
   inner class `Create multiple AWS HmppsQueues` {
     private val someQueueConfig = QueueConfig(queueName = "some queue name", queueAccessKeyId = "some access key id", queueSecretAccessKey = "some secret access key", dlqName = "some dlq name", dlqAccessKeyId = "dlq access key id", dlqSecretAccessKey = "dlq secret access key")
     private val anotherQueueConfig = QueueConfig(queueName = "another queue name", queueAccessKeyId = "another access key id", queueSecretAccessKey = "another secret access key", dlqName = "another dlq name", dlqAccessKeyId = "another dlq access key id", dlqSecretAccessKey = "another dlq secret access key")
-    private val hmppsQueueProperties = HmppsQueueProperties(queues = mapOf("somequeueid" to someQueueConfig, "anotherqueueid" to anotherQueueConfig))
+    private val hmppsQueueProperties = HmppsSqsProperties(queues = mapOf("somequeueid" to someQueueConfig, "anotherqueueid" to anotherQueueConfig))
     private val sqsClient = mock<AmazonSQS>()
     private val sqsDlqClient = mock<AmazonSQS>()
     private lateinit var hmppsQueues: List<HmppsQueue>
@@ -268,7 +268,7 @@ class HmppsQueueFactoryTest {
   @Nested
   inner class `Create AWS HmppsQueue with asynchronous SQS clients` {
     private val someQueueConfig = QueueConfig(asyncQueueClient = true, asyncDlqClient = true, queueName = "some queue name", queueAccessKeyId = "some access key id", queueSecretAccessKey = "some secret access key", dlqName = "some dlq name", dlqAccessKeyId = "dlq access key id", dlqSecretAccessKey = "dlq secret access key")
-    private val hmppsQueueProperties = HmppsQueueProperties(queues = mapOf("somequeueid" to someQueueConfig))
+    private val hmppsQueueProperties = HmppsSqsProperties(queues = mapOf("somequeueid" to someQueueConfig))
     private val sqsClient = mock<AmazonSQSAsync>()
     private val sqsDlqClient = mock<AmazonSQSAsync>()
     private lateinit var hmppsQueues: List<HmppsQueue>
@@ -309,14 +309,14 @@ class HmppsQueueFactoryTest {
       verify(beanFactory).registerSingleton(eq("somequeueid-health"), any<HmppsQueueHealth>())
       verify(beanFactory).registerSingleton(eq("somequeueid-sqs-client"), any<AmazonSQS>())
       verify(beanFactory).registerSingleton(eq("somequeueid-sqs-dlq-client"), any<AmazonSQS>())
-      verify(beanFactory).registerSingleton(eq("somequeueid-jms-listener-factory"), any<HmppsQueueJmsListenerContainerFactory>())
+      verify(beanFactory).registerSingleton(eq("somequeueid-jms-listener-factory"), any<HmppsQueueDestinationContainerFactory>())
     }
   }
 
   @Nested
   inner class `Create LocalStack HmppsQueue with asynchronous SQS clients` {
     private val someQueueConfig = QueueConfig(asyncQueueClient = true, asyncDlqClient = true, queueName = "some queue name", dlqName = "some dlq name")
-    private val hmppsQueueProperties = HmppsQueueProperties(provider = "localstack", queues = mapOf("somequeueid" to someQueueConfig))
+    private val hmppsQueueProperties = HmppsSqsProperties(provider = "localstack", queues = mapOf("somequeueid" to someQueueConfig))
     private val sqsClient = mock<AmazonSQSAsync>()
     private val sqsDlqClient = mock<AmazonSQSAsync>()
     private lateinit var hmppsQueues: List<HmppsQueue>
@@ -358,7 +358,7 @@ class HmppsQueueFactoryTest {
       verify(beanFactory).registerSingleton(eq("somequeueid-health"), any<HmppsQueueHealth>())
       verify(beanFactory).registerSingleton(eq("somequeueid-sqs-client"), any<AmazonSQS>())
       verify(beanFactory).registerSingleton(eq("somequeueid-sqs-dlq-client"), any<AmazonSQS>())
-      verify(beanFactory).registerSingleton(eq("somequeueid-jms-listener-factory"), any<HmppsQueueJmsListenerContainerFactory>())
+      verify(beanFactory).registerSingleton(eq("somequeueid-jms-listener-factory"), any<HmppsQueueDestinationContainerFactory>())
     }
   }
 }

@@ -30,7 +30,7 @@ class HmppsQueueServiceTest {
 
   private val telemetryClient = mock<TelemetryClient>()
   private val hmppsQueueFactory = mock<HmppsQueueFactory>()
-  private val hmppsQueueProperties = mock<HmppsQueueProperties>()
+  private val hmppsQueueProperties = mock<HmppsSqsProperties>()
   private lateinit var hmppsQueueService: HmppsQueueService
 
   @Nested
