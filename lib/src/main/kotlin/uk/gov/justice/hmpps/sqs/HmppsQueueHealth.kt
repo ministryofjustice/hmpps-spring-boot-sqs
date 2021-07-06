@@ -35,7 +35,7 @@ class HmppsQueueHealth(private val hmppsQueue: HmppsQueue) : HealthIndicator {
     getQueueAttributes().map { attributesResult ->
       results += success(HealthDetail("messagesOnQueue" to """${attributesResult.attributes[ApproximateNumberOfMessages.toString()]}"""))
       results += success(HealthDetail("messagesInFlight" to """${attributesResult.attributes[ApproximateNumberOfMessagesNotVisible.toString()]}"""))
-      attributesResult.attributes["$RedrivePolicy"] ?: { results += failure(MissingRedrivePolicyException()) }
+      attributesResult.attributes["$RedrivePolicy"] ?: { results += failure(MissingRedrivePolicyException(hmppsQueue.id)) }
     }.onFailure { throwable -> results += failure(throwable) }
 
     return results.toList()
@@ -75,7 +75,7 @@ class HmppsQueueHealth(private val hmppsQueue: HmppsQueue) : HealthIndicator {
       .onSuccess { healthDetail -> withDetail(healthDetail.key(), healthDetail.value()) }
       .onFailure { throwable ->
         withException(throwable)
-          .also { log.error("Queue health failed due to exception", throwable) }
+          .also { log.error("Queue health for queueId ${hmppsQueue.id} failed due to exception", throwable) }
       }
 
   private fun getQueueAttributes(): Result<GetQueueAttributesResult> {
@@ -90,4 +90,4 @@ class HmppsQueueHealth(private val hmppsQueue: HmppsQueue) : HealthIndicator {
     }
 }
 
-class MissingRedrivePolicyException : RuntimeException("The queue is missing a $RedrivePolicy")
+class MissingRedrivePolicyException(queueId: String) : RuntimeException("The main queue for $queueId is missing a $RedrivePolicy")
