@@ -8,7 +8,7 @@ class MessageListener(private val messageService: MessageService) {
 
   @JmsListener(destination = "mainqueue", containerFactory = "hmppsQueueContainerFactoryProxy")
   fun processMessage(message: String?) {
-    messageService.handleMessage(message ?: "empty message received")
+    messageService.handleMessage(message ?: "empty message received for mainqueue")
   }
 }
 
@@ -17,6 +17,6 @@ class AnotherMessageListener(private val anotherMessageService: AnotherMessageSe
 
   @JmsListener(destination = "anotherqueue", containerFactory = "hmppsQueueContainerFactoryProxy")
   fun processMessage(message: String?) {
-    anotherMessageService.handleMessage(message ?: "empty message received")
+    anotherMessageService.handleMessage(message ?: "empty message received for anotherqueue")
   }
 }
