@@ -21,4 +21,18 @@ data class HmppsQueueProperties(
     val dlqSecretAccessKey: String = "",
     val asyncDlqClient: Boolean = false,
   )
+
+  init {
+    queues.forEach { (queueId, queueConfig) ->
+      if (queueId != queueId.lowercase()) throw InvalidHmppsQueuePropertiesException("queueId $queueId is not lowercase")
+      if (provider == "aws") {
+        if (queueConfig.queueAccessKeyId.isEmpty()) throw InvalidHmppsQueuePropertiesException("queueId $queueId does not have a queue access key id")
+        if (queueConfig.queueSecretAccessKey.isEmpty()) throw InvalidHmppsQueuePropertiesException("queueId $queueId does not have a queue secret access key")
+        if (queueConfig.dlqAccessKeyId.isEmpty()) throw InvalidHmppsQueuePropertiesException("queueId $queueId does not have a DLQ access key id")
+        if (queueConfig.dlqSecretAccessKey.isEmpty()) throw InvalidHmppsQueuePropertiesException("queueId $queueId does not have a DLQ secret access key")
+      }
+    }
+  }
 }
+
+class InvalidHmppsQueuePropertiesException(message: String) : IllegalStateException(message)

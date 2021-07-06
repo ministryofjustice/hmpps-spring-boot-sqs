@@ -38,23 +38,23 @@ abstract class IntegrationTestBase {
   }
 
   fun HmppsQueueProperties.mainQueueConfig() =
-    queues["mainQueue"] ?: throw MissingQueueException("mainQueue has not been loaded from configuration properties")
+    queues["mainqueue"] ?: throw MissingQueueException("mainqueue has not been loaded from configuration properties")
 
   fun HmppsQueueProperties.anotherQueueConfig() =
-    queues["anotherQueue"] ?: throw MissingQueueException("anotherQueue has not been loaded from configuration properties")
+    queues["anotherqueue"] ?: throw MissingQueueException("anotherqueue has not been loaded from configuration properties")
 
-  private val mainQueue by lazy { hmppsQueueService.findByQueueId("mainQueue") ?: throw MissingQueueException("HmppsQueue mainQueue not found") }
-  private val anotherQueue by lazy { hmppsQueueService.findByQueueId("anotherQueue") ?: throw MissingQueueException("HmppsQueue anotherQueue not found") }
+  private val mainQueue by lazy { hmppsQueueService.findByQueueId("mainqueue") ?: throw MissingQueueException("HmppsQueue mainqueue not found") }
+  private val anotherQueue by lazy { hmppsQueueService.findByQueueId("anotherqueue") ?: throw MissingQueueException("HmppsQueue anotherqueue not found") }
 
   protected val sqsClient by lazy { mainQueue.sqsClient }
   protected val sqsDlqClient by lazy { mainQueue.sqsDlqClient }
 
   @SpyBean
-  @Qualifier("anotherQueue-sqs-client")
+  @Qualifier("anotherqueue-sqs-client")
   protected lateinit var anotherSqsClient: AmazonSQS
 
   @SpyBean
-  @Qualifier("anotherQueue-sqs-dlq-client")
+  @Qualifier("anotherqueue-sqs-dlq-client")
   protected lateinit var anotherSqsDlqClient: AmazonSQS
 
   protected val queueUrl: String by lazy { mainQueue.queueUrl }
@@ -98,20 +98,20 @@ abstract class IntegrationTestBase {
   @TestConfiguration
   class SqsConfig(private val hmppsQueueFactory: HmppsQueueFactory) {
 
-    @Bean("anotherQueue-sqs-client")
+    @Bean("anotherqueue-sqs-client")
     fun anotherQueueSqsClient(
       hmppsQueueProperties: HmppsQueueProperties,
-      @Qualifier("anotherQueue-sqs-dlq-client") anotherQueueSqsDlqClient: AmazonSQS
+      @Qualifier("anotherqueue-sqs-dlq-client") anotherQueueSqsDlqClient: AmazonSQS
     ): AmazonSQS =
       with(hmppsQueueProperties) {
-        val config = queues["anotherQueue"] ?: throw MissingQueueException("HmppsQueueProperties config for anotherQueue not found")
+        val config = queues["anotherqueue"] ?: throw MissingQueueException("HmppsQueueProperties config for anotherqueue not found")
         hmppsQueueFactory.localStackSqsClient(config.queueName, config.dlqName, localstackUrl, region, anotherQueueSqsDlqClient)
       }
 
-    @Bean("anotherQueue-sqs-dlq-client")
+    @Bean("anotherqueue-sqs-dlq-client")
     fun anotherQueueSqsDlqClient(hmppsQueueProperties: HmppsQueueProperties): AmazonSQS =
       with(hmppsQueueProperties) {
-        val config = queues["anotherQueue"] ?: throw MissingQueueException("HmppsQueueProperties config for anotherQueue not found")
+        val config = queues["anotherqueue"] ?: throw MissingQueueException("HmppsQueueProperties config for anotherqueue not found")
         hmppsQueueFactory.localStackSqsDlqClient(config.dlqName, localstackUrl, region)
       }
   }

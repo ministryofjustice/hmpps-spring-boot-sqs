@@ -1,8 +1,8 @@
 hmpps.sqs:
   queues:
-    mainQueue:
+    mainqueue:
       queueName: queue
       dlqName: dlq
-    anotherQueue:
+    anotherqueue:
       queueName: another-queue
       dlqName: another-dlq

@@ -6,7 +6,7 @@ import org.springframework.stereotype.Service
 @Service
 class MessageListener(private val messageService: MessageService) {
 
-  @JmsListener(destination = "mainQueue", containerFactory = "hmppsQueueContainerFactoryProxy")
+  @JmsListener(destination = "mainqueue", containerFactory = "hmppsQueueContainerFactoryProxy")
   fun processMessage(message: String?) {
     messageService.handleMessage(message ?: "empty message received")
   }
@@ -15,7 +15,7 @@ class MessageListener(private val messageService: MessageService) {
 @Service
 class AnotherMessageListener(private val anotherMessageService: AnotherMessageService) {
 
-  @JmsListener(destination = "anotherQueue", containerFactory = "hmppsQueueContainerFactoryProxy")
+  @JmsListener(destination = "anotherqueue", containerFactory = "hmppsQueueContainerFactoryProxy")
   fun processMessage(message: String?) {
     anotherMessageService.handleMessage(message ?: "empty message received")
   }
