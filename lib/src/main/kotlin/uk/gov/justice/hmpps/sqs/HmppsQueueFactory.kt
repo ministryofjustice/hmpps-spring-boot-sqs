@@ -58,52 +58,25 @@ class HmppsQueueFactory(
         createDefaultBean().also { bean -> context.beanFactory.registerSingleton(beanName, bean) }
       }
 
-  private fun createSqsDlqClient(queueConfig: QueueConfig, hmppsQueueProperties: HmppsQueueProperties): AmazonSQS =
+  fun createSqsDlqClient(queueConfig: QueueConfig, hmppsQueueProperties: HmppsQueueProperties): AmazonSQS =
     with(hmppsQueueProperties) {
       when (provider) {
-        "aws" -> awsSqsDlqClient(queueConfig.dlqName, queueConfig.dlqAccessKeyId, queueConfig.dlqSecretAccessKey, region, queueConfig.asyncDlqClient)
-        "localstack" -> localStackSqsDlqClient(queueConfig.dlqName, localstackUrl, region, queueConfig.asyncDlqClient)
+        "aws" -> amazonSqsFactory.awsSqsDlqClient(queueConfig.dlqName, queueConfig.dlqAccessKeyId, queueConfig.dlqSecretAccessKey, region, queueConfig.asyncDlqClient)
+        "localstack" -> amazonSqsFactory.localStackSqsDlqClient(queueConfig.dlqName, localstackUrl, region, queueConfig.asyncDlqClient)
+          .also { sqsDlqClient -> sqsDlqClient.createQueue(queueConfig.dlqName) }
         else -> throw IllegalStateException("Unrecognised HMPPS SQS provider $provider")
       }
     }
 
-  private fun createSqsClient(queueConfig: QueueConfig, hmppsQueueProperties: HmppsQueueProperties, sqsDlqClient: AmazonSQS) =
+  fun createSqsClient(queueConfig: QueueConfig, hmppsQueueProperties: HmppsQueueProperties, sqsDlqClient: AmazonSQS) =
     with(hmppsQueueProperties) {
       when (provider) {
-        "aws" -> awsSqsClient(queueConfig.queueName, queueConfig.queueAccessKeyId, queueConfig.queueSecretAccessKey, region, queueConfig.asyncQueueClient)
-        "localstack" -> localStackSqsClient(queueConfig.queueName, queueConfig.dlqName, localstackUrl, region, sqsDlqClient, queueConfig.asyncQueueClient)
+        "aws" -> amazonSqsFactory.awsSqsClient(queueConfig.queueName, queueConfig.queueAccessKeyId, queueConfig.queueSecretAccessKey, region, queueConfig.asyncQueueClient)
+        "localstack" -> amazonSqsFactory.localStackSqsClient(queueConfig.queueName, localstackUrl, region, queueConfig.asyncQueueClient)
+          .also { sqsClient -> createLocalStackQueue(sqsClient, sqsDlqClient, queueConfig.queueName, queueConfig.dlqName) }
         else -> throw IllegalStateException("Unrecognised HMPPS SQS provider $provider")
       }
     }
-
-  fun awsSqsClient(queueName: String, accessKeyId: String, secretAccessKey: String, region: String, asyncClient: Boolean = false): AmazonSQS =
-    when (asyncClient) {
-      false -> amazonSqsFactory.awsAmazonSQS(accessKeyId, secretAccessKey, region)
-      true -> amazonSqsFactory.awsAmazonSQSAsync(accessKeyId, secretAccessKey, region)
-    }.also { log.info("Created an AWS SQS client for queue $queueName") }
-
-  fun localStackSqsClient(queueName: String, dlqName: String, localstackUrl: String, region: String, sqsDlqClient: AmazonSQS, asyncClient: Boolean = false): AmazonSQS =
-    when (asyncClient) {
-      false -> amazonSqsFactory.localStackAmazonSQS(localstackUrl, region)
-      true -> amazonSqsFactory.localStackAmazonSQSAsync(localstackUrl, region)
-    }
-      .also { sqsClient -> createLocalStackQueue(sqsClient, sqsDlqClient, queueName, dlqName) }
-      .also { log.info("Created a LocalStack SQS client for queue $queueName") }
-
-  fun awsSqsDlqClient(dlqName: String, accessKeyId: String, secretAccessKey: String, region: String, asyncClient: Boolean = false): AmazonSQS =
-    when (asyncClient) {
-      false -> amazonSqsFactory.awsAmazonSQS(accessKeyId, secretAccessKey, region)
-      true -> amazonSqsFactory.awsAmazonSQSAsync(accessKeyId, secretAccessKey, region)
-    }
-      .also { log.info("Created an AWS SQS DLQ client for DLQ $dlqName") }
-
-  fun localStackSqsDlqClient(dlqName: String, localstackUrl: String, region: String, asyncClient: Boolean = false): AmazonSQS =
-    when (asyncClient) {
-      false -> amazonSqsFactory.localStackAmazonSQS(localstackUrl, region)
-      true -> amazonSqsFactory.localStackAmazonSQSAsync(localstackUrl, region)
-    }
-      .also { sqsDlqClient -> sqsDlqClient.createQueue(dlqName) }
-      .also { log.info("Created a LocalStack SQS DLQ client for DLQ $dlqName") }
 
   private fun createLocalStackQueue(
     sqsClient: AmazonSQS,

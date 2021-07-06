@@ -105,14 +105,14 @@ abstract class IntegrationTestBase {
     ): AmazonSQS =
       with(hmppsQueueProperties) {
         val config = queues["anotherqueue"] ?: throw MissingQueueException("HmppsQueueProperties config for anotherqueue not found")
-        hmppsQueueFactory.localStackSqsClient(config.queueName, config.dlqName, localstackUrl, region, anotherQueueSqsDlqClient)
+        hmppsQueueFactory.createSqsClient(config, hmppsQueueProperties, anotherQueueSqsDlqClient)
       }
 
     @Bean("anotherqueue-sqs-dlq-client")
     fun anotherQueueSqsDlqClient(hmppsQueueProperties: HmppsQueueProperties): AmazonSQS =
       with(hmppsQueueProperties) {
         val config = queues["anotherqueue"] ?: throw MissingQueueException("HmppsQueueProperties config for anotherqueue not found")
-        hmppsQueueFactory.localStackSqsDlqClient(config.dlqName, localstackUrl, region)
+        hmppsQueueFactory.createSqsDlqClient(config, hmppsQueueProperties)
       }
   }
 }
