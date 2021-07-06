@@ -36,7 +36,7 @@ class HmppsQueueFactoryTest {
   @Nested
   inner class `Create single AWS HmppsQueue` {
     private val someQueueConfig = QueueConfig(queueName = "some queue name", queueAccessKeyId = "some access key id", queueSecretAccessKey = "some secret access key", dlqName = "some dlq name", dlqAccessKeyId = "dlq access key id", dlqSecretAccessKey = "dlq secret access key")
-    private val hmppsQueueProperties = HmppsSqsProperties(queues = mapOf("somequeueid" to someQueueConfig))
+    private val hmppsSqsProperties = HmppsSqsProperties(queues = mapOf("somequeueid" to someQueueConfig))
     private val sqsClient = mock<AmazonSQS>()
     private val sqsDlqClient = mock<AmazonSQS>()
     private lateinit var hmppsQueues: List<HmppsQueue>
@@ -50,7 +50,7 @@ class HmppsQueueFactoryTest {
       whenever(sqsDlqClient.getQueueUrl(anyString())).thenReturn(GetQueueUrlResult().withQueueUrl("some dlq url"))
       whenever(sqsClient.getQueueUrl(anyString())).thenReturn(GetQueueUrlResult().withQueueUrl("some queue url"))
 
-      hmppsQueues = hmppsQueueFactory.createHmppsQueues(hmppsQueueProperties)
+      hmppsQueues = hmppsQueueFactory.createHmppsQueues(hmppsSqsProperties)
     }
 
     @Test
@@ -122,7 +122,7 @@ class HmppsQueueFactoryTest {
   @Nested
   inner class `Create single LocalStack HmppsQueue` {
     private val someQueueConfig = QueueConfig(queueName = "some queue name", dlqName = "some dlq name")
-    private val hmppsQueueProperties = HmppsSqsProperties(provider = "localstack", queues = mapOf("somequeueid" to someQueueConfig))
+    private val hmppsSqsProperties = HmppsSqsProperties(provider = "localstack", queues = mapOf("somequeueid" to someQueueConfig))
     private val sqsClient = mock<AmazonSQS>()
     private val sqsDlqClient = mock<AmazonSQS>()
     private lateinit var hmppsQueues: List<HmppsQueue>
@@ -137,7 +137,7 @@ class HmppsQueueFactoryTest {
       whenever(sqsDlqClient.getQueueUrl(anyString())).thenReturn(GetQueueUrlResult().withQueueUrl("some dlq url"))
       whenever(sqsDlqClient.getQueueAttributes(anyString(), anyList())).thenReturn(GetQueueAttributesResult().withAttributes(mapOf("QueueArn" to "some dlq arn")))
 
-      hmppsQueues = hmppsQueueFactory.createHmppsQueues(hmppsQueueProperties)
+      hmppsQueues = hmppsQueueFactory.createHmppsQueues(hmppsSqsProperties)
     }
 
     @Test
@@ -219,7 +219,7 @@ class HmppsQueueFactoryTest {
   inner class `Create multiple AWS HmppsQueues` {
     private val someQueueConfig = QueueConfig(queueName = "some queue name", queueAccessKeyId = "some access key id", queueSecretAccessKey = "some secret access key", dlqName = "some dlq name", dlqAccessKeyId = "dlq access key id", dlqSecretAccessKey = "dlq secret access key")
     private val anotherQueueConfig = QueueConfig(queueName = "another queue name", queueAccessKeyId = "another access key id", queueSecretAccessKey = "another secret access key", dlqName = "another dlq name", dlqAccessKeyId = "another dlq access key id", dlqSecretAccessKey = "another dlq secret access key")
-    private val hmppsQueueProperties = HmppsSqsProperties(queues = mapOf("somequeueid" to someQueueConfig, "anotherqueueid" to anotherQueueConfig))
+    private val hmppsSqsProperties = HmppsSqsProperties(queues = mapOf("somequeueid" to someQueueConfig, "anotherqueueid" to anotherQueueConfig))
     private val sqsClient = mock<AmazonSQS>()
     private val sqsDlqClient = mock<AmazonSQS>()
     private lateinit var hmppsQueues: List<HmppsQueue>
@@ -237,7 +237,7 @@ class HmppsQueueFactoryTest {
       whenever(sqsClient.getQueueUrl("another queue name")).thenReturn(GetQueueUrlResult().withQueueUrl("another queue url"))
       whenever(sqsDlqClient.getQueueUrl("another dlq name")).thenReturn(GetQueueUrlResult().withQueueUrl("another dlq url"))
 
-      hmppsQueues = hmppsQueueFactory.createHmppsQueues(hmppsQueueProperties)
+      hmppsQueues = hmppsQueueFactory.createHmppsQueues(hmppsSqsProperties)
     }
 
     @Test
@@ -268,7 +268,7 @@ class HmppsQueueFactoryTest {
   @Nested
   inner class `Create AWS HmppsQueue with asynchronous SQS clients` {
     private val someQueueConfig = QueueConfig(asyncQueueClient = true, asyncDlqClient = true, queueName = "some queue name", queueAccessKeyId = "some access key id", queueSecretAccessKey = "some secret access key", dlqName = "some dlq name", dlqAccessKeyId = "dlq access key id", dlqSecretAccessKey = "dlq secret access key")
-    private val hmppsQueueProperties = HmppsSqsProperties(queues = mapOf("somequeueid" to someQueueConfig))
+    private val hmppsSqsProperties = HmppsSqsProperties(queues = mapOf("somequeueid" to someQueueConfig))
     private val sqsClient = mock<AmazonSQSAsync>()
     private val sqsDlqClient = mock<AmazonSQSAsync>()
     private lateinit var hmppsQueues: List<HmppsQueue>
@@ -282,7 +282,7 @@ class HmppsQueueFactoryTest {
       whenever(sqsClient.getQueueUrl("some queue name")).thenReturn(GetQueueUrlResult().withQueueUrl("some queue url"))
       whenever(sqsDlqClient.getQueueUrl("some dlq name")).thenReturn(GetQueueUrlResult().withQueueUrl("some dlq url"))
 
-      hmppsQueues = hmppsQueueFactory.createHmppsQueues(hmppsQueueProperties)
+      hmppsQueues = hmppsQueueFactory.createHmppsQueues(hmppsSqsProperties)
     }
 
     @Test
@@ -316,7 +316,7 @@ class HmppsQueueFactoryTest {
   @Nested
   inner class `Create LocalStack HmppsQueue with asynchronous SQS clients` {
     private val someQueueConfig = QueueConfig(asyncQueueClient = true, asyncDlqClient = true, queueName = "some queue name", dlqName = "some dlq name")
-    private val hmppsQueueProperties = HmppsSqsProperties(provider = "localstack", queues = mapOf("somequeueid" to someQueueConfig))
+    private val hmppsSqsProperties = HmppsSqsProperties(provider = "localstack", queues = mapOf("somequeueid" to someQueueConfig))
     private val sqsClient = mock<AmazonSQSAsync>()
     private val sqsDlqClient = mock<AmazonSQSAsync>()
     private lateinit var hmppsQueues: List<HmppsQueue>
@@ -331,7 +331,7 @@ class HmppsQueueFactoryTest {
       whenever(sqsDlqClient.getQueueUrl("some dlq name")).thenReturn(GetQueueUrlResult().withQueueUrl("some dlq url"))
       whenever(sqsDlqClient.getQueueAttributes(anyString(), anyList())).thenReturn(GetQueueAttributesResult().withAttributes(mapOf("QueueArn" to "some dlq arn")))
 
-      hmppsQueues = hmppsQueueFactory.createHmppsQueues(hmppsQueueProperties)
+      hmppsQueues = hmppsQueueFactory.createHmppsQueues(hmppsSqsProperties)
     }
 
     @Test

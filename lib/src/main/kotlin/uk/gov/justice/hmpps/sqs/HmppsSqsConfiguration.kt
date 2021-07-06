@@ -24,7 +24,7 @@ class HmppsSqsConfiguration {
   ) = HmppsQueueService(telemetryClient, hmppsQueueFactory, hmppsSqsProperties)
 
   @Bean
-  fun hmppsQueueResource(hmppsQueueService: HmppsQueueService) = HmppsSqsResource(hmppsQueueService)
+  fun hmppsQueueResource(hmppsQueueService: HmppsQueueService) = HmppsQueueResource(hmppsQueueService)
 
   @Bean
   @DependsOn("hmppsQueueService")

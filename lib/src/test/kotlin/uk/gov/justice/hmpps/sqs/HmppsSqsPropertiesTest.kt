@@ -9,7 +9,7 @@ class HmppsSqsPropertiesTest {
   fun `should not allow lowercase queueId`() {
     assertThatThrownBy {
       HmppsSqsProperties(queues = mapOf("notLowerCaseQueueId" to HmppsSqsProperties.QueueConfig(queueName = "any", dlqName = "any")))
-    }.isInstanceOf(InvalidHmppsQueuePropertiesException::class.java)
+    }.isInstanceOf(InvalidHmppsSqsPropertiesException::class.java)
       .hasMessageContaining("notLowerCaseQueueId")
       .hasMessageContaining("lowercase")
   }
@@ -18,7 +18,7 @@ class HmppsSqsPropertiesTest {
   fun `should require a queue access key ID`() {
     assertThatThrownBy {
       HmppsSqsProperties(queues = mapOf("queueid" to HmppsSqsProperties.QueueConfig(queueName = "any", dlqName = "any")))
-    }.isInstanceOf(InvalidHmppsQueuePropertiesException::class.java)
+    }.isInstanceOf(InvalidHmppsSqsPropertiesException::class.java)
       .hasMessageContaining("queueid")
       .hasMessageContaining("queue access key id")
   }
@@ -27,7 +27,7 @@ class HmppsSqsPropertiesTest {
   fun `should require a queue secret access key`() {
     assertThatThrownBy {
       HmppsSqsProperties(queues = mapOf("queueid" to HmppsSqsProperties.QueueConfig(queueName = "any", queueAccessKeyId = "any", dlqName = "any")))
-    }.isInstanceOf(InvalidHmppsQueuePropertiesException::class.java)
+    }.isInstanceOf(InvalidHmppsSqsPropertiesException::class.java)
       .hasMessageContaining("queueid")
       .hasMessageContaining("queue secret access key")
   }
@@ -36,7 +36,7 @@ class HmppsSqsPropertiesTest {
   fun `should require a dlq access key ID`() {
     assertThatThrownBy {
       HmppsSqsProperties(queues = mapOf("queueid" to HmppsSqsProperties.QueueConfig(queueName = "any", queueAccessKeyId = "any", queueSecretAccessKey = "any", dlqName = "any")))
-    }.isInstanceOf(InvalidHmppsQueuePropertiesException::class.java)
+    }.isInstanceOf(InvalidHmppsSqsPropertiesException::class.java)
       .hasMessageContaining("queueid")
       .hasMessageContaining("DLQ access key id")
   }
@@ -45,7 +45,7 @@ class HmppsSqsPropertiesTest {
   fun `should require a dlq secret access key`() {
     assertThatThrownBy {
       HmppsSqsProperties(queues = mapOf("queueid" to HmppsSqsProperties.QueueConfig(queueName = "any", queueAccessKeyId = "any", queueSecretAccessKey = "any", dlqName = "any", dlqAccessKeyId = "any")))
-    }.isInstanceOf(InvalidHmppsQueuePropertiesException::class.java)
+    }.isInstanceOf(InvalidHmppsSqsPropertiesException::class.java)
       .hasMessageContaining("queueid")
       .hasMessageContaining("DLQ secret access key")
   }

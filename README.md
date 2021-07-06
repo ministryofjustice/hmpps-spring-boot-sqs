@@ -44,7 +44,7 @@ See [Running All Tests](#running-all-tests) and [Running the test-app](#running-
 
 ### HMPPS Queue Properties
 
-This library is driven by some configuration properties prefixed `hmpps.sqs` that are loaded into class `HmppsQueueProperties`. Based on the properties defined the library will attempt to:
+This library is driven by some configuration properties prefixed `hmpps.sqs` that are loaded into class `HmppsSqsProperties`. Based on the properties defined the library will attempt to:
 
 * create `AmazonSQS` beans for each queue defined
 * create a `HealthIndicator` for each queue which is registered with Spring Boot Actuator and appears on your `/health` page
@@ -57,7 +57,7 @@ Examples of property usage can be found in the test project in the following pla
 * Running locally with LocalStack: [test-app/.../application-localstack.yml](https://github.com/ministryofjustice/hmpps-spring-boot-sqs/blob/main/test-app/src/main/resources/application-localstack.yml)
 * Integration Test: [test-app/.../application-test.yml#L8](https://github.com/ministryofjustice/hmpps-spring-boot-sqs/blob/main/test-app/src/test/resources/application-test.yml#L8)
 
-#### HmppsQueueProperties Definitions
+#### HmppsSqsProperties Definitions
 
 | Property | Default | Description |
 | -------- | ------- | ----------- |
@@ -83,13 +83,13 @@ Each queue declared in the `queues` map is defined in the `QueueConfig` property
 
 #### :warning: queueId Must Be All Lowercase
 
-As we define the production queue properties in environment variables that map to a complex object in `HmppsQueueProperties` Spring is unable to handle a mixed case `queueId`.
+As we define the production queue properties in environment variables that map to a complex object in `HmppsSqsProperties` Spring is unable to handle a mixed case `queueId`.
 
 ### AmazonSQS Beans
 
 As each queue and dead letter queue (DLQ) has its own access key and secret we create an SQS client for each one. Historically this has been done in Spring `@Configuration` classes for both AWS and LocalStack (for testing) but this becomes complicated and hard to follow when there are multiple queues and DLQs.
 
-To remove this pain each queue defined in `HmppsQueueProperties` should have an `AmazonSQS` created for both the main queue and the associated DLQ.
+To remove this pain each queue defined in `HmppsSqsProperties` should have an `AmazonSQS` created for both the main queue and the associated DLQ.
 
 The bean names have the following format and can be used with `@Qualifier` to inject the beans into another `@Component`:
 
@@ -148,9 +148,9 @@ The `@EnableJms` annotation is included by this library.
 
 To read from a queue with JMS we need a `JmsListenerContainerFactory` for each queue which can then be referenced in the `@JmsListener` annotation on the `containerFactory` attribute.
 
-This library will create a container factory for each queue defined in `HmppsQueueProperties` and save them in proxy class `HmppsQueueContainerFactoryProxy`. The proxy can then be defined as the `containerFactory`.
+This library will create a container factory for each queue defined in `HmppsSqsProperties` and save them in proxy class `HmppsQueueContainerFactoryProxy`. The proxy can then be defined as the `containerFactory`.
 
-This means that the only thing you need to do to get a JMS listener working for each queue in `HmppsQueueProperties` is declare `containerFactory = "hmppsQueueContainerFactoryProxy"` on the `@JmsLIstener`.
+This means that the only thing you need to do to get a JMS listener working for each queue in `HmppsSqsProperties` is declare `containerFactory = "hmppsQueueContainerFactoryProxy"` on the `@JmsLIstener`.
 
 An example is available in the `test-app`'s [listeners](https://github.com/ministryofjustice/hmpps-spring-boot-sqs/blob/main/test-app/src/main/kotlin/uk/gov/justice/digital/hmpps/hmppstemplatepackagename/service/MessageListener.kt).
 
@@ -162,7 +162,7 @@ If you don't wish to use the `HmppsQueueContainerFactoryProxy` because you want 
 
 Usually on the `@JmsListenener` annotation the `destination` property refers to a queue name. However, our queue name is defined in configuration properties so the `destination` property would require some horrible SpEL to extract the queue name.
 
-To get around this we have created a custom destination resolver called `HmppsQueueDestinationResolver` which accepts the destination as `queueId` from the [queue configuration properties](#hmppsqueueproperties-definitions) and transforms it into the queue name. This makes the `destination` property much simpler and expresses the listeners intent better.
+To get around this we have created a custom destination resolver called `HmppsQueueDestinationResolver` which accepts the destination as `queueId` from the [queue configuration properties](#hmppssqsproperties-definitions) and transforms it into the queue name. This makes the `destination` property much simpler and expresses the listeners intent better.
 
 For an example see class `MessageListener` in the `test-app`.
 
@@ -170,7 +170,7 @@ For an example see class `MessageListener` in the `test-app`.
 
 All queues should be included on an application's health page. An unhealthy queue indicates an unhealthy service.
 
-For each queue defined in `HmppsQueueProperties` we create a `HmppsQueueHealth` bean.
+For each queue defined in `HmppsSqsProperties` we create a `HmppsQueueHealth` bean.
 
 The Spring beans produced have names of format `<queueId>-health`. If you wish to override the automatically created bean then provide a custom bean with the same name. Upon finding the custom bean this library will use the custom bean rather than generating one.
 

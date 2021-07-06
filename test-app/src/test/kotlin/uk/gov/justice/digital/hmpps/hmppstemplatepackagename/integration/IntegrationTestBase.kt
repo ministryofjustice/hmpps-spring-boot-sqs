@@ -95,6 +95,9 @@ abstract class IntegrationTestBase {
     )
   }
 
+  companion object {
+  }
+
   @TestConfiguration
   class SqsConfig(private val hmppsQueueFactory: HmppsQueueFactory) {
 
@@ -104,14 +107,14 @@ abstract class IntegrationTestBase {
       @Qualifier("anotherqueue-sqs-dlq-client") anotherQueueSqsDlqClient: AmazonSQS
     ): AmazonSQS =
       with(hmppsSqsProperties) {
-        val config = queues["anotherqueue"] ?: throw MissingQueueException("HmppsQueueProperties config for anotherqueue not found")
+        val config = queues["anotherqueue"] ?: throw MissingQueueException("HmppsSqsProperties config for anotherqueue not found")
         hmppsQueueFactory.createSqsClient(config, hmppsSqsProperties, anotherQueueSqsDlqClient)
       }
 
     @Bean("anotherqueue-sqs-dlq-client")
     fun anotherQueueSqsDlqClient(hmppsSqsProperties: HmppsSqsProperties): AmazonSQS =
       with(hmppsSqsProperties) {
-        val config = queues["anotherqueue"] ?: throw MissingQueueException("HmppsQueueProperties config for anotherqueue not found")
+        val config = queues["anotherqueue"] ?: throw MissingQueueException("HmppsSqsProperties config for anotherqueue not found")
         hmppsQueueFactory.createSqsDlqClient(config, hmppsSqsProperties)
       }
   }

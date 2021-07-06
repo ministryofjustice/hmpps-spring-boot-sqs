@@ -24,15 +24,15 @@ data class HmppsSqsProperties(
 
   init {
     queues.forEach { (queueId, queueConfig) ->
-      if (queueId != queueId.lowercase()) throw InvalidHmppsQueuePropertiesException("queueId $queueId is not lowercase")
+      if (queueId != queueId.lowercase()) throw InvalidHmppsSqsPropertiesException("queueId $queueId is not lowercase")
       if (provider == "aws") {
-        if (queueConfig.queueAccessKeyId.isEmpty()) throw InvalidHmppsQueuePropertiesException("queueId $queueId does not have a queue access key id")
-        if (queueConfig.queueSecretAccessKey.isEmpty()) throw InvalidHmppsQueuePropertiesException("queueId $queueId does not have a queue secret access key")
-        if (queueConfig.dlqAccessKeyId.isEmpty()) throw InvalidHmppsQueuePropertiesException("queueId $queueId does not have a DLQ access key id")
-        if (queueConfig.dlqSecretAccessKey.isEmpty()) throw InvalidHmppsQueuePropertiesException("queueId $queueId does not have a DLQ secret access key")
+        if (queueConfig.queueAccessKeyId.isEmpty()) throw InvalidHmppsSqsPropertiesException("queueId $queueId does not have a queue access key id")
+        if (queueConfig.queueSecretAccessKey.isEmpty()) throw InvalidHmppsSqsPropertiesException("queueId $queueId does not have a queue secret access key")
+        if (queueConfig.dlqAccessKeyId.isEmpty()) throw InvalidHmppsSqsPropertiesException("queueId $queueId does not have a DLQ access key id")
+        if (queueConfig.dlqSecretAccessKey.isEmpty()) throw InvalidHmppsSqsPropertiesException("queueId $queueId does not have a DLQ secret access key")
       }
     }
   }
 }
 
-class InvalidHmppsQueuePropertiesException(message: String) : IllegalStateException(message)
+class InvalidHmppsSqsPropertiesException(message: String) : IllegalStateException(message)
