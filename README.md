@@ -64,14 +64,13 @@ Examples of property usage can be found in the test project in the following pla
 | provider | `aws` | `aws` for production or `localstack for` running locally / integration tests. (Testcontainers is not yet supported. Possibly coming soon). |
 | region   | `eu-west-2` | The AWS region where the queues live. |
 | localstackUrl | `http://localhost:4566` | Only used for `provider=localstack`. The location of the running LocalStack instance. |
-| queueAdminRole | `ROLE_QUEUE_ADMIN` | The role used to secure the purge and retry-dlq endpoints in `HmppsQueueResource`. |
 | queues   | | A map of `queueId` to `QueueConfig`. One entry is required for each queue. In production these are derived from environment variables with the prefix `HMPPS_SQS_QUEUES_` that should be populated from Kubernetes secrets (see below).
 
 Each queue declared in the `queues` map is defined in the `QueueConfig` property class
 
 | Property | Default | Description |
 | -------- | ------- | ----------- |
-| queueId | | The key to the `queues` map. A unique name for the queue configuration, used heavily when automatically creating Spring beans. |
+| queueId | | The key to the `queues` map. A unique name for the queue configuration, used heavily when automatically creating Spring beans. Must be lower case. |
 | queueName | | The name of the queue as recognised by AWS or LocalStack. |
 | queueAccessKeyId | | Only used for `provider=aws`. The AWS access key ID, should be derived from an environment variable of format `HMPPS_SQS_QUEUE_<queueName>_ACCESS_KEY_ID`. |
 | queueSecretAccessKey | | Only used for `provider=aws`. The AWS secret access key, should be derived from an environment variable of format `HMPPS_SQS_QUEUE_<queueName>_SECRET_ACCESS_KEY`. |

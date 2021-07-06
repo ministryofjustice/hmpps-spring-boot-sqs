@@ -62,8 +62,9 @@ class HmppsQueueFactory(
     with(hmppsSqsProperties) {
       when (provider) {
         "aws" -> amazonSqsFactory.awsSqsDlqClient(queueConfig.dlqName, queueConfig.dlqAccessKeyId, queueConfig.dlqSecretAccessKey, region, queueConfig.asyncDlqClient)
-        "localstack" -> amazonSqsFactory.localStackSqsDlqClient(queueConfig.dlqName, localstackUrl, region, queueConfig.asyncDlqClient)
-          .also { sqsDlqClient -> sqsDlqClient.createQueue(queueConfig.dlqName) }
+        "localstack" ->
+          amazonSqsFactory.localStackSqsDlqClient(queueConfig.dlqName, localstackUrl, region, queueConfig.asyncDlqClient)
+            .also { sqsDlqClient -> sqsDlqClient.createQueue(queueConfig.dlqName) }
         else -> throw IllegalStateException("Unrecognised HMPPS SQS provider $provider")
       }
     }
@@ -72,8 +73,9 @@ class HmppsQueueFactory(
     with(hmppsSqsProperties) {
       when (provider) {
         "aws" -> amazonSqsFactory.awsSqsClient(queueConfig.queueName, queueConfig.queueAccessKeyId, queueConfig.queueSecretAccessKey, region, queueConfig.asyncQueueClient)
-        "localstack" -> amazonSqsFactory.localStackSqsClient(queueConfig.queueName, localstackUrl, region, queueConfig.asyncQueueClient)
-          .also { sqsClient -> createLocalStackQueue(sqsClient, sqsDlqClient, queueConfig.queueName, queueConfig.dlqName) }
+        "localstack" ->
+          amazonSqsFactory.localStackSqsClient(queueConfig.queueName, localstackUrl, region, queueConfig.asyncQueueClient)
+            .also { sqsClient -> createLocalStackQueue(sqsClient, sqsDlqClient, queueConfig.queueName, queueConfig.dlqName) }
         else -> throw IllegalStateException("Unrecognised HMPPS SQS provider $provider")
       }
     }

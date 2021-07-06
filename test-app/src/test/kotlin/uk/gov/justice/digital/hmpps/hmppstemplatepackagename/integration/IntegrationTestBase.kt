@@ -95,9 +95,6 @@ abstract class IntegrationTestBase {
     )
   }
 
-  companion object {
-  }
-
   @TestConfiguration
   class SqsConfig(private val hmppsQueueFactory: HmppsQueueFactory) {
 
