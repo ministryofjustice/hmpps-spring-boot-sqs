@@ -36,7 +36,7 @@ Hopefully you will now get features like HealthIndicators, queue admin endpoints
 
 ## How To Run This Locally
 
-A test application that applies this library exists for both functional tests and as an example application that uses this library.
+A test application found in module `test-app` applies this library and is used for both functional tests and as an example application you can spin up.
 
 See [Running All Tests](#running-all-tests) and [Running the test-app](#running-the-test-app) for more details.
 
@@ -64,9 +64,10 @@ Examples of property usage can be found in the test project in the following pla
 | provider | `aws` | `aws` for production or `localstack for` running locally / integration tests. (Testcontainers is not yet supported. Possibly coming soon). |
 | region   | `eu-west-2` | The AWS region where the queues live. |
 | localstackUrl | `http://localhost:4566` | Only used for `provider=localstack`. The location of the running LocalStack instance. |
+| queueAdminRole | `ROLE_QUEUE_ADMIN` | The role used to secure the purge and retry-dlq endpoints in `HmppsQueueResource`. |
 | queues   | | A map of `queueId` to `QueueConfig`. One entry is required for each queue. In production these are derived from environment variables with the prefix `HMPPS_SQS_QUEUES_` that should be populated from Kubernetes secrets (see below).
 
-Each queue defined in the `queues` map is defined in the `QueueConfig` property class
+Each queue declared in the `queues` map is defined in the `QueueConfig` property class
 
 | Property | Default | Description |
 | -------- | ------- | ----------- |
@@ -80,22 +81,34 @@ Each queue defined in the `queues` map is defined in the `QueueConfig` property 
 | dlqSecretAccessKey | | Only used for `provider=aws`. The AWS secret access key of the DLQ, should be derived from an environment variable of format `HMPPS_SQS_QUEUE_<queueName>_DLQ_SECRET_ACCESS_KEY`. |
 | asyncDlqClient | false | If true then the `AmazonSQS` bean created will be an `AmazonSQSAsync` instance. |
 
+#### :warning: queueId Must Be All Lowercase
+
+As we define the production queue properties in environment variables that map to a complex object in `HmppsQueueProperties` Spring is unable to handle a mixed case `queueId`.
+
 ### AmazonSQS Beans
 
-Each queue defined in `HmppsQueueProperties` should have an `AmazonSQS` created for both the main queue and the associated dead letter queue (DLQ).
+As each queue and dead letter queue (DLQ) has its own access key and secret we create an SQS client for each one. Historically this has been done in Spring `@Configuration` classes for both AWS and LocalStack (for testing) but this becomes complicated and hard to follow when there are multiple queues and DLQs.
+
+To remove this pain each queue defined in `HmppsQueueProperties` should have an `AmazonSQS` created for both the main queue and the associated DLQ.
 
 The bean names have the following format and can be used with `@Qualifier` to inject the beans into another `@Component`:
 
 * main queue - `<queueId>-sqs-client`
 * DLQ - `<queueId>-sqs-dlq-client`
 
+#### LocalStack AmazonSQS Beans
+
+In the past we would generally have a shell script to create any queues in a running LocalStack instance so that we can run tests against them.
+
+This library will now create the queues automatically when the provider is LocalStack so we don't need the queue creation shell script.
+
 #### Overriding AmazonSQS Beans
 
 If for any reason you don't want to use the `AmazonSQS` beans automatically created by this library but still want other features such as a `HealthIndicator` or queue admin endpoints then it's possible to override them.
 
-At the point this library attempts to generate any bean and register with the `ApplicationContext` if it finds an existing bean with the same name then it does nothing and uses the existing bean.
+At the point this library attempts to generate any bean and register with the `ApplicationContext`, if it finds an existing bean with the same name then it does nothing and uses the existing bean.
 
-So first find the bean names you wish to override as mentioned in [AmazonSQS Beans](#amazonsqs-beans). Then create your own AmazonSQS bean with the same name.
+So first find the bean names you wish to override as mentioned in [AmazonSQS Beans](#amazonsqs-beans). Then create your own `AmazonSQS` bean with the same name.
 
 #### I Don't Need a DLQ. Why Is It Mandatory?
 
@@ -109,7 +122,7 @@ It is only possible to use the `@SpyBean` annotation for beans declared in a `@C
 
 However, as mentioned above you can override the automatically generated beans with your own bean, e.g. with bean name `<queueId>-sqs-client` or `<queueId>-sqs-dlq-client`. If you do this in a `@TestConfiguration` using the `@Bean` annotation then it is possible to declare a corresponding SpyBean. `HmppsQueueFactory` provides factory methods to assist in creating such beans.
 
-See an example in the `test-app` class [IntegrationTestBase](https://github.com/ministryofjustice/hmpps-spring-boot-sqs/blob/main/test-app/src/test/kotlin/uk/gov/justice/digital/hmpps/hmppstemplatepackagename/integration/IntegrationTestBase.kt).
+An example in the `test-app` class which defines beans to spy on in a `@TestConfiguration`. See [IntegrationTestBase](https://github.com/ministryofjustice/hmpps-spring-boot-sqs/blob/main/test-app/src/test/kotlin/uk/gov/justice/digital/hmpps/hmppstemplatepackagename/integration/IntegrationTestBase.kt).
 
 #### MockBeans
 
@@ -137,7 +150,7 @@ To read from a queue with JMS we need a `JmsListenerContainerFactory` for each q
 
 This library will create a container factory for each queue defined in `HmppsQueueProperties` and save them in proxy class `HmppsQueueContainerFactoryProxy`. The proxy can then be defined as the `containerFactory`.
 
-This means that the only thing you need to do to get a JMS listener working for each queue in `HmppsQueueProperties` is use the `HmppsQueueContainerFactoryProxy` container factory.
+This means that the only thing you need to do to get a JMS listener working for each queue in `HmppsQueueProperties` is declare `containerFactory = "hmppsQueueContainerFactoryProxy"` on the `@JmsLIstener`.
 
 An example is available in the `test-app`'s [listeners](https://github.com/ministryofjustice/hmpps-spring-boot-sqs/blob/main/test-app/src/main/kotlin/uk/gov/justice/digital/hmpps/hmppstemplatepackagename/service/MessageListener.kt).
 
@@ -175,7 +188,7 @@ You should however create a couple of integration tests for your queue health in
 When SQS messages fail to be processed by the main queue they are sent to the Dead Letter Queue (DLQ). We then find ourselves in one of the following scenarios:
 
 * The failure was transient and a retry will allow the message to be processed
-* The failure was due to an unrecoverable error and we want to discard the message
+* The failure was due to an unrecoverable error and we want to discard the message while we investigate the error and fix it
 
 Class `HmppsQueueResource` provides endpoints to retry and purge messages on a DLQ.
 
@@ -193,7 +206,7 @@ The queue names should also appear on the `/health` page if using this library f
 
 #### Securing Endpoints
 
-Most endpoints in `HmppsQueueResource` will have a default role required to access them which is overridable by a configuration property.
+Most endpoints in `HmppsQueueResource` will have a default role required to access them which is overridable by a configuration property found in `hmpps.sqs.queueAdminRole`.
 
 Note that any endpoints defined in `HmppsQueueResource` that are not secured by a role are only intended for use within the Kubernetes namespace and must not be left wide open - instead they should be secured in the Kubernetes ingress. See the [example ingress](https://github.com/ministryofjustice/hmpps-spring-boot-sqs/blob/main/test-app/helm_deploy/hmpps-template-kotlin/example/housekeeping-cronjob.yaml) for how to block the endpoints from outside the namespace.
 
@@ -237,7 +250,7 @@ Note that this module does not produce an artifact for publishing - we only publ
 
 #### Running the Functional Tests
 
-The tests require that localstack is running. To start localstack use command:
+The functional tests need a running instance of LocalStack. To start LocalStack use command:
 
 `docker-compose -f docker-compose-test.yml up localstack`
 
@@ -255,23 +268,9 @@ Start localstack with command:
 
 Then run the `test-app` in your IDE from main class `HmppsTemplateKotlin`.
 
-#### Managing Queues in Tests
-
-You will find that this project doesn't contain a set-up script to create localstack resources. This is because there's an issue with using `@SpringBootTest` where if tests running in different Spring contexts share the same queue, the message listener carries on reading from the queue even when the context is not currently active. This results in contamination between tests - sometimes testB fails because the message it was expecting has been processed by testA's message listener.
-
-To make sure that each Spring context works in isolation we create the localstack resources with random names when starting the application.
-
-##### Mechanism
-
-The application configuration properties in `application-test.yml` set the queue and DLQ names to `${random.uuid}`. This means every time the property is read it generates a random queue/DLQ name.
-
-The configuration properties are loaded into class `HmppsQueueProperties`. This is to guarantee that the queue names are only generated once per context, in the properties bean.
-
-The class `HmpspQueueFactory` then takes the queue names from `HmpspQueueProperties` and creates the queues during application startup.
-
 ## How To Contribute To This Library
 
-Raise a PR and ask for a review in the MOJ Slack channel `#dps_dev`.
+Raise a PR and ask for a review in the MOJDT Slack channel `#dps_dev`.
 
 If accepted make sure that the version number in `lib/build.gradle.kts` has been upgraded according to [Semver rules](https://semver.org/spec/v2.0.0.html) and ask in `#dps_tech_team` to publish the library.
 
@@ -289,7 +288,7 @@ As a rule of thumb new features must:
 
 ## Publishing Locally (to test against other projects)
 
-* Firstly bump the version of this project in `lib/build.gradle.kts`.
+* Firstly bump the version of this project in `lib/build.gradle.kts` e.g. increase the minor version by 1 and add `-beta` to the version number.
 * Then publish the plugin to local maven
 
 ```
@@ -311,11 +310,13 @@ However, please note that the document above is old and a couple of things have 
 
 When publishing to Maven Central we authenticate with a username and password.
 
-In order to use groupId (see [Maven coordinates](https://maven.apache.org/pom.html#Maven_Coordinates)) `uk.org.justice.service.hmpps` we claimed the domain `uk.org.justice.service.hmpps` with Sonatype [see this PR](https://github.com/ministryofjustice/cloud-platform-environments/pull/4872) and registered this against my personal Sonatype username (service accounts not supported :( ). By the time you read this several members of the `hmpps-tech-team` will also have accounts associated with that domain.
+In order to use groupId (see [Maven coordinates](https://maven.apache.org/pom.html#Maven_Coordinates)) `uk.org.justice.service.hmpps` we claimed the domain `uk.org.justice.service.hmpps` with Sonatype ( [see this PR](https://github.com/ministryofjustice/cloud-platform-environments/pull/4872) ) and registered this against my personal Sonatype username (service accounts not supported). Several members of the `hmpps-tech-team` have accounts associated with that domain too.
 
 An account also gives us access to the [Staging repository](https://s01.oss.sonatype.org/#stagingRepositories) which is used to validate Maven publications before they are published.
 
-Note that this is the place to look for clues if the publish fails. ^^^
+#### Handling Failed Publications
+
+If the library fails to be published then it might have failed validation in the Sonatype Staging repository so check there for some clues.
 
 #### Creating a Sonatype User
 
@@ -340,8 +341,6 @@ If you need to change the secrets used to authorise with Sonatype delete the Cir
 
 One of the requirements for publishing to Maven Central is that all publications are [signed using PGP](https://central.sonatype.org/publish/requirements/gpg/).
 
-However we wish to publish from Circle CI rather than locally so we have to configure things a little differently.
-
 #### Signing a Publication on Circle CI
 
 In `build.gradle.kts` we use environment variables `ORG_GRADLE_PROJECT_signingKey` and `ORG_GRADLE_PROJECT_signingPassword` as recommended in the [Gradle Signing Plugin documentation](https://docs.gradle.org/current/userguide/signing_plugin.html#sec:in-memory-keys).
@@ -350,6 +349,6 @@ In `build.gradle.kts` we use environment variables `ORG_GRADLE_PROJECT_signingKe
 
 * Generate a new key - follow the [Sonatype guide](https://central.sonatype.org/publish/requirements/gpg/).
 * Export the private key to a file - google for `gpg export private key` and you should find several guides for using `gpg --export-secret-keys`.
-* To allow the private key to be inserted into Circle, convert the newlines in the private key to `\n` with command (assuming the private key is stored in file `private.key`): `cat private.key | sed -E ':a;N;$!ba;s/\r{0,1}\n/\\n/g'`
+* To allow the private key to be inserted into Circle, convert the newlines in the private key to `\n` with command (assuming the private key is stored in file `private.key`): `cat private.key | sed -E '/\r{0,1}\n/\\n/g'`
 * Delete the environment variables `ORG_GRADLE_PROJECT_signingKey` and `ORG_GRADLE_PROJECT_signingPassword` from the [Circle CI env vars page](https://app.circleci.com/settings/project/github/ministryofjustice/hmpps-spring-boot-sqs/environment-variables)
 * Recreate the environment variables where `ORG_GRADLE_PROJECT_signingKey` contains the private key (with newlines) and `ORG_GRADLE_PROJECT_signingPassword` contains the passphrase  
