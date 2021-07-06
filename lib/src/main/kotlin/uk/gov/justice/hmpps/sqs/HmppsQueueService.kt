@@ -20,11 +20,7 @@ class HmppsQueueService(
     private val log = LoggerFactory.getLogger(this::class.java)
   }
 
-  private val hmppsQueues: MutableList<HmppsQueue> = mutableListOf()
-
-  init {
-    hmppsQueues.addAll(hmppsQueueFactory.createHmppsQueues(hmppsSqsProperties))
-  }
+  private val hmppsQueues: List<HmppsQueue> = hmppsQueueFactory.createHmppsQueues(hmppsSqsProperties)
 
   fun findByQueueId(queueId: String) = hmppsQueues.associateBy { it.id }.getOrDefault(queueId, null)
   fun findByQueueName(queueName: String) = hmppsQueues.associateBy { it.queueName }.getOrDefault(queueName, null)
