@@ -121,7 +121,13 @@ It is only possible to use the `@SpyBean` annotation for beans declared in a `@C
 
 However, as mentioned above you can override the automatically generated beans with your own bean, e.g. with bean name `<queueId>-sqs-client` or `<queueId>-sqs-dlq-client`. If you do this in a `@TestConfiguration` using the `@Bean` annotation then it is possible to declare a corresponding SpyBean. `HmppsQueueFactory` provides factory methods to assist in creating such beans.
 
-An example in the `test-app` class which defines beans to spy on in a `@TestConfiguration`. See [IntegrationTestBase](https://github.com/ministryofjustice/hmpps-spring-boot-sqs/blob/main/test-app/src/test/kotlin/uk/gov/justice/digital/hmpps/hmppstemplatepackagename/integration/IntegrationTestBase.kt).
+This is complicated so first check the usage of your Spy Beans. Are they actually being used to mock or verify or just using them to purge queues / count messages on a queue? If there is no mocking or verifying then you can get the real bean from the `HmppsQueueService` by doing:
+
+```kotlin
+  hmppsQueueService.findByQueueId("<insert queue id here>")?.sqsClient ?: throw IllegalStateException("Unable to retrieve an SQS client for HmppsQueue with id <insert queue id here>")
+```
+
+If you definitely need a SpyBean then there is an example in the `test-app` which defines beans to spy on in a `@TestConfiguration`. See [IntegrationTestBase](https://github.com/ministryofjustice/hmpps-spring-boot-sqs/blob/main/test-app/src/test/kotlin/uk/gov/justice/digital/hmpps/hmppstemplatepackagename/integration/IntegrationTestBase.kt).
 
 #### MockBeans
 
