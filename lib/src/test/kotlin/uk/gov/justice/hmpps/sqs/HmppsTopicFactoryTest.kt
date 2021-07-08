@@ -148,7 +148,7 @@ class HmppsTopicFactoryTest {
 
   @Nested
   inner class `Create multiple LocalStack HmppsTopics`() {
-    private val someTopicConfig = TopicConfig(arn = "some arn", accessKeyId = "some access key id", secretAccessKey = "some secret access key")
+    private val someTopicConfig = TopicConfig(arn = "${LOCALSTACK_ARN_PREFIX}some arn", accessKeyId = "some access key id", secretAccessKey = "some secret access key")
     private val anotherTopicConfig = TopicConfig(arn = "another arn", accessKeyId = "another access key id", secretAccessKey = "another secret access key")
     private val hmppsSqsProperties = HmppsSqsProperties(provider = "localstack", queues = mock(), topics = mapOf("sometopicid" to someTopicConfig, "anothertopicid" to anotherTopicConfig))
     private val snsClient = mock<AmazonSNS>()
