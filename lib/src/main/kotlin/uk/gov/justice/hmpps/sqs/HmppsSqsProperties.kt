@@ -39,24 +39,99 @@ data class HmppsSqsProperties(
 
   init {
     queues.forEach { (queueId, queueConfig) ->
-      if (queueId != queueId.lowercase()) throw InvalidHmppsSqsPropertiesException("queueId $queueId is not lowercase")
-      if (provider == "aws") {
-        if (queueConfig.queueAccessKeyId.isEmpty()) throw InvalidHmppsSqsPropertiesException("queueId $queueId does not have a queue access key id")
-        if (queueConfig.queueSecretAccessKey.isEmpty()) throw InvalidHmppsSqsPropertiesException("queueId $queueId does not have a queue secret access key")
-        if (queueConfig.dlqAccessKeyId.isEmpty()) throw InvalidHmppsSqsPropertiesException("queueId $queueId does not have a DLQ access key id")
-        if (queueConfig.dlqSecretAccessKey.isEmpty()) throw InvalidHmppsSqsPropertiesException("queueId $queueId does not have a DLQ secret access key")
-      }
-      if (provider == "localstack") {
-        if (queueConfig.subscribeTopicId.isNotEmpty().and(topics.containsKey(queueConfig.subscribeTopicId).not()))
-          throw InvalidHmppsSqsPropertiesException("queueId $queueId wants to subscribe to ${queueConfig.subscribeTopicId} but it does not exist")
-      }
+      queueIdMustBeLowerCase(queueId)
+      queueNamesMustExist(queueId, queueConfig)
+      awsQueueSecretsMustExist(queueConfig, queueId)
+      localstackTopicSubscriptionsMustExist(queueConfig, queueId)
     }
     topics.forEach { (topicId, topicConfig) ->
-      if (provider == "aws") {
-        if (topicConfig.accessKeyId.isEmpty()) throw InvalidHmppsSqsPropertiesException("topicId $topicId does not have an access key id")
-        if (topicConfig.secretAccessKey.isEmpty()) throw InvalidHmppsSqsPropertiesException("topicId $topicId does not have a secret access key")
-      }
+      topicIdMustBeLowerCase(topicId)
+      awsTopicSecretsMustExist(topicConfig, topicId)
+      localstackTopicNameMustExist(topicId, topicConfig)
     }
+    checkForAwsDuplicateValues()
+    checkForLocalStackDuplicateValues()
+  }
+
+  private fun queueIdMustBeLowerCase(queueId: String) {
+    if (queueId != queueId.lowercase()) throw InvalidHmppsSqsPropertiesException("queueId $queueId is not lowercase")
+  }
+
+  private fun queueNamesMustExist(queueId: String, queueConfig: QueueConfig) {
+    if (queueConfig.queueName.isEmpty()) throw InvalidHmppsSqsPropertiesException("queueId $queueId does not have a queue name")
+    if (queueConfig.dlqName.isEmpty()) throw InvalidHmppsSqsPropertiesException("queueId $queueId does not have a dlq name")
+  }
+
+  private fun awsQueueSecretsMustExist(
+    queueConfig: QueueConfig,
+    queueId: String
+  ) {
+    if (provider == "aws") {
+      if (queueConfig.queueAccessKeyId.isEmpty()) throw InvalidHmppsSqsPropertiesException("queueId $queueId does not have a queue access key id")
+      if (queueConfig.queueSecretAccessKey.isEmpty()) throw InvalidHmppsSqsPropertiesException("queueId $queueId does not have a queue secret access key")
+      if (queueConfig.dlqAccessKeyId.isEmpty()) throw InvalidHmppsSqsPropertiesException("queueId $queueId does not have a DLQ access key id")
+      if (queueConfig.dlqSecretAccessKey.isEmpty()) throw InvalidHmppsSqsPropertiesException("queueId $queueId does not have a DLQ secret access key")
+    }
+  }
+
+  private fun localstackTopicSubscriptionsMustExist(
+    queueConfig: QueueConfig,
+    queueId: String
+  ) {
+    if (provider == "localstack") {
+      if (queueConfig.subscribeTopicId.isNotEmpty().and(topics.containsKey(queueConfig.subscribeTopicId).not()))
+        throw InvalidHmppsSqsPropertiesException("queueId $queueId wants to subscribe to ${queueConfig.subscribeTopicId} but it does not exist")
+    }
+  }
+
+  private fun topicIdMustBeLowerCase(topicId: String) {
+    if (topicId != topicId.lowercase()) throw InvalidHmppsSqsPropertiesException("topicId $topicId is not lowercase")
+  }
+
+  private fun localstackTopicNameMustExist(topicId: String, topicConfig: TopicConfig) {
+    if (provider == "localstack") {
+      if (topicConfig.name.isEmpty()) throw InvalidHmppsSqsPropertiesException("topicId $topicId does not have a name")
+    }
+  }
+
+  private fun awsTopicSecretsMustExist(
+    topicConfig: TopicConfig,
+    topicId: String
+  ) {
+    if (provider == "aws") {
+      if (topicConfig.arn.isEmpty()) throw InvalidHmppsSqsPropertiesException("topicId $topicId does not have an arn")
+      if (topicConfig.accessKeyId.isEmpty()) throw InvalidHmppsSqsPropertiesException("topicId $topicId does not have an access key id")
+      if (topicConfig.secretAccessKey.isEmpty()) throw InvalidHmppsSqsPropertiesException("topicId $topicId does not have a secret access key")
+    }
+  }
+
+  private fun checkForAwsDuplicateValues() {
+    if (provider == "aws") {
+      mustNotContainDuplicates("queue names", queues) { it.value.queueName }
+      mustNotContainDuplicates("queue access key ids", queues) { it.value.queueAccessKeyId }
+      mustNotContainDuplicates("queue secret access keys", queues) { it.value.queueSecretAccessKey }
+
+      mustNotContainDuplicates("dlq names", queues) { it.value.dlqName }
+      mustNotContainDuplicates("dlq access key ids", queues) { it.value.dlqAccessKeyId }
+      mustNotContainDuplicates("dlq secret access keys", queues) { it.value.dlqSecretAccessKey }
+
+      mustNotContainDuplicates("topic arns", topics) { it.value.arn }
+      mustNotContainDuplicates("topic access key ids", topics) { it.value.accessKeyId }
+      mustNotContainDuplicates("topic secret access keys", topics) { it.value.secretAccessKey }
+    }
+  }
+
+  private fun checkForLocalStackDuplicateValues() {
+    if (provider == "localstack") {
+      mustNotContainDuplicates("queue names", queues) { it.value.queueName }
+      mustNotContainDuplicates("dlq names", queues) { it.value.dlqName }
+      mustNotContainDuplicates("topic names", topics) { it.value.name }
+    }
+  }
+
+  private fun <T> mustNotContainDuplicates(description: String, source: Map<String, T>, valueFinder: (Map.Entry<String, T>) -> String) {
+    val duplicateValues = source.mapValues(valueFinder).values.groupingBy { it }.eachCount().filterValues { it > 1 }
+    if (duplicateValues.isNotEmpty()) throw InvalidHmppsSqsPropertiesException("Found duplicated $description: ${duplicateValues.keys}")
   }
 }
 
