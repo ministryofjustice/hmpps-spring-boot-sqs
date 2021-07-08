@@ -47,7 +47,8 @@ data class HmppsSqsProperties(
         if (queueConfig.dlqSecretAccessKey.isEmpty()) throw InvalidHmppsSqsPropertiesException("queueId $queueId does not have a DLQ secret access key")
       }
       if (provider == "localstack") {
-        if (topics.containsKey(queueConfig.subscribeTopicId).not()) throw InvalidHmppsSqsPropertiesException("queueId $queueId wants to subscribe to ${queueConfig.subscribeTopicId} but it does not exist")
+        if (queueConfig.subscribeTopicId.isNotEmpty().and(topics.containsKey(queueConfig.subscribeTopicId).not()))
+          throw InvalidHmppsSqsPropertiesException("queueId $queueId wants to subscribe to ${queueConfig.subscribeTopicId} but it does not exist")
       }
     }
     topics.forEach { (topicId, topicConfig) ->
