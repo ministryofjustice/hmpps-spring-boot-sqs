@@ -107,15 +107,15 @@ data class HmppsSqsProperties(
 
   private fun checkForAwsDuplicateValues() {
     if (provider == "aws") {
-      mustNotContainDuplicates("queue names", queues) { it.value.queueName }
+      mustNotContainDuplicates("queue names", queues, secret = false) { it.value.queueName }
       mustNotContainDuplicates("queue access key ids", queues) { it.value.queueAccessKeyId }
       mustNotContainDuplicates("queue secret access keys", queues) { it.value.queueSecretAccessKey }
 
-      mustNotContainDuplicates("dlq names", queues) { it.value.dlqName }
+      mustNotContainDuplicates("dlq names", queues, secret = false) { it.value.dlqName }
       mustNotContainDuplicates("dlq access key ids", queues) { it.value.dlqAccessKeyId }
       mustNotContainDuplicates("dlq secret access keys", queues) { it.value.dlqSecretAccessKey }
 
-      mustNotContainDuplicates("topic arns", topics) { it.value.arn }
+      mustNotContainDuplicates("topic arns", topics, secret = false) { it.value.arn }
       mustNotContainDuplicates("topic access key ids", topics) { it.value.accessKeyId }
       mustNotContainDuplicates("topic secret access keys", topics) { it.value.secretAccessKey }
     }
@@ -123,15 +123,18 @@ data class HmppsSqsProperties(
 
   private fun checkForLocalStackDuplicateValues() {
     if (provider == "localstack") {
-      mustNotContainDuplicates("queue names", queues) { it.value.queueName }
-      mustNotContainDuplicates("dlq names", queues) { it.value.dlqName }
-      mustNotContainDuplicates("topic names", topics) { it.value.name }
+      mustNotContainDuplicates("queue names", queues, secret = false) { it.value.queueName }
+      mustNotContainDuplicates("dlq names", queues, secret = false) { it.value.dlqName }
+      mustNotContainDuplicates("topic names", topics, secret = false) { it.value.name }
     }
   }
 
-  private fun <T> mustNotContainDuplicates(description: String, source: Map<String, T>, valueFinder: (Map.Entry<String, T>) -> String) {
+  private fun <T> mustNotContainDuplicates(description: String, source: Map<String, T>, secret: Boolean = true, valueFinder: (Map.Entry<String, T>) -> String) {
     val duplicateValues = source.mapValues(valueFinder).values.groupingBy { it }.eachCount().filterValues { it > 1 }
-    if (duplicateValues.isNotEmpty()) throw InvalidHmppsSqsPropertiesException("Found duplicated $description: ${duplicateValues.keys}")
+    if (duplicateValues.isNotEmpty()) {
+      val outputValues = if (secret.not()) duplicateValues.keys else duplicateValues.keys.map { "${it.subSequence(0, 4)}******" }.toList()
+      throw InvalidHmppsSqsPropertiesException("Found duplicated $description: $outputValues")
+    }
   }
 }
 
