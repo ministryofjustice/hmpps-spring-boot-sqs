@@ -76,6 +76,7 @@ class HmppsQueueFactory(
         "localstack" ->
           amazonSqsFactory.localStackSqsClient(queueConfig.queueName, localstackUrl, region, queueConfig.asyncQueueClient)
             .also { sqsClient -> createLocalStackQueue(sqsClient, sqsDlqClient, queueConfig.queueName, queueConfig.dlqName) }
+        // TODO for localstack we should subscribe queues to topics if configured
         else -> throw IllegalStateException("Unrecognised HMPPS SQS provider $provider")
       }
     }

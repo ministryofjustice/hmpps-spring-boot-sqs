@@ -18,6 +18,6 @@ class HmppsQueueJmsListenerContainerFactory(private val factories: List<HmppsQue
       .firstOrNull { it.destination == (endpoint as MethodJmsListenerEndpoint).destination }
       ?.factory
       ?.createListenerContainer(endpoint)
-      ?: throw JmsListenerContainerFactoryMissingException("Unable to find jms listener container factory for endpoint ${endpoint.id}")
+      ?: throw JmsListenerContainerFactoryMissingException("Unable to find jms listener container factory for endpoint ${(endpoint as MethodJmsListenerEndpoint).destination}")
   }
 }
