@@ -41,12 +41,12 @@ data class HmppsSqsProperties(
     queues.forEach { (queueId, queueConfig) ->
       queueIdMustBeLowerCase(queueId)
       queueNamesMustExist(queueId, queueConfig)
-      awsQueueSecretsMustExist(queueConfig, queueId)
+      awsQueueSecretsMustExist(queueId, queueConfig)
       localstackTopicSubscriptionsMustExist(queueConfig, queueId)
     }
     topics.forEach { (topicId, topicConfig) ->
       topicIdMustBeLowerCase(topicId)
-      awsTopicSecretsMustExist(topicConfig, topicId)
+      awsTopicSecretsMustExist(topicId, topicConfig)
       localstackTopicNameMustExist(topicId, topicConfig)
     }
     checkForAwsDuplicateValues()
@@ -62,10 +62,7 @@ data class HmppsSqsProperties(
     if (queueConfig.dlqName.isEmpty()) throw InvalidHmppsSqsPropertiesException("queueId $queueId does not have a dlq name")
   }
 
-  private fun awsQueueSecretsMustExist(
-    queueConfig: QueueConfig,
-    queueId: String
-  ) {
+  private fun awsQueueSecretsMustExist(queueId: String, queueConfig: QueueConfig) {
     if (provider == "aws") {
       if (queueConfig.queueAccessKeyId.isEmpty()) throw InvalidHmppsSqsPropertiesException("queueId $queueId does not have a queue access key id")
       if (queueConfig.queueSecretAccessKey.isEmpty()) throw InvalidHmppsSqsPropertiesException("queueId $queueId does not have a queue secret access key")
@@ -94,10 +91,7 @@ data class HmppsSqsProperties(
     }
   }
 
-  private fun awsTopicSecretsMustExist(
-    topicConfig: TopicConfig,
-    topicId: String
-  ) {
+  private fun awsTopicSecretsMustExist(topicId: String, topicConfig: TopicConfig) {
     if (provider == "aws") {
       if (topicConfig.arn.isEmpty()) throw InvalidHmppsSqsPropertiesException("topicId $topicId does not have an arn")
       if (topicConfig.accessKeyId.isEmpty()) throw InvalidHmppsSqsPropertiesException("topicId $topicId does not have an access key id")
