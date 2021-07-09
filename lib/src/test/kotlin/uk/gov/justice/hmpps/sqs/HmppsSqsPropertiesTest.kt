@@ -131,7 +131,9 @@ class HmppsSqsPropertiesTest {
           queues = mapOf("queueid" to validLocalstackQueueConfig()),
           topics = mapOf("topicid" to validLocalstackTopicConfig().copy(arn = LOCALSTACK_ARN_PREFIX))
         )
-      }
+      }.isInstanceOf(InvalidHmppsSqsPropertiesException::class.java)
+        .hasMessageContaining("topicid")
+        .hasMessageContaining("name")
     }
 
     @Test
@@ -365,6 +367,6 @@ class HmppsSqsPropertiesTest {
 
   private fun validAwsQueueConfig(index: Int = 1) = QueueConfig(queueName = "name$index", queueAccessKeyId = "key$index", queueSecretAccessKey = "secret$index", dlqName = "dlqName$index", dlqAccessKeyId = "dlqKey$index", dlqSecretAccessKey = "dlqSecret$index")
   private fun validAwsTopicConfig(index: Int = 1) = TopicConfig(arn = "arn$index", accessKeyId = "key$index", secretAccessKey = "secret$index")
-  private fun validLocalstackQueueConfig(index: Int = 1) = QueueConfig(queueName = "name$index", dlqName = "dlqName$index", dlqAccessKeyId = "dlqKey$index", dlqSecretAccessKey = "dlqSecret$index")
+  private fun validLocalstackQueueConfig(index: Int = 1) = QueueConfig(queueName = "name$index", dlqName = "dlqName$index")
   private fun validLocalstackTopicConfig(index: Int = 1) = TopicConfig(arn = "${LOCALSTACK_ARN_PREFIX}$index")
 }
