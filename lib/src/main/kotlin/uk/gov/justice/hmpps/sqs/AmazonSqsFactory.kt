@@ -15,29 +15,29 @@ class AmazonSqsFactory {
     val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
-  fun awsSqsClient(queueName: String, accessKeyId: String, secretAccessKey: String, region: String, asyncClient: Boolean = false): AmazonSQS =
+  fun awsSqsClient(queueId: String, queueName: String, accessKeyId: String, secretAccessKey: String, region: String, asyncClient: Boolean = false): AmazonSQS =
     when (asyncClient) {
       false -> awsAmazonSQS(accessKeyId, secretAccessKey, region)
       true -> awsAmazonSQSAsync(accessKeyId, secretAccessKey, region)
-    }.also { log.info("Created an AWS SQS client for queue $queueName") }
+    }.also { log.info("Created an AWS SQS client for queueId $queueId with name $queueName") }
 
-  fun localStackSqsClient(queueName: String, localstackUrl: String, region: String, asyncClient: Boolean = false): AmazonSQS =
+  fun localStackSqsClient(queueId: String, queueName: String, localstackUrl: String, region: String, asyncClient: Boolean = false): AmazonSQS =
     when (asyncClient) {
       false -> localStackAmazonSQS(localstackUrl, region)
       true -> localStackAmazonSQSAsync(localstackUrl, region)
-    }.also { log.info("Created a LocalStack SQS client for queue $queueName") }
+    }.also { log.info("Created a LocalStack SQS client for queueId $queueId with name $queueName") }
 
-  fun awsSqsDlqClient(dlqName: String, accessKeyId: String, secretAccessKey: String, region: String, asyncClient: Boolean = false): AmazonSQS =
+  fun awsSqsDlqClient(queueId: String, dlqName: String, accessKeyId: String, secretAccessKey: String, region: String, asyncClient: Boolean = false): AmazonSQS =
     when (asyncClient) {
       false -> awsAmazonSQS(accessKeyId, secretAccessKey, region)
       true -> awsAmazonSQSAsync(accessKeyId, secretAccessKey, region)
-    }.also { log.info("Created an AWS SQS DLQ client for DLQ $dlqName") }
+    }.also { log.info("Created an AWS SQS DLQ client for queueId $queueId with name $dlqName") }
 
-  fun localStackSqsDlqClient(dlqName: String, localstackUrl: String, region: String, asyncClient: Boolean = false): AmazonSQS =
+  fun localStackSqsDlqClient(queueId: String, dlqName: String, localstackUrl: String, region: String, asyncClient: Boolean = false): AmazonSQS =
     when (asyncClient) {
       false -> localStackAmazonSQS(localstackUrl, region)
       true -> localStackAmazonSQSAsync(localstackUrl, region)
-    }.also { log.info("Created a LocalStack SQS DLQ client for DLQ $dlqName") }
+    }.also { log.info("Created a LocalStack SQS DLQ client for queueId $queueId with name $dlqName") }
 
   private fun awsAmazonSQS(accessKeyId: String, secretAccessKey: String, region: String) =
     AmazonSQSClientBuilder.standard()

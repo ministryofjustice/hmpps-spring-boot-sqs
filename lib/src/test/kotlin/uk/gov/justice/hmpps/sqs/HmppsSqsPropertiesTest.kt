@@ -9,6 +9,8 @@ import uk.gov.justice.hmpps.sqs.HmppsSqsProperties.TopicConfig
 
 class HmppsSqsPropertiesTest {
 
+  private val localstackArnPrefix = "arn:aws:sns:eu-west-2:000000000000:"
+
   @Nested
   inner class GeneralRules {
 
@@ -38,7 +40,7 @@ class HmppsSqsPropertiesTest {
       val properties = HmppsSqsProperties(
         provider = "localstack",
         queues = mapOf("queueid" to validLocalstackQueueConfig()),
-        topics = mapOf("topicid" to validLocalstackTopicConfig().copy(arn = "${LOCALSTACK_ARN_PREFIX}topic-name"))
+        topics = mapOf("topicid" to validLocalstackTopicConfig().copy(arn = "${localstackArnPrefix}topic-name"))
       )
 
       assertThat(properties.topics["topicid"]?.name).isEqualTo("topic-name")
@@ -129,7 +131,7 @@ class HmppsSqsPropertiesTest {
         HmppsSqsProperties(
           provider = "localstack",
           queues = mapOf("queueid" to validLocalstackQueueConfig()),
-          topics = mapOf("topicid" to validLocalstackTopicConfig().copy(arn = LOCALSTACK_ARN_PREFIX))
+          topics = mapOf("topicid" to validLocalstackTopicConfig().copy(arn = localstackArnPrefix))
         )
       }.isInstanceOf(InvalidHmppsSqsPropertiesException::class.java)
         .hasMessageContaining("topicid")
@@ -353,9 +355,9 @@ class HmppsSqsPropertiesTest {
           provider = "localstack",
           queues = mapOf(),
           topics = mapOf(
-            "topic1" to validLocalstackTopicConfig(1).copy(arn = "${LOCALSTACK_ARN_PREFIX}1stName"),
-            "topic2" to validLocalstackTopicConfig(2).copy(arn = "${LOCALSTACK_ARN_PREFIX}2ndName"),
-            "topic3" to validLocalstackTopicConfig(3).copy(arn = "${LOCALSTACK_ARN_PREFIX}1stName")
+            "topic1" to validLocalstackTopicConfig(1).copy(arn = "${localstackArnPrefix}1stName"),
+            "topic2" to validLocalstackTopicConfig(2).copy(arn = "${localstackArnPrefix}2ndName"),
+            "topic3" to validLocalstackTopicConfig(3).copy(arn = "${localstackArnPrefix}1stName")
           )
         )
       }.isInstanceOf(InvalidHmppsSqsPropertiesException::class.java)
@@ -368,5 +370,5 @@ class HmppsSqsPropertiesTest {
   private fun validAwsQueueConfig(index: Int = 1) = QueueConfig(queueName = "name$index", queueAccessKeyId = "key$index", queueSecretAccessKey = "secret$index", dlqName = "dlqName$index", dlqAccessKeyId = "dlqKey$index", dlqSecretAccessKey = "dlqSecret$index")
   private fun validAwsTopicConfig(index: Int = 1) = TopicConfig(arn = "arn$index", accessKeyId = "key$index", secretAccessKey = "secret$index")
   private fun validLocalstackQueueConfig(index: Int = 1) = QueueConfig(queueName = "name$index", dlqName = "dlqName$index")
-  private fun validLocalstackTopicConfig(index: Int = 1) = TopicConfig(arn = "${LOCALSTACK_ARN_PREFIX}$index")
+  private fun validLocalstackTopicConfig(index: Int = 1) = TopicConfig(arn = "${localstackArnPrefix}$index")
 }
