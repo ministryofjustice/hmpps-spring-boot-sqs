@@ -5,23 +5,24 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 
 @Service
-class MessageService {
+class InboundMessageService(private val outboundEventsEmitter: OutboundEventsEmitter) {
   companion object {
     val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
-  fun handleMessage(message: String) {
-    log.info("processed message: $message")
+  fun handleMessage(hmppsEvent: HmppsEvent) {
+    log.info("received event: $hmppsEvent")
+    outboundEventsEmitter.sendEvent(hmppsEvent)
   }
 }
 
 @Service
-class AnotherMessageService {
+class OutboundMessageService {
   companion object {
     val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
-  fun handleMessage(message: String) {
-    log.info("processed message: $message")
+  fun handleMessage(hmppsEvent: HmppsEvent) {
+    log.info("received event: $hmppsEvent")
   }
 }

@@ -1,8 +1,17 @@
 hmpps.sqs:
   queues:
-    mainqueue:
+    inboundqueue:
       queueName: queue
       dlqName: dlq
-    anotherqueue:
+      subscribeTopicId: inboundtopic
+      subscribeFilter: '{"eventType":[ "OFFENDER_MOVEMENT-RECEPTION", "OFFENDER_MOVEMENT-DISCHARGE"] }'
+    outboundqueue:
       queueName: another-queue
       dlqName: another-dlq
+      subscribeTopicId: outboundtopic
+      subscribeFilter: '{"eventType":[ "OFFENDER_MOVEMENT-RECEPTION"] }'
+  topics:
+    inboundtopic:
+      arn: arn:aws:sns:eu-west-2:000000000000:${random.uuid}
+    outboundtopic:
+      arn: arn:aws:sns:eu-west-2:000000000000:${random.uuid}

@@ -1,0 +1,49 @@
+package uk.gov.justice.digital.hmpps.hmppstemplatepackagename.integration
+
+import com.amazonaws.services.sns.model.MessageAttributeValue
+import com.amazonaws.services.sns.model.PublishRequest
+import com.nhaarman.mockitokotlin2.mockingDetails
+import org.assertj.core.api.Assertions.assertThat
+import org.awaitility.kotlin.await
+import org.awaitility.kotlin.matches
+import org.awaitility.kotlin.untilCallTo
+import org.junit.jupiter.api.Test
+import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.service.HmppsEvent
+import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.service.Message
+
+class HmppsEventProcessingTest : IntegrationTestBase() {
+
+  @Test
+  fun `event is published to outbound topic`() {
+    val event = HmppsEvent("event-id", "OFFENDER_MOVEMENT-RECEPTION", "some event contents")
+    inboundSnsClient.publish(
+      PublishRequest(inboundTopicArn, gsonString(event))
+        .withMessageAttributes(
+          mapOf("eventType" to MessageAttributeValue().withDataType("String").withStringValue(event.type))
+        )
+    )
+
+    await untilCallTo { outboundTestSqsClient.countMessagesOnQueue(outboundTestQueueUrl) } matches { it == 1 }
+    val (Message) = objectMapper.readValue(outboundTestSqsClient.receiveMessage(outboundTestQueueUrl).messages[0].body, Message::class.java)
+    val receivedEvent = objectMapper.readValue(Message, HmppsEvent::class.java)
+
+    assertThat(receivedEvent.id).isEqualTo("event-id")
+    assertThat(receivedEvent.type).isEqualTo("OFFENDER_MOVEMENT-RECEPTION")
+    assertThat(receivedEvent.contents).isEqualTo("some event contents")
+  }
+
+  @Test
+  fun `event is published to outbound topic but the test queue subscriber ignores it`() {
+    val event = HmppsEvent("event-id", "OFFENDER_MOVEMENT-DISCHARGE", "some event contents")
+    inboundSnsClient.publish(
+      PublishRequest(inboundTopicArn, gsonString(event))
+        .withMessageAttributes(
+          mapOf("eventType" to MessageAttributeValue().withDataType("String").withStringValue(event.type))
+        )
+    )
+
+    await untilCallTo { mockingDetails(outboundEventsEmitterSpy).invocations!! } matches { it?.isNotEmpty() ?: false } // Don't understand why it is nullable here
+
+    assertThat(outboundTestSqsClient.countMessagesOnQueue(outboundTestQueueUrl)).isEqualTo(0)
+  }
+}

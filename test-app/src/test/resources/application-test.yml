@@ -8,9 +8,23 @@ management.endpoint:
 hmpps.sqs:
   provider: localstack
   queues:
-    mainqueue:
+    inboundqueue:
       dlqName: ${random.uuid}
       queueName: ${random.uuid}
-    anotherqueue:
+      subscribeTopicId: inboundtopic
+      subscribeFilter: '{"eventType":[ "OFFENDER_MOVEMENT-RECEPTION", "OFFENDER_MOVEMENT-DISCHARGE", "test.type"] }'
+    outboundqueue:
       dlqName: ${random.uuid}
       queueName: ${random.uuid}
+      subscribeTopicId: outboundtopic
+      subscribeFilter: '{"eventType":[ "OFFENDER_MOVEMENT-RECEPTION", "test.type"] }'
+    outboundtestqueue:
+      dlqName: ${random.uuid}
+      queueName: ${random.uuid}
+      subscribeTopicId: outboundtopic
+      subscribeFilter: '{"eventType":[ "OFFENDER_MOVEMENT-RECEPTION", "test.type"] }'
+  topics:
+    inboundtopic:
+      arn: arn:aws:sns:eu-west-2:000000000000:${random.uuid}
+    outboundtopic:
+      arn: arn:aws:sns:eu-west-2:000000000000:${random.uuid}
