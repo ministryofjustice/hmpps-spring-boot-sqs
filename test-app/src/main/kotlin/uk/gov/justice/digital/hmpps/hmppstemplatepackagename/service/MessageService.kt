@@ -5,23 +5,29 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 
 @Service
-class MessageService {
+class InboundMessageService(private val outboundEventsEmitter: OutboundEventsEmitter) {
   companion object {
     val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
-  fun handleMessage(message: String) {
-    log.info("processed message: $message")
+  fun handleMessage(hmppsEvent: HmppsEvent) {
+    log.info("received event: $hmppsEvent")
+    val outboundEventType = when (hmppsEvent.type) {
+      "OFFENDER_MOVEMENT-RECEPTION" -> "offender.movement.reception"
+      "OFFENDER_MOVEMENT-DISCHARGE" -> "offender.movement.discharge"
+      else -> hmppsEvent.type
+    }
+    outboundEventsEmitter.sendEvent(HmppsEvent(hmppsEvent.id, outboundEventType, hmppsEvent.contents))
   }
 }
 
 @Service
-class AnotherMessageService {
+class OutboundMessageService {
   companion object {
     val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
-  fun handleMessage(message: String) {
-    log.info("processed message: $message")
+  fun handleMessage(hmppsEvent: HmppsEvent) {
+    log.info("received event: $hmppsEvent")
   }
 }

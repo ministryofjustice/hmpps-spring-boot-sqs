@@ -11,6 +11,9 @@ jobs:
       localstack_tag: "0.12.9.1"
     steps:
       - checkout
+      - run:
+          name: Wait for SQS and SNS to be ready
+          command: curl -4 --connect-timeout 30 --retry-connrefused --retry 20 --retry-delay 5 http://localhost:4566
       - restore_cache:
           keys:
             - gradle-{{ checksum "build.gradle.kts" }}
@@ -22,9 +25,13 @@ jobs:
             - ~/.gradle
           key: gradle-{{ checksum "build.gradle.kts" }}
       - store_test_results:
-          path: build/test-results
+          path: lib/build/test-results
       - store_artifacts:
-          path: build/reports/tests
+          path: lib/build/reports/tests
+      - store_test_results:
+          path: test-app/build/test-results
+      - store_artifacts:
+          path: test-app/build/reports/tests
       - persist_to_workspace:
           root: .
           paths:

@@ -11,6 +11,10 @@ import org.awaitility.kotlin.untilCallTo
 import org.junit.jupiter.api.Test
 import org.mockito.ArgumentMatchers.anyString
 import org.springframework.http.MediaType
+import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.service.EventType
+import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.service.HmppsEvent
+import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.service.Message
+import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.service.MessageAttributes
 
 class HmppsQueueSpyBeanTest : IntegrationTestBase() {
 
@@ -24,45 +28,47 @@ class HmppsQueueSpyBeanTest : IntegrationTestBase() {
       .expectBody()
       .jsonPath("status").isEqualTo("UP")
 
-    verify(anotherSqsClientSpy).getQueueAttributes(any())
+    verify(outboundSqsClientSpy).getQueueAttributes(any())
   }
 
   @Test
   fun `Can verify usage of spy bean for retry-dlq endpoint`() {
-    anotherSqsDlqClientSpy.sendMessage(anotherDlqUrl, "message1")
-    await untilCallTo { anotherSqsDlqClientSpy.countMessagesOnQueue(anotherDlqUrl) } matches { it == 1 }
+    val event = HmppsEvent("id", "test.type", "message1")
+    val message = Message(gsonString(event), "message-id", MessageAttributes(EventType("test.type", "String")))
+    outboundSqsDlqClientSpy.sendMessage(outboundDlqUrl, gsonString(message))
+    await untilCallTo { outboundSqsDlqClientSpy.countMessagesOnQueue(outboundDlqUrl) } matches { it == 1 }
 
     webTestClient.put()
-      .uri("/queue-admin/retry-dlq/${hmppsSqsPropertiesSpy.anotherQueueConfig().dlqName}")
+      .uri("/queue-admin/retry-dlq/${hmppsSqsPropertiesSpy.outboundQueueConfig().dlqName}")
       .headers { it.authToken() }
       .accept(MediaType.APPLICATION_JSON)
       .exchange()
       .expectStatus().isOk
 
-    await untilCallTo { anotherSqsDlqClientSpy.countMessagesOnQueue(anotherDlqUrl) } matches { it == 0 }
-    await untilCallTo { anotherSqsClientSpy.countMessagesOnQueue(anotherQueueUrl) } matches { it == 0 }
+    await untilCallTo { outboundSqsDlqClientSpy.countMessagesOnQueue(outboundDlqUrl) } matches { it == 0 }
+    await untilCallTo { outboundSqsClientSpy.countMessagesOnQueue(outboundQueueUrl) } matches { it == 0 }
 
-    verify(anotherMessageServiceSpy).handleMessage("message1")
-    verify(anotherSqsDlqClientSpy).receiveMessage(ReceiveMessageRequest(anotherDlqUrl).withMaxNumberOfMessages(1))
-    verify(anotherSqsClientSpy).sendMessage(eq(anotherQueueUrl), anyString())
-    verify(anotherSqsDlqClientSpy).deleteMessage(any())
+    verify(outboundMessageServiceSpy).handleMessage(event)
+    verify(outboundSqsDlqClientSpy).receiveMessage(ReceiveMessageRequest(outboundDlqUrl).withMaxNumberOfMessages(1))
+    verify(outboundSqsClientSpy).sendMessage(eq(outboundQueueUrl), anyString())
+    verify(outboundSqsDlqClientSpy).deleteMessage(any())
   }
 
   @Test
   fun `Can verify usage of spy bean for purge-queue endpoint`() {
-    anotherSqsDlqClientSpy.sendMessage(anotherDlqUrl, "message1")
-    await untilCallTo { anotherSqsDlqClientSpy.countMessagesOnQueue(anotherDlqUrl) } matches { it == 1 }
+    outboundSqsDlqClientSpy.sendMessage(outboundDlqUrl, gsonString(HmppsEvent("id", "test.type", "message1")))
+    await untilCallTo { outboundSqsDlqClientSpy.countMessagesOnQueue(outboundDlqUrl) } matches { it == 1 }
 
     webTestClient.put()
-      .uri("/queue-admin/purge-queue/${hmppsSqsPropertiesSpy.anotherQueueConfig().dlqName}")
+      .uri("/queue-admin/purge-queue/${hmppsSqsPropertiesSpy.outboundQueueConfig().dlqName}")
       .headers { it.authToken() }
       .accept(MediaType.APPLICATION_JSON)
       .exchange()
       .expectStatus().isOk
 
-    await untilCallTo { anotherSqsDlqClientSpy.countMessagesOnQueue(anotherDlqUrl) } matches { it == 0 }
+    await untilCallTo { outboundSqsDlqClientSpy.countMessagesOnQueue(outboundDlqUrl) } matches { it == 0 }
 
     // One of these was in the @BeforeEach!
-    verify(anotherSqsDlqClientSpy, times(2)).purgeQueue(any())
+    verify(outboundSqsDlqClientSpy, times(2)).purgeQueue(any())
   }
 }

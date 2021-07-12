@@ -2,6 +2,8 @@ package uk.gov.justice.digital.hmpps.hmppstemplatepackagename.integration
 
 import com.amazonaws.services.sqs.AmazonSQS
 import com.amazonaws.services.sqs.model.PurgeQueueRequest
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.microsoft.applicationinsights.core.dependencies.google.gson.Gson
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.beans.factory.annotation.Autowired
@@ -16,8 +18,9 @@ import org.springframework.http.HttpHeaders
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.integration.mocks.OAuthExtension
-import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.service.AnotherMessageService
-import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.service.MessageService
+import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.service.InboundMessageService
+import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.service.OutboundEventsEmitter
+import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.service.OutboundMessageService
 import uk.gov.justice.hmpps.sqs.HmppsQueueFactory
 import uk.gov.justice.hmpps.sqs.HmppsQueueService
 import uk.gov.justice.hmpps.sqs.HmppsSqsProperties
@@ -31,36 +34,46 @@ abstract class IntegrationTestBase {
 
   @BeforeEach
   fun `clear queues`() {
-    sqsClient.purgeQueue(PurgeQueueRequest(queueUrl))
-    sqsDlqClient.purgeQueue(PurgeQueueRequest(dlqUrl))
-    anotherSqsClientSpy.purgeQueue(PurgeQueueRequest(anotherQueueUrl))
-    anotherSqsDlqClientSpy.purgeQueue(PurgeQueueRequest(anotherDlqUrl))
+    inboundSqsClient.purgeQueue(PurgeQueueRequest(inboundQueueUrl))
+    inboundSqsDlqClient.purgeQueue(PurgeQueueRequest(inboundDlqUrl))
+    outboundSqsClientSpy.purgeQueue(PurgeQueueRequest(outboundQueueUrl))
+    outboundSqsDlqClientSpy.purgeQueue(PurgeQueueRequest(outboundDlqUrl))
   }
 
-  fun HmppsSqsProperties.mainQueueConfig() =
-    queues["mainqueue"] ?: throw MissingQueueException("mainqueue has not been loaded from configuration properties")
+  fun HmppsSqsProperties.inboundQueueConfig() =
+    queues["inboundqueue"] ?: throw MissingQueueException("inboundqueue has not been loaded from configuration properties")
 
-  fun HmppsSqsProperties.anotherQueueConfig() =
-    queues["anotherqueue"] ?: throw MissingQueueException("anotherqueue has not been loaded from configuration properties")
+  fun HmppsSqsProperties.outboundQueueConfig() =
+    queues["outboundqueue"] ?: throw MissingQueueException("outboundqueue has not been loaded from configuration properties")
 
-  private val mainQueue by lazy { hmppsQueueService.findByQueueId("mainqueue") ?: throw MissingQueueException("HmppsQueue mainqueue not found") }
-  private val anotherQueue by lazy { hmppsQueueService.findByQueueId("anotherqueue") ?: throw MissingQueueException("HmppsQueue anotherqueue not found") }
+  private val inboundQueue by lazy { hmppsQueueService.findByQueueId("inboundqueue") ?: throw MissingQueueException("HmppsQueue inboundqueue not found") }
+  private val outboundQueue by lazy { hmppsQueueService.findByQueueId("outboundqueue") ?: throw MissingQueueException("HmppsQueue outboundqueue not found") }
+  private val outboundTestQueue by lazy { hmppsQueueService.findByQueueId("outboundtestqueue") ?: throw MissingQueueException("HmppsQueue outboundtestqueue not found") }
+  private val inboundTopic by lazy { hmppsQueueService.findByTopicId("inboundtopic") ?: throw MissingQueueException("HmppsTopic inboundtopic not found") }
 
-  protected val sqsClient by lazy { mainQueue.sqsClient }
-  protected val sqsDlqClient by lazy { mainQueue.sqsDlqClient }
+  protected val inboundSqsClient by lazy { inboundQueue.sqsClient }
+  protected val inboundSqsDlqClient by lazy { inboundQueue.sqsDlqClient }
+  protected val inboundSnsClient by lazy { inboundTopic.snsClient }
+  protected val outboundTestSqsClient by lazy { outboundTestQueue.sqsClient }
 
   @SpyBean
-  @Qualifier("anotherqueue-sqs-client")
-  protected lateinit var anotherSqsClientSpy: AmazonSQS
+  @Qualifier("outboundqueue-sqs-client")
+  protected lateinit var outboundSqsClientSpy: AmazonSQS
 
   @SpyBean
-  @Qualifier("anotherqueue-sqs-dlq-client")
-  protected lateinit var anotherSqsDlqClientSpy: AmazonSQS
+  @Qualifier("outboundqueue-sqs-dlq-client")
+  protected lateinit var outboundSqsDlqClientSpy: AmazonSQS
 
-  protected val queueUrl: String by lazy { mainQueue.queueUrl }
-  protected val dlqUrl: String by lazy { mainQueue.dlqUrl }
-  protected val anotherQueueUrl: String by lazy { anotherQueue.queueUrl }
-  protected val anotherDlqUrl: String by lazy { anotherQueue.dlqUrl }
+  protected val inboundQueueUrl: String by lazy { inboundQueue.queueUrl }
+  protected val inboundDlqUrl: String by lazy { inboundQueue.dlqUrl }
+  protected val outboundQueueUrl: String by lazy { outboundQueue.queueUrl }
+  protected val outboundDlqUrl: String by lazy { outboundQueue.dlqUrl }
+  protected val outboundTestQueueUrl: String by lazy { outboundTestQueue.queueUrl }
+
+  protected val inboundTopicArn by lazy { inboundTopic.arn }
+
+  @Autowired
+  protected lateinit var objectMapper: ObjectMapper
 
   @Autowired
   protected lateinit var jwtAuthHelper: JwtAuthHelper
@@ -69,13 +82,16 @@ abstract class IntegrationTestBase {
   protected lateinit var hmppsQueueService: HmppsQueueService
 
   @SpyBean
-  protected lateinit var messageServiceSpy: MessageService
+  protected lateinit var inboundMessageServiceSpy: InboundMessageService
 
   @SpyBean
-  protected lateinit var anotherMessageServiceSpy: AnotherMessageService
+  protected lateinit var outboundMessageServiceSpy: OutboundMessageService
 
   @SpyBean
   protected lateinit var hmppsSqsPropertiesSpy: HmppsSqsProperties
+
+  @SpyBean
+  protected lateinit var outboundEventsEmitterSpy: OutboundEventsEmitter
 
   @Suppress("SpringJavaInjectionPointsAutowiringInspection")
   @Autowired
@@ -95,24 +111,26 @@ abstract class IntegrationTestBase {
     )
   }
 
+  protected fun gsonString(any: Any) = Gson().toJson(any) as String
+
   @TestConfiguration
   class SqsConfig(private val hmppsQueueFactory: HmppsQueueFactory) {
 
-    @Bean("anotherqueue-sqs-client")
-    fun anotherQueueSqsClient(
+    @Bean("outboundqueue-sqs-client")
+    fun outboundQueueSqsClient(
       hmppsSqsProperties: HmppsSqsProperties,
-      @Qualifier("anotherqueue-sqs-dlq-client") anotherQueueSqsDlqClient: AmazonSQS
+      @Qualifier("outboundqueue-sqs-dlq-client") outboundQueueSqsDlqClient: AmazonSQS
     ): AmazonSQS =
       with(hmppsSqsProperties) {
-        val config = queues["anotherqueue"] ?: throw MissingQueueException("HmppsSqsProperties config for anotherqueue not found")
-        hmppsQueueFactory.createSqsClient("anotherqueueid", config, hmppsSqsProperties, anotherQueueSqsDlqClient)
+        val config = queues["outboundqueue"] ?: throw MissingQueueException("HmppsSqsProperties config for outboundqueue not found")
+        hmppsQueueFactory.createSqsClient("outboundqueue", config, hmppsSqsProperties, outboundQueueSqsDlqClient)
       }
 
-    @Bean("anotherqueue-sqs-dlq-client")
-    fun anotherQueueSqsDlqClient(hmppsSqsProperties: HmppsSqsProperties): AmazonSQS =
+    @Bean("outboundqueue-sqs-dlq-client")
+    fun outboundQueueSqsDlqClient(hmppsSqsProperties: HmppsSqsProperties): AmazonSQS =
       with(hmppsSqsProperties) {
-        val config = queues["anotherqueue"] ?: throw MissingQueueException("HmppsSqsProperties config for anotherqueue not found")
-        hmppsQueueFactory.createSqsDlqClient("anotherqueueid", config, hmppsSqsProperties)
+        val config = queues["outboundqueue"] ?: throw MissingQueueException("HmppsSqsProperties config for outboundqueue not found")
+        hmppsQueueFactory.createSqsDlqClient("outboundqueue", config, hmppsSqsProperties)
       }
   }
 }

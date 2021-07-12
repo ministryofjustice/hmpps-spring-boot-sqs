@@ -7,7 +7,7 @@ import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.integration.mocks.O
 class QueueHealthCheckTest : IntegrationTestBase() {
 
   @Test
-  fun `Main queue health ok`() {
+  fun `Inbound queue health ok`() {
     oAuthApi.stubHealthPing(200)
 
     webTestClient.get()
@@ -17,17 +17,17 @@ class QueueHealthCheckTest : IntegrationTestBase() {
       .isOk
       .expectBody()
       .jsonPath("status").isEqualTo("UP")
-      .jsonPath("components.mainqueue-health.status").isEqualTo("UP")
-      .jsonPath("components.mainqueue-health.details.queueName").isEqualTo(hmppsSqsPropertiesSpy.mainQueueConfig().queueName)
-      .jsonPath("components.mainqueue-health.details.messagesOnQueue").isEqualTo(0)
-      .jsonPath("components.mainqueue-health.details.messagesInFlight").isEqualTo(0)
-      .jsonPath("components.mainqueue-health.details.dlqName").isEqualTo(hmppsSqsPropertiesSpy.mainQueueConfig().dlqName)
-      .jsonPath("components.mainqueue-health.details.dlqStatus").isEqualTo("UP")
-      .jsonPath("components.mainqueue-health.details.messagesOnDlq").isEqualTo(0)
+      .jsonPath("components.inboundqueue-health.status").isEqualTo("UP")
+      .jsonPath("components.inboundqueue-health.details.queueName").isEqualTo(hmppsSqsPropertiesSpy.inboundQueueConfig().queueName)
+      .jsonPath("components.inboundqueue-health.details.messagesOnQueue").isEqualTo(0)
+      .jsonPath("components.inboundqueue-health.details.messagesInFlight").isEqualTo(0)
+      .jsonPath("components.inboundqueue-health.details.dlqName").isEqualTo(hmppsSqsPropertiesSpy.inboundQueueConfig().dlqName)
+      .jsonPath("components.inboundqueue-health.details.dlqStatus").isEqualTo("UP")
+      .jsonPath("components.inboundqueue-health.details.messagesOnDlq").isEqualTo(0)
   }
 
   @Test
-  fun `Another queue health ok`() {
+  fun `Outbound queue health ok`() {
     oAuthApi.stubHealthPing(200)
 
     webTestClient.get()
@@ -37,12 +37,12 @@ class QueueHealthCheckTest : IntegrationTestBase() {
       .isOk
       .expectBody()
       .jsonPath("status").isEqualTo("UP")
-      .jsonPath("components.anotherqueue-health.status").isEqualTo("UP")
-      .jsonPath("components.anotherqueue-health.details.queueName").isEqualTo(hmppsSqsPropertiesSpy.anotherQueueConfig().queueName)
-      .jsonPath("components.anotherqueue-health.details.messagesOnQueue").isEqualTo(0)
-      .jsonPath("components.anotherqueue-health.details.messagesInFlight").isEqualTo(0)
-      .jsonPath("components.anotherqueue-health.details.dlqName").isEqualTo(hmppsSqsPropertiesSpy.anotherQueueConfig().dlqName)
-      .jsonPath("components.anotherqueue-health.details.dlqStatus").isEqualTo("UP")
-      .jsonPath("components.anotherqueue-health.details.messagesOnDlq").isEqualTo(0)
+      .jsonPath("components.outboundqueue-health.status").isEqualTo("UP")
+      .jsonPath("components.outboundqueue-health.details.queueName").isEqualTo(hmppsSqsPropertiesSpy.outboundQueueConfig().queueName)
+      .jsonPath("components.outboundqueue-health.details.messagesOnQueue").isEqualTo(0)
+      .jsonPath("components.outboundqueue-health.details.messagesInFlight").isEqualTo(0)
+      .jsonPath("components.outboundqueue-health.details.dlqName").isEqualTo(hmppsSqsPropertiesSpy.outboundQueueConfig().dlqName)
+      .jsonPath("components.outboundqueue-health.details.dlqStatus").isEqualTo("UP")
+      .jsonPath("components.outboundqueue-health.details.messagesOnDlq").isEqualTo(0)
   }
 }
