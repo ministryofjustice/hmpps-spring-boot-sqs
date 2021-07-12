@@ -47,10 +47,12 @@ class AmazonSnsFactory {
   private fun localstackAmazonSNS(localstackUrl: String, region: String) =
     AmazonSNSClientBuilder.standard()
       .withEndpointConfiguration(AwsClientBuilder.EndpointConfiguration(localstackUrl, region))
+      .withCredentials(AWSStaticCredentialsProvider(BasicAWSCredentials("any", "any"))) // LocalStack doesn't work with Anonymous credentials when dealing with topics but doesn't care what the credential values are.
       .build()
 
   private fun localstackAmazonSNSAsync(localstackUrl: String, region: String) =
     AmazonSNSAsyncClientBuilder.standard()
       .withEndpointConfiguration(AwsClientBuilder.EndpointConfiguration(localstackUrl, region))
+      .withCredentials(AWSStaticCredentialsProvider(BasicAWSCredentials("any", "any"))) // LocalStack doesn't work with Anonymous credentials when dealing with topics but doesn't care what the credential values are.
       .build()
 }
