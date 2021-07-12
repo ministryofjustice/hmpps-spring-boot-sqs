@@ -21,10 +21,14 @@ jobs:
           paths:
             - ~/.gradle
           key: gradle-{{ checksum "build.gradle.kts" }}
-      - store_test_results:
-          path: build/test-results
-      - store_artifacts:
-          path: build/reports/tests
+      - store_library_test_results:
+          path: lib/build/test-results
+      - store_library_artifacts:
+          path: lib/build/reports/tests
+      - store_testapp_test_results:
+          path: test-app/build/test-results
+      - store_testapp_artifacts:
+          path: test-app/build/reports/tests
       - persist_to_workspace:
           root: .
           paths:
