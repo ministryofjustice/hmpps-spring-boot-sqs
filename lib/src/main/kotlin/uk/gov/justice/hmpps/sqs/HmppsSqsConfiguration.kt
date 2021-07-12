@@ -14,14 +14,18 @@ import org.springframework.jms.annotation.EnableJms
 class HmppsSqsConfiguration {
 
   @Bean
+  fun hmppsTopicFactory(applicationContext: ConfigurableApplicationContext) = HmppsTopicFactory(applicationContext, AmazonSnsFactory())
+
+  @Bean
   fun hmppsQueueFactory(applicationContext: ConfigurableApplicationContext) = HmppsQueueFactory(applicationContext, AmazonSqsFactory())
 
   @Bean
   fun hmppsQueueService(
     telemetryClient: TelemetryClient?,
+    hmppsTopicFactory: HmppsTopicFactory,
     hmppsQueueFactory: HmppsQueueFactory,
     hmppsSqsProperties: HmppsSqsProperties,
-  ) = HmppsQueueService(telemetryClient, hmppsQueueFactory, hmppsSqsProperties)
+  ) = HmppsQueueService(telemetryClient, hmppsTopicFactory, hmppsQueueFactory, hmppsSqsProperties)
 
   @Bean
   fun hmppsQueueResource(hmppsQueueService: HmppsQueueService) = HmppsQueueResource(hmppsQueueService)

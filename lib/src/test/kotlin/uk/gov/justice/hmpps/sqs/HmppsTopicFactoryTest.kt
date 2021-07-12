@@ -15,7 +15,10 @@ import org.springframework.beans.factory.config.ConfigurableListableBeanFactory
 import org.springframework.context.ConfigurableApplicationContext
 import uk.gov.justice.hmpps.sqs.HmppsSqsProperties.TopicConfig
 
+@Suppress("ClassName")
 class HmppsTopicFactoryTest {
+
+  private val localstackArnPrefix = "arn:aws:sns:eu-west-2:000000000000:"
 
   private val context = mock<ConfigurableApplicationContext>()
   private val beanFactory = mock<ConfigurableListableBeanFactory>()
@@ -27,7 +30,7 @@ class HmppsTopicFactoryTest {
   }
 
   @Nested
-  inner class `Create AWS HmppsTopic`() {
+  inner class `Create AWS HmppsTopic` {
     private val someTopicConfig = TopicConfig(arn = "some arn", accessKeyId = "some access key id", secretAccessKey = "some secret access key")
     private val hmppsSqsProperties = HmppsSqsProperties(queues = mock(), topics = mapOf("sometopicid" to someTopicConfig))
     private val snsClient = mock<AmazonSNS>()
@@ -65,8 +68,8 @@ class HmppsTopicFactoryTest {
   }
 
   @Nested
-  inner class `Create LocalStack HmppsTopic`() {
-    private val someTopicConfig = TopicConfig(arn = "some arn", accessKeyId = "some access key id", secretAccessKey = "some secret access key")
+  inner class `Create LocalStack HmppsTopic` {
+    private val someTopicConfig = TopicConfig(arn = "${localstackArnPrefix}some-topic-name", accessKeyId = "some access key id", secretAccessKey = "some secret access key")
     private val hmppsSqsProperties = HmppsSqsProperties(provider = "localstack", queues = mock(), topics = mapOf("sometopicid" to someTopicConfig))
     private val snsClient = mock<AmazonSNS>()
     private lateinit var hmppsTopics: List<HmppsTopic>
@@ -99,11 +102,16 @@ class HmppsTopicFactoryTest {
       verify(beanFactory).registerSingleton("sometopicid-sns-client", snsClient)
     }
 
+    @Test
+    fun `should create the topic`() {
+      verify(snsClient).createTopic("some-topic-name")
+    }
+
     // TODO should register health indicator
   }
 
   @Nested
-  inner class `Create multiple AWS HmppsTopics`() {
+  inner class `Create multiple AWS HmppsTopics` {
     private val someTopicConfig = TopicConfig(arn = "some arn", accessKeyId = "some access key id", secretAccessKey = "some secret access key")
     private val anotherTopicConfig = TopicConfig(arn = "another arn", accessKeyId = "another access key id", secretAccessKey = "another secret access key")
     private val hmppsSqsProperties = HmppsSqsProperties(queues = mock(), topics = mapOf("sometopicid" to someTopicConfig, "anothertopicid" to anotherTopicConfig))
@@ -147,9 +155,9 @@ class HmppsTopicFactoryTest {
   }
 
   @Nested
-  inner class `Create multiple LocalStack HmppsTopics`() {
-    private val someTopicConfig = TopicConfig(arn = "${LOCALSTACK_ARN_PREFIX}some arn", accessKeyId = "some access key id", secretAccessKey = "some secret access key")
-    private val anotherTopicConfig = TopicConfig(arn = "another arn", accessKeyId = "another access key id", secretAccessKey = "another secret access key")
+  inner class `Create multiple LocalStack HmppsTopics` {
+    private val someTopicConfig = TopicConfig(arn = "${localstackArnPrefix}some arn", accessKeyId = "some access key id", secretAccessKey = "some secret access key")
+    private val anotherTopicConfig = TopicConfig(arn = "${localstackArnPrefix}another arn", accessKeyId = "another access key id", secretAccessKey = "another secret access key")
     private val hmppsSqsProperties = HmppsSqsProperties(provider = "localstack", queues = mock(), topics = mapOf("sometopicid" to someTopicConfig, "anothertopicid" to anotherTopicConfig))
     private val snsClient = mock<AmazonSNS>()
     private lateinit var hmppsTopics: List<HmppsTopic>
@@ -191,7 +199,7 @@ class HmppsTopicFactoryTest {
   }
 
   @Nested
-  inner class `Create async AWS HmppsTopics`() {
+  inner class `Create async AWS HmppsTopics` {
     private val someTopicConfig = TopicConfig(arn = "some arn", accessKeyId = "some access key id", secretAccessKey = "some secret access key", asyncClient = true)
     private val hmppsSqsProperties = HmppsSqsProperties(queues = mock(), topics = mapOf("sometopicid" to someTopicConfig))
     private val snsClient = mock<AmazonSNSAsync>()
@@ -217,8 +225,8 @@ class HmppsTopicFactoryTest {
   }
 
   @Nested
-  inner class `Create async LocalStack HmppsTopics`() {
-    private val someTopicConfig = TopicConfig(arn = "some arn", accessKeyId = "some access key id", secretAccessKey = "some secret access key", asyncClient = true)
+  inner class `Create async LocalStack HmppsTopics` {
+    private val someTopicConfig = TopicConfig(arn = "${localstackArnPrefix}some arn", accessKeyId = "some access key id", secretAccessKey = "some secret access key", asyncClient = true)
     private val hmppsSqsProperties = HmppsSqsProperties(provider = "localstack", queues = mock(), topics = mapOf("sometopicid" to someTopicConfig))
     private val snsClient = mock<AmazonSNSAsync>()
     private lateinit var hmppsTopics: List<HmppsTopic>

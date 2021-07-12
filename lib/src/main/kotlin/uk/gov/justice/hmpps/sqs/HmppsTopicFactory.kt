@@ -1,6 +1,8 @@
 package uk.gov.justice.hmpps.sqs
 
 import com.amazonaws.services.sns.AmazonSNS
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import org.springframework.context.ConfigurableApplicationContext
 import uk.gov.justice.hmpps.sqs.HmppsSqsProperties.TopicConfig
 
@@ -8,12 +10,15 @@ class HmppsTopicFactory(
   private val context: ConfigurableApplicationContext,
   private val amazonSnsFactory: AmazonSnsFactory,
 ) {
+  companion object {
+    val log: Logger = LoggerFactory.getLogger(this::class.java)
+  }
 
   fun createHmppsTopics(hmppsSqsProperties: HmppsSqsProperties) =
     hmppsSqsProperties.topics
       .map { (topicId, topicConfig) ->
         val snsClient = getOrDefaultSnsClient(topicId, topicConfig, hmppsSqsProperties)
-        HmppsTopic(topicId, snsClient)
+        HmppsTopic(topicId, topicConfig.arn, snsClient)
         // TODO  .also { getOrDefaultHealthIndicator(it) }
       }.toList()
 
@@ -31,7 +36,8 @@ class HmppsTopicFactory(
       when (provider) {
         "aws" -> amazonSnsFactory.awsSnsClient(topicId, topicConfig.accessKeyId, topicConfig.secretAccessKey, region, topicConfig.asyncClient)
         "localstack" -> amazonSnsFactory.localstackSnsClient(topicId, localstackUrl, region, topicConfig.asyncClient)
-        // TODO .also { // create topic in localstack }
+          .also { it.createTopic(topicConfig.name) }
+          .also { log.info("Created a LocalStack SNS topic for topicId $topicId with ARN ${topicConfig.arn}") }
         else -> throw IllegalStateException("Unrecognised HMPPS SQS provider $provider")
       }
     }

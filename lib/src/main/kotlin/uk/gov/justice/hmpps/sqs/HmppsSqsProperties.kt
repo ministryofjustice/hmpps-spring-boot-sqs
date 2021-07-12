@@ -3,8 +3,6 @@ package uk.gov.justice.hmpps.sqs
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.ConstructorBinding
 
-const val LOCALSTACK_ARN_PREFIX = "arn:aws:sns:eu-west-2:000000000000:"
-
 @ConstructorBinding
 @ConfigurationProperties(prefix = "hmpps.sqs")
 data class HmppsSqsProperties(
@@ -33,8 +31,10 @@ data class HmppsSqsProperties(
     val secretAccessKey: String = "",
     val asyncClient: Boolean = false,
   ) {
-    val name
-      get() = if (arn.startsWith(LOCALSTACK_ARN_PREFIX)) arn.removePrefix(LOCALSTACK_ARN_PREFIX) else "We only provide a topic name for localstack"
+    private val arnRegex = Regex("arn:aws:sns:.*:.*:(.*)$")
+
+    val name: String
+      get() = if (arn.matches(arnRegex)) arnRegex.find(arn)!!.destructured.component1() else throw java.lang.IllegalStateException("Topic ARN $arn is in an unexpected format")
   }
 
   init {

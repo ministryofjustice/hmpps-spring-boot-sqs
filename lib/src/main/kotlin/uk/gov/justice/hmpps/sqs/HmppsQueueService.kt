@@ -9,9 +9,11 @@ import org.slf4j.LoggerFactory
 import com.amazonaws.services.sqs.model.PurgeQueueRequest as AwsPurgeQueueRequest
 
 class MissingQueueException(message: String) : RuntimeException(message)
+class MissingTopicException(message: String) : RuntimeException(message)
 
 class HmppsQueueService(
   private val telemetryClient: TelemetryClient?,
+  hmppsTopicFactory: HmppsTopicFactory,
   hmppsQueueFactory: HmppsQueueFactory,
   hmppsSqsProperties: HmppsSqsProperties,
 ) {
@@ -20,11 +22,14 @@ class HmppsQueueService(
     private val log = LoggerFactory.getLogger(this::class.java)
   }
 
-  private val hmppsQueues: List<HmppsQueue> = hmppsQueueFactory.createHmppsQueues(hmppsSqsProperties)
+  private val hmppsTopics: List<HmppsTopic> = hmppsTopicFactory.createHmppsTopics(hmppsSqsProperties)
+  private val hmppsQueues: List<HmppsQueue> = hmppsQueueFactory.createHmppsQueues(hmppsSqsProperties, hmppsTopics)
 
   fun findByQueueId(queueId: String) = hmppsQueues.associateBy { it.id }.getOrDefault(queueId, null)
   fun findByQueueName(queueName: String) = hmppsQueues.associateBy { it.queueName }.getOrDefault(queueName, null)
   fun findByDlqName(dlqName: String) = hmppsQueues.associateBy { it.dlqName }.getOrDefault(dlqName, null)
+
+  fun findByTopicId(topicId: String) = hmppsTopics.associateBy { it.id }.getOrDefault(topicId, null)
 
   fun retryDlqMessages(request: RetryDlqRequest): RetryDlqResult =
     request.hmppsQueue.retryDlqMessages()
