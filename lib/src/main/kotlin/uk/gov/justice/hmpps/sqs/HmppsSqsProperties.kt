@@ -34,7 +34,7 @@ data class HmppsSqsProperties(
     private val arnRegex = Regex("arn:aws:sns:.*:.*:(.*)$")
 
     val name: String
-      get() = if (arn.matches(arnRegex)) arnRegex.find(arn)!!.destructured.component1() else throw java.lang.IllegalStateException("Topic ARN $arn is in an unexpected format")
+      get() = if (arn.matches(arnRegex)) arnRegex.find(arn)!!.destructured.component1() else throw InvalidHmppsSqsPropertiesException("Topic ARN $arn has an invalid format")
   }
 
   init {

@@ -367,6 +367,28 @@ class HmppsSqsPropertiesTest {
     }
   }
 
+  @Nested
+  inner class TopicArnRegex {
+
+    @Test
+    fun `should retrieve name from valid topic arn`() {
+      val topicConfig = TopicConfig(arn = "${localstackArnPrefix}some_topic_name")
+      val hmppsSqsProperties = HmppsSqsProperties(provider = "localstack", queues = mapOf(), topics = mapOf("sometopicid" to topicConfig))
+
+      assertThat(hmppsSqsProperties.topics["sometopicid"]?.name).isEqualTo("some_topic_name")
+    }
+
+    @Test
+    fun `should throw if topic arn has invalid format`() {
+      val topicConfig = TopicConfig(arn = "invalid_topic_name")
+      assertThatThrownBy {
+        HmppsSqsProperties(provider = "localstack", queues = mapOf(), topics = mapOf("sometopicid" to topicConfig))
+      }.isInstanceOf(InvalidHmppsSqsPropertiesException::class.java)
+        .hasMessageContaining("invalid_topic_name")
+        .hasMessageContaining("invalid format")
+    }
+  }
+
   private fun validAwsQueueConfig(index: Int = 1) = QueueConfig(queueName = "name$index", queueAccessKeyId = "key$index", queueSecretAccessKey = "secret$index", dlqName = "dlqName$index", dlqAccessKeyId = "dlqKey$index", dlqSecretAccessKey = "dlqSecret$index")
   private fun validAwsTopicConfig(index: Int = 1) = TopicConfig(arn = "arn$index", accessKeyId = "key$index", secretAccessKey = "secret$index")
   private fun validLocalstackQueueConfig(index: Int = 1) = QueueConfig(queueName = "name$index", dlqName = "dlqName$index")
