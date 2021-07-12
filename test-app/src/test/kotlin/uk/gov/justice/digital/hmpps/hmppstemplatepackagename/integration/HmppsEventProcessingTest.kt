@@ -28,7 +28,7 @@ class HmppsEventProcessingTest : IntegrationTestBase() {
     val receivedEvent = objectMapper.readValue(Message, HmppsEvent::class.java)
 
     assertThat(receivedEvent.id).isEqualTo("event-id")
-    assertThat(receivedEvent.type).isEqualTo("OFFENDER_MOVEMENT-RECEPTION")
+    assertThat(receivedEvent.type).isEqualTo("offender.movement.reception")
     assertThat(receivedEvent.contents).isEqualTo("some event contents")
   }
 

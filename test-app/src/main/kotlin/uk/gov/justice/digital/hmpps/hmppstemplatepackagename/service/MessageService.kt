@@ -12,7 +12,12 @@ class InboundMessageService(private val outboundEventsEmitter: OutboundEventsEmi
 
   fun handleMessage(hmppsEvent: HmppsEvent) {
     log.info("received event: $hmppsEvent")
-    outboundEventsEmitter.sendEvent(hmppsEvent)
+    val outboundEventType = when (hmppsEvent.type) {
+      "OFFENDER_MOVEMENT-RECEPTION" -> "offender.movement.reception"
+      "OFFENDER_MOVEMENT-DISCHARGE" -> "offender.movement.discharge"
+      else -> hmppsEvent.type
+    }
+    outboundEventsEmitter.sendEvent(HmppsEvent(hmppsEvent.id, outboundEventType, hmppsEvent.contents))
   }
 }
 

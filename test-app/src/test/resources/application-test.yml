@@ -17,12 +17,12 @@ hmpps.sqs:
       dlqName: ${random.uuid}
       queueName: ${random.uuid}
       subscribeTopicId: outboundtopic
-      subscribeFilter: '{"eventType":[ "OFFENDER_MOVEMENT-RECEPTION", "test.type"] }'
+      subscribeFilter: '{"eventType":[ "offender.movement.reception", "test.type"] }'
     outboundtestqueue:
       dlqName: ${random.uuid}
       queueName: ${random.uuid}
       subscribeTopicId: outboundtopic
-      subscribeFilter: '{"eventType":[ "OFFENDER_MOVEMENT-RECEPTION", "test.type"] }'
+      subscribeFilter: '{"eventType":[ "offender.movement.reception", "test.type"] }'
   topics:
     inboundtopic:
       arn: arn:aws:sns:eu-west-2:000000000000:${random.uuid}
