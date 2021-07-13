@@ -40,8 +40,8 @@ class HmppsTopicHealthTest {
 
     val health = topicHealth.health()
 
-    assertThat(health.details["SubscriptionsConfirmed"]).isEqualTo("1")
-    assertThat(health.details["SubscriptionsPending"]).isEqualTo("2")
+    assertThat(health.details["subscriptionsConfirmed"]).isEqualTo("1")
+    assertThat(health.details["subscriptionsPending"]).isEqualTo("2")
   }
 
   @Test
