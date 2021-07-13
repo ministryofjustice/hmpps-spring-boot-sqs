@@ -25,6 +25,7 @@ import uk.gov.justice.hmpps.sqs.HmppsQueueFactory
 import uk.gov.justice.hmpps.sqs.HmppsQueueService
 import uk.gov.justice.hmpps.sqs.HmppsSqsProperties
 import uk.gov.justice.hmpps.sqs.MissingQueueException
+import uk.gov.justice.hmpps.sqs.MissingTopicException
 
 @SpringBootTest(webEnvironment = RANDOM_PORT)
 @Import(IntegrationTestBase.SqsConfig::class, JwtAuthHelper::class)
@@ -45,6 +46,12 @@ abstract class IntegrationTestBase {
 
   fun HmppsSqsProperties.outboundQueueConfig() =
     queues["outboundqueue"] ?: throw MissingQueueException("outboundqueue has not been loaded from configuration properties")
+
+  fun HmppsSqsProperties.inboundTopicConfig() =
+    topics["inboundtopic"] ?: throw MissingTopicException("inboundtopic has not been loaded from configuration properties")
+
+  fun HmppsSqsProperties.outboundTopicConfig() =
+    topics["outboundtopic"] ?: throw MissingTopicException("outboundtopic has not been loaded from configuration properties")
 
   private val inboundQueue by lazy { hmppsQueueService.findByQueueId("inboundqueue") ?: throw MissingQueueException("HmppsQueue inboundqueue not found") }
   private val outboundQueue by lazy { hmppsQueueService.findByQueueId("outboundqueue") ?: throw MissingQueueException("HmppsQueue outboundqueue not found") }

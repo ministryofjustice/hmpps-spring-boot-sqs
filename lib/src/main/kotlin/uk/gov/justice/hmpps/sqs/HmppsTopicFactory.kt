@@ -19,8 +19,18 @@ class HmppsTopicFactory(
       .map { (topicId, topicConfig) ->
         val snsClient = getOrDefaultSnsClient(topicId, topicConfig, hmppsSqsProperties)
         HmppsTopic(topicId, topicConfig.arn, snsClient)
-        // TODO  .also { getOrDefaultHealthIndicator(it) }
+          .also { getOrDefaultHealthIndicator(it) }
       }.toList()
+
+  private fun getOrDefaultHealthIndicator(topic: HmppsTopic) {
+    "${topic.id}-health".let { beanName ->
+      runCatching { context.beanFactory.getBean(beanName) as AmazonSNS }
+        .getOrElse {
+          HmppsTopicHealth(topic)
+            .also { context.beanFactory.registerSingleton(beanName, it) }
+        }
+    }
+  }
 
   private fun getOrDefaultSnsClient(topicId: String, topicConfig: TopicConfig, hmppsSqsProperties: HmppsSqsProperties): AmazonSNS =
     "$topicId-sns-client".let { beanName ->
