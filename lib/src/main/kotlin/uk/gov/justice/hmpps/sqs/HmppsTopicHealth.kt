@@ -14,8 +14,8 @@ class HmppsTopicHealth(private val hmppsTopic: HmppsTopic) : HealthIndicator {
 
     getTopicAttributes()
       .onSuccess { result ->
-        healthBuilder.withDetail("SubscriptionsConfirmed", """${result.attributes["SubscriptionsConfirmed"]}""")
-        healthBuilder.withDetail("SubscriptionsPending", """${result.attributes["SubscriptionsPending"]}""")
+        healthBuilder.withDetail("subscriptionsConfirmed", """${result.attributes["SubscriptionsConfirmed"]}""")
+        healthBuilder.withDetail("subscriptionsPending", """${result.attributes["SubscriptionsPending"]}""")
       }
       .onFailure { throwable ->
         healthBuilder.down().withException(throwable)

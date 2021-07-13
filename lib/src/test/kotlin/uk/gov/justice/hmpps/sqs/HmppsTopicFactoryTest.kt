@@ -2,6 +2,8 @@ package uk.gov.justice.hmpps.sqs
 
 import com.amazonaws.services.sns.AmazonSNS
 import com.amazonaws.services.sns.AmazonSNSAsync
+import com.nhaarman.mockitokotlin2.any
+import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
@@ -12,6 +14,7 @@ import org.junit.jupiter.api.Test
 import org.mockito.ArgumentMatchers.anyBoolean
 import org.mockito.ArgumentMatchers.anyString
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory
+import org.springframework.boot.actuate.health.HealthIndicator
 import org.springframework.context.ConfigurableApplicationContext
 import uk.gov.justice.hmpps.sqs.HmppsSqsProperties.TopicConfig
 
@@ -64,7 +67,10 @@ class HmppsTopicFactoryTest {
       verify(beanFactory).registerSingleton("sometopicid-sns-client", snsClient)
     }
 
-    // TODO should register health indicator
+    @Test
+    fun `should register health indicators`() {
+      verify(beanFactory).registerSingleton(eq("sometopicid-health"), any<HealthIndicator>())
+    }
   }
 
   @Nested
@@ -107,7 +113,10 @@ class HmppsTopicFactoryTest {
       verify(snsClient).createTopic("some-topic-name")
     }
 
-    // TODO should register health indicator
+    @Test
+    fun `should register health indicators`() {
+      verify(beanFactory).registerSingleton(eq("sometopicid-health"), any<HealthIndicator>())
+    }
   }
 
   @Nested
@@ -151,7 +160,11 @@ class HmppsTopicFactoryTest {
       verify(beanFactory).registerSingleton("anothertopicid-sns-client", snsClient)
     }
 
-    // TODO should register 2 health indicators
+    @Test
+    fun `should register 2 health indicators`() {
+      verify(beanFactory).registerSingleton(eq("sometopicid-health"), any<HealthIndicator>())
+      verify(beanFactory).registerSingleton(eq("anothertopicid-health"), any<HealthIndicator>())
+    }
   }
 
   @Nested
@@ -195,7 +208,11 @@ class HmppsTopicFactoryTest {
       verify(beanFactory).registerSingleton("anothertopicid-sns-client", snsClient)
     }
 
-    // TODO should register 2 health indicators
+    @Test
+    fun `should register 2 health indicators`() {
+      verify(beanFactory).registerSingleton(eq("sometopicid-health"), any<HealthIndicator>())
+      verify(beanFactory).registerSingleton(eq("anothertopicid-health"), any<HealthIndicator>())
+    }
   }
 
   @Nested
