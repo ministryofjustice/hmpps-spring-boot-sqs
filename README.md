@@ -192,7 +192,7 @@ As each topic has its own access key and secret we create an Amazon SNS client f
 
 To remove this pain each topic defined in `HmppsSqsProperties` should have an `AmazonSNS` created.
 
-The bean names have the format `<queueId-sns-client` and can be used with `@Qualifier` to inject the beans into another `@Component`:
+The bean names have the format `<topicId>-sns-client` and can be used with `@Qualifier` to inject the beans into another `@Component`:
 
 #### LocalStack AmazonSNS Beans
 
