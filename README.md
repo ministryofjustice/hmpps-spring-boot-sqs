@@ -8,9 +8,11 @@ This library is currently being developed and tested within the HMPPS Tech Team 
 
 ## Overview
 
-We have many services that use AWS SQS queues and various patterns for managing queues have evolved over time. These patterns have been duplicated widely and thus are subject to the usual problems associated with a lack of DRY such as code drift and the proliferation of boilerplate code.
+We have many services that use AWS SQS queues and topics with various patterns for managing queues that have evolved over time. These patterns have been duplicated widely and thus are subject to the usual problems associated with a lack of DRY such as code drift and the proliferation of boilerplate code.
 
 This library is intended to capture the most common patterns and make them easy to distribute among other projects. The goal is to provide various queue management and configuration tasks out of the box.
+
+The library relies on [Spring Boot Auto-configuration](https://docs.spring.io/spring-boot/docs/2.0.0.M3/reference/html/using-boot-auto-configuration.html) based upon [configuration properties](#hmpps-queue-properties).
 
 ## How To Use This Library
 
@@ -32,7 +34,7 @@ implementation 'uk.gov.justice.service.hmpps:hmpps-spring-boot-sqs:<library-vers
 
 Then create some properties defining the queue(s) in the application. See [HMPPS Queue Properties](#hmpps-queue-properties) for information on the properties, and check the [test-app](https://github.com/ministryofjustice/hmpps-spring-boot-sqs/tree/main/test-app) for an example.
 
-Hopefully you will now get features like HealthIndicators, queue admin endpoints and AmazonSQS beans for free. Read more about all available features [here](#features).
+You will now get features like HealthIndicators, queue admin endpoints, AmazonSQS/SNS beans and a custom JmsListenerContainerFactory - all for free. Read more about all available features [here](#features).
 
 ## How To Run This Locally
 
@@ -46,10 +48,12 @@ See [Running All Tests](#running-all-tests) and [Running the test-app](#running-
 
 This library is driven by some configuration properties prefixed `hmpps.sqs` that are loaded into class `HmppsSqsProperties`. Based on the properties defined the library will attempt to:
 
-* create `AmazonSQS` beans for each queue defined
-* create a `HealthIndicator` for each queue which is registered with Spring Boot Actuator and appears on your `/health` page
+* create `AmazonSQS` beans for each queue defined which are configured for AWS (or LocalStack for testing / running locally)
+* create `AmazonSNS` beans for each topic defined which are configured for AWS (or LocalStack for testing / running locally)
+* create a `HealthIndicator` for each queue and topic which is registered with Spring Boot Actuator and appears on your `/health` page
 * add `HmpspQueueResource` to the project which provides endpoints for retrying DLQ messages and purging queues
-* create LocalStack queues for testing against
+* create a JMS listener connection factory for each queue defined
+* create LocalStack queues and topics for testing against, and subscribe queues to topics where configured
 
 Examples of property usage can be found in the test project in the following places:
 
@@ -65,6 +69,7 @@ Examples of property usage can be found in the test project in the following pla
 | region   | `eu-west-2` | The AWS region where the queues live. |
 | localstackUrl | `http://localhost:4566` | Only used for `provider=localstack`. The location of the running LocalStack instance. |
 | queues   | | A map of `queueId` to `QueueConfig`. One entry is required for each queue. In production these are derived from environment variables with the prefix `HMPPS_SQS_QUEUES_` that should be populated from Kubernetes secrets (see below).
+| topics   | | A map of `topicId` to `TopicConfig`. One entry is required for each topic. In production these are derived from environment variables with the prefix `HMPPS_SQS_TOPICS_` that should be populated from Kubernetes secrets (see below).
 
 Each queue declared in the `queues` map is defined in the `QueueConfig` property class
 
@@ -72,17 +77,53 @@ Each queue declared in the `queues` map is defined in the `QueueConfig` property
 | -------- | ------- | ----------- |
 | queueId | | The key to the `queues` map. A unique name for the queue configuration, used heavily when automatically creating Spring beans. Must be lower case. |
 | queueName | | The name of the queue as recognised by AWS or LocalStack. |
-| queueAccessKeyId | | Only used for `provider=aws`. The AWS access key ID, should be derived from an environment variable of format `HMPPS_SQS_QUEUE_<queueName>_ACCESS_KEY_ID`. |
-| queueSecretAccessKey | | Only used for `provider=aws`. The AWS secret access key, should be derived from an environment variable of format `HMPPS_SQS_QUEUE_<queueName>_SECRET_ACCESS_KEY`. |
-| asyncQueueClient | false | If true then the `AmazonSQS` bean created will be an `AmazonSQSAsync` instance. |
+| queueAccessKeyId | | Only used for `provider=aws`. The AWS access key ID, should be derived from an environment variable of format `HMPPS_SQS_QUEUES_<queueId>_ACCESS_KEY_ID`. |
+| queueSecretAccessKey | | Only used for `provider=aws`. The AWS secret access key, should be derived from an environment variable of format `HMPPS_SQS_QUEUES_<queueId>_SECRET_ACCESS_KEY`. |
+| subscribeTopicId | | Only used for `provider=localstack`. The `topicId` of the topic this queue subscribes to when either running integration tests or running locally. |
+| subscribeFilter | | Only used for `provider=localstack`. The filter policy to be applied when subscribing to the topic. Generally used to filter out certain messages. See your queue's `filter_policy` in `cloud-platform-environments` for an example. |
+| asyncQueueClient | `false` | If true then the `AmazonSQS` bean created will be an `AmazonSQSAsync` instance. |
 | dlqName | | The name of the queue's dead letter queue (DLQ) as recognised by AWS or LocalStack. |
-| dlqAccessKeyId | | Only used for `provider=aws`. The AWS access key ID of the DLQ, should be derived from an environment variable of format `HMPPS_SQS_QUEUE_<queueName>_DLQ_ACCESS_KEY_ID`. |
-| dlqSecretAccessKey | | Only used for `provider=aws`. The AWS secret access key of the DLQ, should be derived from an environment variable of format `HMPPS_SQS_QUEUE_<queueName>_DLQ_SECRET_ACCESS_KEY`. |
-| asyncDlqClient | false | If true then the `AmazonSQS` bean created will be an `AmazonSQSAsync` instance. |
+| dlqAccessKeyId | | Only used for `provider=aws`. The AWS access key ID of the DLQ, should be derived from an environment variable of format `HMPPS_SQS_QUEUES_<queueId>_DLQ_ACCESS_KEY_ID`. |
+| dlqSecretAccessKey | | Only used for `provider=aws`. The AWS secret access key of the DLQ, should be derived from an environment variable of format `HMPPS_SQS_QUEUES_<queueId>_DLQ_SECRET_ACCESS_KEY`. |
+| asyncDlqClient | `false` | If true then the `AmazonSQS` bean created will be an `AmazonSQSAsync` instance. |
 
-#### :warning: queueId Must Be All Lowercase
+Each topic declared in the `topics` map is defined in the `TopicConfig` property class
 
-As we define the production queue properties in environment variables that map to a complex object in `HmppsSqsProperties` Spring is unable to handle a mixed case `queueId`.
+| Property | Default | Description |
+| -------- | ------- | ----------- |
+| topicId | | The key to the `topics` map. A unique name for the topic configuration, used heavily when automatically creating Spring beans. Must be lower case. |
+| arn | | The ARN of the topic as recognised by AWS and LocalStack. |
+| accessKeyId | | Only used for `provider=aws`. The AWS access key ID, should be derived from an environment variable of format `HMPPS_SQS_TOPICS_<topicId>_ACCESS_KEY_ID`. | 
+| secretAccessKey | | Only used for `provider=aws`. The AWS secret access key, should be derived from an environment variable of format `HMPPS_SQS_TOPICS_<topicId>_SECRET_ACCESS_KEY`. |
+| asyncClient | `false` | If true then the `AmazonSNS` bean created will be an `AmazonSNSAsync` instance. |
+
+#### :warning: queueId and topicId Must Be All Lowercase
+
+As we define the production queue and topic properties in environment variables that map to a complex object in `HmppsSqsProperties` Spring is unable to handle a mixed case `queueId` or `topicId`.
+
+### JmsListener
+
+The `@EnableJms` annotation is included by this library.
+
+### JmsListenerContainerFactory
+
+To read from a queue with JMS we need a `JmsListenerContainerFactory` for each queue which can then be referenced in the `@JmsListener` annotation.
+
+This library will create a container factory for each queue defined in `HmppsSqsProperties` and save them in proxy class `HmppsQueueContainerFactoryProxy` with a link from each `queueId` to the relevant container factory.
+
+This means that to get a JMS listener working for each queue in `HmppsSqsProperties` you need to declare your `@JmsListener` annotation in the following format:
+
+```kotlin
+  @JmsListener(destination = "<queueId>", containerFactory = "hmppsQueueContainerFactoryProxy")
+```
+
+where `<queueId>` is taken from [HmppsSqsProperties Definitions](#hmppssqsproperties-definitions)
+
+An example is available in the `test-app`'s [listeners](https://github.com/ministryofjustice/hmpps-spring-boot-sqs/blob/main/test-app/src/main/kotlin/uk/gov/justice/digital/hmpps/hmppstemplatepackagename/service/MessageListener.kt).
+
+#### Overriding the JmsListenerContainerFactory
+
+If you don't wish to use the `HmppsQueueContainerFactoryProxy` because you want to configure your listener in a different way then simply create your own `DefaultJmsListenerContainerFactory` and reference it on the `@JmsListener` annotation.
 
 ### AmazonSQS Beans
 
@@ -145,31 +186,29 @@ If you need to know the actual queue names used you can find them in the Spring 
 
 `AWS_ACCESS_KEY_ID=foobar AWS_SECRET_ACCESS_KEY=foobar aws --endpoint-url=http://localhost:4566 --region=eu-west-2 sqs list-queues`
 
-### JmsListener
+### AmazonSNS Beans
 
-The `@EnableJms` annotation is included by this library.
+As each topic has its own access key and secret we create an Amazon SNS client for each one. Historically this has been done in Spring `@Configuration` classes for both AWS and LocalStack (for testing) but this becomes complicated and hard to follow.
 
-### JmsListenerContainerFactory
+To remove this pain each topic defined in `HmppsSqsProperties` should have an `AmazonSNS` created.
 
-To read from a queue with JMS we need a `JmsListenerContainerFactory` for each queue which can then be referenced in the `@JmsListener` annotation on the `containerFactory` attribute.
+The bean names have the format `<queueId-sns-client` and can be used with `@Qualifier` to inject the beans into another `@Component`:
 
-This library will create a container factory for each queue defined in `HmppsSqsProperties` and save them in proxy class `HmppsQueueContainerFactoryProxy`. The proxy can then be defined as the `containerFactory`.
+#### LocalStack AmazonSNS Beans
 
-This means that the only thing you need to do to get a JMS listener working for each queue in `HmppsSqsProperties` is declare `containerFactory = "hmppsQueueContainerFactoryProxy"` on the `@JmsLIstener`.
+In the past we would generally have a shell script to create any topics in a running LocalStack instance so that we can run tests against them. The same goes for queues subscribing to the topics.
 
-An example is available in the `test-app`'s [listeners](https://github.com/ministryofjustice/hmpps-spring-boot-sqs/blob/main/test-app/src/main/kotlin/uk/gov/justice/digital/hmpps/hmppstemplatepackagename/service/MessageListener.kt).
+This library will now create the topics automatically and subscribe queues to them when `provider=localstack` so we don't need the shell script.
 
-#### Overriding the JmsListenerContainerFactory
+#### Random Topic Names
 
-If you don't wish to use the `HmppsQueueContainerFactoryProxy` because you want to configure your listener in a different way then simply create your own `DefaultJmsListenerContainerFactory` and reference it on the `@JmsListener` annotation.
+If you look in the `test-app`'s [application properties](https://github.com/ministryofjustice/hmpps-spring-boot-sqs/blob/main/test-app/src/test/resources/application-test.yml) you can see that it uses random topic names.
 
-#### @JmsListener destination
+When `provider=localstack` the topics are created in LocalStack as soon as the `AmazonSNS` beans are created. By using random topic names we can ensure tests do not interfere with each other.
 
-Usually on the `@JmsListenener` annotation the `destination` property refers to a queue name. However, our queue name is defined in configuration properties so the `destination` property would require some horrible SpEL to extract the queue name.
+If you need to know the actual topic names used you can find them in the Spring logs. You can also see them in LocalStack with command:
 
-To get around this we have created a custom destination resolver called `HmppsQueueDestinationResolver` which accepts the destination as `queueId` from the [queue configuration properties](#hmppssqsproperties-definitions) and transforms it into the queue name. This makes the `destination` property much simpler and expresses the listeners intent better.
-
-For an example see class `MessageListener` in the `test-app`.
+`AWS_ACCESS_KEY_ID=foobar AWS_SECRET_ACCESS_KEY=foobar aws --endpoint-url=http://localhost:4566 --region=eu-west-2 sns list-topics`
 
 ### Queue Health
 
@@ -187,6 +226,23 @@ You should however create a couple of integration tests for your queue health in
 
 * happy path - `QueueHealthCheckTest`
 * negative path - `QueueHealthCheckNegativeTest`
+
+### Topic Health
+
+All topics should be included on an application's health page.
+
+For each topic defined in `HmppsSqsProperties` we create a `HmppsQueueHealth` bean.
+
+The Spring beans produced have names of format `<topicId>-health`. If you wish to override the automatically created bean then provide a custom bean with the same name. Upon finding the custom bean this library will use the custom bean rather than generating one.
+
+#### Testing Topic Health
+
+Unit tests for the generic topic health exist in this library so there is no need to add more.
+
+You should however create a couple of integration tests for your topic health in case your implementation has problems. Examples are available in the `test-app` - see classes:
+
+* happy path - `TopicHealthCheckTest`
+* negative path - `TopicHealthCheckNegativeTest`
 
 ### Queue Admin Endpoints
 
