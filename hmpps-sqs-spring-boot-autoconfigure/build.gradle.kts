@@ -14,16 +14,17 @@ plugins {
   id("se.patrikerdes.use-latest-versions") version "0.2.17"
 }
 
-base.archivesBaseName = "hmpps-spring-boot-sqs"
-
 dependencies {
-  api("com.amazonaws:amazon-sqs-java-messaging-lib:1.0.8")
-  api("com.amazonaws:aws-java-sdk-sns:1.11.942")
-  implementation("org.springframework.boot:spring-boot-starter-web")
-  implementation("org.springframework.boot:spring-boot-starter-security")
-  implementation("org.springframework.boot:spring-boot-starter-actuator")
-  implementation("com.microsoft.azure:applicationinsights-core:2.6.3")
+  implementation("com.amazonaws:amazon-sqs-java-messaging-lib:1.0.8")
+  implementation("com.amazonaws:aws-java-sdk-sns:1.11.942")
+  implementation(platform("org.springframework.boot:spring-boot-dependencies:2.5.2"))
+  implementation("org.springframework.boot:spring-boot-starter")
+  implementation("org.springframework.boot:spring-boot-autoconfigure")
+  implementation("org.springframework.boot:spring-boot-actuator-autoconfigure")
+  implementation("org.springframework:spring-web")
   implementation("org.springframework:spring-jms")
+  implementation("org.springframework.security:spring-security-core")
+  implementation("com.microsoft.azure:applicationinsights-core:2.6.3")
 
   testImplementation("org.assertj:assertj-core:3.19.0")
   testImplementation("org.junit.jupiter:junit-jupiter:5.8.0-M1")
@@ -43,7 +44,7 @@ publishing {
       pom {
         name.set(base.archivesBaseName)
         artifactId = base.archivesBaseName
-        description.set("A helper library providing utilities for using amazon-sqs-java-messaging-lib")
+        description.set("A Spring Boot Autoconfigure library providing utilities for using amazon-sqs-java-messaging-lib")
         url.set("https://github.com/ministryofjustice/hmpps-spring-boot-sqs")
         licenses {
           license {
