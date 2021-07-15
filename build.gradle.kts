@@ -5,7 +5,7 @@ plugins {
 /*
  * This build script only handles publishing to the Sonatype Nexus repository (a.k.a. Maven Central).
  *
- * The build script that produces the published library can be found at `/lib/build.gradle.kts`.
+ * The build script that produces the published library can be found at `/hmpps-sqs-spring-boot-autoconfigure/build.gradle.kts`.
  */
 
 allprojects {

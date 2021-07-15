@@ -281,15 +281,15 @@ Hopefully your Open API document generator can find the endpoints automatically 
 
 We are using a multi-module project in order to create functional tests that use the imported library.
 
-### lib
+### hmpps-sqs-spring-boot-autoconfigure
 
-This is the module that generates the library for publishing. See the publish job in Circle build `/.circleci/config.yml` for more details.
+This is the module that generates the autoconfigure library for publishing. See the publish job in Circle build `/.circleci/config.yml` for more details.
 
 #### Running the Unit Tests
 
-To run only the unit tests found in the `lib` module use command:
+To run only the unit tests found in the `hmpps-sqs-spring-boot-autoconfigure` module use command:
 
-`./gradlew lib:test`
+`./gradlew hmpps-sqs-spring-boot-autoconfigure:test`
 
 #### Running All Tests
 
@@ -360,7 +360,7 @@ As a rule of thumb new features must:
 * Then publish the plugin to local maven
 
 ```
-./gradlew publishToMavenLocal -x :lib:signMavenPublication
+./gradlew publishToMavenLocal -x :hmpps-sqs-spring-boot-autoconfigure:signMavenPublication
 ```
 
 In the other project's Gradle build script change the version to match and it should now be pulled into the project.

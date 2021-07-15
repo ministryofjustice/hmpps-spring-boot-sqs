@@ -1,3 +1,3 @@
 rootProject.name = "hmpps-spring-boot-sqs"
-include("lib")
+include("hmpps-sqs-spring-boot-autoconfigure")
 include("test-app")
