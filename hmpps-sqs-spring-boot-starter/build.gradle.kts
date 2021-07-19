@@ -5,9 +5,14 @@ plugins {
 }
 
 dependencies {
-  // implementation("uk.gov.justice.service.hmpps:hmpps-sqs-spring-boot-autoconfigure:${project.version}")
-  // implementation("uk.gov.justice.service.hmpps:hmpps-spring-boot-sqs:${project.version}") // TODO replace with above line when published
-  api(project(":hmpps-sqs-spring-boot-autoconfigure")) // TODO replace with above line when publishing
+  api(project(":hmpps-sqs-spring-boot-autoconfigure"))
+  api("com.amazonaws:amazon-sqs-java-messaging-lib:1.0.8")
+  api("com.amazonaws:aws-java-sdk-sns:1.11.942")
+  api("org.springframework.boot:spring-boot-starter-web")
+  api("org.springframework.boot:spring-boot-starter-security")
+  api("org.springframework.boot:spring-boot-starter-actuator")
+  api("com.microsoft.azure:applicationinsights-core:2.6.3")
+  api("org.springframework:spring-jms")
 }
 
 // TODO move all the below into the parent gradle script? (and the same for the autoconfigure library?)

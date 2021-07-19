@@ -17,13 +17,11 @@ plugins {
 dependencies {
   implementation("com.amazonaws:amazon-sqs-java-messaging-lib:1.0.8")
   implementation("com.amazonaws:aws-java-sdk-sns:1.11.942")
-  implementation("org.springframework.boot:spring-boot-starter")
-  implementation("org.springframework.boot:spring-boot-autoconfigure")
-  implementation("org.springframework.boot:spring-boot-actuator-autoconfigure")
-  implementation("org.springframework:spring-web")
-  implementation("org.springframework:spring-jms")
-  implementation("org.springframework.security:spring-security-core")
+  implementation("org.springframework.boot:spring-boot-starter-web")
+  implementation("org.springframework.boot:spring-boot-starter-security")
+  implementation("org.springframework.boot:spring-boot-starter-actuator")
   implementation("com.microsoft.azure:applicationinsights-core:2.6.3")
+  implementation("org.springframework:spring-jms")
 
   testImplementation("org.assertj:assertj-core:3.19.0")
   testImplementation("org.junit.jupiter:junit-jupiter:5.8.0-M1")
