@@ -9,7 +9,7 @@ data class HmppsSqsProperties(
   val provider: String = "aws",
   val region: String = "eu-west-2",
   val localstackUrl: String = "http://localhost:4566",
-  val queues: Map<String, QueueConfig>,
+  val queues: Map<String, QueueConfig> = mapOf(),
   val topics: Map<String, TopicConfig> = mapOf(),
 ) {
   data class QueueConfig(
