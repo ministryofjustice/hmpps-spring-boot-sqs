@@ -13,10 +13,7 @@ dependencies {
   implementation("org.springframework.boot:spring-boot-starter-security")
   implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
 
-  implementation(project(":lib"))
-  implementation(platform("com.amazonaws:aws-java-sdk-bom:1.11.942"))
-  implementation("com.amazonaws:aws-java-sdk-sqs:1.11.106")
-  implementation("org.springframework:spring-jms")
+  implementation(project(":hmpps-sqs-spring-boot-starter"))
 
   testImplementation("org.assertj:assertj-core:3.19.0")
   testImplementation("org.junit.jupiter:junit-jupiter:5.8.0-M1")

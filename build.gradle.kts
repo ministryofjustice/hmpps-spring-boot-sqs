@@ -5,12 +5,12 @@ plugins {
 /*
  * This build script only handles publishing to the Sonatype Nexus repository (a.k.a. Maven Central).
  *
- * The build script that produces the published library can be found at `/lib/build.gradle.kts`.
+ * The build scripts that produce the published autoconfigure and starter libraries can be found at `/hmpps-sqs-spring-boot-autoconfigure/build.gradle.kts` and `/hmpps-sqs-spring-boot-starter/build.gradle.kts`.
  */
 
 allprojects {
   group = "uk.gov.justice.service.hmpps"
-  version = "0.7.1"
+  version = "0.8.0-beta"
 }
 
 nexusPublishing {

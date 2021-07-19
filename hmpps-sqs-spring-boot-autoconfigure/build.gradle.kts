@@ -14,11 +14,9 @@ plugins {
   id("se.patrikerdes.use-latest-versions") version "0.2.17"
 }
 
-base.archivesBaseName = "hmpps-spring-boot-sqs"
-
 dependencies {
-  api("com.amazonaws:amazon-sqs-java-messaging-lib:1.0.8")
-  api("com.amazonaws:aws-java-sdk-sns:1.11.942")
+  implementation("com.amazonaws:amazon-sqs-java-messaging-lib:1.0.8")
+  implementation("com.amazonaws:aws-java-sdk-sns:1.11.942")
   implementation("org.springframework.boot:spring-boot-starter-web")
   implementation("org.springframework.boot:spring-boot-starter-security")
   implementation("org.springframework.boot:spring-boot-starter-actuator")
@@ -38,12 +36,12 @@ publishing {
     mavenLocal()
   }
   publications {
-    create<MavenPublication>("maven") {
+    create<MavenPublication>("autoconfigure") {
       from(components["java"])
       pom {
         name.set(base.archivesBaseName)
         artifactId = base.archivesBaseName
-        description.set("A helper library providing utilities for using amazon-sqs-java-messaging-lib")
+        description.set("A Spring Boot Autoconfigure library providing utilities for using amazon-sqs-java-messaging-lib")
         url.set("https://github.com/ministryofjustice/hmpps-spring-boot-sqs")
         licenses {
           license {
@@ -69,7 +67,7 @@ signing {
   val signingKey: String? by project
   val signingPassword: String? by project
   useInMemoryPgpKeys(signingKey, signingPassword)
-  sign(publishing.publications["maven"])
+  sign(publishing.publications["autoconfigure"])
 }
 java.sourceCompatibility = JavaVersion.VERSION_16
 

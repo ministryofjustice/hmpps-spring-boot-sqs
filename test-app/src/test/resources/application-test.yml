@@ -23,6 +23,10 @@ hmpps.sqs:
       queueName: ${random.uuid}
       subscribeTopicId: outboundtopic
       subscribeFilter: '{"eventType":[ "offender.movement.reception", "test.type"] }'
+    missingfilterqueue:
+      dlqName: ${random.uuid}
+      queueName: ${random.uuid}
+      subscribeTopicId: outboundtopic
   topics:
     inboundtopic:
       arn: arn:aws:sns:eu-west-2:000000000000:${random.uuid}
