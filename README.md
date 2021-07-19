@@ -1,6 +1,6 @@
 # hmpps-spring-boot-sqs
 
-A Spring Boot starter library providing utilities for using Amazon SQS/SNS. The library is very opinionated towards usage within HMPPS, e.g. we assume that there each queue has its own secrets rather than sharing access between queues.
+A Spring Boot starter library providing utilities for using Amazon SQS/SNS. The library is very opinionated towards usage within HMPPS, e.g. we assume that each queue has its own secrets rather than sharing access between queues.
 
 ## :construction: THIS IS A WORK IN PROGRESS :construction:
 
