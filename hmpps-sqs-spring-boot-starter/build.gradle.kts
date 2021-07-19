@@ -1,5 +1,5 @@
 plugins {
-  kotlin("jvm") version "1.5.10"
+  kotlin("jvm") version "1.5.21"
   id("maven-publish")
   id("signing")
 }
@@ -9,6 +9,7 @@ dependencies {
   api(platform("com.amazonaws:aws-java-sdk-bom:1.11.942"))
   api("com.amazonaws:amazon-sqs-java-messaging-lib:1.0.8")
   api("com.amazonaws:aws-java-sdk-sns:1.11.942")
+  api(platform("org.springframework.boot:spring-boot-dependencies:2.5.2"))
   api("org.springframework.boot:spring-boot-starter-web")
   api("org.springframework.boot:spring-boot-starter-security")
   api("org.springframework.boot:spring-boot-starter-actuator")
@@ -16,7 +17,6 @@ dependencies {
   api("org.springframework:spring-jms")
 }
 
-// TODO move all the below into the parent gradle script? (and the same for the autoconfigure library?)
 publishing {
   repositories {
     mavenLocal()
