@@ -24,9 +24,9 @@ jobs:
           paths:
             - ~/.gradle
           key: gradle-{{ checksum "build.gradle.kts" }}
-      - store_autoconfigure_test_results:
+      - store_test_results:
           path: hmpps-sqs-spring-boot-autoconfigure/build/test-results
-      - store_autoconfigure_artifacts:
+      - store_artifacts:
           path: hmpps-sqs-spring-boot-autoconfigure/build/reports/tests
       - store_test_results:
           path: test-app/build/test-results
