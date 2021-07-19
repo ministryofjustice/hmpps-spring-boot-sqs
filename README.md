@@ -1,6 +1,6 @@
 # hmpps-spring-boot-sqs
 
-A helper library providing utilities for using `amazon-sqs-java-messaging-lib`
+A Spring Boot starter library providing utilities for using Amazon SQS/SNS. The library is very opinionated towards usage within HMPPS, e.g. we assume that there each queue has its own secrets rather than sharing access between queues.
 
 ## :construction: THIS IS A WORK IN PROGRESS :construction:
 
@@ -23,13 +23,13 @@ Add the following dependency to your Gradle build script:
 *Kotlin*
 
 ``` kotlin
-implementation("uk.gov.justice.service.hmpps:hmpps-spring-boot-sqs:<library-version>")
+implementation("uk.gov.justice.service.hmpps:hmpps-sqs-spring-boot-starter:<library-version>")
 ```
 
 *Groovy*
 
 ``` groovy
-implementation 'uk.gov.justice.service.hmpps:hmpps-spring-boot-sqs:<library-version>'
+implementation 'uk.gov.justice.service.hmpps:hmpps-sqs-spring-boot-starter:<library-version>'
 ```
 
 Then create some properties defining the queue(s) in the application. See [HMPPS Queue Properties](#hmpps-queue-properties) for information on the properties, and check the [test-app](https://github.com/ministryofjustice/hmpps-spring-boot-sqs/tree/main/test-app) for an example.
@@ -283,7 +283,11 @@ We are using a multi-module project in order to create functional tests that use
 
 ### hmpps-sqs-spring-boot-autoconfigure
 
-This is the module that generates the autoconfigure library for publishing. See the publish job in Circle build `/.circleci/config.yml` for more details.
+This is the module that generates the autoconfigure library for consuming in the starter library. It provides all of the functionality provided by this project.
+
+### hmpps-sqs-spring-boot-starter
+
+This is the module that generates the starter library for publishing. The starter library includes the autoconfigure library and any dependencies required to make it work.
 
 #### Running the Unit Tests
 
@@ -360,7 +364,7 @@ As a rule of thumb new features must:
 * Then publish the plugin to local maven
 
 ```
-./gradlew publishToMavenLocal -x :hmpps-sqs-spring-boot-autoconfigure:signMavenPublication
+./gradlew publishToMavenLocal -x :hmpps-sqs-spring-boot-autoconfigure:signMavenPublication -x :hmpps-sqs-spring-boot-starter:signMavenPublication
 ```
 
 In the other project's Gradle build script change the version to match and it should now be pulled into the project.
