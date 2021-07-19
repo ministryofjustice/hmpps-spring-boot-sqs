@@ -24,10 +24,10 @@ jobs:
           paths:
             - ~/.gradle
           key: gradle-{{ checksum "build.gradle.kts" }}
-      - store_test_results:
-          path: lib/build/test-results
-      - store_artifacts:
-          path: lib/build/reports/tests
+      - store_autoconfigure_test_results:
+          path: hmpps-sqs-spring-boot-autoconfigure/build/test-results
+      - store_autoconfigure_artifacts:
+          path: hmpps-sqs-spring-boot-autoconfigure/build/reports/tests
       - store_test_results:
           path: test-app/build/test-results
       - store_artifacts:
@@ -35,7 +35,8 @@ jobs:
       - persist_to_workspace:
           root: .
           paths:
-            - build/libs
+            - hmpps-sqs-spring-boot-autoconfigure/build/libs
+            - hmpps-sqs-spring-boot-starter/build/libs
             - build.gradle.kts
 
   publish:
@@ -51,15 +52,15 @@ jobs:
       - run:
           command: |
             ORG_GRADLE_PROJECT_signingKey=$(echo -e "$ORG_GRADLE_PROJECT_signingKey")
-            ./gradlew -Dorg.gradle.jvmargs="--illegal-access=permit" -Dkotlin.daemon.jvm.options="--illegal-access=permit" lib:publishToSonatype closeAndReleaseSonatypeStagingRepository
+            ./gradlew -Dorg.gradle.jvmargs="--illegal-access=permit" -Dkotlin.daemon.jvm.options="--illegal-access=permit" hmpps-sqs-spring-boot-autoconfigure:publishToSonatype closeAndReleaseSonatypeStagingRepository
+      - run:
+          command: |
+            ORG_GRADLE_PROJECT_signingKey=$(echo -e "$ORG_GRADLE_PROJECT_signingKey")
+            ./gradlew -Dorg.gradle.jvmargs="--illegal-access=permit" -Dkotlin.daemon.jvm.options="--illegal-access=permit" hmpps-sqs-spring-boot-starter:publishToSonatype closeAndReleaseSonatypeStagingRepository
       - save_cache:
           paths:
             - ~/.gradle
           key: gradle-{{ checksum "build.gradle.kts" }}
-      - store_test_results:
-          path: build/test-results
-      - store_artifacts:
-          path: build/reports/tests
       - persist_to_workspace:
           root: .
           paths:
