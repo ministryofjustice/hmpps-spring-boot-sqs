@@ -1,6 +1,6 @@
 plugins {
-  id("uk.gov.justice.hmpps.gradle-spring-boot") version "3.3.0"
-  kotlin("plugin.spring") version "1.5.10"
+  id("uk.gov.justice.hmpps.gradle-spring-boot") version "3.3.4"
+  kotlin("plugin.spring") version "1.5.21"
 }
 
 configurations {
@@ -15,11 +15,11 @@ dependencies {
 
   implementation(project(":hmpps-sqs-spring-boot-starter"))
 
-  testImplementation("org.assertj:assertj-core:3.19.0")
+  testImplementation("org.assertj:assertj-core:3.20.2")
   testImplementation("org.junit.jupiter:junit-jupiter:5.8.0-M1")
-  testImplementation("org.mockito:mockito-junit-jupiter:3.10.0")
+  testImplementation("org.mockito:mockito-junit-jupiter:3.11.2")
   testImplementation("com.nhaarman.mockitokotlin2:mockito-kotlin:2.2.0")
-  testImplementation("org.mockito:mockito-inline:3.10.0")
+  testImplementation("org.mockito:mockito-inline:3.11.2")
   testImplementation("org.awaitility:awaitility-kotlin:4.1.0")
   testImplementation("io.jsonwebtoken:jjwt:0.9.1")
   testImplementation("com.github.tomakehurst:wiremock-standalone:2.27.2")
