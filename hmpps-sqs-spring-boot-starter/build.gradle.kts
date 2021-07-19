@@ -16,7 +16,7 @@ publishing {
     mavenLocal()
   }
   publications {
-    create<MavenPublication>("maven") {
+    create<MavenPublication>("starter") {
       from(components["java"])
       pom {
         name.set(base.archivesBaseName)
@@ -47,7 +47,7 @@ signing {
   val signingKey: String? by project
   val signingPassword: String? by project
   useInMemoryPgpKeys(signingKey, signingPassword)
-  sign(publishing.publications["maven"])
+  sign(publishing.publications["starter"])
 }
 java.sourceCompatibility = JavaVersion.VERSION_16
 

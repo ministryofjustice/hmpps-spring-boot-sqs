@@ -17,7 +17,6 @@ plugins {
 dependencies {
   implementation("com.amazonaws:amazon-sqs-java-messaging-lib:1.0.8")
   implementation("com.amazonaws:aws-java-sdk-sns:1.11.942")
-  implementation(platform("org.springframework.boot:spring-boot-dependencies:2.5.2"))
   implementation("org.springframework.boot:spring-boot-starter")
   implementation("org.springframework.boot:spring-boot-autoconfigure")
   implementation("org.springframework.boot:spring-boot-actuator-autoconfigure")
@@ -39,7 +38,7 @@ publishing {
     mavenLocal()
   }
   publications {
-    create<MavenPublication>("maven") {
+    create<MavenPublication>("autoconfigure") {
       from(components["java"])
       pom {
         name.set(base.archivesBaseName)
@@ -70,7 +69,7 @@ signing {
   val signingKey: String? by project
   val signingPassword: String? by project
   useInMemoryPgpKeys(signingKey, signingPassword)
-  sign(publishing.publications["maven"])
+  sign(publishing.publications["autoconfigure"])
 }
 java.sourceCompatibility = JavaVersion.VERSION_16
 
