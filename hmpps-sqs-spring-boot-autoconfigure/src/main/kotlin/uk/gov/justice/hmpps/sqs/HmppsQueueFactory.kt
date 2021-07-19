@@ -105,12 +105,13 @@ class HmppsQueueFactory(
     if (hmppsSqsProperties.provider == "localstack")
       hmppsTopics.firstOrNull { topic -> topic.id == queueConfig.subscribeTopicId }
         ?.also { topic ->
+          val subscribeAttribute = if (queueConfig.subscribeFilter.isNullOrEmpty()) mapOf() else mapOf("FilterPolicy" to queueConfig.subscribeFilter)
           topic.snsClient.subscribe(
             SubscribeRequest()
               .withTopicArn(topic.arn)
               .withProtocol("sqs")
               .withEndpoint("${hmppsSqsProperties.localstackUrl}/queue/${queueConfig.queueName}")
-              .withAttributes(mapOf("FilterPolicy" to queueConfig.subscribeFilter))
+              .withAttributes(subscribeAttribute)
           )
             .also { log.info("Queue ${queueConfig.queueName} has subscribed to topic with arn ${topic.arn}") }
         }
