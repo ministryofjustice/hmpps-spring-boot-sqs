@@ -277,6 +277,14 @@ We do not provide any detailed Open API documentation for these endpoints. This 
 
 Hopefully your Open API document generator can find the endpoints automatically and includes them in the Open API docs. If not you may have to introduce some configuration to point the generator at the endpoints, for example using the Springfox [ApiSelectorBuilder#apis method](https://springfox.github.io/springfox/docs/snapshot/#springfox-spring-mvc-and-spring-boot) to add the base package `uk.gov.justice.hmpps.sqs`.
 
+### Testcontainers
+
+In the past many queueing applications have allowed running against either a Testcontainers LocalStack instance or a standalone LocalStack instance started manually with docker-compose (which is required when running the tests on CircleCI).
+
+This led to some applications having a very complicated configuration with 3 sets of `AmazonSQS` beans required - production, standalone LocalStack and Testcontainers LocalStack.
+
+When using this library there is an easier way to use Testcontainers. Look in the `test-app` at class `IntegrationTestBase` in the `companion object`. There is an example of how to start a Testcontainers LocalStack instance only if a standalone LocalStack instance is not already running. This means that if you check out the library and run the tests then Testcontainers will jump in and start a LocalStack instance for you. However, if you are developing the application and would prefer not to wait for the Testcontainers LocalStack instance to start and stop on every test run then you can start a standalone LocalStack instance and the tests will use that.
+
 ## Modules
 
 We are using a multi-module project in order to create functional tests that use the imported library.
@@ -297,13 +305,25 @@ To run only the unit tests found in the `hmpps-sqs-spring-boot-autoconfigure` mo
 
 #### Running All Tests
 
-To run all tests including the functional tests in the module `test-app` use this command to start localstack:
+Use the following command to run all tests, with the functional tests running against a Testcontainers LocalStack instance:
+
+`./gradlew test`
+
+Note that Testcontainers only starts if LocalStack is not running on port 4566.
+
+##### With Standalone LocalStack
+
+If you are developing in this library then starting and stopping Testcontainers LocalStack for every test run quickly becomes tedious.
+
+Use this command to run a standalone LocalStack instance:
 
 `docker-compose -f docker-compose-test.yml up localstack`
 
-And this command to run the tests:
+And to run the tests use this command - as often as you like:
 
 `./gradlew test`
+
+The standalone LocalStack instance does not need stopping and starting between test runs.
 
 ### test-app
 
@@ -315,13 +335,23 @@ Note that this module does not produce an artifact for publishing - we only publ
 
 #### Running the Functional Tests
 
-The functional tests need a running instance of LocalStack. To start LocalStack use command:
+From the root of the project run the following command to test only the test-app tests against a Testcontainers LocalStack instance:
+
+`./gradlew test-app:test`
+
+##### With Standalone LocalStack
+
+If you are developing in this library then starting and stopping a Testcontainers LocalStack instance for every test run quickly becomes tedious.
+
+Use this command to start a standalone LocalStack instance:
 
 `docker-compose -f docker-compose-test.yml up localstack`
 
 From the root of the project run the following command to test only the test-app tests:
 
 `./gradlew test-app:test`
+
+The standalone LocalStack instance does not need stopping and starting between test runs.
 
 ### Running the test-app
 
