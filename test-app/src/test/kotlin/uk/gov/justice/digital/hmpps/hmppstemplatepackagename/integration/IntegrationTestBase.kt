@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.microsoft.applicationinsights.core.dependencies.google.gson.Gson
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.extension.ExtendWith
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.boot.test.context.SpringBootTest
@@ -16,7 +17,15 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Import
 import org.springframework.http.HttpHeaders
 import org.springframework.test.context.ActiveProfiles
+import org.springframework.test.context.DynamicPropertyRegistry
+import org.springframework.test.context.DynamicPropertySource
 import org.springframework.test.web.reactive.server.WebTestClient
+import org.testcontainers.containers.localstack.LocalStackContainer
+import org.testcontainers.containers.localstack.LocalStackContainer.Service.SNS
+import org.testcontainers.containers.localstack.LocalStackContainer.Service.SQS
+import org.testcontainers.containers.output.Slf4jLogConsumer
+import org.testcontainers.containers.wait.strategy.Wait
+import org.testcontainers.utility.DockerImageName
 import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.integration.mocks.OAuthExtension
 import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.service.InboundMessageService
 import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.service.OutboundEventsEmitter
@@ -26,6 +35,8 @@ import uk.gov.justice.hmpps.sqs.HmppsQueueService
 import uk.gov.justice.hmpps.sqs.HmppsSqsProperties
 import uk.gov.justice.hmpps.sqs.MissingQueueException
 import uk.gov.justice.hmpps.sqs.MissingTopicException
+import java.io.IOException
+import java.net.ServerSocket
 
 @SpringBootTest(webEnvironment = RANDOM_PORT)
 @Import(IntegrationTestBase.SqsConfig::class, JwtAuthHelper::class)
@@ -138,6 +149,48 @@ abstract class IntegrationTestBase {
       with(hmppsSqsProperties) {
         val config = queues["outboundqueue"] ?: throw MissingQueueException("HmppsSqsProperties config for outboundqueue not found")
         hmppsQueueFactory.createSqsDlqClient("outboundqueue", config, hmppsSqsProperties)
+      }
+  }
+
+  companion object {
+    val log = LoggerFactory.getLogger(this::class.java)
+
+    @JvmStatic
+    @DynamicPropertySource
+    fun testcontainers(registry: DynamicPropertyRegistry) {
+      startLocalstackIfNotRunning()?.run {
+        getEndpointConfiguration(SNS)
+          .let { it.serviceEndpoint to it.signingRegion }
+          .also {
+            registry.add("hmpps.sqs.localstackUrl") { it.first }
+            registry.add("hmpps.sqs.region") { it.second }
+          }
+      }
+    }
+
+    private fun startLocalstackIfNotRunning(): LocalStackContainer? {
+      if (localstackIsRunning()) return null
+      val logConsumer = Slf4jLogConsumer(log).withPrefix("localstack")
+      return LocalStackContainer(
+        DockerImageName.parse("localstack/localstack").withTag("0.12.9.1")
+      ).apply {
+        withServices(SNS, SQS)
+        withEnv("HOSTNAME_EXTERNAL", "localhost")
+        withEnv("DEFAULT_REGION", "eu-west-2")
+        waitingFor(
+          Wait.forLogMessage(".*Ready.*", 1)
+        )
+        start()
+        followOutput(logConsumer)
+      }
+    }
+
+    private fun localstackIsRunning(): Boolean =
+      try {
+        val serverSocket = ServerSocket(4566)
+        serverSocket.localPort == 0
+      } catch (e: IOException) {
+        true
       }
   }
 }
