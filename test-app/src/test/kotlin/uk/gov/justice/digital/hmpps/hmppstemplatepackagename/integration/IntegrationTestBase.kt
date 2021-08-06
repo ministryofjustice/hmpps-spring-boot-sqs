@@ -47,9 +47,9 @@ abstract class IntegrationTestBase {
   @BeforeEach
   fun `clear queues`() {
     inboundSqsClient.purgeQueue(PurgeQueueRequest(inboundQueueUrl))
-    inboundSqsDlqClient.purgeQueue(PurgeQueueRequest(inboundDlqUrl))
+    inboundSqsDlqClient?.purgeQueue(PurgeQueueRequest(inboundDlqUrl))
     outboundSqsClientSpy.purgeQueue(PurgeQueueRequest(outboundQueueUrl))
-    outboundSqsDlqClientSpy.purgeQueue(PurgeQueueRequest(outboundDlqUrl))
+    outboundSqsDlqClient?.purgeQueue(PurgeQueueRequest(outboundDlqUrl))
   }
 
   fun HmppsSqsProperties.inboundQueueConfig() =
@@ -70,22 +70,20 @@ abstract class IntegrationTestBase {
   private val inboundTopic by lazy { hmppsQueueService.findByTopicId("inboundtopic") ?: throw MissingQueueException("HmppsTopic inboundtopic not found") }
 
   protected val inboundSqsClient by lazy { inboundQueue.sqsClient }
-  protected val inboundSqsDlqClient by lazy { inboundQueue.sqsDlqClient!! }
+  protected val inboundSqsDlqClient: AmazonSQS? by lazy { inboundQueue.sqsDlqClient }
   protected val inboundSnsClient by lazy { inboundTopic.snsClient }
   protected val outboundTestSqsClient by lazy { outboundTestQueue.sqsClient }
+
+  protected val outboundSqsDlqClient: AmazonSQS? by lazy { outboundQueue.sqsDlqClient }
 
   @SpyBean
   @Qualifier("outboundqueue-sqs-client")
   protected lateinit var outboundSqsClientSpy: AmazonSQS
 
-  @SpyBean
-  @Qualifier("outboundqueue-sqs-dlq-client")
-  protected lateinit var outboundSqsDlqClientSpy: AmazonSQS
-
   protected val inboundQueueUrl: String by lazy { inboundQueue.queueUrl }
-  protected val inboundDlqUrl: String by lazy { inboundQueue.dlqUrl!! }
+  protected val inboundDlqUrl: String? by lazy { inboundQueue.dlqUrl }
   protected val outboundQueueUrl: String by lazy { outboundQueue.queueUrl }
-  protected val outboundDlqUrl: String by lazy { outboundQueue.dlqUrl!! }
+  protected val outboundDlqUrl: String? by lazy { outboundQueue.dlqUrl }
   protected val outboundTestQueueUrl: String by lazy { outboundTestQueue.queueUrl }
 
   protected val inboundTopicArn by lazy { inboundTopic.arn }
