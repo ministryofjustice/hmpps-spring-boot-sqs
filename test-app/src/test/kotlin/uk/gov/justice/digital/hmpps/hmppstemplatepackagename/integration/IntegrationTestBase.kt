@@ -47,9 +47,9 @@ abstract class IntegrationTestBase {
   @BeforeEach
   fun `clear queues`() {
     inboundSqsClient.purgeQueue(PurgeQueueRequest(inboundQueueUrl))
-    inboundSqsDlqClient?.purgeQueue(PurgeQueueRequest(inboundDlqUrl))
+    inboundSqsDlqClient.purgeQueue(PurgeQueueRequest(inboundDlqUrl))
     outboundSqsClientSpy.purgeQueue(PurgeQueueRequest(outboundQueueUrl))
-    outboundSqsDlqClient?.purgeQueue(PurgeQueueRequest(outboundDlqUrl))
+    outboundSqsDlqClient.purgeQueue(PurgeQueueRequest(outboundDlqUrl))
   }
 
   fun HmppsSqsProperties.inboundQueueConfig() =
@@ -70,21 +70,20 @@ abstract class IntegrationTestBase {
   private val inboundTopic by lazy { hmppsQueueService.findByTopicId("inboundtopic") ?: throw MissingQueueException("HmppsTopic inboundtopic not found") }
 
   protected val inboundSqsClient by lazy { inboundQueue.sqsClient }
-  protected val inboundSqsDlqClient: AmazonSQS? by lazy { inboundQueue.sqsDlqClient }
+  protected val inboundSqsDlqClient by lazy { inboundQueue.sqsDlqClient as AmazonSQS }
   protected val inboundSnsClient by lazy { inboundTopic.snsClient }
-  protected val outboundTestSqsClient by lazy { outboundTestQueue.sqsClient }
-
-  protected val outboundSqsDlqClient: AmazonSQS? by lazy { outboundQueue.sqsDlqClient }
+  protected val outboundSqsDlqClient by lazy { outboundQueue.sqsDlqClient as AmazonSQS }
+  protected val outboundTestSqsClient by lazy { outboundTestQueue.sqsClient as AmazonSQS}
 
   @SpyBean
   @Qualifier("outboundqueue-sqs-client")
   protected lateinit var outboundSqsClientSpy: AmazonSQS
 
-  protected val inboundQueueUrl: String by lazy { inboundQueue.queueUrl }
-  protected val inboundDlqUrl: String? by lazy { inboundQueue.dlqUrl }
-  protected val outboundQueueUrl: String by lazy { outboundQueue.queueUrl }
-  protected val outboundDlqUrl: String? by lazy { outboundQueue.dlqUrl }
-  protected val outboundTestQueueUrl: String by lazy { outboundTestQueue.queueUrl }
+  protected val inboundQueueUrl by lazy { inboundQueue.queueUrl }
+  protected val inboundDlqUrl by lazy { inboundQueue.dlqUrl as String }
+  protected val outboundQueueUrl by lazy { outboundQueue.queueUrl }
+  protected val outboundDlqUrl by lazy { outboundQueue.dlqUrl as String }
+  protected val outboundTestQueueUrl by lazy { outboundTestQueue.queueUrl }
 
   protected val inboundTopicArn by lazy { inboundTopic.arn }
 

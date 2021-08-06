@@ -58,7 +58,7 @@ class HmppsQueueHealthTest {
   @Test
   fun `should show status DOWN`() {
     whenever(sqsClient.getQueueUrl(anyString())).thenThrow(QueueDoesNotExistException::class.java)
-    whenever(sqsDlqClient.getQueueUrl(dlqName)).thenThrow(NullPointerException::class.java)
+    whenever(sqsDlqClient.getQueueUrl(dlqName)).thenThrow(RuntimeException::class.java)
 
     val health = queueHealth.health()
 
@@ -68,7 +68,7 @@ class HmppsQueueHealthTest {
   @Test
   fun `should show exception causing status DOWN`() {
     whenever(sqsClient.getQueueUrl(anyString())).thenThrow(QueueDoesNotExistException::class.java)
-    whenever(sqsDlqClient.getQueueUrl(dlqName)).thenThrow(NullPointerException::class.java)
+    whenever(sqsDlqClient.getQueueUrl(dlqName)).thenThrow(RuntimeException::class.java)
 
     val health = queueHealth.health()
 
@@ -78,7 +78,7 @@ class HmppsQueueHealthTest {
   @Test
   fun `should show queue name if status DOWN`() {
     whenever(sqsClient.getQueueUrl(anyString())).thenThrow(QueueDoesNotExistException::class.java)
-    whenever(sqsDlqClient.getQueueUrl(dlqName)).thenThrow(NullPointerException::class.java)
+    whenever(sqsDlqClient.getQueueUrl(dlqName)).thenThrow(RuntimeException::class.java)
 
     val health = queueHealth.health()
 

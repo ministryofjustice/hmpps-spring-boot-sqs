@@ -95,13 +95,15 @@ class HmppsQueueHealth(private val hmppsQueue: HmppsQueue) : HealthIndicator {
     }
   }
 
-  private fun getDlqAttributes(): Result<GetQueueAttributesResult> {
-    return if (hmppsQueue.sqsDlqClient == null) failure(RuntimeException("Attempted to access dlqclient that does not exist"))
-    else
+  private fun getDlqAttributes(): Result<GetQueueAttributesResult> =
+    hmppsQueue.sqsDlqClient?.let {
       runCatching {
         hmppsQueue.sqsDlqClient!!.getQueueAttributes(GetQueueAttributesRequest(hmppsQueue.dlqUrl).withAttributeNames(All))
       }
-  }
+    }
+      ?: failure(MissingDlqClientException(hmppsQueue.dlqName!!))
 }
 
+
 class MissingRedrivePolicyException(queueId: String) : RuntimeException("The main queue for $queueId is missing a $RedrivePolicy")
+class MissingDlqClientException(dlqName: String) : RuntimeException("Attempted to access dlqclient for $dlqName that does not exist")

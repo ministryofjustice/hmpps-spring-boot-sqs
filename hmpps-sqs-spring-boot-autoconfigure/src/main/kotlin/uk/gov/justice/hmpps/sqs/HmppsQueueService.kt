@@ -44,7 +44,7 @@ class HmppsQueueService(
     val messageCount = sqsDlqClient.countMessagesOnQueue(dlqUrl!!)
     val messages = mutableListOf<Message>()
     repeat(messageCount) {
-      sqsDlqClient!!.receiveMessage(ReceiveMessageRequest(dlqUrl).withMaxNumberOfMessages(1)).messages.firstOrNull()
+      sqsDlqClient.receiveMessage(ReceiveMessageRequest(dlqUrl).withMaxNumberOfMessages(1)).messages.firstOrNull()
         ?.also { msg ->
           sqsClient.sendMessage(queueUrl, msg.body)
           sqsDlqClient.deleteMessage(DeleteMessageRequest(dlqUrl, msg.receiptHandle))
