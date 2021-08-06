@@ -40,10 +40,11 @@ class HmppsQueueService(
       .map { retryDlqRequest -> retryDlqMessages(retryDlqRequest) }
 
   private fun HmppsQueue.retryDlqMessages(): RetryDlqResult {
-    val messageCount = sqsDlqClient.countMessagesOnQueue(dlqUrl)
+    if (sqsDlqClient == null || dlqUrl == null) return RetryDlqResult(0, mutableListOf<Message>())
+    val messageCount = sqsDlqClient.countMessagesOnQueue(dlqUrl!!)
     val messages = mutableListOf<Message>()
     repeat(messageCount) {
-      sqsDlqClient.receiveMessage(ReceiveMessageRequest(dlqUrl).withMaxNumberOfMessages(1)).messages.firstOrNull()
+      sqsDlqClient!!.receiveMessage(ReceiveMessageRequest(dlqUrl).withMaxNumberOfMessages(1)).messages.firstOrNull()
         ?.also { msg ->
           sqsClient.sendMessage(queueUrl, msg.body)
           sqsDlqClient.deleteMessage(DeleteMessageRequest(dlqUrl, msg.receiptHandle))
@@ -71,7 +72,7 @@ class HmppsQueueService(
     findByQueueName(queueName)
       ?.let { hmppsQueue -> PurgeQueueRequest(hmppsQueue.queueName, hmppsQueue.sqsClient, hmppsQueue.queueUrl) }
       ?: findByDlqName(queueName)
-        ?.let { hmppsQueue -> PurgeQueueRequest(hmppsQueue.dlqName, hmppsQueue.sqsDlqClient, hmppsQueue.dlqUrl) }
+        ?.let { hmppsQueue -> PurgeQueueRequest(hmppsQueue.dlqName!!, hmppsQueue.sqsDlqClient!!, hmppsQueue.dlqUrl!!) }
 }
 
 data class RetryDlqRequest(val hmppsQueue: HmppsQueue)

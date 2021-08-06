@@ -25,7 +25,7 @@ class HmppsQueueFactory(
   fun createHmppsQueues(hmppsSqsProperties: HmppsSqsProperties, hmppsTopics: List<HmppsTopic> = listOf()) =
     hmppsSqsProperties.queues
       .map { (queueId, queueConfig) ->
-        val sqsDlqClient = getOrDefaultSqsDlqClient(queueId, queueConfig, hmppsSqsProperties)
+        val sqsDlqClient = getSqsDlqClient(queueId, queueConfig, hmppsSqsProperties)
         val sqsClient = getOrDefaultSqsClient(queueId, queueConfig, hmppsSqsProperties, sqsDlqClient)
           .also { subscribeToLocalStackTopic(hmppsSqsProperties, queueConfig, hmppsTopics) }
         HmppsQueue(queueId, sqsClient, queueConfig.queueName, sqsDlqClient, queueConfig.dlqName)
@@ -33,12 +33,17 @@ class HmppsQueueFactory(
           .also { createJmsListenerContainerFactory(it, hmppsSqsProperties) }
       }.toList()
 
-  private fun getOrDefaultSqsDlqClient(queueId: String, queueConfig: QueueConfig, hmppsSqsProperties: HmppsSqsProperties): AmazonSQS =
-    getOrDefaultBean("$queueId-sqs-dlq-client") {
-      createSqsDlqClient(queueId, queueConfig, hmppsSqsProperties)
-    }
+  private fun getSqsDlqClient(queueId: String, queueConfig: QueueConfig, hmppsSqsProperties: HmppsSqsProperties): AmazonSQS? {
+    runCatching { context.beanFactory.getBean("$queueId-sqs-dlq-client") }
+      .onSuccess {
+        return getOrDefaultBean("$queueId-sqs-dlq-client") {
+          createSqsDlqClient(queueId, queueConfig, hmppsSqsProperties)
+        }
+      }
+    return null
+  }
 
-  private fun getOrDefaultSqsClient(queueId: String, queueConfig: QueueConfig, hmppsSqsProperties: HmppsSqsProperties, sqsDlqClient: AmazonSQS): AmazonSQS =
+  private fun getOrDefaultSqsClient(queueId: String, queueConfig: QueueConfig, hmppsSqsProperties: HmppsSqsProperties, sqsDlqClient: AmazonSQS?): AmazonSQS =
     getOrDefaultBean("$queueId-sqs-client") {
       createSqsClient(queueId, queueConfig, hmppsSqsProperties, sqsDlqClient)
     }
@@ -63,15 +68,15 @@ class HmppsQueueFactory(
   fun createSqsDlqClient(queueId: String, queueConfig: QueueConfig, hmppsSqsProperties: HmppsSqsProperties): AmazonSQS =
     with(hmppsSqsProperties) {
       when (provider) {
-        "aws" -> amazonSqsFactory.awsSqsDlqClient(queueId, queueConfig.dlqName, queueConfig.dlqAccessKeyId, queueConfig.dlqSecretAccessKey, region, queueConfig.asyncDlqClient)
+        "aws" -> return amazonSqsFactory.awsSqsDlqClient(queueId, queueConfig.dlqName!!, queueConfig.dlqAccessKeyId, queueConfig.dlqSecretAccessKey, region, queueConfig.asyncDlqClient)
         "localstack" ->
-          amazonSqsFactory.localStackSqsDlqClient(queueId, queueConfig.dlqName, localstackUrl, region, queueConfig.asyncDlqClient)
+          return amazonSqsFactory.localStackSqsDlqClient(queueId, queueConfig.dlqName!!, localstackUrl, region, queueConfig.asyncDlqClient)
             .also { sqsDlqClient -> sqsDlqClient.createQueue(queueConfig.dlqName) }
         else -> throw IllegalStateException("Unrecognised HMPPS SQS provider $provider")
       }
     }
 
-  fun createSqsClient(queueId: String, queueConfig: QueueConfig, hmppsSqsProperties: HmppsSqsProperties, sqsDlqClient: AmazonSQS) =
+  fun createSqsClient(queueId: String, queueConfig: QueueConfig, hmppsSqsProperties: HmppsSqsProperties, sqsDlqClient: AmazonSQS?) =
     with(hmppsSqsProperties) {
       when (provider) {
         "aws" -> amazonSqsFactory.awsSqsClient(queueId, queueConfig.queueName, queueConfig.queueAccessKeyId, queueConfig.queueSecretAccessKey, region, queueConfig.asyncQueueClient)
@@ -84,22 +89,27 @@ class HmppsQueueFactory(
 
   private fun createLocalStackQueue(
     sqsClient: AmazonSQS,
-    sqsDlqClient: AmazonSQS,
+    sqsDlqClient: AmazonSQS?,
     queueName: String,
-    dlqName: String,
-  ) =
-    sqsDlqClient.getQueueUrl(dlqName).queueUrl
-      .let { dlqQueueUrl -> sqsDlqClient.getQueueAttributes(dlqQueueUrl, listOf(QueueAttributeName.QueueArn.toString())).attributes["QueueArn"]!! }
-      .also { queueArn ->
-        sqsClient.createQueue(
-          CreateQueueRequest(queueName).withAttributes(
-            mapOf(
-              QueueAttributeName.RedrivePolicy.toString() to
-                """{"deadLetterTargetArn":"$queueArn","maxReceiveCount":"5"}"""
+    dlqName: String?,
+  ) {
+    if (dlqName == null || sqsDlqClient == null) {
+      sqsClient.createQueue(CreateQueueRequest(queueName))
+    } else {
+      sqsDlqClient.getQueueUrl(dlqName).queueUrl
+        .let { dlqQueueUrl -> sqsDlqClient.getQueueAttributes(dlqQueueUrl, listOf(QueueAttributeName.QueueArn.toString())).attributes["QueueArn"]!! }
+        .also { queueArn ->
+          sqsClient.createQueue(
+            CreateQueueRequest(queueName).withAttributes(
+              mapOf(
+                QueueAttributeName.RedrivePolicy.toString() to
+                  """{"deadLetterTargetArn":"$queueArn","maxReceiveCount":"5"}"""
+              )
             )
           )
-        )
-      }
+        }
+    }
+  }
 
   private fun subscribeToLocalStackTopic(hmppsSqsProperties: HmppsSqsProperties, queueConfig: QueueConfig, hmppsTopics: List<HmppsTopic>) {
     if (hmppsSqsProperties.provider == "localstack")

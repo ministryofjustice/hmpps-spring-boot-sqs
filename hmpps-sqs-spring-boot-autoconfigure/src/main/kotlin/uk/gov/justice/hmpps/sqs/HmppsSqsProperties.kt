@@ -19,7 +19,7 @@ data class HmppsSqsProperties(
     val asyncQueueClient: Boolean = false,
     val subscribeTopicId: String = "",
     val subscribeFilter: String = "",
-    val dlqName: String,
+    val dlqName: String? = null,
     val dlqAccessKeyId: String = "",
     val dlqSecretAccessKey: String = "",
     val asyncDlqClient: Boolean = false,
@@ -59,15 +59,16 @@ data class HmppsSqsProperties(
 
   private fun queueNamesMustExist(queueId: String, queueConfig: QueueConfig) {
     if (queueConfig.queueName.isEmpty()) throw InvalidHmppsSqsPropertiesException("queueId $queueId does not have a queue name")
-    if (queueConfig.dlqName.isEmpty()) throw InvalidHmppsSqsPropertiesException("queueId $queueId does not have a dlq name")
   }
 
   private fun awsQueueSecretsMustExist(queueId: String, queueConfig: QueueConfig) {
     if (provider == "aws") {
       if (queueConfig.queueAccessKeyId.isEmpty()) throw InvalidHmppsSqsPropertiesException("queueId $queueId does not have a queue access key id")
       if (queueConfig.queueSecretAccessKey.isEmpty()) throw InvalidHmppsSqsPropertiesException("queueId $queueId does not have a queue secret access key")
-      if (queueConfig.dlqAccessKeyId.isEmpty()) throw InvalidHmppsSqsPropertiesException("queueId $queueId does not have a DLQ access key id")
-      if (queueConfig.dlqSecretAccessKey.isEmpty()) throw InvalidHmppsSqsPropertiesException("queueId $queueId does not have a DLQ secret access key")
+      queueConfig.dlqName?.let {
+        if (queueConfig.dlqAccessKeyId.isEmpty()) throw InvalidHmppsSqsPropertiesException("queueId $queueId does not have a DLQ access key id")
+        if (queueConfig.dlqSecretAccessKey.isEmpty()) throw InvalidHmppsSqsPropertiesException("queueId $queueId does not have a DLQ secret access key")
+      }
     }
   }
 
@@ -123,10 +124,10 @@ data class HmppsSqsProperties(
     }
   }
 
-  private fun <T> mustNotContainDuplicates(description: String, source: Map<String, T>, secret: Boolean = true, valueFinder: (Map.Entry<String, T>) -> String) {
+  private fun <T> mustNotContainDuplicates(description: String, source: Map<String, T>, secret: Boolean = true, valueFinder: (Map.Entry<String, T>) -> String?) {
     val duplicateValues = source.mapValues(valueFinder).values.groupingBy { it }.eachCount().filterValues { it > 1 }
     if (duplicateValues.isNotEmpty()) {
-      val outputValues = if (secret.not()) duplicateValues.keys else duplicateValues.keys.map { "${it.subSequence(0, 4)}******" }.toList()
+      val outputValues = if (secret.not()) duplicateValues.keys else duplicateValues.keys.map { "${it?.subSequence(0, 4)}******" }.toList()
       throw InvalidHmppsSqsPropertiesException("Found duplicated $description: $outputValues")
     }
   }
