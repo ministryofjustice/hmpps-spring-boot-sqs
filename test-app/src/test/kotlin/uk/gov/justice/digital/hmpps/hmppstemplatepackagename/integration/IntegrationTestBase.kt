@@ -70,7 +70,7 @@ abstract class IntegrationTestBase {
   private val inboundTopic by lazy { hmppsQueueService.findByTopicId("inboundtopic") ?: throw MissingQueueException("HmppsTopic inboundtopic not found") }
 
   protected val inboundSqsClient by lazy { inboundQueue.sqsClient }
-  protected val inboundSqsDlqClient by lazy { inboundQueue.sqsDlqClient }
+  protected val inboundSqsDlqClient by lazy { inboundQueue.sqsDlqClient!! }
   protected val inboundSnsClient by lazy { inboundTopic.snsClient }
   protected val outboundTestSqsClient by lazy { outboundTestQueue.sqsClient }
 
@@ -83,9 +83,9 @@ abstract class IntegrationTestBase {
   protected lateinit var outboundSqsDlqClientSpy: AmazonSQS
 
   protected val inboundQueueUrl: String by lazy { inboundQueue.queueUrl }
-  protected val inboundDlqUrl: String by lazy { inboundQueue.dlqUrl }
+  protected val inboundDlqUrl: String by lazy { inboundQueue.dlqUrl!! }
   protected val outboundQueueUrl: String by lazy { outboundQueue.queueUrl }
-  protected val outboundDlqUrl: String by lazy { outboundQueue.dlqUrl }
+  protected val outboundDlqUrl: String by lazy { outboundQueue.dlqUrl!! }
   protected val outboundTestQueueUrl: String by lazy { outboundTestQueue.queueUrl }
 
   protected val inboundTopicArn by lazy { inboundTopic.arn }

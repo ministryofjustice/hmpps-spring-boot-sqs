@@ -96,12 +96,10 @@ class HmppsQueueHealth(private val hmppsQueue: HmppsQueue) : HealthIndicator {
   }
 
   private fun getDlqAttributes(): Result<GetQueueAttributesResult> {
-    return if (hmppsQueue.sqsDlqClient == null) success(GetQueueAttributesResult())
+    return if (hmppsQueue.sqsDlqClient == null) failure(RuntimeException("Attempted to access dlqclient that does not exist"))
     else
-      hmppsQueue.sqsDlqClient.let {
-        runCatching {
-          hmppsQueue.sqsDlqClient!!.getQueueAttributes(GetQueueAttributesRequest(hmppsQueue.dlqUrl).withAttributeNames(All))
-        }
+      runCatching {
+        hmppsQueue.sqsDlqClient!!.getQueueAttributes(GetQueueAttributesRequest(hmppsQueue.dlqUrl).withAttributeNames(All))
       }
   }
 }
