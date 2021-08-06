@@ -25,7 +25,7 @@ class HmppsQueueFactory(
   fun createHmppsQueues(hmppsSqsProperties: HmppsSqsProperties, hmppsTopics: List<HmppsTopic> = listOf()) =
     hmppsSqsProperties.queues
       .map { (queueId, queueConfig) ->
-        val sqsDlqClient = getSqsDlqClient(queueId, queueConfig, hmppsSqsProperties)
+        val sqsDlqClient = getOrDefaultSqsDlqClient(queueId, queueConfig, hmppsSqsProperties)
         val sqsClient = getOrDefaultSqsClient(queueId, queueConfig, hmppsSqsProperties, sqsDlqClient)
           .also { subscribeToLocalStackTopic(hmppsSqsProperties, queueConfig, hmppsTopics) }
         HmppsQueue(queueId, sqsClient, queueConfig.queueName, sqsDlqClient, queueConfig.dlqName)
@@ -33,15 +33,12 @@ class HmppsQueueFactory(
           .also { createJmsListenerContainerFactory(it, hmppsSqsProperties) }
       }.toList()
 
-  private fun getSqsDlqClient(queueId: String, queueConfig: QueueConfig, hmppsSqsProperties: HmppsSqsProperties): AmazonSQS? {
-    runCatching { context.beanFactory.getBean("$queueId-sqs-dlq-client") }
-      .onSuccess {
-        return getOrDefaultBean("$queueId-sqs-dlq-client") {
-          createSqsDlqClient(queueId, queueConfig, hmppsSqsProperties)
-        }
+  private fun getOrDefaultSqsDlqClient(queueId: String, queueConfig: QueueConfig, hmppsSqsProperties: HmppsSqsProperties): AmazonSQS? =
+    queueConfig.dlqName?.let {
+      getOrDefaultBean("$queueId-sqs-dlq-client") {
+        createSqsDlqClient(queueId, queueConfig, hmppsSqsProperties)
       }
-    return null
-  }
+    }
 
   private fun getOrDefaultSqsClient(queueId: String, queueConfig: QueueConfig, hmppsSqsProperties: HmppsSqsProperties, sqsDlqClient: AmazonSQS?): AmazonSQS =
     getOrDefaultBean("$queueId-sqs-client") {
