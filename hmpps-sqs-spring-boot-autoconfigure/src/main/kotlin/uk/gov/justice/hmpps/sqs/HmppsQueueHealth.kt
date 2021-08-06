@@ -104,6 +104,5 @@ class HmppsQueueHealth(private val hmppsQueue: HmppsQueue) : HealthIndicator {
       ?: failure(MissingDlqClientException(hmppsQueue.dlqName!!))
 }
 
-
 class MissingRedrivePolicyException(queueId: String) : RuntimeException("The main queue for $queueId is missing a $RedrivePolicy")
 class MissingDlqClientException(dlqName: String) : RuntimeException("Attempted to access dlqclient for $dlqName that does not exist")
