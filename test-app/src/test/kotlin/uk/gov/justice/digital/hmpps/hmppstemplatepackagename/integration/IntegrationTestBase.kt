@@ -73,7 +73,7 @@ abstract class IntegrationTestBase {
   protected val inboundSqsDlqClient by lazy { inboundQueue.sqsDlqClient as AmazonSQS }
   protected val inboundSnsClient by lazy { inboundTopic.snsClient }
   protected val outboundSqsDlqClient by lazy { outboundQueue.sqsDlqClient as AmazonSQS }
-  protected val outboundTestSqsClient by lazy { outboundTestQueue.sqsClient as AmazonSQS }
+  protected val outboundTestSqsClient by lazy { outboundTestQueue.sqsClient }
 
   @SpyBean
   @Qualifier("outboundqueue-sqs-client")
