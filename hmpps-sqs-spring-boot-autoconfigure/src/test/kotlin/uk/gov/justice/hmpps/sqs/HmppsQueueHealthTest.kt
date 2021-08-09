@@ -58,7 +58,6 @@ class HmppsQueueHealthTest {
   @Test
   fun `should show status DOWN`() {
     whenever(sqsClient.getQueueUrl(anyString())).thenThrow(QueueDoesNotExistException::class.java)
-    whenever(sqsDlqClient.getQueueUrl(dlqName)).thenThrow(RuntimeException::class.java)
 
     val health = queueHealth.health()
 
@@ -68,7 +67,6 @@ class HmppsQueueHealthTest {
   @Test
   fun `should show exception causing status DOWN`() {
     whenever(sqsClient.getQueueUrl(anyString())).thenThrow(QueueDoesNotExistException::class.java)
-    whenever(sqsDlqClient.getQueueUrl(dlqName)).thenThrow(RuntimeException::class.java)
 
     val health = queueHealth.health()
 
@@ -78,7 +76,6 @@ class HmppsQueueHealthTest {
   @Test
   fun `should show queue name if status DOWN`() {
     whenever(sqsClient.getQueueUrl(anyString())).thenThrow(QueueDoesNotExistException::class.java)
-    whenever(sqsDlqClient.getQueueUrl(dlqName)).thenThrow(RuntimeException::class.java)
 
     val health = queueHealth.health()
 
@@ -89,7 +86,6 @@ class HmppsQueueHealthTest {
   fun `should show status DOWN if unable to retrieve queue attributes`() {
     whenever(sqsClient.getQueueUrl(anyString())).thenReturn(someGetQueueUrlResult())
     whenever(sqsClient.getQueueAttributes(someGetQueueAttributesRequest())).thenThrow(RuntimeException::class.java)
-    whenever(sqsDlqClient.getQueueUrl(dlqName)).thenThrow(RuntimeException::class.java)
 
     val health = queueHealth.health()
 
@@ -129,7 +125,6 @@ class HmppsQueueHealthTest {
     whenever(sqsClient.getQueueAttributes(someGetQueueAttributesRequest())).thenReturn(
       someGetQueueAttributesResultWithoutDLQ()
     )
-    whenever(sqsDlqClient.getQueueUrl(dlqName)).thenThrow(RuntimeException::class.java)
 
     val health = queueHealth.health()
 
@@ -143,7 +138,6 @@ class HmppsQueueHealthTest {
     whenever(sqsClient.getQueueAttributes(someGetQueueAttributesRequest())).thenReturn(
       someGetQueueAttributesResultWithoutDLQ()
     )
-    whenever(sqsDlqClient.getQueueUrl(dlqName)).thenThrow(RuntimeException::class.java)
 
     val health = queueHealth.health()
 
@@ -156,7 +150,6 @@ class HmppsQueueHealthTest {
     whenever(sqsClient.getQueueAttributes(someGetQueueAttributesRequest())).thenReturn(
       someGetQueueAttributesResultWithoutDLQ()
     )
-    whenever(sqsDlqClient.getQueueUrl(dlqName)).thenThrow(RuntimeException::class.java)
 
     val health = queueHealth.health()
 

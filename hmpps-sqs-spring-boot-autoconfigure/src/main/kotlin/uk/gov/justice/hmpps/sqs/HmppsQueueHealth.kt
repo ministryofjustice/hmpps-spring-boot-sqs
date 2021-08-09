@@ -36,18 +36,19 @@ class HmppsQueueHealth(private val hmppsQueue: HmppsQueue) : HealthIndicator {
       results += success(HealthDetail("messagesOnQueue" to """${attributesResult.attributes[ApproximateNumberOfMessages.toString()]}"""))
       results += success(HealthDetail("messagesInFlight" to """${attributesResult.attributes[ApproximateNumberOfMessagesNotVisible.toString()]}"""))
 
-      // TODO only add redrive failure if there is a dlq
-      attributesResult.attributes["$RedrivePolicy"] ?: { results += failure(MissingRedrivePolicyException(hmppsQueue.id)) }
+      hmppsQueue.dlqName?.let {
+        attributesResult.attributes["$RedrivePolicy"] ?: run { results += failure(MissingRedrivePolicyException(hmppsQueue.id)) }
+      }
     }.onFailure { throwable -> results += failure(throwable) }
 
     return results.toList()
   }
   private fun checkDlqHealth(): List<Result<HealthDetail>> {
     val results = mutableListOf<Result<HealthDetail>>()
-    hmppsQueue.dlqName?.let {
+    hmppsQueue.dlqName?.run {
       results += success(HealthDetail("dlqName" to hmppsQueue.dlqName))
 
-      hmppsQueue.sqsDlqClient?.let {
+      hmppsQueue.sqsDlqClient?.run {
         getDlqAttributes().map { attributesResult ->
           results += success(
             HealthDetail(
@@ -96,13 +97,11 @@ class HmppsQueueHealth(private val hmppsQueue: HmppsQueue) : HealthIndicator {
   }
 
   private fun getDlqAttributes(): Result<GetQueueAttributesResult> =
-    hmppsQueue.sqsDlqClient?.let {
-      runCatching {
-        hmppsQueue.sqsDlqClient!!.getQueueAttributes(GetQueueAttributesRequest(hmppsQueue.dlqUrl).withAttributeNames(All))
-      }
+    runCatching {
+      hmppsQueue.sqsDlqClient?.getQueueAttributes(GetQueueAttributesRequest(hmppsQueue.dlqUrl).withAttributeNames(All))
+        ?: throw MissingDlqClientException(hmppsQueue.dlqName)
     }
-      ?: failure(MissingDlqClientException(hmppsQueue.dlqName!!))
 }
 
 class MissingRedrivePolicyException(queueId: String) : RuntimeException("The main queue for $queueId is missing a $RedrivePolicy")
-class MissingDlqClientException(dlqName: String) : RuntimeException("Attempted to access dlqclient for $dlqName that does not exist")
+class MissingDlqClientException(dlqName: String?) : RuntimeException("Attempted to access dlqclient for $dlqName that does not exist")

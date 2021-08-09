@@ -49,7 +49,7 @@ abstract class IntegrationTestBase {
     inboundSqsClient.purgeQueue(PurgeQueueRequest(inboundQueueUrl))
     inboundSqsDlqClient.purgeQueue(PurgeQueueRequest(inboundDlqUrl))
     outboundSqsClientSpy.purgeQueue(PurgeQueueRequest(outboundQueueUrl))
-    outboundSqsDlqClient.purgeQueue(PurgeQueueRequest(outboundDlqUrl))
+    outboundSqsDlqClientSpy.purgeQueue(PurgeQueueRequest(outboundDlqUrl))
   }
 
   fun HmppsSqsProperties.inboundQueueConfig() =
@@ -78,6 +78,10 @@ abstract class IntegrationTestBase {
   @SpyBean
   @Qualifier("outboundqueue-sqs-client")
   protected lateinit var outboundSqsClientSpy: AmazonSQS
+
+  @SpyBean
+  @Qualifier("outboundqueue-sqs-dlq-client")
+  protected lateinit var outboundSqsDlqClientSpy: AmazonSQS
 
   protected val inboundQueueUrl by lazy { inboundQueue.queueUrl }
   protected val inboundDlqUrl by lazy { inboundQueue.dlqUrl as String }

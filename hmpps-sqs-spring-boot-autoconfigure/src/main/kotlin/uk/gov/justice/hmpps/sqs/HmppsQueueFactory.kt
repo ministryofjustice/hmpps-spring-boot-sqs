@@ -65,11 +65,11 @@ class HmppsQueueFactory(
 
   fun createSqsDlqClient(queueId: String, queueConfig: QueueConfig, hmppsSqsProperties: HmppsSqsProperties): AmazonSQS =
     with(hmppsSqsProperties) {
-      if (queueConfig.dlqName == null) throw MissingDlqNameException()
+      queueConfig.dlqName ?: throw MissingDlqNameException()
       when (provider) {
-        "aws" -> return amazonSqsFactory.awsSqsDlqClient(queueId, queueConfig.dlqName, queueConfig.dlqAccessKeyId, queueConfig.dlqSecretAccessKey, region, queueConfig.asyncDlqClient)
+        "aws" -> amazonSqsFactory.awsSqsDlqClient(queueId, queueConfig.dlqName, queueConfig.dlqAccessKeyId, queueConfig.dlqSecretAccessKey, region, queueConfig.asyncDlqClient)
         "localstack" ->
-          return amazonSqsFactory.localStackSqsDlqClient(queueId, queueConfig.dlqName, localstackUrl, region, queueConfig.asyncDlqClient)
+          amazonSqsFactory.localStackSqsDlqClient(queueId, queueConfig.dlqName, localstackUrl, region, queueConfig.asyncDlqClient)
             .also { sqsDlqClient -> sqsDlqClient.createQueue(queueConfig.dlqName) }
         else -> throw IllegalStateException("Unrecognised HMPPS SQS provider $provider")
       }
@@ -96,7 +96,7 @@ class HmppsQueueFactory(
       sqsClient.createQueue(CreateQueueRequest(queueName))
     } else {
       sqsDlqClient.getQueueUrl(dlqName).queueUrl
-        .let { dlqQueueUrl -> sqsDlqClient.getQueueAttributes(dlqQueueUrl, listOf(QueueAttributeName.QueueArn.toString())).attributes["QueueArn"]!! }
+        .let { dlqQueueUrl -> sqsDlqClient.getQueueAttributes(dlqQueueUrl, listOf(QueueAttributeName.QueueArn.toString())).attributes["QueueArn"] }
         .also { queueArn ->
           sqsClient.createQueue(
             CreateQueueRequest(queueName).withAttributes(
