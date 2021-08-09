@@ -29,17 +29,17 @@ class HmppsQueueFactory(
         val sqsDlqClient = getOrDefaultSqsDlqClient(queueId, queueConfig, hmppsSqsProperties)
         val sqsClient = getOrDefaultSqsClient(queueId, queueConfig, hmppsSqsProperties, sqsDlqClient)
           .also { subscribeToLocalStackTopic(hmppsSqsProperties, queueConfig, hmppsTopics) }
-        HmppsQueue(queueId, sqsClient, queueConfig.queueName, sqsDlqClient, queueConfig.dlqName)
+        HmppsQueue(queueId, sqsClient, queueConfig.queueName, sqsDlqClient, queueConfig.dlqName.ifEmpty { null })
           .also { getOrDefaultHealthIndicator(it) }
           .also { createJmsListenerContainerFactory(it, hmppsSqsProperties) }
       }.toList()
 
   private fun getOrDefaultSqsDlqClient(queueId: String, queueConfig: QueueConfig, hmppsSqsProperties: HmppsSqsProperties): AmazonSQS? =
-    queueConfig.dlqName?.let {
+    if (queueConfig.dlqName.isNotEmpty()) {
       getOrDefaultBean("$queueId-sqs-dlq-client") {
         createSqsDlqClient(queueId, queueConfig, hmppsSqsProperties)
       }
-    }
+    } else null
 
   private fun getOrDefaultSqsClient(queueId: String, queueConfig: QueueConfig, hmppsSqsProperties: HmppsSqsProperties, sqsDlqClient: AmazonSQS?): AmazonSQS =
     getOrDefaultBean("$queueId-sqs-client") {
@@ -65,7 +65,7 @@ class HmppsQueueFactory(
 
   fun createSqsDlqClient(queueId: String, queueConfig: QueueConfig, hmppsSqsProperties: HmppsSqsProperties): AmazonSQS =
     with(hmppsSqsProperties) {
-      queueConfig.dlqName ?: throw MissingDlqNameException()
+      if (queueConfig.dlqName.isEmpty()) throw MissingDlqNameException()
       when (provider) {
         "aws" -> amazonSqsFactory.awsSqsDlqClient(queueId, queueConfig.dlqName, queueConfig.dlqAccessKeyId, queueConfig.dlqSecretAccessKey, region, queueConfig.asyncDlqClient)
         "localstack" ->
@@ -90,9 +90,9 @@ class HmppsQueueFactory(
     sqsClient: AmazonSQS,
     sqsDlqClient: AmazonSQS?,
     queueName: String,
-    dlqName: String?,
+    dlqName: String,
   ) {
-    if (dlqName == null || sqsDlqClient == null) {
+    if (dlqName.isEmpty() || sqsDlqClient == null) {
       sqsClient.createQueue(CreateQueueRequest(queueName))
     } else {
       sqsDlqClient.getQueueUrl(dlqName).queueUrl
