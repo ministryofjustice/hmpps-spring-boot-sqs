@@ -1,6 +1,7 @@
 package uk.gov.justice.hmpps.sqs
 
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatNoException
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -77,6 +78,13 @@ class HmppsSqsPropertiesTest {
     }
 
     @Test
+    fun `should not require a dlq access key ID if no dlq exists`() {
+      assertThatNoException().isThrownBy {
+        HmppsSqsProperties(queues = mapOf("queueid" to validAwsQueueNoDlqConfig().copy(dlqAccessKeyId = "")))
+      }
+    }
+
+    @Test
     fun `should require a dlq secret access key`() {
       assertThatThrownBy {
         HmppsSqsProperties(queues = mapOf("queueid" to validAwsQueueConfig().copy(dlqSecretAccessKey = "")))
@@ -86,7 +94,14 @@ class HmppsSqsPropertiesTest {
     }
 
     @Test
-    fun ` topics should have an arn`() {
+    fun `should not require a dlq secret access key if no dlq exists`() {
+      assertThatNoException().isThrownBy {
+        HmppsSqsProperties(queues = mapOf("queueid" to validAwsQueueNoDlqConfig().copy(dlqSecretAccessKey = "")))
+      }
+    }
+
+    @Test
+    fun `topics should have an arn`() {
       assertThatThrownBy {
         HmppsSqsProperties(
           queues = mapOf("queueid" to validAwsQueueConfig()),
@@ -349,6 +364,21 @@ class HmppsSqsPropertiesTest {
     }
 
     @Test
+    fun `dlq is optional`() {
+      assertThatNoException().isThrownBy {
+        HmppsSqsProperties(
+          provider = "localstack",
+          queues = mapOf(
+            "queueid1" to validLocalstackQueueNoDlqConfig(1),
+            "queueid2" to validLocalstackQueueNoDlqConfig(2),
+            "queueid3" to validLocalstackQueueNoDlqConfig(3)
+          ),
+          topics = mapOf()
+        )
+      }
+    }
+
+    @Test
     fun `topic names should be unique`() {
       assertThatThrownBy {
         HmppsSqsProperties(
@@ -390,7 +420,9 @@ class HmppsSqsPropertiesTest {
   }
 
   private fun validAwsQueueConfig(index: Int = 1) = QueueConfig(queueName = "name$index", queueAccessKeyId = "key$index", queueSecretAccessKey = "secret$index", dlqName = "dlqName$index", dlqAccessKeyId = "dlqKey$index", dlqSecretAccessKey = "dlqSecret$index")
+  private fun validAwsQueueNoDlqConfig(index: Int = 1) = QueueConfig(queueName = "name$index", queueAccessKeyId = "key$index", queueSecretAccessKey = "secret$index")
   private fun validAwsTopicConfig(index: Int = 1) = TopicConfig(arn = "arn$index", accessKeyId = "key$index", secretAccessKey = "secret$index")
   private fun validLocalstackQueueConfig(index: Int = 1) = QueueConfig(queueName = "name$index", dlqName = "dlqName$index")
+  private fun validLocalstackQueueNoDlqConfig(index: Int = 1) = QueueConfig(queueName = "name$index")
   private fun validLocalstackTopicConfig(index: Int = 1) = TopicConfig(arn = "${localstackArnPrefix}$index")
 }

@@ -10,7 +10,7 @@ plugins {
 
 allprojects {
   group = "uk.gov.justice.service.hmpps"
-  version = "0.8.2-beta"
+  version = "0.8.2-beta-2"
 }
 
 nexusPublishing {
