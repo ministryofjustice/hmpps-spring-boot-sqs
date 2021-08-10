@@ -35,20 +35,30 @@ class HmppsQueueHealth(private val hmppsQueue: HmppsQueue) : HealthIndicator {
     getQueueAttributes().map { attributesResult ->
       results += success(HealthDetail("messagesOnQueue" to """${attributesResult.attributes[ApproximateNumberOfMessages.toString()]}"""))
       results += success(HealthDetail("messagesInFlight" to """${attributesResult.attributes[ApproximateNumberOfMessagesNotVisible.toString()]}"""))
-      attributesResult.attributes["$RedrivePolicy"] ?: { results += failure(MissingRedrivePolicyException(hmppsQueue.id)) }
+
+      hmppsQueue.dlqName?.let {
+        attributesResult.attributes["$RedrivePolicy"] ?: run { results += failure(MissingRedrivePolicyException(hmppsQueue.id)) }
+      }
     }.onFailure { throwable -> results += failure(throwable) }
 
     return results.toList()
   }
-
   private fun checkDlqHealth(): List<Result<HealthDetail>> {
     val results = mutableListOf<Result<HealthDetail>>()
-    results += success(HealthDetail("dlqName" to hmppsQueue.dlqName))
+    hmppsQueue.dlqName?.run {
+      results += success(HealthDetail("dlqName" to hmppsQueue.dlqName))
 
-    getDlqAttributes().map { attributesResult ->
-      results += success(HealthDetail("messagesOnDlq" to """${attributesResult.attributes[ApproximateNumberOfMessages.toString()]}"""))
-    }.onFailure { throwable -> results += failure(throwable) }
-
+      hmppsQueue.sqsDlqClient?.run {
+        getDlqAttributes().map { attributesResult ->
+          results += success(
+            HealthDetail(
+              "messagesOnDlq" to
+                """${attributesResult.attributes[ApproximateNumberOfMessages.toString()]}"""
+            )
+          )
+        }.onFailure { throwable -> results += failure(throwable) }
+      }
+    }
     return results.toList()
   }
 
@@ -56,8 +66,10 @@ class HmppsQueueHealth(private val hmppsQueue: HmppsQueue) : HealthIndicator {
     val healthBuilder = if (queueStatus(dlqResults, queueResults) == "UP") Builder().up() else Builder().down()
     queueResults.forEach { healthBuilder.addHealthResult(it) }
 
-    healthBuilder.withDetail("dlqStatus", dlqStatus(dlqResults, queueResults))
-    dlqResults.forEach { healthBuilder.addHealthResult(it) }
+    if (dlqResults.isNotEmpty()) {
+      healthBuilder.withDetail("dlqStatus", dlqStatus(dlqResults, queueResults))
+      dlqResults.forEach { healthBuilder.addHealthResult(it) }
+    }
 
     return healthBuilder.build()
   }
@@ -86,8 +98,10 @@ class HmppsQueueHealth(private val hmppsQueue: HmppsQueue) : HealthIndicator {
 
   private fun getDlqAttributes(): Result<GetQueueAttributesResult> =
     runCatching {
-      hmppsQueue.sqsDlqClient.getQueueAttributes(GetQueueAttributesRequest(hmppsQueue.dlqUrl).withAttributeNames(All))
+      hmppsQueue.sqsDlqClient?.getQueueAttributes(GetQueueAttributesRequest(hmppsQueue.dlqUrl).withAttributeNames(All))
+        ?: throw MissingDlqClientException(hmppsQueue.dlqName)
     }
 }
 
 class MissingRedrivePolicyException(queueId: String) : RuntimeException("The main queue for $queueId is missing a $RedrivePolicy")
+class MissingDlqClientException(dlqName: String?) : RuntimeException("Attempted to access dlqclient for $dlqName that does not exist")

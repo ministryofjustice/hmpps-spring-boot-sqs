@@ -6,9 +6,9 @@ class HmppsQueue(
   val id: String,
   val sqsClient: AmazonSQS,
   val queueName: String,
-  val sqsDlqClient: AmazonSQS,
-  val dlqName: String,
+  val sqsDlqClient: AmazonSQS? = null,
+  val dlqName: String? = null
 ) {
   val queueUrl: String by lazy { sqsClient.getQueueUrl(queueName).queueUrl }
-  val dlqUrl: String by lazy { sqsDlqClient.getQueueUrl(dlqName).queueUrl }
+  val dlqUrl: String? by lazy { sqsDlqClient?.getQueueUrl(dlqName)?.queueUrl }
 }

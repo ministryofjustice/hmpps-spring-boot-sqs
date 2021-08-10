@@ -111,7 +111,7 @@ class HmppsQueueHealthTest {
   }
 
   @Test
-  fun `show show interesting DLQ attributes`() {
+  fun `should show interesting DLQ attributes`() {
     mockHealthyQueue()
 
     val health = queueHealth.health()

@@ -233,9 +233,7 @@ class HmppsQueueFactoryTest {
     fun `configure mocks and register queues`() {
       whenever(sqsFactory.awsSqsDlqClient(anyString(), anyString(), anyString(), anyString(), anyString(), anyBoolean()))
         .thenReturn(sqsDlqClient)
-        .thenReturn(sqsDlqClient)
       whenever(sqsFactory.awsSqsClient(anyString(), anyString(), anyString(), anyString(), anyString(), anyBoolean()))
-        .thenReturn(sqsClient)
         .thenReturn(sqsClient)
       whenever(sqsClient.getQueueUrl("some queue name")).thenReturn(GetQueueUrlResult().withQueueUrl("some queue url"))
       whenever(sqsDlqClient.getQueueUrl("some dlq name")).thenReturn(GetQueueUrlResult().withQueueUrl("some dlq url"))

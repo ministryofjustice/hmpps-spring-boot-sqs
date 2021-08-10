@@ -394,7 +394,8 @@ As a rule of thumb new features must:
 * Then publish the plugin to local maven
 
 ```
-./gradlew publishToMavenLocal -x :hmpps-sqs-spring-boot-autoconfigure:signMavenPublication -x :hmpps-sqs-spring-boot-starter:signMavenPublication
+./gradlew publishToMavenLocal -x :hmpps-sqs-spring-boot-autoconfigure:signAutoconfigurePublication -x :hmpps-sqs-spring-boot-starter:signStarterPublication 
+
 ```
 
 In the other project's Gradle build script change the version to match and it should now be pulled into the project.

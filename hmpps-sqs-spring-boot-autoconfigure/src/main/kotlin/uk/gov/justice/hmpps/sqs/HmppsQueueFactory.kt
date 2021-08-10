@@ -12,6 +12,7 @@ import org.springframework.boot.actuate.health.HealthIndicator
 import org.springframework.context.ConfigurableApplicationContext
 import org.springframework.jms.config.DefaultJmsListenerContainerFactory
 import uk.gov.justice.hmpps.sqs.HmppsSqsProperties.QueueConfig
+import java.lang.RuntimeException
 import javax.jms.Session
 
 class HmppsQueueFactory(
@@ -28,17 +29,19 @@ class HmppsQueueFactory(
         val sqsDlqClient = getOrDefaultSqsDlqClient(queueId, queueConfig, hmppsSqsProperties)
         val sqsClient = getOrDefaultSqsClient(queueId, queueConfig, hmppsSqsProperties, sqsDlqClient)
           .also { subscribeToLocalStackTopic(hmppsSqsProperties, queueConfig, hmppsTopics) }
-        HmppsQueue(queueId, sqsClient, queueConfig.queueName, sqsDlqClient, queueConfig.dlqName)
+        HmppsQueue(queueId, sqsClient, queueConfig.queueName, sqsDlqClient, queueConfig.dlqName.ifEmpty { null })
           .also { getOrDefaultHealthIndicator(it) }
           .also { createJmsListenerContainerFactory(it, hmppsSqsProperties) }
       }.toList()
 
-  private fun getOrDefaultSqsDlqClient(queueId: String, queueConfig: QueueConfig, hmppsSqsProperties: HmppsSqsProperties): AmazonSQS =
-    getOrDefaultBean("$queueId-sqs-dlq-client") {
-      createSqsDlqClient(queueId, queueConfig, hmppsSqsProperties)
-    }
+  private fun getOrDefaultSqsDlqClient(queueId: String, queueConfig: QueueConfig, hmppsSqsProperties: HmppsSqsProperties): AmazonSQS? =
+    if (queueConfig.dlqName.isNotEmpty()) {
+      getOrDefaultBean("$queueId-sqs-dlq-client") {
+        createSqsDlqClient(queueId, queueConfig, hmppsSqsProperties)
+      }
+    } else null
 
-  private fun getOrDefaultSqsClient(queueId: String, queueConfig: QueueConfig, hmppsSqsProperties: HmppsSqsProperties, sqsDlqClient: AmazonSQS): AmazonSQS =
+  private fun getOrDefaultSqsClient(queueId: String, queueConfig: QueueConfig, hmppsSqsProperties: HmppsSqsProperties, sqsDlqClient: AmazonSQS?): AmazonSQS =
     getOrDefaultBean("$queueId-sqs-client") {
       createSqsClient(queueId, queueConfig, hmppsSqsProperties, sqsDlqClient)
     }
@@ -62,6 +65,7 @@ class HmppsQueueFactory(
 
   fun createSqsDlqClient(queueId: String, queueConfig: QueueConfig, hmppsSqsProperties: HmppsSqsProperties): AmazonSQS =
     with(hmppsSqsProperties) {
+      if (queueConfig.dlqName.isEmpty()) throw MissingDlqNameException()
       when (provider) {
         "aws" -> amazonSqsFactory.awsSqsDlqClient(queueId, queueConfig.dlqName, queueConfig.dlqAccessKeyId, queueConfig.dlqSecretAccessKey, region, queueConfig.asyncDlqClient)
         "localstack" ->
@@ -71,7 +75,7 @@ class HmppsQueueFactory(
       }
     }
 
-  fun createSqsClient(queueId: String, queueConfig: QueueConfig, hmppsSqsProperties: HmppsSqsProperties, sqsDlqClient: AmazonSQS) =
+  fun createSqsClient(queueId: String, queueConfig: QueueConfig, hmppsSqsProperties: HmppsSqsProperties, sqsDlqClient: AmazonSQS?) =
     with(hmppsSqsProperties) {
       when (provider) {
         "aws" -> amazonSqsFactory.awsSqsClient(queueId, queueConfig.queueName, queueConfig.queueAccessKeyId, queueConfig.queueSecretAccessKey, region, queueConfig.asyncQueueClient)
@@ -84,22 +88,27 @@ class HmppsQueueFactory(
 
   private fun createLocalStackQueue(
     sqsClient: AmazonSQS,
-    sqsDlqClient: AmazonSQS,
+    sqsDlqClient: AmazonSQS?,
     queueName: String,
     dlqName: String,
-  ) =
-    sqsDlqClient.getQueueUrl(dlqName).queueUrl
-      .let { dlqQueueUrl -> sqsDlqClient.getQueueAttributes(dlqQueueUrl, listOf(QueueAttributeName.QueueArn.toString())).attributes["QueueArn"]!! }
-      .also { queueArn ->
-        sqsClient.createQueue(
-          CreateQueueRequest(queueName).withAttributes(
-            mapOf(
-              QueueAttributeName.RedrivePolicy.toString() to
-                """{"deadLetterTargetArn":"$queueArn","maxReceiveCount":"5"}"""
+  ) {
+    if (dlqName.isEmpty() || sqsDlqClient == null) {
+      sqsClient.createQueue(CreateQueueRequest(queueName))
+    } else {
+      sqsDlqClient.getQueueUrl(dlqName).queueUrl
+        .let { dlqQueueUrl -> sqsDlqClient.getQueueAttributes(dlqQueueUrl, listOf(QueueAttributeName.QueueArn.toString())).attributes["QueueArn"] }
+        .also { queueArn ->
+          sqsClient.createQueue(
+            CreateQueueRequest(queueName).withAttributes(
+              mapOf(
+                QueueAttributeName.RedrivePolicy.toString() to
+                  """{"deadLetterTargetArn":"$queueArn","maxReceiveCount":"5"}"""
+              )
             )
           )
-        )
-      }
+        }
+    }
+  }
 
   private fun subscribeToLocalStackTopic(hmppsSqsProperties: HmppsSqsProperties, queueConfig: QueueConfig, hmppsTopics: List<HmppsTopic>) {
     if (hmppsSqsProperties.provider == "localstack")
@@ -126,3 +135,5 @@ class HmppsQueueFactory(
       setErrorHandler { t: Throwable? -> log.error("Error caught in jms listener", t) }
     }
 }
+
+class MissingDlqNameException() : RuntimeException("Attempted to access dlq but no name has been set")
