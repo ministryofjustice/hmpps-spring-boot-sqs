@@ -65,7 +65,7 @@ Examples of property usage can be found in the test project in the following pla
 
 | Property | Default | Description |
 | -------- | ------- | ----------- |
-| provider | `aws` | `aws` for production or `localstack for` running locally / integration tests. (Testcontainers is not yet supported. Possibly coming soon). |
+| provider | `aws` | `aws` for production or `localstack` for running locally / integration tests.
 | region   | `eu-west-2` | The AWS region where the queues live. |
 | localstackUrl | `http://localhost:4566` | Only used for `provider=localstack`. The location of the running LocalStack instance. |
 | queues   | | A map of `queueId` to `QueueConfig`. One entry is required for each queue. In production these are derived from environment variables with the prefix `HMPPS_SQS_QUEUES_` that should be populated from Kubernetes secrets (see below).
