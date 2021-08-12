@@ -150,11 +150,9 @@ At the point this library attempts to generate any bean and register with the `A
 
 So first find the bean names you wish to override as mentioned in [AmazonSQS Beans](#amazonsqs-beans). Then create your own `AmazonSQS` bean with the same name.
 
-#### I Don't Need a DLQ. Why Is It Mandatory?
+#### Optional DLQ
 
-Queues without dead letter queues are currently unsupported by this library as it is considered an edge case based on current practises in HMPPS.
-
-If this is a blocker to you using this library contact `#dps_tech_team` on MOJDT Slack.
+Queues without dead letter queues are supported by this library.  Configure the queue in the same manner as a normal queue, but omit any dlq properties.
 
 #### SpyBeans
 

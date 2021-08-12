@@ -46,4 +46,23 @@ class HmppsEventProcessingTest : IntegrationTestBase() {
 
     assertThat(outboundTestSqsClient.countMessagesOnQueue(outboundTestQueueUrl)).isEqualTo(0)
   }
+
+  @Test
+  fun `event is published to outbound topic received by queue with no dlq`() {
+    val event = HmppsEvent("event-id", "OFFENDER_MOVEMENT-RECEPTION", "some event contents")
+    inboundSnsClient.publish(
+      PublishRequest(inboundTopicArn, gsonString(event))
+        .withMessageAttributes(
+          mapOf("eventType" to MessageAttributeValue().withDataType("String").withStringValue(event.type))
+        )
+    )
+
+    await untilCallTo { outboundTestNoDlqSqsClient.countMessagesOnQueue(outboundTestNoDlqQueueUrl) } matches { it == 1 }
+    val (Message) = objectMapper.readValue(outboundTestNoDlqSqsClient.receiveMessage(outboundTestNoDlqQueueUrl).messages[0].body, Message::class.java)
+    val receivedEvent = objectMapper.readValue(Message, HmppsEvent::class.java)
+
+    assertThat(receivedEvent.id).isEqualTo("event-id")
+    assertThat(receivedEvent.type).isEqualTo("offender.movement.reception")
+    assertThat(receivedEvent.contents).isEqualTo("some event contents")
+  }
 }

@@ -61,12 +61,13 @@ abstract class IntegrationTestBase {
   private val outboundQueue by lazy { hmppsQueueService.findByQueueId("outboundqueue") ?: throw MissingQueueException("HmppsQueue outboundqueue not found") }
   private val outboundTestQueue by lazy { hmppsQueueService.findByQueueId("outboundtestqueue") ?: throw MissingQueueException("HmppsQueue outboundtestqueue not found") }
   private val inboundTopic by lazy { hmppsQueueService.findByTopicId("inboundtopic") ?: throw MissingQueueException("HmppsTopic inboundtopic not found") }
+  private val outboundTestNoDlqQueue by lazy { hmppsQueueService.findByQueueId("outboundtestnodlqqueue") ?: throw MissingQueueException("HmppsQueue outboundtestnodlqqueue not found") }
 
   protected val inboundSqsClient by lazy { inboundQueue.sqsClient }
   protected val inboundSqsDlqClient by lazy { inboundQueue.sqsDlqClient as AmazonSQS }
   protected val inboundSnsClient by lazy { inboundTopic.snsClient }
-  protected val outboundSqsDlqClient by lazy { outboundQueue.sqsDlqClient as AmazonSQS }
   protected val outboundTestSqsClient by lazy { outboundTestQueue.sqsClient }
+  protected val outboundTestNoDlqSqsClient by lazy { outboundTestNoDlqQueue.sqsClient }
 
   @SpyBean
   @Qualifier("outboundqueue-sqs-client")
@@ -81,6 +82,7 @@ abstract class IntegrationTestBase {
   protected val outboundQueueUrl by lazy { outboundQueue.queueUrl }
   protected val outboundDlqUrl by lazy { outboundQueue.dlqUrl as String }
   protected val outboundTestQueueUrl by lazy { outboundTestQueue.queueUrl }
+  protected val outboundTestNoDlqQueueUrl by lazy { outboundTestNoDlqQueue.queueUrl }
 
   protected val inboundTopicArn by lazy { inboundTopic.arn }
 
