@@ -1,15 +1,19 @@
+import com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask
+
 plugins {
   kotlin("jvm") version "1.5.21"
   id("maven-publish")
   id("signing")
+  id("com.github.ben-manes.versions") version "0.39.0"
+  id("se.patrikerdes.use-latest-versions") version "0.2.17"
 }
 
 dependencies {
   api(project(":hmpps-sqs-spring-boot-autoconfigure"))
-  api(platform("com.amazonaws:aws-java-sdk-bom:1.11.942"))
+  api(platform("com.amazonaws:aws-java-sdk-bom:1.12.46"))
   api("com.amazonaws:amazon-sqs-java-messaging-lib:1.0.8")
-  api("com.amazonaws:aws-java-sdk-sns:1.11.942")
-  api(platform("org.springframework.boot:spring-boot-dependencies:2.5.2"))
+  api("com.amazonaws:aws-java-sdk-sns")
+  api(platform("org.springframework.boot:spring-boot-dependencies:2.5.3"))
   api("org.springframework.boot:spring-boot-starter-web")
   api("org.springframework.boot:spring-boot-starter-security")
   api("org.springframework.boot:spring-boot-starter-actuator")
@@ -55,7 +59,7 @@ signing {
   useInMemoryPgpKeys(signingKey, signingPassword)
   sign(publishing.publications["starter"])
 }
-java.sourceCompatibility = JavaVersion.VERSION_16
+java.sourceCompatibility = JavaVersion.VERSION_11
 
 repositories {
   mavenLocal()
@@ -67,4 +71,10 @@ fun isNonStable(version: String): Boolean {
   val regex = "^[0-9,.v-]+(-r)?$".toRegex()
   val isStable = stableKeyword || regex.matches(version)
   return isStable.not()
+}
+
+tasks.withType<DependencyUpdatesTask> {
+  rejectVersionIf {
+    isNonStable(candidate.version) && !isNonStable(currentVersion)
+  }
 }
