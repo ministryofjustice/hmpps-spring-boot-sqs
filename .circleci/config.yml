@@ -1,19 +1,17 @@
 version: 2.1
 
 orbs:
-  hmpps: ministryofjustice/hmpps@3.8
+  hmpps: ministryofjustice/hmpps@3.10
 
 jobs:
   validate:
     executor:
       name: hmpps/localstack
-      jdk_tag: "16.0"
-      localstack_tag: "0.12.9.1"
+      jdk_tag: "11.0"
+      localstack_tag: "0.12.10"
     steps:
       - checkout
-      - run:
-          name: Wait for SQS and SNS to be ready
-          command: curl -4 --connect-timeout 30 --retry-connrefused --retry 20 --retry-delay 5 http://localhost:4566
+      - hmpps/wait_till_ready
       - restore_cache:
           keys:
             - gradle-{{ checksum "build.gradle.kts" }}
@@ -42,7 +40,7 @@ jobs:
   publish:
     executor:
       name: hmpps/java
-      tag: "16.0"
+      tag: "11.0"
     steps:
       - checkout
       - restore_cache:

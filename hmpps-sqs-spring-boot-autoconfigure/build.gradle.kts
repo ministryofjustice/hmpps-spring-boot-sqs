@@ -1,3 +1,4 @@
+import com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
@@ -7,16 +8,16 @@ plugins {
   id("signing")
   id("com.adarshr.test-logger") version "3.0.0"
   id("com.github.ben-manes.versions") version "0.39.0"
+  id("se.patrikerdes.use-latest-versions") version "0.2.17"
   id("io.spring.dependency-management") version "1.0.11.RELEASE"
   id("org.jlleitschuh.gradle.ktlint") version "10.1.0"
   id("org.owasp.dependencycheck") version "6.2.2"
-  id("org.springframework.boot") version "2.5.2"
-  id("se.patrikerdes.use-latest-versions") version "0.2.17"
+  id("org.springframework.boot") version "2.5.3"
 }
 
 dependencies {
   implementation("com.amazonaws:amazon-sqs-java-messaging-lib:1.0.8")
-  implementation("com.amazonaws:aws-java-sdk-sns:1.12.26")
+  implementation("com.amazonaws:aws-java-sdk-sns:1.12.46")
   implementation("org.springframework.boot:spring-boot-starter-web")
   implementation("org.springframework.boot:spring-boot-starter-security")
   implementation("org.springframework.boot:spring-boot-starter-actuator")
@@ -69,7 +70,7 @@ signing {
   useInMemoryPgpKeys(signingKey, signingPassword)
   sign(publishing.publications["autoconfigure"])
 }
-java.sourceCompatibility = JavaVersion.VERSION_16
+java.sourceCompatibility = JavaVersion.VERSION_11
 
 tasks.bootJar {
   enabled = false
@@ -96,14 +97,22 @@ fun isNonStable(version: String): Boolean {
   return isStable.not()
 }
 
-tasks.withType<KotlinCompile> {
-  kotlinOptions {
-    jvmTarget = "16"
+tasks {
+  withType<KotlinCompile> {
+    kotlinOptions {
+      jvmTarget = "11"
+    }
   }
-}
 
-tasks.withType<Test> {
-  useJUnitPlatform()
+  withType<Test> {
+    useJUnitPlatform()
+  }
+
+  withType<DependencyUpdatesTask> {
+    rejectVersionIf {
+      isNonStable(candidate.version) && !isNonStable(currentVersion)
+    }
+  }
 }
 
 project.getTasksByName("check", false).forEach {
