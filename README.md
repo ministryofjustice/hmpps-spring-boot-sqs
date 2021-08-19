@@ -1,10 +1,6 @@
-# hmpps-spring-boot-sqs
+# HMPPS Spring Boot SQS / SNS
 
-A Spring Boot starter library providing utilities for using Amazon SQS/SNS. The library is very opinionated towards usage within HMPPS, e.g. we assume that each queue has its own secrets rather than sharing access between queues.
-
-## :construction: THIS IS A WORK IN PROGRESS :construction:
-
-This library is currently being developed and tested within the HMPPS Tech Team and is not currently intended for wider consumption. Please wait for an official v1.0.0.
+A Spring Boot starter library providing utilities for using Amazon Simple Queue Service (SQS) and Simple Notification Service (SNS). The library is very opinionated towards usage within HMPPS, e.g. we assume that each queue has its own secrets rather than sharing access between queues.
 
 ## Overview
 
@@ -12,7 +8,11 @@ We have many services that use AWS SQS queues and topics with various patterns f
 
 This library is intended to capture the most common patterns and make them easy to distribute among other projects. The goal is to provide various queue management and configuration tasks out of the box.
 
-The library relies on [Spring Boot Auto-configuration](https://docs.spring.io/spring-boot/docs/2.0.0.M3/reference/html/using-boot-auto-configuration.html) based upon [configuration properties](#hmpps-queue-properties).
+The library relies on [Spring Boot Auto-configuration](https://docs.spring.io/spring-boot/docs/current/reference/html/using.html#using.auto-configuration) based upon [configuration properties](#hmpps-queue-properties).
+
+## Release Notes
+
+##### [1.0.0](release-notes/1.0.0.md)
 
 ## How To Use This Library
 
