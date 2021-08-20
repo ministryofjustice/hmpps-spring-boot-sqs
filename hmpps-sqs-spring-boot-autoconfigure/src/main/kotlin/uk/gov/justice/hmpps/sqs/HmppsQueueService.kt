@@ -11,14 +11,14 @@ import com.amazonaws.services.sqs.model.PurgeQueueRequest as AwsPurgeQueueReques
 class MissingQueueException(message: String) : RuntimeException(message)
 class MissingTopicException(message: String) : RuntimeException(message)
 
-class HmppsQueueService(
+open class HmppsQueueService(
   private val telemetryClient: TelemetryClient?,
   hmppsTopicFactory: HmppsTopicFactory,
   hmppsQueueFactory: HmppsQueueFactory,
   hmppsSqsProperties: HmppsSqsProperties,
 ) {
 
-  companion object {
+  private companion object {
     private val log = LoggerFactory.getLogger(this::class.java)
   }
 
