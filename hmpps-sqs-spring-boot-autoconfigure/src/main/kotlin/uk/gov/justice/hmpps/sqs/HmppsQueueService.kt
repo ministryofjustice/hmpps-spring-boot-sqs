@@ -25,16 +25,16 @@ open class HmppsQueueService(
   private val hmppsTopics: List<HmppsTopic> = hmppsTopicFactory.createHmppsTopics(hmppsSqsProperties)
   private val hmppsQueues: List<HmppsQueue> = hmppsQueueFactory.createHmppsQueues(hmppsSqsProperties, hmppsTopics)
 
-  fun findByQueueId(queueId: String) = hmppsQueues.associateBy { it.id }.getOrDefault(queueId, null)
-  fun findByQueueName(queueName: String) = hmppsQueues.associateBy { it.queueName }.getOrDefault(queueName, null)
-  fun findByDlqName(dlqName: String) = hmppsQueues.associateBy { it.dlqName }.getOrDefault(dlqName, null)
+  open fun findByQueueId(queueId: String) = hmppsQueues.associateBy { it.id }.getOrDefault(queueId, null)
+  open fun findByQueueName(queueName: String) = hmppsQueues.associateBy { it.queueName }.getOrDefault(queueName, null)
+  open fun findByDlqName(dlqName: String) = hmppsQueues.associateBy { it.dlqName }.getOrDefault(dlqName, null)
 
-  fun findByTopicId(topicId: String) = hmppsTopics.associateBy { it.id }.getOrDefault(topicId, null)
+  open fun findByTopicId(topicId: String) = hmppsTopics.associateBy { it.id }.getOrDefault(topicId, null)
 
-  fun retryDlqMessages(request: RetryDlqRequest): RetryDlqResult =
+  open fun retryDlqMessages(request: RetryDlqRequest): RetryDlqResult =
     request.hmppsQueue.retryDlqMessages()
 
-  fun retryAllDlqs() =
+  open fun retryAllDlqs() =
     hmppsQueues
       .map { hmppsQueue -> RetryDlqRequest(hmppsQueue) }
       .map { retryDlqRequest -> retryDlqMessages(retryDlqRequest) }
@@ -57,7 +57,7 @@ open class HmppsQueueService(
     return RetryDlqResult(messageCount, messages.toList())
   }
 
-  fun purgeQueue(request: PurgeQueueRequest): PurgeQueueResult =
+  open fun purgeQueue(request: PurgeQueueRequest): PurgeQueueResult =
     with(request) {
       sqsClient.countMessagesOnQueue(queueUrl)
         .takeIf { it > 0 }
@@ -68,7 +68,7 @@ open class HmppsQueueService(
         ?: PurgeQueueResult(0)
     }
 
-  fun findQueueToPurge(queueName: String): PurgeQueueRequest? =
+  open fun findQueueToPurge(queueName: String): PurgeQueueRequest? =
     findByQueueName(queueName)
       ?.let { hmppsQueue -> PurgeQueueRequest(hmppsQueue.queueName, hmppsQueue.sqsClient, hmppsQueue.queueUrl) }
       ?: findByDlqName(queueName)
