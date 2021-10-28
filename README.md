@@ -12,6 +12,7 @@ The library relies on [Spring Boot Auto-configuration](https://docs.spring.io/sp
 
 ## Release Notes
 
+##### [1.0.3](release-notes/1.0.3.md)
 ##### [1.0.2](release-notes/1.0.2.md)
 ##### [1.0.1](release-notes/1.0.1.md)
 ##### [1.0.0](release-notes/1.0.0.md)
