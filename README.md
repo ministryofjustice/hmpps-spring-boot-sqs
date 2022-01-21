@@ -12,6 +12,7 @@ The library relies on [Spring Boot Auto-configuration](https://docs.spring.io/sp
 
 ## Release Notes
 
+##### [1.0.5](release-notes/1.0.4.md)
 ##### [1.0.4](release-notes/1.0.4.md)
 ##### [1.0.3](release-notes/1.0.3.md)
 ##### [1.0.2](release-notes/1.0.2.md)
@@ -313,7 +314,7 @@ Use the following command to run all tests, with the functional tests running ag
 
 Note that Testcontainers only starts if LocalStack is not running on port 4566.
 
-#### Running Tests in your own project without import these beans
+#### Running Tests in your own project without LocalStack dependency
 
 There maybe scenarios where you want to run SpringBoot tests in your own project, but you don't want all the autoconfigured beans
 this library would bring in, for instance you might want to test a portion of your application that does not depend on queues being present, so you don't 
