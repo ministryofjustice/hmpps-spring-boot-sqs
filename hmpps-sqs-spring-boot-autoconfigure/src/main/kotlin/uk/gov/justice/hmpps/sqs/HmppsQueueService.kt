@@ -5,7 +5,9 @@ import com.amazonaws.services.sqs.model.DeleteMessageRequest
 import com.amazonaws.services.sqs.model.Message
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest
 import com.microsoft.applicationinsights.TelemetryClient
+import com.microsoft.applicationinsights.core.dependencies.google.gson.Gson
 import org.slf4j.LoggerFactory
+import kotlin.math.min
 import com.amazonaws.services.sqs.model.PurgeQueueRequest as AwsPurgeQueueRequest
 
 class MissingQueueException(message: String) : RuntimeException(message)
@@ -34,13 +36,16 @@ open class HmppsQueueService(
   open fun retryDlqMessages(request: RetryDlqRequest): RetryDlqResult =
     request.hmppsQueue.retryDlqMessages()
 
+  open fun getDlqMessages(request: GetDlqRequest): GetDlqResult =
+    request.hmppsQueue.getDlqMessages(request.maxMessages)
+
   open fun retryAllDlqs() =
     hmppsQueues
       .map { hmppsQueue -> RetryDlqRequest(hmppsQueue) }
       .map { retryDlqRequest -> retryDlqMessages(retryDlqRequest) }
 
   private fun HmppsQueue.retryDlqMessages(): RetryDlqResult {
-    if (sqsDlqClient == null || dlqUrl == null) return RetryDlqResult(0, mutableListOf<Message>())
+    if (sqsDlqClient == null || dlqUrl == null) return RetryDlqResult(0, mutableListOf())
     val messageCount = sqsDlqClient.countMessagesOnQueue(dlqUrl!!)
     val messages = mutableListOf<Message>()
     repeat(messageCount) {
@@ -55,6 +60,24 @@ open class HmppsQueueService(
       ?.also { log.info("For dlq ${this.dlqName} we found $messageCount messages, attempted to retry ${messages.size}") }
       ?.also { telemetryClient?.trackEvent("RetryDLQ", mapOf("dlq-name" to dlqName, "messages-found" to "$messageCount", "messages-retried" to "${messages.size}"), null) }
     return RetryDlqResult(messageCount, messages.toList())
+  }
+
+  private fun HmppsQueue.getDlqMessages(maxMessages: Int): GetDlqResult {
+    if (sqsDlqClient == null || dlqUrl == null) return GetDlqResult(0, 0, mutableListOf())
+
+    val messages = mutableListOf<DlqMessage>()
+    val messageCount = sqsDlqClient.countMessagesOnQueue(dlqUrl!!)
+    val messagesToReturnCount = min(messageCount, maxMessages)
+
+    repeat(messagesToReturnCount) {
+      sqsDlqClient.receiveMessage(ReceiveMessageRequest(dlqUrl).withMaxNumberOfMessages(1)).messages.firstOrNull()
+        ?.also { msg ->
+          val map: Map<String, Any> = HashMap()
+          messages += DlqMessage(messageId = msg.messageId, body = Gson().fromJson(msg.body, map.javaClass))
+        }
+    }
+
+    return GetDlqResult(messageCount, messagesToReturnCount, messages.toList())
   }
 
   open fun purgeQueue(request: PurgeQueueRequest): PurgeQueueResult =
@@ -77,6 +100,10 @@ open class HmppsQueueService(
 
 data class RetryDlqRequest(val hmppsQueue: HmppsQueue)
 data class RetryDlqResult(val messagesFoundCount: Int, val messages: List<Message>)
+
+data class GetDlqRequest(val hmppsQueue: HmppsQueue, val maxMessages: Int)
+data class GetDlqResult(val messagesFoundCount: Int, val messagesReturnedCount: Int, val messages: List<DlqMessage>)
+data class DlqMessage(val body: Map<String, Any>, val messageId: String)
 
 data class PurgeQueueRequest(val queueName: String, val sqsClient: AmazonSQS, val queueUrl: String)
 data class PurgeQueueResult(val messagesFoundCount: Int)

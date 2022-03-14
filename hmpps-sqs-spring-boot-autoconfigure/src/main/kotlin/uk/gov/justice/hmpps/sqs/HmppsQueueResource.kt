@@ -2,9 +2,11 @@ package uk.gov.justice.hmpps.sqs
 
 import org.springframework.http.HttpStatus
 import org.springframework.security.access.prepost.PreAuthorize
+import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.server.ResponseStatusException
 
@@ -33,4 +35,15 @@ class HmppsQueueResource(private val hmppsQueueService: HmppsQueueService) {
     hmppsQueueService.findQueueToPurge(queueName)
       ?.let { request -> hmppsQueueService.purgeQueue(request) }
       ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "$queueName not found")
+
+  /*
+    Note: Once the DLQ messages have been read, they are not visible again (for subsequent reads) for approximately 30 seconds. This is due to the visibility
+    timeout period which supports deleting of dlq messages when sent back to the processing queue
+   */
+  @GetMapping("/get-dlq-messages/{dlqName}")
+  @PreAuthorize("hasRole(@environment.getProperty('hmpps.sqs.queueAdminRole', 'ROLE_QUEUE_ADMIN'))")
+  fun getDlqMessages(@PathVariable("dlqName") dlqName: String, @RequestParam("maxMessages", required = false, defaultValue = "100") maxMessages: Int) =
+    hmppsQueueService.findByDlqName(dlqName)
+      ?.let { hmppsQueue -> hmppsQueueService.getDlqMessages(GetDlqRequest(hmppsQueue, maxMessages)) }
+      ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "$dlqName not found")
 }
