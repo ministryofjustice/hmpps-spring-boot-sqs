@@ -349,6 +349,58 @@ class HmppsQueueServiceTest {
   }
 
   @Nested
+  inner class GetDlqMessages {
+    private val dlqSqs = mock<AmazonSQS>()
+    private val queueSqs = mock<AmazonSQS>()
+
+    @BeforeEach
+    fun `stub getting of queue url`() {
+      whenever(queueSqs.getQueueUrl(anyString())).thenReturn(GetQueueUrlResult().withQueueUrl("queueUrl"))
+      whenever(dlqSqs.getQueueUrl(anyString())).thenReturn(GetQueueUrlResult().withQueueUrl("dlqUrl"))
+
+      hmppsQueueService = HmppsQueueService(telemetryClient, hmppsTopicFactory, hmppsQueueFactory, hmppsSqsProperties)
+    }
+
+    @BeforeEach
+    fun `gets a message on the dlq`() {
+      whenever(dlqSqs.getQueueAttributes(anyString(), eq(listOf("ApproximateNumberOfMessages")))).thenReturn(
+        GetQueueAttributesResult().withAttributes(mapOf("ApproximateNumberOfMessages" to "1"))
+      )
+      whenever(dlqSqs.receiveMessage(any<ReceiveMessageRequest>()))
+        .thenReturn(
+          ReceiveMessageResult().withMessages(
+            Message().withBody(
+              """{
+                                            "Message":{
+                                                "id":"event-id",
+                                                "contents":"event-contents"
+                                            },
+                                            "MessageId":"message-id-1"
+                                          }"""
+            )
+              .withReceiptHandle("message-1-receipt-handle").withMessageId("external-message-id-1")
+          )
+        )
+
+      hmppsQueueService = HmppsQueueService(telemetryClient, hmppsTopicFactory, hmppsQueueFactory, hmppsSqsProperties)
+    }
+
+    @Test
+    fun `should get messages from the dlq`() {
+      val dlqResult = hmppsQueueService.getDlqMessages(GetDlqRequest(HmppsQueue("some queue id", queueSqs, "some queue name", dlqSqs, "some dlq name"), 10))
+      assertThat(dlqResult.messagesFoundCount).isEqualTo(1)
+      assertThat(dlqResult.messagesReturnedCount).isEqualTo(1)
+      assertThat(dlqResult.messages).hasSize(1)
+      assertThat(dlqResult.messages.get(0).messageId).isEqualTo("external-message-id-1")
+      verify(dlqSqs).receiveMessage(
+        check<ReceiveMessageRequest> {
+          assertThat(it.queueUrl).isEqualTo("dlqUrl")
+        }
+      )
+    }
+  }
+
+  @Nested
   inner class FindQueueToPurge {
 
     private val sqsClient = mock<AmazonSQS>()

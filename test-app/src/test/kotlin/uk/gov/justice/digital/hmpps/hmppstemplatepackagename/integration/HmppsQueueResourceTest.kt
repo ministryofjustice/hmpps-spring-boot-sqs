@@ -4,6 +4,7 @@ import com.nhaarman.mockitokotlin2.verify
 import org.awaitility.kotlin.await
 import org.awaitility.kotlin.matches
 import org.awaitility.kotlin.untilCallTo
+import org.hamcrest.Matchers
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
@@ -171,6 +172,81 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
         .expectStatus().isOk
 
       await untilCallTo { outboundSqsDlqClientSpy.countMessagesOnQueue(outboundDlqUrl) } matches { it == 0 }
+    }
+  }
+
+  @Nested
+  inner class GetDlqMessages {
+    val defaultMessageAttributes = MessageAttributes(EventType("test.type", "String"))
+    val defaultEvent = HmppsEvent("event-id", "test.type", "event-contents")
+    fun testMessage(id: String) = Message(gsonString(defaultEvent), "message-$id", defaultMessageAttributes)
+
+    @Test
+    internal fun `requires a valid authentication token`() {
+      webTestClient.get()
+        .uri("/queue-admin/get-dlq-messages/any-queue")
+        .exchange()
+        .expectStatus().isUnauthorized
+    }
+
+    @Test
+    internal fun `requires the correct role`() {
+      webTestClient.get()
+        .uri("/queue-admin/get-dlq-messages/any-queue")
+        .headers { it.authToken(roles = listOf("WRONG_ROLE")) }
+        .exchange()
+        .expectStatus().isForbidden
+    }
+
+    @Test
+    fun `should fail if dlq not found`() {
+      webTestClient.get()
+        .uri("/queue-admin/get-dlq-messages/UNKNOWN_DLQ")
+        .headers { it.authToken() }
+        .exchange()
+        .expectStatus().isNotFound
+    }
+
+    @Test
+    fun `should get all messages from the specified dlq`() {
+      for (i in 1..3) {
+        inboundSqsDlqClient.sendMessage(inboundDlqUrl, gsonString(testMessage("id-$i")))
+      }
+      await untilCallTo { inboundSqsDlqClient.countMessagesOnQueue(inboundDlqUrl) } matches { it == 3 }
+
+      webTestClient.get()
+        .uri("/queue-admin/get-dlq-messages/${hmppsSqsPropertiesSpy.inboundQueueConfig().dlqName}")
+        .headers { it.authToken() }
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("messagesFoundCount").isEqualTo(3)
+        .jsonPath("messagesReturnedCount").isEqualTo(3)
+        .jsonPath("messages..body.MessageId").value(
+          Matchers.contains(
+            "message-id-1",
+            "message-id-2",
+            "message-id-3"
+          )
+        )
+    }
+
+    @Test
+    fun `should be able to specify the max number of returned messages`() {
+      for (i in 1..20) {
+        inboundSqsDlqClient.sendMessage(inboundDlqUrl, gsonString(testMessage("id-$i")))
+      }
+      await untilCallTo { inboundSqsDlqClient.countMessagesOnQueue(inboundDlqUrl) } matches { it == 20 }
+
+      webTestClient.get()
+        .uri("/queue-admin/get-dlq-messages/${hmppsSqsPropertiesSpy.inboundQueueConfig().dlqName}?maxMessages=12")
+        .headers { it.authToken() }
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("messagesFoundCount").isEqualTo(20)
+        .jsonPath("messagesReturnedCount").isEqualTo(12)
+        .jsonPath("$..messages.length()").isEqualTo(12)
     }
   }
 }
