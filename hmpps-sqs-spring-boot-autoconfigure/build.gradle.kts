@@ -21,6 +21,7 @@ dependencies {
   implementation("org.springframework.boot:spring-boot-starter-web")
   implementation("org.springframework.boot:spring-boot-starter-security")
   implementation("org.springframework.boot:spring-boot-starter-actuator")
+  implementation("com.google.code.gson:gson:2.9.0")
   implementation("com.microsoft.azure:applicationinsights-core:2.6.4")
   implementation("org.springframework:spring-jms")
 

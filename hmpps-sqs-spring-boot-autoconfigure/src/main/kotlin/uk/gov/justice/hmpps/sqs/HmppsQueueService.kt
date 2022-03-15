@@ -4,8 +4,9 @@ import com.amazonaws.services.sqs.AmazonSQS
 import com.amazonaws.services.sqs.model.DeleteMessageRequest
 import com.amazonaws.services.sqs.model.Message
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest
+import com.google.gson.GsonBuilder
+import com.google.gson.ToNumberPolicy
 import com.microsoft.applicationinsights.TelemetryClient
-import com.microsoft.applicationinsights.core.dependencies.google.gson.Gson
 import org.slf4j.LoggerFactory
 import kotlin.math.min
 import com.amazonaws.services.sqs.model.PurgeQueueRequest as AwsPurgeQueueRequest
@@ -22,6 +23,7 @@ open class HmppsQueueService(
 
   private companion object {
     private val log = LoggerFactory.getLogger(this::class.java)
+    private val gson = GsonBuilder().setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE).create()
   }
 
   private val hmppsTopics: List<HmppsTopic> = hmppsTopicFactory.createHmppsTopics(hmppsSqsProperties)
@@ -73,7 +75,7 @@ open class HmppsQueueService(
       sqsDlqClient.receiveMessage(ReceiveMessageRequest(dlqUrl).withMaxNumberOfMessages(1)).messages.firstOrNull()
         ?.also { msg ->
           val map: Map<String, Any> = HashMap()
-          messages += DlqMessage(messageId = msg.messageId, body = Gson().fromJson(msg.body, map.javaClass))
+          messages += DlqMessage(messageId = msg.messageId, body = gson.fromJson(msg.body, map.javaClass))
         }
     }
 
