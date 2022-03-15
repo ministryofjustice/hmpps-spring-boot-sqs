@@ -373,7 +373,8 @@ class HmppsQueueServiceTest {
               """{
                                             "Message":{
                                                 "id":"event-id",
-                                                "contents":"event-contents"
+                                                "contents":"event-contents",
+                                                "longProperty":12345678
                                             },
                                             "MessageId":"message-id-1"
                                           }"""
@@ -391,7 +392,9 @@ class HmppsQueueServiceTest {
       assertThat(dlqResult.messagesFoundCount).isEqualTo(1)
       assertThat(dlqResult.messagesReturnedCount).isEqualTo(1)
       assertThat(dlqResult.messages).hasSize(1)
-      assertThat(dlqResult.messages.get(0).messageId).isEqualTo("external-message-id-1")
+      assertThat(dlqResult.messages[0].messageId).isEqualTo("external-message-id-1")
+      val messageMap = dlqResult.messages[0].body["Message"] as Map<*, *>
+      assertThat(messageMap["longProperty"]).isEqualTo(12345678L)
       verify(dlqSqs).receiveMessage(
         check<ReceiveMessageRequest> {
           assertThat(it.queueUrl).isEqualTo("dlqUrl")
