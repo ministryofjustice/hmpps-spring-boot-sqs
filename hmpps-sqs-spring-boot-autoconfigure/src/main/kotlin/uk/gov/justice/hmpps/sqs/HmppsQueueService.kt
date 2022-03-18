@@ -4,6 +4,7 @@ import com.amazonaws.services.sqs.AmazonSQS
 import com.amazonaws.services.sqs.model.DeleteMessageRequest
 import com.amazonaws.services.sqs.model.Message
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest
+import com.amazonaws.services.sqs.model.SendMessageRequest
 import com.google.gson.GsonBuilder
 import com.google.gson.ToNumberPolicy
 import com.microsoft.applicationinsights.TelemetryClient
@@ -51,9 +52,9 @@ open class HmppsQueueService(
     val messageCount = sqsDlqClient.countMessagesOnQueue(dlqUrl!!)
     val messages = mutableListOf<Message>()
     repeat(messageCount) {
-      sqsDlqClient.receiveMessage(ReceiveMessageRequest(dlqUrl).withMaxNumberOfMessages(1)).messages.firstOrNull()
+      sqsDlqClient.receiveMessage(ReceiveMessageRequest(dlqUrl).withMaxNumberOfMessages(1).withMessageAttributeNames("All")).messages.firstOrNull()
         ?.also { msg ->
-          sqsClient.sendMessage(queueUrl, msg.body)
+          sqsClient.sendMessage(SendMessageRequest().withQueueUrl(queueUrl).withMessageBody(msg.body).withMessageAttributes(msg.messageAttributes))
           sqsDlqClient.deleteMessage(DeleteMessageRequest(dlqUrl, msg.receiptHandle))
           messages += msg
         }
