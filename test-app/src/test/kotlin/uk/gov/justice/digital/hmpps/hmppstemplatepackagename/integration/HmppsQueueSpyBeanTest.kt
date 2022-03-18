@@ -1,15 +1,17 @@
 package uk.gov.justice.digital.hmpps.hmppstemplatepackagename.integration
 
+import com.amazonaws.services.sqs.model.MessageAttributeValue
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest
+import com.amazonaws.services.sqs.model.SendMessageRequest
 import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.eq
+import com.nhaarman.mockitokotlin2.argumentCaptor
 import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
+import org.assertj.core.api.Assertions.assertThat
 import org.awaitility.kotlin.await
 import org.awaitility.kotlin.matches
 import org.awaitility.kotlin.untilCallTo
 import org.junit.jupiter.api.Test
-import org.mockito.ArgumentMatchers.anyString
 import org.springframework.http.MediaType
 import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.service.EventType
 import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.service.HmppsEvent
@@ -35,7 +37,8 @@ class HmppsQueueSpyBeanTest : IntegrationTestBase() {
   fun `Can verify usage of spy bean for retry-dlq endpoint`() {
     val event = HmppsEvent("id", "test.type", "message1")
     val message = Message(gsonString(event), "message-id", MessageAttributes(EventType("test.type", "String")))
-    outboundSqsDlqClientSpy.sendMessage(outboundDlqUrl, gsonString(message))
+    val messageAttributes = mutableMapOf("eventType" to MessageAttributeValue().withDataType("String").withStringValue("test value"))
+    outboundSqsDlqClientSpy.sendMessage(SendMessageRequest().withQueueUrl(outboundDlqUrl).withMessageBody(gsonString(message)).withMessageAttributes(messageAttributes))
     await untilCallTo { outboundSqsDlqClientSpy.countMessagesOnQueue(outboundDlqUrl) } matches { it == 1 }
 
     webTestClient.put()
@@ -48,10 +51,17 @@ class HmppsQueueSpyBeanTest : IntegrationTestBase() {
     await untilCallTo { outboundSqsDlqClientSpy.countMessagesOnQueue(outboundDlqUrl) } matches { it == 0 }
     await untilCallTo { outboundSqsClientSpy.countMessagesOnQueue(outboundQueueUrl) } matches { it == 0 }
 
+    val captor = argumentCaptor<SendMessageRequest>()
+
     verify(outboundMessageServiceSpy).handleMessage(event)
-    verify(outboundSqsDlqClientSpy).receiveMessage(ReceiveMessageRequest(outboundDlqUrl).withMaxNumberOfMessages(1))
-    verify(outboundSqsClientSpy).sendMessage(eq(outboundQueueUrl), anyString())
+    verify(outboundSqsDlqClientSpy).receiveMessage(ReceiveMessageRequest(outboundDlqUrl).withMaxNumberOfMessages(1).withMessageAttributeNames("All"))
     verify(outboundSqsDlqClientSpy).deleteMessage(any())
+
+    verify(outboundSqsClientSpy).sendMessage(captor.capture())
+
+    assertThat(captor.firstValue.queueUrl).isEqualTo(outboundQueueUrl)
+    assertThat(captor.firstValue.messageBody).isEqualTo(gsonString(message))
+    assertThat(captor.firstValue.messageAttributes).isEqualTo(messageAttributes)
   }
 
   @Test

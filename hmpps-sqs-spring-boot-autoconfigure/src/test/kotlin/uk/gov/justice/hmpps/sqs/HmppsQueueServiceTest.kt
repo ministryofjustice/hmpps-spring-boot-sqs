@@ -5,8 +5,10 @@ import com.amazonaws.services.sqs.model.DeleteMessageRequest
 import com.amazonaws.services.sqs.model.GetQueueAttributesResult
 import com.amazonaws.services.sqs.model.GetQueueUrlResult
 import com.amazonaws.services.sqs.model.Message
+import com.amazonaws.services.sqs.model.MessageAttributeValue
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest
 import com.amazonaws.services.sqs.model.ReceiveMessageResult
+import com.amazonaws.services.sqs.model.SendMessageRequest
 import com.microsoft.applicationinsights.TelemetryClient
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.argumentCaptor
@@ -144,7 +146,10 @@ class HmppsQueueServiceTest {
         whenever(dlqSqs.receiveMessage(any<ReceiveMessageRequest>()))
           .thenReturn(
             ReceiveMessageResult().withMessages(
-              Message().withBody("message-body").withReceiptHandle("message-receipt-handle")
+              Message()
+                .withBody("message-body")
+                .withReceiptHandle("message-receipt-handle")
+                .withMessageAttributes(mutableMapOf("some" to stringAttributeOf("attribute")))
             )
           )
 
@@ -178,8 +183,7 @@ class HmppsQueueServiceTest {
       @Test
       fun `should send message to the main queue`() {
         hmppsQueueService.retryDlqMessages(RetryDlqRequest(HmppsQueue("some queue id", queueSqs, "some queue name", dlqSqs, "some dlq name")))
-
-        verify(queueSqs).sendMessage("queueUrl", "message-body")
+        verify(queueSqs).sendMessage(SendMessageRequest().withQueueUrl("queueUrl").withMessageBody("message-body").withMessageAttributes(mutableMapOf("some" to stringAttributeOf("attribute"))))
       }
 
       @Test
@@ -218,12 +222,18 @@ class HmppsQueueServiceTest {
         whenever(dlqSqs.receiveMessage(any<ReceiveMessageRequest>()))
           .thenReturn(
             ReceiveMessageResult().withMessages(
-              Message().withBody("message-1-body").withReceiptHandle("message-1-receipt-handle")
+              Message()
+                .withBody("message-1-body")
+                .withReceiptHandle("message-1-receipt-handle")
+                .withMessageAttributes((mutableMapOf("attribute-key-1" to stringAttributeOf("attribute-value-1"))))
             )
           )
           .thenReturn(
             ReceiveMessageResult().withMessages(
-              Message().withBody("message-2-body").withReceiptHandle("message-2-receipt-handle")
+              Message()
+                .withBody("message-2-body")
+                .withReceiptHandle("message-2-receipt-handle")
+                .withMessageAttributes((mutableMapOf("attribute-key-2" to stringAttributeOf("attribute-value-2"))))
             )
           )
 
@@ -257,8 +267,8 @@ class HmppsQueueServiceTest {
       fun `should send message to the main queue`() {
         hmppsQueueService.retryDlqMessages(RetryDlqRequest(HmppsQueue("some queue id", queueSqs, "some queue name", dlqSqs, "some dlq name")))
 
-        verify(queueSqs).sendMessage("queueUrl", "message-1-body")
-        verify(queueSqs).sendMessage("queueUrl", "message-2-body")
+        verify(queueSqs).sendMessage(SendMessageRequest().withQueueUrl("queueUrl").withMessageBody("message-1-body").withMessageAttributes((mutableMapOf("attribute-key-1" to stringAttributeOf("attribute-value-1")))))
+        verify(queueSqs).sendMessage(SendMessageRequest().withQueueUrl("queueUrl").withMessageBody("message-2-body").withMessageAttributes((mutableMapOf("attribute-key-2" to stringAttributeOf("attribute-value-2")))))
       }
 
       @Test
@@ -282,7 +292,7 @@ class HmppsQueueServiceTest {
         whenever(dlqSqs.receiveMessage(any<ReceiveMessageRequest>()))
           .thenReturn(
             ReceiveMessageResult().withMessages(
-              Message().withBody("message-1-body").withReceiptHandle("message-1-receipt-handle")
+              Message().withBody("message-1-body").withReceiptHandle("message-1-receipt-handle").withMessageAttributes(mutableMapOf("some" to stringAttributeOf("attribute")))
             )
           )
           .thenReturn(ReceiveMessageResult())
@@ -318,7 +328,7 @@ class HmppsQueueServiceTest {
       fun `should send message to the main queue`() {
         hmppsQueueService.retryDlqMessages(RetryDlqRequest(HmppsQueue("some queue id", queueSqs, "some queue name", dlqSqs, "some dlq name")))
 
-        verify(queueSqs).sendMessage("queueUrl", "message-1-body")
+        verify(queueSqs).sendMessage(SendMessageRequest().withQueueUrl("queueUrl").withMessageBody("message-1-body").withMessageAttributes(mutableMapOf("some" to stringAttributeOf("attribute"))))
       }
 
       @Test
@@ -511,4 +521,10 @@ class HmppsQueueServiceTest {
         .thenReturn(GetQueueAttributesResult().withAttributes(mapOf("ApproximateNumberOfMessages" to "$messageCount")))
     }
   }
+}
+
+private fun stringAttributeOf(value: String?): MessageAttributeValue? {
+  return MessageAttributeValue()
+    .withDataType("String")
+    .withStringValue(value)
 }
