@@ -398,7 +398,7 @@ bash $(find -name offender-movement-discharge.sh)
 
 Raise a PR and ask for a review in the MOJDT Slack channel `#dps_dev`.
 
-If accepted make sure that the version number in `lib/build.gradle.kts` has been upgraded according to [Semver rules](https://semver.org/spec/v2.0.0.html) and ask in `#dps_tech_team` to publish the library.
+If accepted make sure that the version number in `lib/build.gradle.kts` has been upgraded according to [Semver rules](https://semver.org/spec/v2.0.0.html) and ask in `#hmpps-dev` to publish the library.
 
 ### Contribution Guidelines
 
