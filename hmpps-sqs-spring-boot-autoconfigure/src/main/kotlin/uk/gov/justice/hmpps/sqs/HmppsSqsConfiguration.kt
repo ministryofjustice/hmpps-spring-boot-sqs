@@ -40,6 +40,10 @@ class HmppsSqsConfiguration {
 
   @Bean
   @ConditionalOnMissingBean
+  fun hmppsQueueResourceAsync(hmppsQueueResource: HmppsQueueResource) = HmppsQueueResourceAsync(hmppsQueueResource)
+
+  @Bean
+  @ConditionalOnMissingBean
   @DependsOn("hmppsQueueService")
   fun hmppsQueueContainerFactoryProxy(factories: List<HmppsQueueDestinationContainerFactory>) = HmppsQueueJmsListenerContainerFactory(factories)
 }
