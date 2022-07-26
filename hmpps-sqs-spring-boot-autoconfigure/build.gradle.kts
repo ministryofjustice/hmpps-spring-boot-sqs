@@ -2,22 +2,22 @@ import com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-  kotlin("jvm") version "1.7.0"
-  kotlin("plugin.spring") version "1.7.0"
+  kotlin("jvm") version "1.7.10"
+  kotlin("plugin.spring") version "1.7.10"
   id("maven-publish")
   id("signing")
-  id("com.adarshr.test-logger") version "3.1.0"
+  id("com.adarshr.test-logger") version "3.2.0"
   id("com.github.ben-manes.versions") version "0.42.0"
   id("se.patrikerdes.use-latest-versions") version "0.2.18"
   id("io.spring.dependency-management") version "1.0.12.RELEASE"
   id("org.jlleitschuh.gradle.ktlint") version "10.3.0"
   id("org.owasp.dependencycheck") version "7.1.1"
-  id("org.springframework.boot") version "2.7.1"
+  id("org.springframework.boot") version "2.7.2"
 }
 
 dependencies {
   implementation("com.amazonaws:amazon-sqs-java-messaging-lib:1.1.0")
-  implementation("com.amazonaws:aws-java-sdk-sns:1.12.252")
+  implementation("com.amazonaws:aws-java-sdk-sns:1.12.267")
   implementation("org.springframework.boot:spring-boot-starter-web")
   implementation("org.springframework.boot:spring-boot-starter-webflux")
   implementation("org.springframework.boot:spring-boot-starter-security")
@@ -42,8 +42,8 @@ publishing {
     create<MavenPublication>("autoconfigure") {
       from(components["java"])
       pom {
-        name.set(base.archivesBaseName)
-        artifactId = base.archivesBaseName
+        name.set(base.archivesName)
+        artifactId = base.archivesName.get()
         description.set("A Spring Boot Autoconfigure library providing utilities for using amazon-sqs-java-messaging-lib")
         url.set("https://github.com/ministryofjustice/hmpps-spring-boot-sqs")
         licenses {
