@@ -1,0 +1,12 @@
+hmpps.sqs:
+  provider: localstack
+  queues:
+    inboundqueue:
+      queueName: async-inbound-queue
+      dlqName: async-inbound-dlq
+      subscribeTopicId: inboundtopic
+      subscribeFilter: '{"eventType":[ "OFFENDER_MOVEMENT-RECEPTION", "OFFENDER_MOVEMENT-DISCHARGE"] }'
+  topics:
+    inboundtopic:
+      arn: arn:aws:sns:eu-west-2:000000000000:async-inbound-topic
+

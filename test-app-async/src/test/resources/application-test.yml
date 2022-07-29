@@ -1,0 +1,20 @@
+server:
+  shutdown: immediate
+
+management.endpoint:
+  health.cache.time-to-live: 0
+  info.cache.time-to-live: 0
+
+hmpps.sqs:
+  provider: localstack
+  queues:
+    inboundqueue:
+      dlqName: ${random.uuid}
+      queueName: ${random.uuid}
+      subscribeTopicId: inboundtopic
+      subscribeFilter: '{"eventType":[ "OFFENDER_MOVEMENT-RECEPTION", "OFFENDER_MOVEMENT-DISCHARGE", "test.type"] }'
+  topics:
+    inboundtopic:
+      arn: arn:aws:sns:eu-west-2:000000000000:${random.uuid}
+    outboundtopic:
+      arn: arn:aws:sns:eu-west-2:000000000000:${random.uuid}
