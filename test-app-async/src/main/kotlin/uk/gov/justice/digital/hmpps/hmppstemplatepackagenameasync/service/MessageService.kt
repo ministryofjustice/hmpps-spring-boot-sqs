@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 
 @Service
-class InboundMessageService() {
+class InboundMessageService(private val outboundEventsEmitter: OutboundEventsEmitter) {
   companion object {
     val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
@@ -17,7 +17,17 @@ class InboundMessageService() {
       "OFFENDER_MOVEMENT-DISCHARGE" -> "offender.movement.discharge"
       else -> hmppsEvent.type
     }
-    log.info("not producing outbound event type $outboundEventType as it is not currently implemented")
+    outboundEventsEmitter.sendEvent(HmppsEvent(hmppsEvent.id, outboundEventType, hmppsEvent.contents))
   }
 }
 
+@Service
+class OutboundMessageService {
+  companion object {
+    val log: Logger = LoggerFactory.getLogger(this::class.java)
+  }
+
+  fun handleMessage(hmppsEvent: HmppsEvent) {
+    log.info("received event: $hmppsEvent")
+  }
+}

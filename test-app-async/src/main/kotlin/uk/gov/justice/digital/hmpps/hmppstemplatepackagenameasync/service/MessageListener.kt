@@ -15,6 +15,17 @@ class InboundMessageListener(private val inboundMessageService: InboundMessageSe
   }
 }
 
+@Service
+class OutboundMessageListener(private val outboundMessageService: OutboundMessageService, private val objectMapper: ObjectMapper) {
+
+  @JmsListener(destination = "outboundqueue", containerFactory = "hmppsQueueContainerFactoryProxy")
+  fun processMessage(rawMessage: String?) {
+    val (message) = objectMapper.readValue(rawMessage, Message::class.java)
+    val event = objectMapper.readValue(message, HmppsEvent::class.java)
+    outboundMessageService.handleMessage(event)
+  }
+}
+
 data class HmppsEvent(val id: String, val type: String, val contents: String)
 data class EventType(val Value: String, val Type: String)
 data class MessageAttributes(val eventType: EventType)

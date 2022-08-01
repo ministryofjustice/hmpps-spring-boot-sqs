@@ -95,7 +95,9 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
       val message5 = Message(gsonString(event5), "message-id5", MessageAttributes(EventType("test.type", "String")))
       val message6 = Message(gsonString(event6), "message-id6", MessageAttributes(EventType("test.type", "String")))
       inboundSqsDlqClient.sendMessage(inboundDlqUrl, gsonString(message5))
+      outboundSqsDlqClientSpy.sendMessage(outboundDlqUrl, gsonString(message6))
       await untilCallTo { inboundSqsDlqClient.countMessagesOnQueue(inboundDlqUrl) } matches { it == 1 }
+      await untilCallTo { outboundSqsDlqClientSpy.countMessagesOnQueue(outboundDlqUrl) } matches { it == 1 }
 
       webTestClient.put()
         .uri("/queue-admin-async/retry-all-dlqs")
@@ -106,8 +108,11 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
 
       await untilCallTo { inboundSqsDlqClient.countMessagesOnQueue(inboundDlqUrl) } matches { it == 0 }
       await untilCallTo { inboundSqsClient.countMessagesOnQueue(inboundQueueUrl) } matches { it == 0 }
+      await untilCallTo { outboundSqsDlqClientSpy.countMessagesOnQueue(outboundDlqUrl) } matches { it == 0 }
+      await untilCallTo { outboundSqsClientSpy.countMessagesOnQueue(outboundQueueUrl) } matches { it == 0 }
 
       verify(inboundMessageServiceSpy).handleMessage(event5)
+      verify(outboundMessageServiceSpy).handleMessage(event6)
     }
   }
 
@@ -127,6 +132,22 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
         .expectStatus().isOk
 
       await untilCallTo { inboundSqsDlqClient.countMessagesOnQueue(inboundDlqUrl) } matches { it == 0 }
+    }
+
+    @Test
+    fun `should purge the outbound dlq`() {
+      outboundSqsDlqClientSpy.sendMessage(outboundDlqUrl, gsonString(HmppsEvent("id3", "test.type", "message3")))
+      outboundSqsDlqClientSpy.sendMessage(outboundDlqUrl, gsonString(HmppsEvent("id4", "test.type", "message4")))
+      await untilCallTo { outboundSqsDlqClientSpy.countMessagesOnQueue(outboundDlqUrl) } matches { it == 2 }
+
+      webTestClient.put()
+        .uri("/queue-admin-async/purge-queue/${hmppsSqsPropertiesSpy.outboundQueueConfig().dlqName}")
+        .headers { it.authToken() }
+        .accept(MediaType.APPLICATION_JSON)
+        .exchange()
+        .expectStatus().isOk
+
+      await untilCallTo { outboundSqsDlqClientSpy.countMessagesOnQueue(outboundDlqUrl) } matches { it == 0 }
     }
   }
 
