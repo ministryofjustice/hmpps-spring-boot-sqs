@@ -13,6 +13,11 @@ dependencies {
   implementation("org.springframework.boot:spring-boot-starter-security")
   implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
 
+  implementation("org.springdoc:springdoc-openapi-ui:1.6.9")
+  implementation("org.springdoc:springdoc-openapi-webflux-ui:1.6.9")
+  implementation("org.springdoc:springdoc-openapi-kotlin:1.6.9")
+  implementation("org.springdoc:springdoc-openapi-security:1.6.9")
+
   implementation(project(":hmpps-sqs-spring-boot-starter"))
 
   testImplementation("org.assertj:assertj-core:3.23.1")

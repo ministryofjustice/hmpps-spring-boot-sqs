@@ -11,6 +11,7 @@ data class HmppsSqsProperties(
   val localstackUrl: String = "http://localhost:4566",
   val queues: Map<String, QueueConfig> = mapOf(),
   val topics: Map<String, TopicConfig> = mapOf(),
+  val reactiveApi: Boolean = false,
 ) {
   data class QueueConfig(
     val queueName: String,
@@ -127,7 +128,7 @@ data class HmppsSqsProperties(
   private fun <T> mustNotContainDuplicates(description: String, source: Map<String, T>, secret: Boolean = true, valueFinder: (Map.Entry<String, T>) -> String) {
     val duplicateValues = source.mapValues(valueFinder).values.filter { it.isNotEmpty() }.groupingBy { it }.eachCount().filterValues { it > 1 }
     if (duplicateValues.isNotEmpty()) {
-      val outputValues = if (secret.not()) duplicateValues.keys else duplicateValues.keys.map { "${it?.subSequence(0, 4)}******" }.toList()
+      val outputValues = if (secret.not()) duplicateValues.keys else duplicateValues.keys.map { "${it.subSequence(0, 4)}******" }.toList()
       throw InvalidHmppsSqsPropertiesException("Found duplicated $description: $outputValues")
     }
   }

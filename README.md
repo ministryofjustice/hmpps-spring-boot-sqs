@@ -76,13 +76,14 @@ Examples of property usage can be found in the test project in the following pla
 
 #### HmppsSqsProperties Definitions
 
-| Property | Default | Description |
-| -------- | ------- | ----------- |
-| provider | `aws` | `aws` for production or `localstack` for running locally / integration tests.
-| region   | `eu-west-2` | The AWS region where the queues live. |
+| Property      | Default                 | Description |
+|---------------|-------------------------| ----------- |
+| provider      | `aws`                   | `aws` for production or `localstack` for running locally / integration tests. |
+| region        | `eu-west-2`             | The AWS region where the queues live. |
 | localstackUrl | `http://localhost:4566` | Only used for `provider=localstack`. The location of the running LocalStack instance. |
-| queues   | | A map of `queueId` to `QueueConfig`. One entry is required for each queue. In production these are derived from environment variables with the prefix `HMPPS_SQS_QUEUES_` that should be populated from Kubernetes secrets (see below).
-| topics   | | A map of `topicId` to `TopicConfig`. One entry is required for each topic. In production these are derived from environment variables with the prefix `HMPPS_SQS_TOPICS_` that should be populated from Kubernetes secrets (see below).
+| queues        |                         | A map of `queueId` to `QueueConfig`. One entry is required for each queue. In production these are derived from environment variables with the prefix `HMPPS_SQS_QUEUES_` that should be populated from Kubernetes secrets (see below). |
+| topics        |                         | A map of `topicId` to `TopicConfig`. One entry is required for each topic. In production these are derived from environment variables with the prefix `HMPPS_SQS_TOPICS_` that should be populated from Kubernetes secrets (see below). |
+| reactiveApi   | false                   | Publishes a reactive API for the Queue Admin Endpoints. See [#reactive-queue-admin-endpoints] for more details. |
 
 Each queue declared in the `queues` map is defined in the `QueueConfig` property class
 
@@ -287,6 +288,12 @@ Note that any endpoints defined in `HmppsQueueResource` that are not secured by 
 We do not provide any detailed Open API documentation for these endpoints. This is because there is a variety of Open API document generators being used at different versions and catering for them all would require a complicated solution for little benefit.
 
 Hopefully your Open API document generator can find the endpoints automatically and includes them in the Open API docs. If not you may have to introduce some configuration to point the generator at the endpoints, for example using the Springfox [ApiSelectorBuilder#apis method](https://springfox.github.io/springfox/docs/snapshot/#springfox-spring-mvc-and-spring-boot) to add the base package `uk.gov.justice.hmpps.sqs`.
+
+#### Reactive Queue Admin Endpoints
+
+If you're building an application with Reactive endpoints then your ResourceServer will be configured to support Reactive. This means that you will need Reactive Queue admin endpoints which have path prefix `/queue-admin-async` instead of `/queue-admin`.
+
+To switch to the reactive Queue admin endpoints add configuration `hmpps.sqs.reactiveApi=true` to your configuration properties. Note that this will disable the non-reactive endpoints (which are enabled by default).
 
 ### Testcontainers
 

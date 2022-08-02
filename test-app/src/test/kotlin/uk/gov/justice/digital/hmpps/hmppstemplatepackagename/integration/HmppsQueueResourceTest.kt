@@ -249,4 +249,40 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
         .jsonPath("$..messages.length()").isEqualTo(12)
     }
   }
+
+  @Nested
+  inner class ReactiveApi {
+    @Test
+    fun `should not support reactive API by default`() {
+      webTestClient.put()
+        .uri {
+          it.path("/queue-admin-async/retry-dlq/{dlqName}")
+            .build(hmppsSqsPropertiesSpy.inboundQueueConfig().dlqName)
+        }
+        .headers { it.authToken() }
+        .accept(MediaType.APPLICATION_JSON)
+        .exchange()
+        .expectStatus().isNotFound
+    }
+
+    @Test
+    fun `should not show the reactive API in the Open API docs`() {
+      webTestClient.get()
+        .uri("/v3/api-docs")
+        .accept(MediaType.APPLICATION_JSON)
+        .exchange()
+        .expectStatus().isOk
+        .expectBody().jsonPath("$.paths['/queue-admin-async/retry-dlq/{dlqName}']").doesNotExist()
+    }
+
+    @Test
+    fun `should show the non-reactive API in the Open API docs`() {
+      webTestClient.get()
+        .uri("/v3/api-docs")
+        .accept(MediaType.APPLICATION_JSON)
+        .exchange()
+        .expectStatus().isOk
+        .expectBody().jsonPath("$.paths['/queue-admin/retry-dlq/{dlqName}']").exists()
+    }
+  }
 }
