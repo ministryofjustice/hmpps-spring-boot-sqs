@@ -23,8 +23,8 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
   inner class SecureEndpoints {
     private fun secureEndpoints() =
       listOf(
-        "/queue-admin-async/retry-dlq/any-queue",
-        "/queue-admin-async/purge-queue/any-queue",
+        "/queue-admin/retry-dlq/any-queue",
+        "/queue-admin/purge-queue/any-queue",
       )
 
     @ParameterizedTest
@@ -54,7 +54,7 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
     @Test
     fun `should fail if dlq not found`() {
       webTestClient.put()
-        .uri("/queue-admin-async/retry-dlq/UNKNOWN_DLQ")
+        .uri("/queue-admin/retry-dlq/UNKNOWN_DLQ")
         .headers { it.authToken() }
         .accept(MediaType.APPLICATION_JSON)
         .exchange()
@@ -72,7 +72,7 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
       await untilCallTo { inboundSqsDlqClient.countMessagesOnQueue(inboundDlqUrl) } matches { it == 2 }
 
       webTestClient.put()
-        .uri("/queue-admin-async/retry-dlq/${hmppsSqsPropertiesSpy.inboundQueueConfig().dlqName}")
+        .uri("/queue-admin/retry-dlq/${hmppsSqsPropertiesSpy.inboundQueueConfig().dlqName}")
         .headers { it.authToken() }
         .accept(MediaType.APPLICATION_JSON)
         .exchange()
@@ -100,7 +100,7 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
       await untilCallTo { outboundSqsDlqClientSpy.countMessagesOnQueue(outboundDlqUrl) } matches { it == 1 }
 
       webTestClient.put()
-        .uri("/queue-admin-async/retry-all-dlqs")
+        .uri("/queue-admin/retry-all-dlqs")
         .headers { it.authToken() }
         .accept(MediaType.APPLICATION_JSON)
         .exchange()
@@ -125,7 +125,7 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
       await untilCallTo { inboundSqsDlqClient.countMessagesOnQueue(inboundDlqUrl) } matches { it == 2 }
 
       webTestClient.put()
-        .uri("/queue-admin-async/purge-queue/${hmppsSqsPropertiesSpy.inboundQueueConfig().dlqName}")
+        .uri("/queue-admin/purge-queue/${hmppsSqsPropertiesSpy.inboundQueueConfig().dlqName}")
         .headers { it.authToken() }
         .accept(MediaType.APPLICATION_JSON)
         .exchange()
@@ -141,7 +141,7 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
       await untilCallTo { outboundSqsDlqClientSpy.countMessagesOnQueue(outboundDlqUrl) } matches { it == 2 }
 
       webTestClient.put()
-        .uri("/queue-admin-async/purge-queue/${hmppsSqsPropertiesSpy.outboundQueueConfig().dlqName}")
+        .uri("/queue-admin/purge-queue/${hmppsSqsPropertiesSpy.outboundQueueConfig().dlqName}")
         .headers { it.authToken() }
         .accept(MediaType.APPLICATION_JSON)
         .exchange()
@@ -160,7 +160,7 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
     @Test
     internal fun `requires a valid authentication token`() {
       webTestClient.get()
-        .uri("/queue-admin-async/get-dlq-messages/any-queue")
+        .uri("/queue-admin/get-dlq-messages/any-queue")
         .exchange()
         .expectStatus().isUnauthorized
     }
@@ -168,7 +168,7 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
     @Test
     internal fun `requires the correct role`() {
       webTestClient.get()
-        .uri("/queue-admin-async/get-dlq-messages/any-queue")
+        .uri("/queue-admin/get-dlq-messages/any-queue")
         .headers { it.authToken(roles = listOf("WRONG_ROLE")) }
         .exchange()
         .expectStatus().isForbidden
@@ -177,7 +177,7 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
     @Test
     fun `should fail if dlq not found`() {
       webTestClient.get()
-        .uri("/queue-admin-async/get-dlq-messages/UNKNOWN_DLQ")
+        .uri("/queue-admin/get-dlq-messages/UNKNOWN_DLQ")
         .headers { it.authToken() }
         .exchange()
         .expectStatus().isNotFound
@@ -191,7 +191,7 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
       await untilCallTo { inboundSqsDlqClient.countMessagesOnQueue(inboundDlqUrl) } matches { it == 3 }
 
       webTestClient.get()
-        .uri("/queue-admin-async/get-dlq-messages/${hmppsSqsPropertiesSpy.inboundQueueConfig().dlqName}")
+        .uri("/queue-admin/get-dlq-messages/${hmppsSqsPropertiesSpy.inboundQueueConfig().dlqName}")
         .headers { it.authToken() }
         .exchange()
         .expectStatus().isOk
@@ -215,7 +215,7 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
       await untilCallTo { inboundSqsDlqClient.countMessagesOnQueue(inboundDlqUrl) } matches { it == 20 }
 
       webTestClient.get()
-        .uri("/queue-admin-async/get-dlq-messages/${hmppsSqsPropertiesSpy.inboundQueueConfig().dlqName}?maxMessages=12")
+        .uri("/queue-admin/get-dlq-messages/${hmppsSqsPropertiesSpy.inboundQueueConfig().dlqName}?maxMessages=12")
         .headers { it.authToken() }
         .exchange()
         .expectStatus().isOk
@@ -223,6 +223,20 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
         .jsonPath("messagesFoundCount").isEqualTo(20)
         .jsonPath("messagesReturnedCount").isEqualTo(12)
         .jsonPath("$..messages.length()").isEqualTo(12)
+    }
+  }
+
+  @Nested
+  inner class OpenApiDocs {
+    @Test
+    fun `should show the reactive API in the Open API docs`() {
+      webTestClient.get()
+        .uri("/v3/api-docs")
+        .accept(MediaType.APPLICATION_JSON)
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.paths['/queue-admin/retry-dlq/{dlqName}'].put.tags[0]").isEqualTo("hmpps-queue-resource-async")
     }
   }
 }

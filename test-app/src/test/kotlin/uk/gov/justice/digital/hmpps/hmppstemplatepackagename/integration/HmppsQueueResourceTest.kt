@@ -249,4 +249,18 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
         .jsonPath("$..messages.length()").isEqualTo(12)
     }
   }
+
+  @Nested
+  inner class OpenApiDocs {
+    @Test
+    fun `should show the non-reactive API in the Open API docs`() {
+      webTestClient.get()
+        .uri("/v3/api-docs")
+        .accept(MediaType.APPLICATION_JSON)
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.paths['/queue-admin/retry-dlq/{dlqName}'].put.tags[0]").isEqualTo("hmpps-queue-resource")
+    }
+  }
 }

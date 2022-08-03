@@ -76,39 +76,40 @@ Examples of property usage can be found in the test project in the following pla
 
 #### HmppsSqsProperties Definitions
 
-| Property | Default | Description |
-| -------- | ------- | ----------- |
-| provider | `aws` | `aws` for production or `localstack` for running locally / integration tests.
-| region   | `eu-west-2` | The AWS region where the queues live. |
-| localstackUrl | `http://localhost:4566` | Only used for `provider=localstack`. The location of the running LocalStack instance. |
-| queues   | | A map of `queueId` to `QueueConfig`. One entry is required for each queue. In production these are derived from environment variables with the prefix `HMPPS_SQS_QUEUES_` that should be populated from Kubernetes secrets (see below).
-| topics   | | A map of `topicId` to `TopicConfig`. One entry is required for each topic. In production these are derived from environment variables with the prefix `HMPPS_SQS_TOPICS_` that should be populated from Kubernetes secrets (see below).
+| Property      | Default                 | Description                                                                                                                                                                                                                             |
+|---------------|-------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| provider      | `aws`                   | `aws` for production or `localstack` for running locally / integration tests.                                                                                                                                                           |
+| region        | `eu-west-2`             | The AWS region where the queues live.                                                                                                                                                                                                   |
+| localstackUrl | `http://localhost:4566` | Only used for `provider=localstack`. The location of the running LocalStack instance.                                                                                                                                                   |
+| queues        |                         | A map of `queueId` to `QueueConfig`. One entry is required for each queue. In production these are derived from environment variables with the prefix `HMPPS_SQS_QUEUES_` that should be populated from Kubernetes secrets (see below). |
+| topics        |                         | A map of `topicId` to `TopicConfig`. One entry is required for each topic. In production these are derived from environment variables with the prefix `HMPPS_SQS_TOPICS_` that should be populated from Kubernetes secrets (see below). |
+| reactiveApi   | `false`                 | Publishes a reactive API for the Queue Admin Endpoints. See [Reactive Queue Admin Endpoints](#reactive-queue-admin-endpoints) for more details.                                                                                         |
 
 Each queue declared in the `queues` map is defined in the `QueueConfig` property class
 
-| Property | Default | Description |
-| -------- | ------- | ----------- |
-| queueId | | The key to the `queues` map. A unique name for the queue configuration, used heavily when automatically creating Spring beans. Must be lower case. |
-| queueName | | The name of the queue as recognised by AWS or LocalStack. |
-| queueAccessKeyId | | Only used for `provider=aws`. The AWS access key ID, should be derived from an environment variable of format `HMPPS_SQS_QUEUES_<queueId>_QUEUE_ACCESS_KEY_ID`. |
-| queueSecretAccessKey | | Only used for `provider=aws`. The AWS secret access key, should be derived from an environment variable of format `HMPPS_SQS_QUEUES_<queueId>_QUEUE_SECRET_ACCESS_KEY`. |
-| subscribeTopicId | | Only used for `provider=localstack`. The `topicId` of the topic this queue subscribes to when either running integration tests or running locally. |
-| subscribeFilter | | Only used for `provider=localstack`. The filter policy to be applied when subscribing to the topic. Generally used to filter out certain messages. See your queue's `filter_policy` in `cloud-platform-environments` for an example. |
-| asyncQueueClient | `false` | If true then the `AmazonSQS` bean created will be an `AmazonSQSAsync` instance. |
-| dlqName | | The name of the queue's dead letter queue (DLQ) as recognised by AWS or LocalStack. |
-| dlqAccessKeyId | | Only used for `provider=aws`. The AWS access key ID of the DLQ, should be derived from an environment variable of format `HMPPS_SQS_QUEUES_<queueId>_DLQ_ACCESS_KEY_ID`. |
-| dlqSecretAccessKey | | Only used for `provider=aws`. The AWS secret access key of the DLQ, should be derived from an environment variable of format `HMPPS_SQS_QUEUES_<queueId>_DLQ_SECRET_ACCESS_KEY`. |
-| asyncDlqClient | `false` | If true then the `AmazonSQS` bean created will be an `AmazonSQSAsync` instance. |
+| Property             | Default | Description                                                                                                                                                                                                                          |
+|----------------------|---------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| queueId              |         | The key to the `queues` map. A unique name for the queue configuration, used heavily when automatically creating Spring beans. Must be lower case.                                                                                   |
+| queueName            |         | The name of the queue as recognised by AWS or LocalStack.                                                                                                                                                                            |
+| queueAccessKeyId     |         | Only used for `provider=aws`. The AWS access key ID, should be derived from an environment variable of format `HMPPS_SQS_QUEUES_<queueId>_QUEUE_ACCESS_KEY_ID`.                                                                      |
+| queueSecretAccessKey |         | Only used for `provider=aws`. The AWS secret access key, should be derived from an environment variable of format `HMPPS_SQS_QUEUES_<queueId>_QUEUE_SECRET_ACCESS_KEY`.                                                              |
+| subscribeTopicId     |         | Only used for `provider=localstack`. The `topicId` of the topic this queue subscribes to when either running integration tests or running locally.                                                                                   |
+| subscribeFilter      |         | Only used for `provider=localstack`. The filter policy to be applied when subscribing to the topic. Generally used to filter out certain messages. See your queue's `filter_policy` in `cloud-platform-environments` for an example. |
+| asyncQueueClient     | `false` | If true then the `AmazonSQS` bean created will be an `AmazonSQSAsync` instance.                                                                                                                                                      |
+| dlqName              |         | The name of the queue's dead letter queue (DLQ) as recognised by AWS or LocalStack.                                                                                                                                                  |
+| dlqAccessKeyId       |         | Only used for `provider=aws`. The AWS access key ID of the DLQ, should be derived from an environment variable of format `HMPPS_SQS_QUEUES_<queueId>_DLQ_ACCESS_KEY_ID`.                                                             |
+| dlqSecretAccessKey   |         | Only used for `provider=aws`. The AWS secret access key of the DLQ, should be derived from an environment variable of format `HMPPS_SQS_QUEUES_<queueId>_DLQ_SECRET_ACCESS_KEY`.                                                     |
+| asyncDlqClient       | `false` | If true then the `AmazonSQS` bean created will be an `AmazonSQSAsync` instance.                                                                                                                                                      |
 
 Each topic declared in the `topics` map is defined in the `TopicConfig` property class
 
-| Property | Default | Description |
-| -------- | ------- | ----------- |
-| topicId | | The key to the `topics` map. A unique name for the topic configuration, used heavily when automatically creating Spring beans. Must be lower case. |
-| arn | | The ARN of the topic as recognised by AWS and LocalStack. |
-| accessKeyId | | Only used for `provider=aws`. The AWS access key ID, should be derived from an environment variable of format `HMPPS_SQS_TOPICS_<topicId>_ACCESS_KEY_ID`. | 
-| secretAccessKey | | Only used for `provider=aws`. The AWS secret access key, should be derived from an environment variable of format `HMPPS_SQS_TOPICS_<topicId>_SECRET_ACCESS_KEY`. |
-| asyncClient | `false` | If true then the `AmazonSNS` bean created will be an `AmazonSNSAsync` instance. |
+| Property        | Default | Description                                                                                                                                                       |
+|-----------------|---------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| topicId         |         | The key to the `topics` map. A unique name for the topic configuration, used heavily when automatically creating Spring beans. Must be lower case.                |
+| arn             |         | The ARN of the topic as recognised by AWS and LocalStack.                                                                                                         |
+| accessKeyId     |         | Only used for `provider=aws`. The AWS access key ID, should be derived from an environment variable of format `HMPPS_SQS_TOPICS_<topicId>_ACCESS_KEY_ID`.         | 
+| secretAccessKey |         | Only used for `provider=aws`. The AWS secret access key, should be derived from an environment variable of format `HMPPS_SQS_TOPICS_<topicId>_SECRET_ACCESS_KEY`. |
+| asyncClient     | `false` | If true then the `AmazonSNS` bean created will be an `AmazonSNSAsync` instance.                                                                                   |
 
 #### :warning: queueId and topicId Must Be All Lowercase
 
@@ -287,6 +288,12 @@ Note that any endpoints defined in `HmppsQueueResource` that are not secured by 
 We do not provide any detailed Open API documentation for these endpoints. This is because there is a variety of Open API document generators being used at different versions and catering for them all would require a complicated solution for little benefit.
 
 Hopefully your Open API document generator can find the endpoints automatically and includes them in the Open API docs. If not you may have to introduce some configuration to point the generator at the endpoints, for example using the Springfox [ApiSelectorBuilder#apis method](https://springfox.github.io/springfox/docs/snapshot/#springfox-spring-mvc-and-spring-boot) to add the base package `uk.gov.justice.hmpps.sqs`.
+
+#### Reactive Queue Admin Endpoints
+
+If you're building an application with Reactive endpoints then your ResourceServer will be configured to support Reactive. This means that you will need Reactive Queue admin endpoints which have path prefix `/queue-admin` instead of `/queue-admin`.
+
+To switch to the reactive Queue admin endpoints add configuration `hmpps.sqs.reactiveApi=true` to your configuration properties. Note that this will disable the non-reactive endpoints (which are enabled by default).
 
 ### Testcontainers
 
