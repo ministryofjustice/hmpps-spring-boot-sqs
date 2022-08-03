@@ -10,7 +10,7 @@ class HmppsQueueAdminTest : IntegrationTestBase() {
   @Test
   fun `should not allow purge with the default role`() {
     webTestClient.put()
-      .uri("/queue-admin-async/purge-queue/${hmppsSqsPropertiesSpy.inboundQueueConfig().dlqName}")
+      .uri("/queue-admin/purge-queue/${hmppsSqsPropertiesSpy.inboundQueueConfig().dlqName}")
       .headers { it.authToken() }
       .accept(MediaType.APPLICATION_JSON)
       .exchange()
@@ -20,7 +20,7 @@ class HmppsQueueAdminTest : IntegrationTestBase() {
   @Test
   fun `should allow purge with custom queue admin role`() {
     webTestClient.put()
-      .uri("/queue-admin-async/purge-queue/${hmppsSqsPropertiesSpy.inboundQueueConfig().dlqName}")
+      .uri("/queue-admin/purge-queue/${hmppsSqsPropertiesSpy.inboundQueueConfig().dlqName}")
       .headers { it.authToken(roles = listOf("ROLE_TEST_APP_QUEUE_ADMIN")) }
       .accept(MediaType.APPLICATION_JSON)
       .exchange()
@@ -30,7 +30,7 @@ class HmppsQueueAdminTest : IntegrationTestBase() {
   @Test
   fun `should not allow retry dlq with the default role`() {
     webTestClient.put()
-      .uri("/queue-admin-async/retry-dlq/${hmppsSqsPropertiesSpy.inboundQueueConfig().dlqName}")
+      .uri("/queue-admin/retry-dlq/${hmppsSqsPropertiesSpy.inboundQueueConfig().dlqName}")
       .headers { it.authToken() }
       .accept(MediaType.APPLICATION_JSON)
       .exchange()
@@ -40,7 +40,7 @@ class HmppsQueueAdminTest : IntegrationTestBase() {
   @Test
   fun `should allow retry dlq with custom queue admin role`() {
     webTestClient.put()
-      .uri("/queue-admin-async/retry-dlq/${hmppsSqsPropertiesSpy.inboundQueueConfig().dlqName}")
+      .uri("/queue-admin/retry-dlq/${hmppsSqsPropertiesSpy.inboundQueueConfig().dlqName}")
       .headers { it.authToken(roles = listOf("ROLE_TEST_APP_QUEUE_ADMIN")) }
       .accept(MediaType.APPLICATION_JSON)
       .exchange()

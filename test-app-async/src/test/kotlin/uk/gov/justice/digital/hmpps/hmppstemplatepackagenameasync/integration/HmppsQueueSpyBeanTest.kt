@@ -42,7 +42,7 @@ class HmppsQueueSpyBeanTest : IntegrationTestBase() {
     await untilCallTo { outboundSqsDlqClientSpy.countMessagesOnQueue(outboundDlqUrl) } matches { it == 1 }
 
     webTestClient.put()
-      .uri("/queue-admin-async/retry-dlq/${hmppsSqsPropertiesSpy.outboundQueueConfig().dlqName}")
+      .uri("/queue-admin/retry-dlq/${hmppsSqsPropertiesSpy.outboundQueueConfig().dlqName}")
       .headers { it.authToken() }
       .accept(MediaType.APPLICATION_JSON)
       .exchange()
@@ -70,7 +70,7 @@ class HmppsQueueSpyBeanTest : IntegrationTestBase() {
     await untilCallTo { outboundSqsDlqClientSpy.countMessagesOnQueue(outboundDlqUrl) } matches { it == 1 }
 
     webTestClient.put()
-      .uri("/queue-admin-async/purge-queue/${hmppsSqsPropertiesSpy.outboundQueueConfig().dlqName}")
+      .uri("/queue-admin/purge-queue/${hmppsSqsPropertiesSpy.outboundQueueConfig().dlqName}")
       .headers { it.authToken() }
       .accept(MediaType.APPLICATION_JSON)
       .exchange()

@@ -291,7 +291,7 @@ Hopefully your Open API document generator can find the endpoints automatically 
 
 #### Reactive Queue Admin Endpoints
 
-If you're building an application with Reactive endpoints then your ResourceServer will be configured to support Reactive. This means that you will need Reactive Queue admin endpoints which have path prefix `/queue-admin-async` instead of `/queue-admin`.
+If you're building an application with Reactive endpoints then your ResourceServer will be configured to support Reactive. This means that you will need Reactive Queue admin endpoints which have path prefix `/queue-admin` instead of `/queue-admin`.
 
 To switch to the reactive Queue admin endpoints add configuration `hmpps.sqs.reactiveApi=true` to your configuration properties. Note that this will disable the non-reactive endpoints (which are enabled by default).
 

@@ -11,10 +11,12 @@ import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.server.ResponseStatusException
 
 /*
- * An asynchronous wrapper around HmppsQueueResource
+ * Warning: This is a duplicate of HmppsQueueResourceAsync but with suspend functions. Therefore, this class should be kept in sync with the non-async class.
+ *
+ * This class *should* just be a wrapper around HmppsQueueResource but that sometimes works and sometimes doesn't! So we're keeping the duplication for now.
  */
 @RestController
-@RequestMapping("/queue-admin-async")
+@RequestMapping("/queue-admin")
 class HmppsQueueResourceAsync(private val hmppsQueueService: HmppsQueueService) {
 
   @PutMapping("/retry-dlq/{dlqName}")
