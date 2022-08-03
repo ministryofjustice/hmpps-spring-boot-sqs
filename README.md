@@ -29,7 +29,7 @@ The library relies on [Spring Boot Auto-configuration](https://docs.spring.io/sp
 
 ## How To Use This Library
 
-Find the latest published version of the library by searching on Maven Central for `hmpps-spring-boot-sqs`.  (If you can't find the version mentioned in `/lib/build.gradle.kts` please be patient, it can take a while to publish to Maven Central).
+Find the latest published version of the library by searching on Maven Central for `hmpps-spring-boot-sqs`.  (If you can't find the version mentioned in `build.gradle.kts` please be patient, it can take a while to publish to Maven Central).
 
 Add the following dependency to your Gradle build script:
 
@@ -364,7 +364,11 @@ This module contains a copy of the [Kotlin template project](https://github.com/
 
 Various queue related functionality has been added to the template project so that we can run tests against the library.
 
-Note that this module does not produce an artifact for publishing - we only publish the library from the `lib` module.
+Note that this module does not produce an artifact for publishing - we only publish the library from the `hmpps-sqs-spring-boot-starter` module.
+
+#### test-app-async
+
+This is a copy of the `test-app` which uses a Reactive Spring configuration. This is required as more and more projects switch to using Reactive in their applications. It should be kept up-to-date with `test-app`. All following instructions relating to the test-app apply to test-app-async too.
 
 #### Running the Functional Tests
 
@@ -407,7 +411,7 @@ bash $(find -name offender-movement-discharge.sh)
 
 Raise a PR and ask for a review in the MOJDT Slack channel `#dps_dev`.
 
-If accepted make sure that the version number in `lib/build.gradle.kts` has been upgraded according to [Semver rules](https://semver.org/spec/v2.0.0.html) and ask in `#hmpps-dev` to publish the library.
+If accepted make sure that the version number in `build.gradle.kts` has been upgraded according to [Semver rules](https://semver.org/spec/v2.0.0.html) and ask in `#hmpps_dev` to publish the library.
 
 ### Contribution Guidelines
 
@@ -423,7 +427,7 @@ As a rule of thumb new features must:
 
 ## Publishing Locally (to test against other projects)
 
-* Firstly bump the version of this project in `lib/build.gradle.kts` e.g. increase the minor version by 1 and add `-beta` to the version number.
+* Firstly bump the version of this project in `build.gradle.kts` e.g. increase the minor version by 1 and add `-beta` to the version number.
 * Then publish the plugin to local maven
 
 ```
@@ -434,6 +438,20 @@ As a rule of thumb new features must:
 In the other project's Gradle build script change the version to match and it should now be pulled into the project.
 
 ## Publishing to Maven Central
+
+The Circle build pipeline for the `main` branch has a step to manually approve a publish to Maven Cental. If you do not have permission to approve this step please ask in Slack channel `#hmpps_dev` to find someone that does.
+
+### Published Version Numbers
+
+Please be aware that once the jar is published to Maven Central other teams can use that version. They may even upgrade to the new version automatically with some fancy tooling.
+
+Use some common sense when changing the version number and publishing:
+* Try NOT to introduce breaking changes. Be creative, there are often ways around this
+* Use [semantic versioning](https://semver.org/) to indicate the scope of the change
+* You might think you can only test your change in the wild - consider [testing locally on other projects](#publishing-locally-to-test-against-other-projects) first
+* If you must test in the wild, add a suffix to the version number such as `-beta` or `-wip` to indicate the change is not considered stable
+
+## Technical Details of Publishing to Maven Central
 
 [This guide](https://central.sonatype.org/publish/publish-guide/) was used as a basis for publishing to Maven Central.
 
@@ -446,7 +464,7 @@ However, please note that the document above is old and a couple of things have 
 
 When publishing to Maven Central we authenticate with a username and password.
 
-In order to use groupId (see [Maven coordinates](https://maven.apache.org/pom.html#Maven_Coordinates)) `uk.org.justice.service.hmpps` we claimed the domain `uk.org.justice.service.hmpps` with Sonatype ( [see this PR](https://github.com/ministryofjustice/cloud-platform-environments/pull/4872) ) and registered this against my personal Sonatype username (service accounts not supported). Several members of the `hmpps-tech-team` have accounts associated with that domain too.
+In order to use groupId (see [Maven coordinates](https://maven.apache.org/pom.html#Maven_Coordinates)) `uk.org.justice.service.hmpps` we claimed the domain `uk.org.justice.service.hmpps` with Sonatype ( [see this PR](https://github.com/ministryofjustice/cloud-platform-environments/pull/4872) ) and registered this against my personal Sonatype username (service accounts not supported). Several members of the former `dps-tech-team` have accounts associated with that domain too - ask in Slack channel `#hmpps_dev` to find such people.
 
 An account also gives us access to the [Staging repository](https://s01.oss.sonatype.org/#stagingRepositories) which is used to validate Maven publications before they are published.
 
