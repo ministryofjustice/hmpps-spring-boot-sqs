@@ -19,9 +19,9 @@ class HmppsTopicFactory(
     hmppsSqsProperties.topics
       .filter { (_, topicConfig) -> !topicConfig.asyncClient }
       .map { (topicId, topicConfig) ->
-            val snsClient = getOrDefaultSnsClient(topicId, topicConfig, hmppsSqsProperties)
-          HmppsTopic(topicId, topicConfig.arn, snsClient)
-            .also { getOrDefaultHealthIndicator(it) }
+        val snsClient = getOrDefaultSnsClient(topicId, topicConfig, hmppsSqsProperties)
+        HmppsTopic(topicId, topicConfig.arn, snsClient)
+          .also { getOrDefaultHealthIndicator(it) }
       }.toList()
 
   private fun getOrDefaultHealthIndicator(topic: HmppsTopic) {

@@ -1,11 +1,11 @@
 package uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.integration
 
-import org.mockito.kotlin.mockingDetails
 import org.assertj.core.api.Assertions.assertThat
 import org.awaitility.kotlin.await
 import org.awaitility.kotlin.matches
 import org.awaitility.kotlin.untilCallTo
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.mockingDetails
 import software.amazon.awssdk.services.sns.model.MessageAttributeValue
 import software.amazon.awssdk.services.sns.model.PublishRequest
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest
@@ -19,15 +19,15 @@ class HmppsEventProcessingTest : IntegrationTestBase() {
     val event = HmppsEvent("event-id", "OFFENDER_MOVEMENT-RECEPTION", "some event contents")
     inboundSnsClient.publish(
       PublishRequest.builder().topicArn(inboundTopicArn).message(gsonString(event)).messageAttributes(
-          mapOf("eventType" to MessageAttributeValue.builder().dataType("String").stringValue(event.type).build())
-        ).build()
+        mapOf("eventType" to MessageAttributeValue.builder().dataType("String").stringValue(event.type).build())
+      ).build()
     )
 
     await untilCallTo { outboundTestSqsClient.countMessagesOnQueue(outboundTestQueueUrl) } matches { it == 1 }
 
     val receivedEvent = ReceiveMessageRequest.builder().queueUrl(outboundTestQueueUrl).build()
       .let { request -> outboundTestSqsClient.receiveMessage(request).messages()[0].body() }
-      .let { response -> objectMapper.readValue(response,  Message::class.java) }
+      .let { response -> objectMapper.readValue(response, Message::class.java) }
       .Message
       .let { message -> objectMapper.readValue(message, HmppsEvent::class.java) }
 
@@ -63,7 +63,7 @@ class HmppsEventProcessingTest : IntegrationTestBase() {
 
     val receivedEvent = ReceiveMessageRequest.builder().queueUrl(outboundTestNoDlqQueueUrl).build()
       .let { request -> outboundTestSqsClient.receiveMessage(request).messages()[0].body() }
-      .let { response -> objectMapper.readValue(response,  Message::class.java) }
+      .let { response -> objectMapper.readValue(response, Message::class.java) }
       .Message
       .let { message -> objectMapper.readValue(message, HmppsEvent::class.java) }
 

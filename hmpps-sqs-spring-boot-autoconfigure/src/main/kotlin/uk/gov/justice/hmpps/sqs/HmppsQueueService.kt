@@ -115,4 +115,5 @@ data class PurgeQueueResult(val messagesFoundCount: Int)
 internal fun SqsClient.countMessagesOnQueue(queueUrl: String): Int =
   this.getQueueAttributes(GetQueueAttributesRequest.builder().queueUrl(queueUrl).attributeNames(QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES).build())
     .let {
-      it.attributes()[QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES]?.toInt() ?: 0 }
+      it.attributes()[QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES]?.toInt() ?: 0
+    }

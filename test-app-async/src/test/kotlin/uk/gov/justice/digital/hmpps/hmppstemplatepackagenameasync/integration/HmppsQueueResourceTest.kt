@@ -1,6 +1,5 @@
 package uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.integration
 
-import org.mockito.kotlin.verify
 import org.awaitility.kotlin.await
 import org.awaitility.kotlin.matches
 import org.awaitility.kotlin.untilCallTo
@@ -10,6 +9,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
+import org.mockito.kotlin.verify
 import org.springframework.http.MediaType
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest
 import uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.service.EventType

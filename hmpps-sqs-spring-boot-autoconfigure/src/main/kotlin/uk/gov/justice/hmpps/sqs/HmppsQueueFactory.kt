@@ -40,14 +40,14 @@ class HmppsQueueFactory(
     if (queueConfig.dlqName.isNotEmpty()) {
       getOrDefaultBean("$queueId-sqs-dlq-client") {
         createSqsDlqClient(queueConfig, hmppsSqsProperties)
-          .also { log.info("Created ${hmppsSqsProperties.provider} SqsClient for DLQ queueId $queueId with name ${queueConfig.dlqName}")}
+          .also { log.info("Created ${hmppsSqsProperties.provider} SqsClient for DLQ queueId $queueId with name ${queueConfig.dlqName}") }
       }
     } else null
 
   private fun getOrDefaultSqsClient(queueId: String, queueConfig: QueueConfig, hmppsSqsProperties: HmppsSqsProperties, sqsDlqClient: SqsClient?): SqsClient =
     getOrDefaultBean("$queueId-sqs-client") {
       createSqsClient(queueConfig, hmppsSqsProperties, sqsDlqClient)
-        .also { log.info("Created ${hmppsSqsProperties.provider} SqsClient for queue queueId $queueId with name ${queueConfig.queueName}")}
+        .also { log.info("Created ${hmppsSqsProperties.provider} SqsClient for queue queueId $queueId with name ${queueConfig.queueName}") }
     }
 
   private fun getOrDefaultHealthIndicator(hmppsQueue: HmppsQueue): HealthIndicator =

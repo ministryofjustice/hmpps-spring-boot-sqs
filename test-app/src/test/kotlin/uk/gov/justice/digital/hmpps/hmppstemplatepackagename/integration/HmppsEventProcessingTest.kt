@@ -1,11 +1,11 @@
 package uk.gov.justice.digital.hmpps.hmppstemplatepackagename.integration
 
-import org.mockito.kotlin.mockingDetails
 import org.assertj.core.api.Assertions.assertThat
 import org.awaitility.kotlin.await
 import org.awaitility.kotlin.matches
 import org.awaitility.kotlin.untilCallTo
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.mockingDetails
 import software.amazon.awssdk.services.sns.model.MessageAttributeValue
 import software.amazon.awssdk.services.sns.model.PublishRequest
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest

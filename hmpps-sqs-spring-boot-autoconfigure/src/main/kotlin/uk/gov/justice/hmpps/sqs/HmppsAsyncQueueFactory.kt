@@ -36,14 +36,14 @@ class HmppsAsyncQueueFactory(
     if (queueConfig.dlqName.isNotEmpty()) {
       getOrDefaultBean("$queueId-sqs-dlq-client") {
         createSqsAsyncDlqClient(queueConfig, hmppsSqsProperties)
-          .also { log.info("Created ${hmppsSqsProperties.provider} SqsAsyncClient for DLQ queueId $queueId with name ${queueConfig.dlqName}")}
+          .also { log.info("Created ${hmppsSqsProperties.provider} SqsAsyncClient for DLQ queueId $queueId with name ${queueConfig.dlqName}") }
       }
     } else null
 
   private fun getOrDefaultSqsAsyncClient(queueId: String, queueConfig: QueueConfig, hmppsSqsProperties: HmppsSqsProperties, sqsDlqClient: SqsAsyncClient?): SqsAsyncClient =
     getOrDefaultBean("$queueId-sqs-client") {
       createSqsAsyncClient(queueConfig, hmppsSqsProperties, sqsDlqClient)
-        .also { log.info("Created ${hmppsSqsProperties.provider} SqsAsyncClient for queue queueId $queueId with name ${queueConfig.queueName}")}
+        .also { log.info("Created ${hmppsSqsProperties.provider} SqsAsyncClient for queue queueId $queueId with name ${queueConfig.queueName}") }
     }
 
   private fun getOrDefaultAsyncHealthIndicator(hmppsQueue: HmppsAsyncQueue): HealthIndicator =

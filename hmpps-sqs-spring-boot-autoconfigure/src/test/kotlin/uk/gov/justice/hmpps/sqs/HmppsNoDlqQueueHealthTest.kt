@@ -1,10 +1,10 @@
 package uk.gov.justice.hmpps.sqs
 
+import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
-import org.assertj.core.api.Assertions.assertThat
-import org.junit.jupiter.api.Test
 import org.springframework.boot.actuate.health.Status
 import software.amazon.awssdk.services.sqs.SqsClient
 import software.amazon.awssdk.services.sqs.model.GetQueueAttributesRequest

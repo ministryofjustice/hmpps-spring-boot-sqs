@@ -1,14 +1,14 @@
 package uk.gov.justice.hmpps.sqs
 
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.mockito.ArgumentMatchers.anyString
 import org.mockito.kotlin.any
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory
 import org.springframework.context.ConfigurableApplicationContext
 import software.amazon.awssdk.services.sns.SnsAsyncClient

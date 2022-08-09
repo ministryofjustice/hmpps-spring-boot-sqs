@@ -77,14 +77,14 @@ open class HmppsAsyncQueueService(
     val messagesToReturnCount = min(messageCount, maxMessages)
 
     (1..messagesToReturnCount).map {
-        sqsAsyncDlqClient.receiveMessage(ReceiveMessageRequest.builder().queueUrl(dlqUrl).maxNumberOfMessages(1).build())
-          .thenApply { it.messages().firstOrNull() }
-          .thenApply { msg ->
-            msg?.run {
-              messages += DlqMessage(messageId = msg.messageId(), body = gson.fromJson(msg.body(), mapClassType))
-            }
+      sqsAsyncDlqClient.receiveMessage(ReceiveMessageRequest.builder().queueUrl(dlqUrl).maxNumberOfMessages(1).build())
+        .thenApply { it.messages().firstOrNull() }
+        .thenApply { msg ->
+          msg?.run {
+            messages += DlqMessage(messageId = msg.messageId(), body = gson.fromJson(msg.body(), mapClassType))
           }
-      }.toTypedArray()
+        }
+    }.toTypedArray()
     // CompletableFuture.allOf(*messageFutures) TODO do I need this? Or does suspend magic just work and I can switch back to repeat(messagesToReturnCount)?
     return GetDlqResult(messageCount, messagesToReturnCount, messages.toList())
   }

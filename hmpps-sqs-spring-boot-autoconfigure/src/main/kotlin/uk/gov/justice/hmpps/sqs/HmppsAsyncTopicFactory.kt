@@ -54,5 +54,4 @@ class HmppsAsyncTopicFactory(
         else -> throw IllegalStateException("Unrecognised HMPPS SQS provider $provider")
       }
     }
-
 }
