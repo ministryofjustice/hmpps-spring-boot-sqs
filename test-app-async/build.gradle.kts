@@ -25,12 +25,13 @@ dependencies {
   implementation(project(":hmpps-sqs-spring-boot-starter"))
 
   testImplementation("org.assertj:assertj-core:3.23.1")
-  testImplementation("org.junit.jupiter:junit-jupiter:5.8.2")
+  testImplementation("org.junit.jupiter:junit-jupiter:5.9.0")
   testImplementation("org.mockito:mockito-junit-jupiter:4.6.1")
-  testImplementation("com.nhaarman.mockitokotlin2:mockito-kotlin:2.2.0")
+  testImplementation("org.mockito.kotlin:mockito-kotlin:4.0.0")
   testImplementation("org.mockito:mockito-inline:4.6.1")
   testImplementation("org.awaitility:awaitility-kotlin:4.2.0")
   testImplementation("io.jsonwebtoken:jjwt:0.9.1")
   testImplementation("com.github.tomakehurst:wiremock-standalone:2.27.2")
   testImplementation("org.testcontainers:localstack:1.17.3")
+  testImplementation("com.amazonaws:aws-java-sdk-core:1.12.272") // needed so that Localstack has access to the AWS SDK V1 API
 }
