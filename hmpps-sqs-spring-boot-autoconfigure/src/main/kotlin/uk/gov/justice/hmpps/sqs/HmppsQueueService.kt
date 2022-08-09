@@ -1,16 +1,18 @@
 package uk.gov.justice.hmpps.sqs
 
-import com.amazonaws.services.sqs.AmazonSQS
-import com.amazonaws.services.sqs.model.DeleteMessageRequest
-import com.amazonaws.services.sqs.model.Message
-import com.amazonaws.services.sqs.model.ReceiveMessageRequest
-import com.amazonaws.services.sqs.model.SendMessageRequest
 import com.google.gson.GsonBuilder
 import com.google.gson.ToNumberPolicy
 import com.microsoft.applicationinsights.TelemetryClient
 import org.slf4j.LoggerFactory
+import software.amazon.awssdk.services.sqs.SqsClient
+import software.amazon.awssdk.services.sqs.model.DeleteMessageRequest
+import software.amazon.awssdk.services.sqs.model.GetQueueAttributesRequest
+import software.amazon.awssdk.services.sqs.model.Message
+import software.amazon.awssdk.services.sqs.model.QueueAttributeName
+import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest
+import software.amazon.awssdk.services.sqs.model.SendMessageRequest
 import kotlin.math.min
-import com.amazonaws.services.sqs.model.PurgeQueueRequest as AwsPurgeQueueRequest
+import software.amazon.awssdk.services.sqs.model.PurgeQueueRequest as AwsPurgeQueueRequest
 
 class MissingQueueException(message: String) : RuntimeException(message)
 class MissingTopicException(message: String) : RuntimeException(message)
@@ -50,13 +52,13 @@ open class HmppsQueueService(
   private fun HmppsQueue.retryDlqMessages(): RetryDlqResult {
     if (sqsDlqClient == null || dlqUrl == null) return RetryDlqResult(0, mutableListOf())
     val messageCount = sqsDlqClient.countMessagesOnQueue(dlqUrl!!)
-    val messages = mutableListOf<Message>()
+    val messages = mutableListOf<Message.Builder>()
     repeat(messageCount) {
-      sqsDlqClient.receiveMessage(ReceiveMessageRequest(dlqUrl).withMaxNumberOfMessages(1).withMessageAttributeNames("All")).messages.firstOrNull()
+      sqsDlqClient.receiveMessage(ReceiveMessageRequest.builder().queueUrl(dlqUrl).maxNumberOfMessages(1).messageAttributeNames("All").build()).messages().firstOrNull()
         ?.also { msg ->
-          sqsClient.sendMessage(SendMessageRequest().withQueueUrl(queueUrl).withMessageBody(msg.body).withMessageAttributes(msg.messageAttributes))
-          sqsDlqClient.deleteMessage(DeleteMessageRequest(dlqUrl, msg.receiptHandle))
-          messages += msg
+          sqsClient.sendMessage(SendMessageRequest.builder().queueUrl(queueUrl).messageBody(msg.body()).messageAttributes(msg.messageAttributes()).build())
+          sqsDlqClient.deleteMessage(DeleteMessageRequest.builder().queueUrl(dlqUrl).receiptHandle(msg.receiptHandle()).build())
+          messages += msg.toBuilder()
         }
     }
     messageCount.takeIf { it > 0 }
@@ -73,10 +75,10 @@ open class HmppsQueueService(
     val messagesToReturnCount = min(messageCount, maxMessages)
 
     repeat(messagesToReturnCount) {
-      sqsDlqClient.receiveMessage(ReceiveMessageRequest(dlqUrl).withMaxNumberOfMessages(1)).messages.firstOrNull()
+      sqsDlqClient.receiveMessage(ReceiveMessageRequest.builder().queueUrl(dlqUrl).maxNumberOfMessages(1).build()).messages().firstOrNull()
         ?.also { msg ->
           val map: Map<String, Any> = HashMap()
-          messages += DlqMessage(messageId = msg.messageId, body = gson.fromJson(msg.body, map.javaClass))
+          messages += DlqMessage(messageId = msg.messageId(), body = gson.fromJson(msg.body(), map.javaClass))
         }
     }
 
@@ -87,7 +89,7 @@ open class HmppsQueueService(
     with(request) {
       sqsClient.countMessagesOnQueue(queueUrl)
         .takeIf { it > 0 }
-        ?.also { sqsClient.purgeQueue(AwsPurgeQueueRequest(queueUrl)) }
+        ?.also { sqsClient.purgeQueue(AwsPurgeQueueRequest.builder().queueUrl(queueUrl).build()) }
         ?.also { log.info("For queue $queueName attempted to purge $it messages from queue") }
         ?.also { telemetryClient?.trackEvent("PurgeQueue", mapOf("queue-name" to queueName, "messages-found" to "$it"), null) }
         ?.let { PurgeQueueResult(it) }
@@ -100,17 +102,17 @@ open class HmppsQueueService(
       ?: findByDlqName(queueName)
         ?.let { hmppsQueue -> PurgeQueueRequest(hmppsQueue.dlqName!!, hmppsQueue.sqsDlqClient!!, hmppsQueue.dlqUrl!!) }
 }
-
 data class RetryDlqRequest(val hmppsQueue: HmppsQueue)
-data class RetryDlqResult(val messagesFoundCount: Int, val messages: List<Message>)
+data class RetryDlqResult(val messagesFoundCount: Int, val messages: List<Message.Builder>)
 
 data class GetDlqRequest(val hmppsQueue: HmppsQueue, val maxMessages: Int)
 data class GetDlqResult(val messagesFoundCount: Int, val messagesReturnedCount: Int, val messages: List<DlqMessage>)
 data class DlqMessage(val body: Map<String, Any>, val messageId: String)
 
-data class PurgeQueueRequest(val queueName: String, val sqsClient: AmazonSQS, val queueUrl: String)
+data class PurgeQueueRequest(val queueName: String, val sqsClient: SqsClient, val queueUrl: String)
 data class PurgeQueueResult(val messagesFoundCount: Int)
 
-internal fun AmazonSQS.countMessagesOnQueue(queueUrl: String): Int =
-  this.getQueueAttributes(queueUrl, listOf("ApproximateNumberOfMessages"))
-    .let { it.attributes["ApproximateNumberOfMessages"]?.toInt() ?: 0 }
+internal fun SqsClient.countMessagesOnQueue(queueUrl: String): Int =
+  this.getQueueAttributes(GetQueueAttributesRequest.builder().queueUrl(queueUrl).attributeNames(QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES).build())
+    .let {
+      it.attributes()[QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES]?.toInt() ?: 0 }

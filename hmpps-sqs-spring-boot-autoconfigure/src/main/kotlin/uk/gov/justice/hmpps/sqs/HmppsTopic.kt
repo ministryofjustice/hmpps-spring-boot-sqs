@@ -1,9 +1,9 @@
 package uk.gov.justice.hmpps.sqs
 
-import com.amazonaws.services.sns.AmazonSNS
+import software.amazon.awssdk.services.sns.SnsClient
 
 class HmppsTopic(
   val id: String,
   val arn: String,
-  val snsClient: AmazonSNS,
+  val snsClient: SnsClient,
 )

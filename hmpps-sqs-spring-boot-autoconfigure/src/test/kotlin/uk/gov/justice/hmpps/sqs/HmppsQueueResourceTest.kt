@@ -1,12 +1,11 @@
 package uk.gov.justice.hmpps.sqs
 
-import com.amazonaws.services.sqs.model.Message
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.check
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.times
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.whenever
+import org.mockito.kotlin.any
+import org.mockito.kotlin.check
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.times
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -21,6 +20,7 @@ import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+import software.amazon.awssdk.services.sqs.model.Message
 
 @WebMvcTest(HmppsQueueResource::class)
 @AutoConfigureMockMvc(addFilters = false)
@@ -40,7 +40,7 @@ class HmppsQueueResourceTest {
       whenever(hmppsQueueService.findByDlqName("some dlq name"))
         .thenReturn(hmppsQueue)
       whenever(hmppsQueueService.retryDlqMessages(any()))
-        .thenReturn(RetryDlqResult(2, listOf(Message())))
+        .thenReturn(RetryDlqResult(2, listOf(Message.builder().body("some body"))))
 
       mockMvc.perform(put("/queue-admin/retry-dlq/some dlq name"))
         .andExpect(status().isOk)
