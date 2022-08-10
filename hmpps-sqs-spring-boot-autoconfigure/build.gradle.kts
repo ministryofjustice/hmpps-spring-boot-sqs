@@ -16,21 +16,23 @@ plugins {
 }
 
 dependencies {
-  implementation("com.amazonaws:amazon-sqs-java-messaging-lib:1.1.0")
-  implementation("com.amazonaws:aws-java-sdk-sns:1.12.267")
+  implementation("com.amazonaws:amazon-sqs-java-messaging-lib:2.0.0")
+  implementation(platform("software.amazon.awssdk:bom:2.17.245"))
+  implementation("software.amazon.awssdk:sns")
   implementation("org.springframework.boot:spring-boot-starter-web")
   implementation("org.springframework.boot:spring-boot-starter-webflux")
   implementation("org.springframework.boot:spring-boot-starter-security")
   implementation("org.springframework.boot:spring-boot-starter-actuator")
-  implementation("com.google.code.gson:gson:2.9.0")
+  implementation("com.google.code.gson:gson:2.9.1")
   implementation("com.microsoft.azure:applicationinsights-core:2.6.4")
   implementation("org.springframework:spring-jms")
+  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.6.4")
 
   testImplementation("org.assertj:assertj-core:3.23.1")
-  testImplementation("org.junit.jupiter:junit-jupiter:5.8.2")
+  testImplementation("org.junit.jupiter:junit-jupiter:5.9.0")
   testImplementation("org.mockito:mockito-junit-jupiter:4.6.1")
-  testImplementation("com.nhaarman.mockitokotlin2:mockito-kotlin:2.2.0")
   testImplementation("org.springframework.boot:spring-boot-starter-test")
+  testImplementation("org.mockito.kotlin:mockito-kotlin:4.0.0")
   testImplementation("org.mockito:mockito-inline:4.6.1")
 }
 
