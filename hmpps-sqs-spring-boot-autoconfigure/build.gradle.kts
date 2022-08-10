@@ -16,8 +16,9 @@ plugins {
 }
 
 dependencies {
-  implementation("com.amazonaws:amazon-sqs-java-messaging-lib:1.1.0")
-  implementation("com.amazonaws:aws-java-sdk-sns:1.12.337")
+  implementation("com.amazonaws:amazon-sqs-java-messaging-lib:2.0.0")
+  implementation(platform("software.amazon.awssdk:bom:2.17.245"))
+  implementation("software.amazon.awssdk:sns")
   implementation("org.springframework.boot:spring-boot-starter-web")
   implementation("org.springframework.boot:spring-boot-starter-webflux")
   implementation("org.springframework.boot:spring-boot-starter-security")
@@ -25,6 +26,7 @@ dependencies {
   implementation("com.google.code.gson:gson:2.10")
   implementation("com.microsoft.azure:applicationinsights-core:3.4.3")
   implementation("org.springframework:spring-jms")
+  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.6.4")
 
   testImplementation("org.assertj:assertj-core:3.23.1")
   testImplementation("org.junit.jupiter:junit-jupiter:5.9.1")

@@ -10,10 +10,10 @@ plugins {
 
 dependencies {
   api(project(":hmpps-sqs-spring-boot-autoconfigure"))
-  api(platform("com.amazonaws:aws-java-sdk-bom:1.12.337"))
-  api("com.amazonaws:amazon-sqs-java-messaging-lib:1.1.0")
-  api("com.amazonaws:aws-java-sdk-sns")
-  api(platform("org.springframework.boot:spring-boot-dependencies:2.7.6"))
+  api(platform("software.amazon.awssdk:bom:2.17.245"))
+  api("com.amazonaws:amazon-sqs-java-messaging-lib:2.0.0")
+  api("software.amazon.awssdk:sns")
+  api(platform("org.springframework.boot:spring-boot-dependencies:2.7.2"))
   api("org.springframework.boot:spring-boot-starter-web")
   api("org.springframework.boot:spring-boot-starter-security")
   api("org.springframework.boot:spring-boot-starter-actuator")

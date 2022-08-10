@@ -29,4 +29,5 @@ dependencies {
   testImplementation("io.jsonwebtoken:jjwt:0.9.1")
   testImplementation("com.github.tomakehurst:wiremock-standalone:2.27.2")
   testImplementation("org.testcontainers:localstack:1.17.5")
+  testImplementation("com.amazonaws:aws-java-sdk-core:1.12.272") // Needed so Localstack has access to the AWS SDK V1 API
 }

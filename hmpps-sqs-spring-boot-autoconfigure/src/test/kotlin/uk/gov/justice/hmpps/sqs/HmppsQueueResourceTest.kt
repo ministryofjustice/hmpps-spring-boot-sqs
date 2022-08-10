@@ -1,6 +1,5 @@
 package uk.gov.justice.hmpps.sqs
 
-import com.amazonaws.services.sqs.model.Message
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -21,6 +20,7 @@ import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+import software.amazon.awssdk.services.sqs.model.Message
 
 @WebMvcTest(HmppsQueueResource::class)
 @AutoConfigureMockMvc(addFilters = false)
@@ -40,7 +40,7 @@ class HmppsQueueResourceTest {
       whenever(hmppsQueueService.findByDlqName("some dlq name"))
         .thenReturn(hmppsQueue)
       whenever(hmppsQueueService.retryDlqMessages(any()))
-        .thenReturn(RetryDlqResult(2, listOf(Message())))
+        .thenReturn(RetryDlqResult(2, listOf(Message.builder().body("some body"))))
 
       mockMvc.perform(put("/queue-admin/retry-dlq/some dlq name"))
         .andExpect(status().isOk)
