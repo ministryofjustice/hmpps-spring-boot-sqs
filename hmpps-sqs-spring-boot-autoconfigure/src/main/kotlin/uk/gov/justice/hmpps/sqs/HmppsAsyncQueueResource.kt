@@ -54,5 +54,7 @@ class HmppsAsyncQueueResource(private val hmppsQueueService: HmppsQueueService, 
   suspend fun getDlqMessages(@PathVariable("dlqName") dlqName: String, @RequestParam("maxMessages", required = false, defaultValue = "100") maxMessages: Int) =
     hmppsQueueService.findByDlqName(dlqName)
       ?.let { hmppsQueue -> hmppsQueueService.getDlqMessages(GetDlqRequest(hmppsQueue, maxMessages)) }
+      ?: hmppsAsyncQueueService.findByDlqName(dlqName)
+        ?.let { hmppsAsyncQueue -> hmppsAsyncQueueService.getDlqMessages(GetAsyncDlqRequest(hmppsAsyncQueue, maxMessages)) }
       ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "$dlqName not found")
 }
