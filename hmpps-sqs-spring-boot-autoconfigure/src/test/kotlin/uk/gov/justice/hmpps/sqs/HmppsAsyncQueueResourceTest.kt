@@ -34,7 +34,6 @@ class HmppsAsyncQueueResourceTest {
   @MockBean
   private lateinit var hmppsAsyncQueueService: HmppsAsyncQueueService
 
-
   @Nested
   inner class RetryDlq {
     @Test
@@ -64,7 +63,8 @@ class HmppsAsyncQueueResourceTest {
       whenever(hmppsAsyncQueueService.findByDlqName("some dlq name"))
         .thenReturn(hmppsAsyncQueue)
       whenever(hmppsAsyncQueueService.retryDlqMessages(any())).doSuspendableAnswer {
-        withContext(Dispatchers.Default) { RetryDlqResult(2, listOf(Message.builder().body("some body"))) } }
+        withContext(Dispatchers.Default) { RetryDlqResult(2, listOf(Message.builder().body("some body"))) }
+      }
 
       webTestClient.put()
         .uri("/queue-admin/retry-dlq/some dlq name")
