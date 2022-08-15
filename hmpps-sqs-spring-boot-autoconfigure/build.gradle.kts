@@ -26,7 +26,8 @@ dependencies {
   implementation("com.google.code.gson:gson:2.9.1")
   implementation("com.microsoft.azure:applicationinsights-core:2.6.4")
   implementation("org.springframework:spring-jms")
-  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.6.4")
+  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
+  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8")
 
   testImplementation("org.assertj:assertj-core:3.23.1")
   testImplementation("org.junit.jupiter:junit-jupiter:5.9.0")
@@ -34,6 +35,8 @@ dependencies {
   testImplementation("org.springframework.boot:spring-boot-starter-test")
   testImplementation("org.mockito.kotlin:mockito-kotlin:4.0.0")
   testImplementation("org.mockito:mockito-inline:4.6.1")
+  testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.6.4")
+  testImplementation("org.jetbrains.kotlin:kotlin-reflect")
 }
 
 publishing {
