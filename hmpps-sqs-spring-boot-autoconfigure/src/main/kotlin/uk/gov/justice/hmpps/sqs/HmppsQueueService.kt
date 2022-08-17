@@ -7,7 +7,6 @@ import org.slf4j.LoggerFactory
 import software.amazon.awssdk.services.sqs.SqsClient
 import software.amazon.awssdk.services.sqs.model.DeleteMessageRequest
 import software.amazon.awssdk.services.sqs.model.GetQueueAttributesRequest
-import software.amazon.awssdk.services.sqs.model.Message
 import software.amazon.awssdk.services.sqs.model.QueueAttributeName
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest
@@ -52,13 +51,15 @@ open class HmppsQueueService(
   private fun HmppsQueue.retryDlqMessages(): RetryDlqResult {
     if (sqsDlqClient == null || dlqUrl == null) return RetryDlqResult(0, mutableListOf())
     val messageCount = sqsDlqClient.countMessagesOnQueue(dlqUrl!!)
-    val messages = mutableListOf<Message.Builder>()
+    val messages = mutableListOf<DlqMessage>()
+    val map: Map<String, Any> = HashMap()
+
     repeat(messageCount) {
       sqsDlqClient.receiveMessage(ReceiveMessageRequest.builder().queueUrl(dlqUrl).maxNumberOfMessages(1).messageAttributeNames("All").build()).messages().firstOrNull()
         ?.also { msg ->
           sqsClient.sendMessage(SendMessageRequest.builder().queueUrl(queueUrl).messageBody(msg.body()).messageAttributes(msg.messageAttributes()).build())
           sqsDlqClient.deleteMessage(DeleteMessageRequest.builder().queueUrl(dlqUrl).receiptHandle(msg.receiptHandle()).build())
-          messages += msg.toBuilder()
+          messages += DlqMessage(messageId = msg.messageId(), body = gson.fromJson(msg.body(), map.javaClass))
         }
     }
     messageCount.takeIf { it > 0 }
@@ -103,8 +104,7 @@ open class HmppsQueueService(
         ?.let { hmppsQueue -> PurgeQueueRequest(hmppsQueue.dlqName!!, hmppsQueue.sqsDlqClient!!, hmppsQueue.dlqUrl!!) }
 }
 data class RetryDlqRequest(val hmppsQueue: HmppsQueue)
-data class RetryDlqResult(val messagesFoundCount: Int, val messages: List<Message.Builder>)
-
+data class RetryDlqResult(val messagesFoundCount: Int, val messages: List<DlqMessage>)
 data class GetDlqRequest(val hmppsQueue: HmppsQueue, val maxMessages: Int)
 data class GetDlqResult(val messagesFoundCount: Int, val messagesReturnedCount: Int, val messages: List<DlqMessage>)
 data class DlqMessage(val body: Map<String, Any>, val messageId: String)

@@ -19,7 +19,6 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.test.web.reactive.server.WebTestClient
-import software.amazon.awssdk.services.sqs.model.Message
 
 @WebMvcTest(HmppsAsyncQueueResource::class)
 @AutoConfigureMockMvc(addFilters = false)
@@ -42,7 +41,7 @@ class HmppsAsyncQueueResourceTest {
       whenever(hmppsQueueService.findByDlqName("some dlq name"))
         .thenReturn(hmppsQueue)
       whenever(hmppsQueueService.retryDlqMessages(any()))
-        .thenReturn(RetryDlqResult(2, listOf(Message.builder().body("some body"))))
+        .thenReturn(RetryDlqResult(2, listOf(DlqMessage(mapOf("key" to "value"), "id"))))
 
       webTestClient.put()
         .uri("/queue-admin/retry-dlq/some dlq name")
@@ -51,6 +50,8 @@ class HmppsAsyncQueueResourceTest {
         .expectBody()
         .jsonPath("$.messagesFoundCount").isEqualTo(2)
         .jsonPath("$.messages.length()").isEqualTo(1)
+        .jsonPath("$.messages[0].messageId").isEqualTo("id")
+        .jsonPath("$.messages[0].body.key").isEqualTo("value")
 
       verify(hmppsQueueService).retryDlqMessages(check { it.hmppsQueue === hmppsQueue })
     }
@@ -63,7 +64,7 @@ class HmppsAsyncQueueResourceTest {
       whenever(hmppsAsyncQueueService.findByDlqName("some dlq name"))
         .thenReturn(hmppsAsyncQueue)
       whenever(hmppsAsyncQueueService.retryDlqMessages(any())).doSuspendableAnswer {
-        withContext(Dispatchers.Default) { RetryDlqResult(2, listOf(Message.builder().body("some body"))) }
+        withContext(Dispatchers.Default) { RetryDlqResult(2, listOf(DlqMessage(mapOf("key" to "value"), "id"))) }
       }
 
       webTestClient.put()
@@ -73,6 +74,8 @@ class HmppsAsyncQueueResourceTest {
         .expectBody()
         .jsonPath("$.messagesFoundCount").isEqualTo(2)
         .jsonPath("$.messages.length()").isEqualTo(1)
+        .jsonPath("$.messages[0].messageId").isEqualTo("id")
+        .jsonPath("$.messages[0].body.key").isEqualTo("value")
 
       verify(hmppsQueueService, never()).retryDlqMessages(any())
       verify(hmppsAsyncQueueService).retryDlqMessages(RetryAsyncDlqRequest(hmppsAsyncQueue))
