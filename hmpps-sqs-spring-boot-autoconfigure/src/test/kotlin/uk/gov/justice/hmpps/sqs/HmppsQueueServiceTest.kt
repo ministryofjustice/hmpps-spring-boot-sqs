@@ -2,7 +2,6 @@ package uk.gov.justice.hmpps.sqs
 
 import com.microsoft.applicationinsights.TelemetryClient
 import org.assertj.core.api.Assertions.assertThat
-import org.assertj.core.groups.Tuple.tuple
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -149,8 +148,20 @@ class HmppsQueueServiceTest {
           .thenReturn(
             ReceiveMessageResponse.builder().messages(
               Message.builder()
-                .body("message-body")
+                .body(
+                  """
+                    {
+                      "Message":{
+                        "id":"event-id",
+                        "contents":"event-contents",
+                        "longProperty":12345678
+                      },
+                      "MessageId":"message-id-1"
+                    }
+                  """.trimIndent()
+                )
                 .receiptHandle("message-receipt-handle")
+                .messageId("external-message-id-1")
                 .messageAttributes(mutableMapOf("some" to stringAttributeOf("attribute")))
                 .build()
             ).build()
@@ -186,7 +197,13 @@ class HmppsQueueServiceTest {
       @Test
       fun `should send message to the main queue`() {
         hmppsQueueService.retryDlqMessages(RetryDlqRequest(HmppsQueue("some queue id", queueSqs, "some queue name", dlqSqs, "some dlq name")))
-        verify(queueSqs).sendMessage(SendMessageRequest.builder().queueUrl("queueUrl").messageBody("message-body").messageAttributes(mutableMapOf("some" to stringAttributeOf("attribute"))).build())
+        verify(queueSqs).sendMessage(
+          check<SendMessageRequest> {
+            assertThat(it.queueUrl()).isEqualTo("queueUrl")
+            assertThat(it.messageBody()).isNotEmpty
+            assertThat(it.messageAttributes()).containsEntry("some", stringAttributeOf("attribute"))
+          }
+        )
       }
 
       @Test
@@ -194,9 +211,8 @@ class HmppsQueueServiceTest {
         val result = hmppsQueueService.retryDlqMessages(RetryDlqRequest(HmppsQueue("some queue id", queueSqs, "some queue name", dlqSqs, "some dlq name")))
 
         assertThat(result.messagesFoundCount).isEqualTo(1)
-        assertThat(result.messages.stream().map { it.build() })
-          .extracting(Message::body, Message::receiptHandle)
-          .containsExactly(tuple("message-body", "message-receipt-handle"))
+        assertThat(result.messages[0].messageId).isEqualTo("external-message-id-1")
+        assertThat(result.messages[0].body["Message"]).isNotNull
       }
 
       @Test
@@ -226,18 +242,42 @@ class HmppsQueueServiceTest {
           .thenReturn(
             ReceiveMessageResponse.builder().messages(
               Message.builder()
-                .body("message-1-body")
+                .body(
+                  """
+                    {
+                      "Message":{
+                        "id":"event-id",
+                        "contents":"event-contents",
+                        "longProperty":12345678
+                      },
+                      "MessageId":"message-id-1"
+                    }
+                  """.trimIndent()
+                )
                 .receiptHandle("message-1-receipt-handle")
-                .messageAttributes((mutableMapOf("attribute-key-1" to stringAttributeOf("attribute-value-1"))))
+                .messageId("external-message-id-1")
+                .messageAttributes(mutableMapOf("some" to stringAttributeOf("attribute-1")))
                 .build()
             ).build()
           )
           .thenReturn(
             ReceiveMessageResponse.builder().messages(
               Message.builder()
-                .body("message-2-body")
+                .body(
+                  """
+                    {
+                      "Message":{
+                        "id":"event-id",
+                        "contents":"event-contents",
+                        "longProperty":12345678
+                      },
+                      "MessageId":"message-id-2"
+                    }
+                  """.trimIndent()
+                )
                 .receiptHandle("message-2-receipt-handle")
-                .messageAttributes((mutableMapOf("attribute-key-2" to stringAttributeOf("attribute-value-2"))))
+                .messageId("external-message-id-2")
+                .messageAttributes(mutableMapOf("some" to stringAttributeOf("attribute-2")))
                 .build()
             ).build()
           )
@@ -272,8 +312,15 @@ class HmppsQueueServiceTest {
       fun `should send message to the main queue`() {
         hmppsQueueService.retryDlqMessages(RetryDlqRequest(HmppsQueue("some queue id", queueSqs, "some queue name", dlqSqs, "some dlq name")))
 
-        verify(queueSqs).sendMessage(SendMessageRequest.builder().queueUrl("queueUrl").messageBody("message-1-body").messageAttributes(mutableMapOf("attribute-key-1" to stringAttributeOf("attribute-value-1"))).build())
-        verify(queueSqs).sendMessage(SendMessageRequest.builder().queueUrl("queueUrl").messageBody("message-2-body").messageAttributes(mutableMapOf("attribute-key-2" to stringAttributeOf("attribute-value-2"))).build())
+        val captor = argumentCaptor<SendMessageRequest>()
+        verify(queueSqs, times(2)).sendMessage(captor.capture())
+
+        assertThat(captor.firstValue.queueUrl()).isEqualTo("queueUrl")
+        assertThat(captor.firstValue.messageBody()).contains("message-id-1")
+        assertThat((captor.firstValue.messageAttributes()["some"] as MessageAttributeValue).stringValue()).isEqualTo("attribute-1")
+        assertThat(captor.secondValue.queueUrl()).isEqualTo("queueUrl")
+        assertThat(captor.secondValue.messageBody()).contains("message-id-2")
+        assertThat((captor.secondValue.messageAttributes()["some"] as MessageAttributeValue).stringValue()).isEqualTo("attribute-2")
       }
 
       @Test
@@ -281,9 +328,10 @@ class HmppsQueueServiceTest {
         val result = hmppsQueueService.retryDlqMessages(RetryDlqRequest(HmppsQueue("some queue id", queueSqs, "some queue name", dlqSqs, "some dlq name")))
 
         assertThat(result.messagesFoundCount).isEqualTo(2)
-        assertThat(result.messages.stream().map { it.build() })
-          .extracting(Message::body, Message::receiptHandle)
-          .containsExactly(tuple("message-1-body", "message-1-receipt-handle"), tuple("message-2-body", "message-2-receipt-handle"))
+        assertThat(result.messages[0].messageId).isEqualTo("external-message-id-1")
+        assertThat(result.messages[0].body["Message"]).isNotNull
+        assertThat(result.messages[1].messageId).isEqualTo("external-message-id-2")
+        assertThat(result.messages[1].body["Message"]).isNotNull
       }
     }
 
@@ -294,12 +342,27 @@ class HmppsQueueServiceTest {
         whenever(dlqSqs.getQueueAttributes(any<GetQueueAttributesRequest>())).thenReturn(
           GetQueueAttributesResponse.builder().attributes(mapOf(QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES to "2")).build()
         )
-        whenever(dlqSqs.receiveMessage(any<ReceiveMessageRequest>()))
-          .thenReturn(
-            ReceiveMessageResponse.builder().messages(
-              Message.builder().body("message-1-body").receiptHandle("message-1-receipt-handle").messageAttributes(mutableMapOf("some" to stringAttributeOf("attribute"))).build()
-            ).build()
-          )
+        whenever(dlqSqs.receiveMessage(any<ReceiveMessageRequest>())).thenReturn(
+          ReceiveMessageResponse.builder().messages(
+            Message.builder()
+              .body(
+                """
+                    {
+                      "Message":{
+                        "id":"event-id",
+                        "contents":"event-contents",
+                        "longProperty":12345678
+                      },
+                      "MessageId":"message-id-1"
+                    }
+                """.trimIndent()
+              )
+              .receiptHandle("message-1-receipt-handle")
+              .messageId("external-message-id-1")
+              .messageAttributes(mutableMapOf("some" to stringAttributeOf("attribute-1")))
+              .build()
+          ).build()
+        )
           .thenReturn(ReceiveMessageResponse.builder().build())
 
         hmppsQueueService = HmppsQueueService(telemetryClient, hmppsTopicFactory, hmppsQueueFactory, hmppsSqsProperties)
@@ -333,7 +396,12 @@ class HmppsQueueServiceTest {
       fun `should send message to the main queue`() {
         hmppsQueueService.retryDlqMessages(RetryDlqRequest(HmppsQueue("some queue id", queueSqs, "some queue name", dlqSqs, "some dlq name")))
 
-        verify(queueSqs).sendMessage(SendMessageRequest.builder().queueUrl("queueUrl").messageBody("message-1-body").messageAttributes(mutableMapOf("some" to stringAttributeOf("attribute"))).build())
+        val captor = argumentCaptor<SendMessageRequest>()
+        verify(queueSqs).sendMessage(captor.capture())
+
+        assertThat(captor.firstValue.queueUrl()).isEqualTo("queueUrl")
+        assertThat(captor.firstValue.messageBody()).contains("message-id-1")
+        assertThat((captor.firstValue.messageAttributes()["some"] as MessageAttributeValue).stringValue()).isEqualTo("attribute-1")
       }
 
       @Test
@@ -341,9 +409,8 @@ class HmppsQueueServiceTest {
         val result = hmppsQueueService.retryDlqMessages(RetryDlqRequest(HmppsQueue("some queue id", queueSqs, "some queue name", dlqSqs, "some dlq name")))
 
         assertThat(result.messagesFoundCount).isEqualTo(2)
-        assertThat(result.messages.stream().map { it.build() })
-          .extracting(Message::body, Message::receiptHandle)
-          .containsExactly(tuple("message-1-body", "message-1-receipt-handle"))
+        assertThat(result.messages[0].messageId).isEqualTo("external-message-id-1")
+        assertThat(result.messages[0].body["Message"]).isNotNull
       }
 
       @Test
@@ -386,13 +453,13 @@ class HmppsQueueServiceTest {
           ReceiveMessageResponse.builder().messages(
             Message.builder().body(
               """{
-                                            "Message":{
-                                                "id":"event-id",
-                                                "contents":"event-contents",
-                                                "longProperty":12345678
-                                            },
-                                            "MessageId":"message-id-1"
-                                          }"""
+                    "Message":{
+                        "id":"event-id",
+                        "contents":"event-contents",
+                        "longProperty":12345678
+                    },
+                    "MessageId":"message-id-1"
+                }"""
             )
               .receiptHandle("message-1-receipt-handle")
               .messageId("external-message-id-1")
