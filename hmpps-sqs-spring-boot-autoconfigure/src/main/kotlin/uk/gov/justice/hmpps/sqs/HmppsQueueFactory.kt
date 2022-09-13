@@ -102,7 +102,7 @@ class HmppsQueueFactory(
             CreateQueueRequest(queueName).withAttributes(
               mapOf(
                 QueueAttributeName.RedrivePolicy.toString() to
-                  """{"deadLetterTargetArn":"$queueArn","maxReceiveCount":"0"}"""
+                  """{"deadLetterTargetArn":"$queueArn","maxReceiveCount":"1"}"""
               )
             )
           )
