@@ -214,7 +214,7 @@ class HmppsQueueFactoryTest {
     fun `should create a queue with a redrive policy`() {
       verify(sqsClient).createQueue(
         check<CreateQueueRequest> {
-          assertThat(it.attributes).containsEntry("RedrivePolicy", """{"deadLetterTargetArn":"some dlq arn","maxReceiveCount":"0"}""")
+          assertThat(it.attributes).containsEntry("RedrivePolicy", """{"deadLetterTargetArn":"some dlq arn","maxReceiveCount":"1"}""")
         }
       )
     }
