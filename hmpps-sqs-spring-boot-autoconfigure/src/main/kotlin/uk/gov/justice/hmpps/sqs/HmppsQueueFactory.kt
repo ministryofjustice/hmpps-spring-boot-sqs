@@ -81,7 +81,7 @@ class HmppsQueueFactory(
         "aws" -> amazonSqsFactory.awsSqsClient(queueId, queueConfig.queueName, queueConfig.queueAccessKeyId, queueConfig.queueSecretAccessKey, region, queueConfig.asyncQueueClient)
         "localstack" ->
           amazonSqsFactory.localStackSqsClient(queueId, queueConfig.queueName, localstackUrl, region, queueConfig.asyncQueueClient)
-            .also { sqsClient -> createLocalStackQueue(sqsClient, sqsDlqClient, queueConfig.queueName, queueConfig.dlqName) }
+            .also { sqsClient -> createLocalStackQueue(sqsClient, sqsDlqClient, queueConfig.queueName, queueConfig.dlqName, queueConfig.dlqMaxReceiveCount) }
         else -> throw IllegalStateException("Unrecognised HMPPS SQS provider $provider")
       }
     }
@@ -91,6 +91,7 @@ class HmppsQueueFactory(
     sqsDlqClient: AmazonSQS?,
     queueName: String,
     dlqName: String,
+    maxReceiveCount: Int,
   ) {
     if (dlqName.isEmpty() || sqsDlqClient == null) {
       sqsClient.createQueue(CreateQueueRequest(queueName))
@@ -102,7 +103,7 @@ class HmppsQueueFactory(
             CreateQueueRequest(queueName).withAttributes(
               mapOf(
                 QueueAttributeName.RedrivePolicy.toString() to
-                  """{"deadLetterTargetArn":"$queueArn","maxReceiveCount":"1"}"""
+                  """{"deadLetterTargetArn":"$queueArn","maxReceiveCount":"$maxReceiveCount"}"""
               )
             )
           )

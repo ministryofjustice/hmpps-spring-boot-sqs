@@ -12,6 +12,8 @@ The library relies on [Spring Boot Auto-configuration](https://docs.spring.io/sp
 
 ## Release Notes
 
+##### [1.1.10](release-notes/1.1.10.md)
+##### [1.1.9](release-notes/1.1.9.md)
 ##### [1.1.8](release-notes/1.1.8.md)
 ##### [1.1.7](release-notes/1.1.7.md)
 ##### [1.1.6](release-notes/1.1.6.md)
@@ -101,6 +103,7 @@ Each queue declared in the `queues` map is defined in the `QueueConfig` property
 | dlqAccessKeyId       |         | Only used for `provider=aws`. The AWS access key ID of the DLQ, should be derived from an environment variable of format `HMPPS_SQS_QUEUES_<queueId>_DLQ_ACCESS_KEY_ID`.                                                             |
 | dlqSecretAccessKey   |         | Only used for `provider=aws`. The AWS secret access key of the DLQ, should be derived from an environment variable of format `HMPPS_SQS_QUEUES_<queueId>_DLQ_SECRET_ACCESS_KEY`.                                                     |
 | asyncDlqClient       | `false` | If true then the `AmazonSQS` bean created will be an `AmazonSQSAsync` instance.                                                                                                                                                      |
+| dlqMaxReceiveCount   | 5       | Only used for `provider=localstack`. Change the number of retries automatically provided by Localstack on DLQs. e.g. It can be useful to change this to 1 when testing DLQ retry functionality.                                      |
 
 Each topic declared in the `topics` map is defined in the `TopicConfig` property class
 
