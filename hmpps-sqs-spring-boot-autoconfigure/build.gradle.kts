@@ -15,6 +15,9 @@ plugins {
   id("org.springframework.boot") version "2.7.2"
 }
 
+// Pinned to counter various CVEs with previous versions. Please remove this once Spring pulls in at least this version: https://docs.spring.io/spring-boot/docs/current/reference/html/dependency-versions.html
+ext["snakeyaml.version"] = "1.33"
+
 dependencies {
   implementation("com.amazonaws:amazon-sqs-java-messaging-lib:1.1.0")
   implementation("com.amazonaws:aws-java-sdk-sns:1.12.267")
