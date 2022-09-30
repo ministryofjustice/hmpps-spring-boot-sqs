@@ -15,6 +15,8 @@ plugins {
   id("org.springframework.boot") version "2.7.2"
 }
 
+ext["snakeyaml.version"] = "1.33"
+
 dependencies {
   implementation("com.amazonaws:amazon-sqs-java-messaging-lib:1.1.0")
   implementation("com.amazonaws:aws-java-sdk-sns:1.12.267")
