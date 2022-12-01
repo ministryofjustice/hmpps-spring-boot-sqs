@@ -82,7 +82,7 @@ class HmppsQueueFactory(
     return when (findProvider(hmppsSqsProperties.provider)) {
       Provider.AWS -> sqsClientFactory.awsSqsClient(queueConfig.queueAccessKeyId, queueConfig.queueSecretAccessKey, region)
       Provider.LOCALSTACK -> sqsClientFactory.localstackSqsClient(hmppsSqsProperties.localstackUrl, region)
-        .also { sqsClient -> createLocalStackQueue(sqsClient, sqsDlqClient, queueConfig.queueName, queueConfig.dlqName) }
+        .also { sqsClient -> createLocalStackQueue(sqsClient, sqsDlqClient, queueConfig.queueName, queueConfig.dlqName, queueConfig.dlqMaxReceiveCount) }
     }
   }
 
@@ -99,7 +99,7 @@ class HmppsQueueFactory(
       val dlqUrl = sqsDlqClient.getQueueUrl(GetQueueUrlRequest.builder().queueName(dlqName).build()).queueUrl()
       val dlqArn = sqsDlqClient.getQueueAttributes(GetQueueAttributesRequest.builder().queueUrl(dlqUrl).attributeNames(QueueAttributeName.QUEUE_ARN).build()).attributes()[QueueAttributeName.QUEUE_ARN]
       sqsClient.createQueue(
-        CreateQueueRequest.builder().queueName(queueName).attributes(mapOf(QueueAttributeName.REDRIVE_POLICY to """{"deadLetterTargetArn":"$dlqArn","maxReceiveCount":"5"}""")).build()
+        CreateQueueRequest.builder().queueName(queueName).attributes(mapOf(QueueAttributeName.REDRIVE_POLICY to """{"deadLetterTargetArn":"$dlqArn","maxReceiveCount":"$maxReceiveCount"}""")).build()
       )
     }
   }

@@ -4,20 +4,20 @@ plugins {
   kotlin("jvm") version "1.7.22"
   id("maven-publish")
   id("signing")
-  id("com.github.ben-manes.versions") version "0.43.0"
+  id("com.github.ben-manes.versions") version "0.44.0"
   id("se.patrikerdes.use-latest-versions") version "0.2.18"
 }
 
 dependencies {
   api(project(":hmpps-sqs-spring-boot-autoconfigure"))
-  api(platform("software.amazon.awssdk:bom:2.17.245"))
-  api("com.amazonaws:amazon-sqs-java-messaging-lib:2.0.0")
+  api(platform("software.amazon.awssdk:bom:2.18.28"))
+  api("com.amazonaws:amazon-sqs-java-messaging-lib:2.0.1")
   api("software.amazon.awssdk:sns")
-  api(platform("org.springframework.boot:spring-boot-dependencies:2.7.2"))
+  api(platform("org.springframework.boot:spring-boot-dependencies:2.7.6"))
   api("org.springframework.boot:spring-boot-starter-web")
   api("org.springframework.boot:spring-boot-starter-security")
   api("org.springframework.boot:spring-boot-starter-actuator")
-  api("com.microsoft.azure:applicationinsights-core:3.4.3")
+  api("com.microsoft.azure:applicationinsights-core:3.4.4")
   api("org.springframework:spring-jms")
 }
 
