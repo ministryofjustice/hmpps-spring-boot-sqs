@@ -24,6 +24,7 @@ data class HmppsSqsProperties(
     val dlqAccessKeyId: String = "",
     val dlqSecretAccessKey: String = "",
     val asyncDlqClient: Boolean = false,
+    val dlqMaxReceiveCount: Int = 5,
   )
 
   data class TopicConfig(
