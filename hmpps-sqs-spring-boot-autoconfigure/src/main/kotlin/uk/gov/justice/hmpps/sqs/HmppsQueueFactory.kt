@@ -7,12 +7,12 @@ import org.slf4j.LoggerFactory
 import org.springframework.boot.actuate.health.HealthIndicator
 import org.springframework.context.ConfigurableApplicationContext
 import org.springframework.jms.config.DefaultJmsListenerContainerFactory
-import software.amazon.awssdk.services.sns.model.SubscribeRequest
 import software.amazon.awssdk.services.sqs.SqsClient
 import software.amazon.awssdk.services.sqs.model.CreateQueueRequest
 import software.amazon.awssdk.services.sqs.model.GetQueueAttributesRequest
 import software.amazon.awssdk.services.sqs.model.GetQueueUrlRequest
 import software.amazon.awssdk.services.sqs.model.QueueAttributeName
+import software.amazon.awssdk.services.sns.model.SubscribeRequest
 import uk.gov.justice.hmpps.sqs.HmppsSqsProperties.QueueConfig
 import javax.jms.Session
 
@@ -82,7 +82,7 @@ class HmppsQueueFactory(
     return when (findProvider(hmppsSqsProperties.provider)) {
       Provider.AWS -> sqsClientFactory.awsSqsClient(queueConfig.queueAccessKeyId, queueConfig.queueSecretAccessKey, region)
       Provider.LOCALSTACK -> sqsClientFactory.localstackSqsClient(hmppsSqsProperties.localstackUrl, region)
-        .also { sqsClient -> createLocalStackQueue(sqsClient, sqsDlqClient, queueConfig.queueName, queueConfig.dlqName) }
+        .also { sqsClient -> createLocalStackQueue(sqsClient, sqsDlqClient, queueConfig.queueName, queueConfig.dlqName, queueConfig.dlqMaxReceiveCount) }
     }
   }
 
@@ -91,6 +91,7 @@ class HmppsQueueFactory(
     sqsDlqClient: SqsClient?,
     queueName: String,
     dlqName: String,
+    maxReceiveCount: Int,
   ) {
     if (dlqName.isEmpty() || sqsDlqClient == null) {
       sqsClient.createQueue(CreateQueueRequest.builder().queueName(queueName).build())
@@ -98,7 +99,7 @@ class HmppsQueueFactory(
       val dlqUrl = sqsDlqClient.getQueueUrl(GetQueueUrlRequest.builder().queueName(dlqName).build()).queueUrl()
       val dlqArn = sqsDlqClient.getQueueAttributes(GetQueueAttributesRequest.builder().queueUrl(dlqUrl).attributeNames(QueueAttributeName.QUEUE_ARN).build()).attributes()[QueueAttributeName.QUEUE_ARN]
       sqsClient.createQueue(
-        CreateQueueRequest.builder().queueName(queueName).attributes(mapOf(QueueAttributeName.REDRIVE_POLICY to """{"deadLetterTargetArn":"$dlqArn","maxReceiveCount":"5"}""")).build()
+        CreateQueueRequest.builder().queueName(queueName).attributes(mapOf(QueueAttributeName.REDRIVE_POLICY to """{"deadLetterTargetArn":"$dlqArn","maxReceiveCount":"$maxReceiveCount"}""")).build()
       )
     }
   }
