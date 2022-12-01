@@ -217,13 +217,17 @@ class HmppsQueueFactoryTest {
 
     @Test
     fun `should use configurable maxReceiveCount on RedrivePolicy`() {
+      whenever(sqsFactory.localstackSqsClient(anyString(), anyString()))
+        .thenReturn(sqsDlqClient)
+        .thenReturn(sqsClient)
+
       val someQueueConfig = QueueConfig(queueName = "some queue name", dlqName = "some dlq name", dlqMaxReceiveCount = 2)
       val hmppsSqsProperties = HmppsSqsProperties(provider = "localstack", queues = mapOf("somequeueid" to someQueueConfig))
       hmppsQueues = hmppsQueueFactory.createHmppsQueues(hmppsSqsProperties)
 
       verify(sqsClient).createQueue(
         check<CreateQueueRequest> {
-          assertThat(it.attributes).containsEntry("RedrivePolicy", """{"deadLetterTargetArn":"some dlq arn","maxReceiveCount":"2"}""")
+          assertThat(it.attributes()).containsEntry(QueueAttributeName.REDRIVE_POLICY, """{"deadLetterTargetArn":"some dlq arn","maxReceiveCount":"2"}""")
         }
       )
     }
