@@ -6,11 +6,11 @@ import com.amazonaws.services.sqs.model.GetQueueAttributesResult
 import com.amazonaws.services.sqs.model.GetQueueUrlResult
 import com.amazonaws.services.sqs.model.QueueAttributeName
 import com.amazonaws.services.sqs.model.QueueDoesNotExistException
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.whenever
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.ArgumentMatchers.anyString
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
 import org.springframework.boot.actuate.health.Status
 
 class HmppsQueueHealthTest {
