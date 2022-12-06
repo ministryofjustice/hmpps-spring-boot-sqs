@@ -2,8 +2,8 @@ import com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-  kotlin("jvm") version "1.7.20"
-  kotlin("plugin.spring") version "1.7.20"
+  kotlin("jvm") version "1.7.22"
+  kotlin("plugin.spring") version "1.7.22"
   id("maven-publish")
   id("signing")
   id("com.adarshr.test-logger") version "3.2.0"
@@ -12,13 +12,8 @@ plugins {
   id("io.spring.dependency-management") version "1.1.0"
   id("org.jlleitschuh.gradle.ktlint") version "11.0.0"
   id("org.owasp.dependencycheck") version "7.3.0"
-  id("org.springframework.boot") version "2.7.5"
+  id("org.springframework.boot") version "2.7.6"
 }
-
-// Pinned to counter various CVEs with previous versions. Please remove this once Spring pulls in at least this version: https://docs.spring.io/spring-boot/docs/current/reference/html/dependency-versions.html
-ext["snakeyaml.version"] = "1.33"
-// Pinned to counter various CVEs. Please remove once Spring Boot brings in at least this version.
-ext["spring-security.version"] = "5.7.5"
 
 dependencies {
   implementation("com.amazonaws:amazon-sqs-java-messaging-lib:1.1.0")
