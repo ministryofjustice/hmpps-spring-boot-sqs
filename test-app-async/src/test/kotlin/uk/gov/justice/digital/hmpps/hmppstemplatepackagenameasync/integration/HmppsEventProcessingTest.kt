@@ -2,12 +2,12 @@ package uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.integration
 
 import com.amazonaws.services.sns.model.MessageAttributeValue
 import com.amazonaws.services.sns.model.PublishRequest
-import com.nhaarman.mockitokotlin2.mockingDetails
 import org.assertj.core.api.Assertions.assertThat
 import org.awaitility.kotlin.await
 import org.awaitility.kotlin.matches
 import org.awaitility.kotlin.untilCallTo
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.mockingDetails
 import uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.service.HmppsEvent
 import uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.service.Message
 
