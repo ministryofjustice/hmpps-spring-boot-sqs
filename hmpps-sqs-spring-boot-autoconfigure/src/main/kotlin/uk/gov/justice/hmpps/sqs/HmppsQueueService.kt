@@ -91,14 +91,14 @@ open class HmppsQueueService(
   open fun purgeQueue(request: PurgeQueueRequest): PurgeQueueResult =
     with(request) {
       val messageCount = sqsClient.countMessagesOnQueue(queueUrl)
-        return if (messageCount > 0) {
-          sqsClient.purgeQueue(AwsPurgeQueueRequest.builder().queueUrl(queueUrl).build())
-          log.info("For queue $queueName attempted to purge $messageCount messages from queue")
-          telemetryClient?.trackEvent("PurgeQueue", mapOf("queue-name" to queueName, "messages-found" to "$messageCount"), null)
-          PurgeQueueResult(messageCount)
-        } else {
-          PurgeQueueResult(0)
-        }
+      return if (messageCount > 0) {
+        sqsClient.purgeQueue(AwsPurgeQueueRequest.builder().queueUrl(queueUrl).build())
+        log.info("For queue $queueName attempted to purge $messageCount messages from queue")
+        telemetryClient?.trackEvent("PurgeQueue", mapOf("queue-name" to queueName, "messages-found" to "$messageCount"), null)
+        PurgeQueueResult(messageCount)
+      } else {
+        PurgeQueueResult(0)
+      }
     }
 
   open fun findQueueToPurge(queueName: String): PurgeQueueRequest? =
