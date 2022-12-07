@@ -11,7 +11,6 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import org.mockito.kotlin.verify
 import org.springframework.http.MediaType
-import software.amazon.awssdk.services.sqs.model.SendMessageRequest
 import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.service.EventType
 import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.service.HmppsEvent
 import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.service.Message
@@ -68,8 +67,8 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
       val event2 = HmppsEvent("id2", "test.type", "message4")
       val message1 = Message(gsonString(event1), "message-id1", MessageAttributes(EventType("test.type", "String")))
       val message2 = Message(gsonString(event2), "message-id2", MessageAttributes(EventType("test.type", "String")))
-      inboundSqsDlqClient.sendMessage(SendMessageRequest.builder().queueUrl(inboundDlqUrl).messageBody(gsonString(message1)).build())
-      inboundSqsDlqClient.sendMessage(SendMessageRequest.builder().queueUrl(inboundDlqUrl).messageBody(gsonString(message2)).build())
+      inboundSqsDlqClient.sendMessage(inboundDlqUrl, gsonString(message1))
+      inboundSqsDlqClient.sendMessage(inboundDlqUrl, gsonString(message2))
       await untilCallTo { inboundSqsDlqClient.countMessagesOnQueue(inboundDlqUrl) } matches { it == 2 }
 
       webTestClient.put()
@@ -92,8 +91,8 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
       val event4 = HmppsEvent("id4", "test.type", "message4")
       val message3 = Message(gsonString(event3), "message-id3", MessageAttributes(EventType("test.type", "String")))
       val message4 = Message(gsonString(event4), "message-id4", MessageAttributes(EventType("test.type", "String")))
-      outboundSqsDlqClientSpy.sendMessage(SendMessageRequest.builder().queueUrl(outboundDlqUrl).messageBody(gsonString(message3)).build())
-      outboundSqsDlqClientSpy.sendMessage(SendMessageRequest.builder().queueUrl(outboundDlqUrl).messageBody(gsonString(message4)).build())
+      outboundSqsDlqClientSpy.sendMessage(outboundDlqUrl, gsonString(message3))
+      outboundSqsDlqClientSpy.sendMessage(outboundDlqUrl, gsonString(message4))
       await untilCallTo { outboundSqsDlqClientSpy.countMessagesOnQueue(outboundDlqUrl) } matches { it == 2 }
 
       webTestClient.put()
@@ -119,8 +118,8 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
       val event6 = HmppsEvent("id6", "test.type", "message6")
       val message5 = Message(gsonString(event5), "message-id5", MessageAttributes(EventType("test.type", "String")))
       val message6 = Message(gsonString(event6), "message-id6", MessageAttributes(EventType("test.type", "String")))
-      inboundSqsDlqClient.sendMessage(SendMessageRequest.builder().queueUrl(inboundDlqUrl).messageBody(gsonString(message5)).build())
-      outboundSqsDlqClientSpy.sendMessage(SendMessageRequest.builder().queueUrl(outboundDlqUrl).messageBody(gsonString(message6)).build())
+      inboundSqsDlqClient.sendMessage(inboundDlqUrl, gsonString(message5))
+      outboundSqsDlqClientSpy.sendMessage(outboundDlqUrl, gsonString(message6))
       await untilCallTo { inboundSqsDlqClient.countMessagesOnQueue(inboundDlqUrl) } matches { it == 1 }
       await untilCallTo { outboundSqsDlqClientSpy.countMessagesOnQueue(outboundDlqUrl) } matches { it == 1 }
 
@@ -145,8 +144,8 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
   inner class PurgeQueue {
     @Test
     fun `should purge the inbound dlq`() {
-      inboundSqsDlqClient.sendMessage(SendMessageRequest.builder().queueUrl(inboundDlqUrl).messageBody(gsonString(HmppsEvent("id1", "test.type", "message1"))).build())
-      inboundSqsDlqClient.sendMessage(SendMessageRequest.builder().queueUrl(inboundDlqUrl).messageBody(gsonString(HmppsEvent("id2", "test.type", "message2"))).build())
+      inboundSqsDlqClient.sendMessage(inboundDlqUrl, gsonString(HmppsEvent("id1", "test.type", "message1")))
+      inboundSqsDlqClient.sendMessage(inboundDlqUrl, gsonString(HmppsEvent("id2", "test.type", "message2")))
       await untilCallTo { inboundSqsDlqClient.countMessagesOnQueue(inboundDlqUrl) } matches { it == 2 }
 
       webTestClient.put()
@@ -161,8 +160,8 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
 
     @Test
     fun `should purge the outbound dlq`() {
-      outboundSqsDlqClientSpy.sendMessage(SendMessageRequest.builder().queueUrl(outboundDlqUrl).messageBody(gsonString(HmppsEvent("id3", "test.type", "message3"))).build())
-      outboundSqsDlqClientSpy.sendMessage(SendMessageRequest.builder().queueUrl(outboundDlqUrl).messageBody(gsonString(HmppsEvent("id4", "test.type", "message4"))).build())
+      outboundSqsDlqClientSpy.sendMessage(outboundDlqUrl, gsonString(HmppsEvent("id3", "test.type", "message3")))
+      outboundSqsDlqClientSpy.sendMessage(outboundDlqUrl, gsonString(HmppsEvent("id4", "test.type", "message4")))
       await untilCallTo { outboundSqsDlqClientSpy.countMessagesOnQueue(outboundDlqUrl) } matches { it == 2 }
 
       webTestClient.put()
@@ -211,7 +210,7 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
     @Test
     fun `should get all messages from the specified dlq`() {
       for (i in 1..3) {
-        inboundSqsDlqClient.sendMessage(SendMessageRequest.builder().queueUrl(inboundDlqUrl).messageBody(gsonString(testMessage("id-$i"))).build())
+        inboundSqsDlqClient.sendMessage(inboundDlqUrl, gsonString(testMessage("id-$i")))
       }
       await untilCallTo { inboundSqsDlqClient.countMessagesOnQueue(inboundDlqUrl) } matches { it == 3 }
 
@@ -235,7 +234,7 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
     @Test
     fun `should be able to specify the max number of returned messages`() {
       for (i in 1..20) {
-        inboundSqsDlqClient.sendMessage(SendMessageRequest.builder().queueUrl(inboundDlqUrl).messageBody(gsonString(testMessage("id-$i"))).build())
+        inboundSqsDlqClient.sendMessage(inboundDlqUrl, gsonString(testMessage("id-$i")))
       }
       await untilCallTo { inboundSqsDlqClient.countMessagesOnQueue(inboundDlqUrl) } matches { it == 20 }
 

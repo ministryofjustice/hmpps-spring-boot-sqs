@@ -1,17 +1,17 @@
 package uk.gov.justice.digital.hmpps.hmppstemplatepackagename.integration.health
 
+import com.amazonaws.auth.AWSStaticCredentialsProvider
+import com.amazonaws.auth.BasicAWSCredentials
+import com.amazonaws.client.builder.AwsClientBuilder
+import com.amazonaws.services.sns.AmazonSNSClientBuilder
 import org.junit.jupiter.api.Test
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.context.annotation.Bean
-import software.amazon.awssdk.auth.credentials.AnonymousCredentialsProvider
-import software.amazon.awssdk.regions.Region
-import software.amazon.awssdk.services.sns.SnsClient
 import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.integration.mocks.OAuthExtension.Companion.oAuthApi
 import uk.gov.justice.hmpps.sqs.HmppsSqsProperties
 import uk.gov.justice.hmpps.sqs.HmppsTopic
 import uk.gov.justice.hmpps.sqs.HmppsTopicHealth
-import java.net.URI
 
 class TopicHealthNegativeTest : IntegrationTestBase() {
 
@@ -19,10 +19,9 @@ class TopicHealthNegativeTest : IntegrationTestBase() {
   class TestConfig {
     @Bean
     fun badTopicHealth(hmppsConfigProperties: HmppsSqsProperties): HmppsTopicHealth {
-      val snsClient = SnsClient.builder()
-        .endpointOverride(URI.create(hmppsConfigProperties.localstackUrl))
-        .region(Region.of(hmppsConfigProperties.region))
-        .credentialsProvider(AnonymousCredentialsProvider.create())
+      val snsClient = AmazonSNSClientBuilder.standard()
+        .withEndpointConfiguration(AwsClientBuilder.EndpointConfiguration(hmppsConfigProperties.localstackUrl, hmppsConfigProperties.region))
+        .withCredentials(AWSStaticCredentialsProvider(BasicAWSCredentials("any", "any")))
         .build()
       return HmppsTopicHealth(HmppsTopic("missingTopicId", "missingTopicArn", snsClient))
     }

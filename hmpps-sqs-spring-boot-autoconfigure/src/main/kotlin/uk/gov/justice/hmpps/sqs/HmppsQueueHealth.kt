@@ -1,13 +1,16 @@
 package uk.gov.justice.hmpps.sqs
 
+import com.amazonaws.services.sqs.model.GetQueueAttributesRequest
+import com.amazonaws.services.sqs.model.GetQueueAttributesResult
+import com.amazonaws.services.sqs.model.QueueAttributeName.All
+import com.amazonaws.services.sqs.model.QueueAttributeName.ApproximateNumberOfMessages
+import com.amazonaws.services.sqs.model.QueueAttributeName.ApproximateNumberOfMessagesNotVisible
+import com.amazonaws.services.sqs.model.QueueAttributeName.RedrivePolicy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.boot.actuate.health.Health
 import org.springframework.boot.actuate.health.Health.Builder
 import org.springframework.boot.actuate.health.HealthIndicator
-import software.amazon.awssdk.services.sqs.model.GetQueueAttributesRequest
-import software.amazon.awssdk.services.sqs.model.GetQueueAttributesResponse
-import software.amazon.awssdk.services.sqs.model.QueueAttributeName
 import kotlin.Result.Companion.failure
 import kotlin.Result.Companion.success
 
@@ -29,12 +32,12 @@ class HmppsQueueHealth(private val hmppsQueue: HmppsQueue) : HealthIndicator {
     val results = mutableListOf<Result<HealthDetail>>()
     results += success(HealthDetail("queueName" to hmppsQueue.queueName))
 
-    getQueueAttributes().map { attributesResponse ->
-      results += success(HealthDetail("messagesOnQueue" to """${attributesResponse.attributes()[QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES]}"""))
-      results += success(HealthDetail("messagesInFlight" to """${attributesResponse.attributes()[QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES_NOT_VISIBLE]}"""))
+    getQueueAttributes().map { attributesResult ->
+      results += success(HealthDetail("messagesOnQueue" to """${attributesResult.attributes[ApproximateNumberOfMessages.toString()]}"""))
+      results += success(HealthDetail("messagesInFlight" to """${attributesResult.attributes[ApproximateNumberOfMessagesNotVisible.toString()]}"""))
 
       hmppsQueue.dlqName?.let {
-        attributesResponse.attributes()[QueueAttributeName.REDRIVE_POLICY] ?: run { results += failure(MissingRedrivePolicyException(hmppsQueue.id)) }
+        attributesResult.attributes["$RedrivePolicy"] ?: run { results += failure(MissingRedrivePolicyException(hmppsQueue.id)) }
       }
     }.onFailure { throwable -> results += failure(throwable) }
 
@@ -50,7 +53,7 @@ class HmppsQueueHealth(private val hmppsQueue: HmppsQueue) : HealthIndicator {
           results += success(
             HealthDetail(
               "messagesOnDlq" to
-                """${attributesResult.attributes()[QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES]}"""
+                """${attributesResult.attributes[ApproximateNumberOfMessages.toString()]}"""
             )
           )
         }.onFailure { throwable -> results += failure(throwable) }
@@ -87,15 +90,18 @@ class HmppsQueueHealth(private val hmppsQueue: HmppsQueue) : HealthIndicator {
           .also { log.error("Queue health for queueId ${hmppsQueue.id} failed due to exception", throwable) }
       }
 
-  private fun getQueueAttributes(): Result<GetQueueAttributesResponse> {
+  private fun getQueueAttributes(): Result<GetQueueAttributesResult> {
     return runCatching {
-      hmppsQueue.sqsClient.getQueueAttributes(GetQueueAttributesRequest.builder().queueUrl(hmppsQueue.queueUrl).attributeNames(QueueAttributeName.ALL).build())
+      hmppsQueue.sqsClient.getQueueAttributes(GetQueueAttributesRequest(hmppsQueue.queueUrl).withAttributeNames(All))
     }
   }
 
-  private fun getDlqAttributes(): Result<GetQueueAttributesResponse> =
+  private fun getDlqAttributes(): Result<GetQueueAttributesResult> =
     runCatching {
-      hmppsQueue.sqsDlqClient?.getQueueAttributes(GetQueueAttributesRequest.builder().queueUrl(hmppsQueue.queueUrl).attributeNames(QueueAttributeName.ALL).build())
+      hmppsQueue.sqsDlqClient?.getQueueAttributes(GetQueueAttributesRequest(hmppsQueue.dlqUrl).withAttributeNames(All))
         ?: throw MissingDlqClientException(hmppsQueue.dlqName)
     }
 }
+
+class MissingRedrivePolicyException(queueId: String) : RuntimeException("The main queue for $queueId is missing a $RedrivePolicy")
+class MissingDlqClientException(dlqName: String?) : RuntimeException("Attempted to access dlqclient for $dlqName that does not exist")

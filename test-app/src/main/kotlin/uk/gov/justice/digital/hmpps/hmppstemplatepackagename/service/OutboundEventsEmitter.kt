@@ -1,11 +1,11 @@
 package uk.gov.justice.digital.hmpps.hmppstemplatepackagename.service
 
+import com.amazonaws.services.sns.model.MessageAttributeValue
+import com.amazonaws.services.sns.model.PublishRequest
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
-import software.amazon.awssdk.services.sns.model.MessageAttributeValue
-import software.amazon.awssdk.services.sns.model.PublishRequest
 import uk.gov.justice.hmpps.sqs.HmppsQueueService
 import uk.gov.justice.hmpps.sqs.MissingTopicException
 
@@ -26,13 +26,10 @@ class OutboundEventsEmitter(hmppsQueueService: HmppsQueueService, private val ob
 
   private fun publishToOutboundTopic(hmppsEvent: HmppsEvent) {
     outboundTopic.snsClient.publish(
-      PublishRequest.builder()
-        .topicArn(outboundTopic.arn)
-        .message(objectMapper.writeValueAsString(hmppsEvent))
-        .messageAttributes(
-          mapOf("eventType" to MessageAttributeValue.builder().dataType("String").stringValue(hmppsEvent.type).build())
+      PublishRequest(outboundTopic.arn, objectMapper.writeValueAsString(hmppsEvent))
+        .withMessageAttributes(
+          mapOf("eventType" to MessageAttributeValue().withDataType("String").withStringValue(hmppsEvent.type))
         )
-        .build()
         .also { log.info("Published event $hmppsEvent to outbound topic") }
     )
   }
