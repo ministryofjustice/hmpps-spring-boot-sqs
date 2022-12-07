@@ -6,7 +6,7 @@ import org.springframework.boot.actuate.health.HealthIndicator
 import software.amazon.awssdk.services.sns.model.GetTopicAttributesRequest
 import software.amazon.awssdk.services.sns.model.GetTopicAttributesResponse
 
-class HmppsTopicHealth(private val hmppsTopic: HmppsTopic) : HealthIndicator {
+class HmppsAsyncTopicHealth(private val hmppsTopic: HmppsAsyncTopic) : HealthIndicator {
 
   override fun health(): Health {
     val healthBuilder = Builder().up()
@@ -27,7 +27,7 @@ class HmppsTopicHealth(private val hmppsTopic: HmppsTopic) : HealthIndicator {
 
   private fun getTopicAttributes(): Result<GetTopicAttributesResponse> {
     return runCatching {
-      hmppsTopic.snsClient.getTopicAttributes(GetTopicAttributesRequest.builder().topicArn(hmppsTopic.arn).build())
+      hmppsTopic.snsClient.getTopicAttributes(GetTopicAttributesRequest.builder().topicArn(hmppsTopic.arn).build()).get()
     }
   }
 }

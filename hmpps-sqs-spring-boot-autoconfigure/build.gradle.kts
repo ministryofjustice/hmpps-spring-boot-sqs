@@ -7,31 +7,41 @@ plugins {
   id("maven-publish")
   id("signing")
   id("com.adarshr.test-logger") version "3.2.0"
-  id("com.github.ben-manes.versions") version "0.43.0"
+  id("com.github.ben-manes.versions") version "0.44.0"
   id("se.patrikerdes.use-latest-versions") version "0.2.18"
   id("io.spring.dependency-management") version "1.1.0"
   id("org.jlleitschuh.gradle.ktlint") version "11.0.0"
-  id("org.owasp.dependencycheck") version "7.3.0"
+  id("org.owasp.dependencycheck") version "7.3.2"
   id("org.springframework.boot") version "2.7.6"
 }
 
+// Pinned to counter various CVEs with previous versions. Please remove this once Spring pulls in at least this version: https://docs.spring.io/spring-boot/docs/current/reference/html/dependency-versions.html
+ext["snakeyaml.version"] = "1.33"
+// Pinned to counter various CVEs. Please remove once Spring Boot brings in at least this version.
+ext["spring-security.version"] = "5.7.5"
+
 dependencies {
-  implementation("com.amazonaws:amazon-sqs-java-messaging-lib:1.1.0")
-  implementation("com.amazonaws:aws-java-sdk-sns:1.12.337")
+  implementation("com.amazonaws:amazon-sqs-java-messaging-lib:2.0.1")
+  implementation(platform("software.amazon.awssdk:bom:2.18.28"))
+  implementation("software.amazon.awssdk:sns")
   implementation("org.springframework.boot:spring-boot-starter-web")
   implementation("org.springframework.boot:spring-boot-starter-webflux")
   implementation("org.springframework.boot:spring-boot-starter-security")
   implementation("org.springframework.boot:spring-boot-starter-actuator")
   implementation("com.google.code.gson:gson:2.10")
-  implementation("com.microsoft.azure:applicationinsights-core:3.4.3")
+  implementation("com.microsoft.azure:applicationinsights-core:3.4.4")
   implementation("org.springframework:spring-jms")
+  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
+  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8")
 
   testImplementation("org.assertj:assertj-core:3.23.1")
   testImplementation("org.junit.jupiter:junit-jupiter:5.9.1")
-  testImplementation("org.mockito:mockito-junit-jupiter:4.8.1")
-  testImplementation("org.mockito.kotlin:mockito-kotlin:4.0.0")
+  testImplementation("org.mockito:mockito-junit-jupiter:4.9.0")
   testImplementation("org.springframework.boot:spring-boot-starter-test")
-  testImplementation("org.mockito:mockito-inline:4.8.1")
+  testImplementation("org.mockito.kotlin:mockito-kotlin:4.1.0")
+  testImplementation("org.mockito:mockito-inline:4.9.0")
+  testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.6.4")
+  testImplementation("org.jetbrains.kotlin:kotlin-reflect")
 }
 
 publishing {

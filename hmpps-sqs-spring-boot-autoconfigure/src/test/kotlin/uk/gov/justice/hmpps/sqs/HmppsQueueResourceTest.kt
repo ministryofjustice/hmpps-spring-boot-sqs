@@ -1,6 +1,5 @@
 package uk.gov.justice.hmpps.sqs
 
-import com.amazonaws.services.sqs.model.Message
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -40,12 +39,14 @@ class HmppsQueueResourceTest {
       whenever(hmppsQueueService.findByDlqName("some dlq name"))
         .thenReturn(hmppsQueue)
       whenever(hmppsQueueService.retryDlqMessages(any()))
-        .thenReturn(RetryDlqResult(2, listOf(Message())))
+        .thenReturn(RetryDlqResult(2, listOf(DlqMessage(mapOf("key" to "value"), "id"))))
 
       mockMvc.perform(put("/queue-admin/retry-dlq/some dlq name"))
         .andExpect(status().isOk)
         .andExpect(jsonPath("$.messagesFoundCount").value(2))
         .andExpect(jsonPath("$.messages.length()").value(1))
+        .andExpect(jsonPath("$.messages[0].messageId").value("id"))
+        .andExpect(jsonPath("$.messages[0].body.key").value("value"))
 
       verify(hmppsQueueService).retryDlqMessages(check { it.hmppsQueue === hmppsQueue })
     }

@@ -11,7 +11,7 @@ import software.amazon.awssdk.services.sqs.model.QueueAttributeName
 import kotlin.Result.Companion.failure
 import kotlin.Result.Companion.success
 
-class HmppsQueueHealth(private val hmppsQueue: HmppsQueue) : HealthIndicator {
+class HmppsAsyncQueueHealth(private val hmppsQueue: HmppsAsyncQueue) : HealthIndicator {
 
   companion object {
     val log: Logger = LoggerFactory.getLogger(this::class.java)
@@ -45,7 +45,7 @@ class HmppsQueueHealth(private val hmppsQueue: HmppsQueue) : HealthIndicator {
     hmppsQueue.dlqName?.run {
       results += success(HealthDetail("dlqName" to hmppsQueue.dlqName))
 
-      hmppsQueue.sqsDlqClient?.run {
+      hmppsQueue.sqsAsyncDlqClient?.run {
         getDlqAttributes().map { attributesResult ->
           results += success(
             HealthDetail(
@@ -89,13 +89,13 @@ class HmppsQueueHealth(private val hmppsQueue: HmppsQueue) : HealthIndicator {
 
   private fun getQueueAttributes(): Result<GetQueueAttributesResponse> {
     return runCatching {
-      hmppsQueue.sqsClient.getQueueAttributes(GetQueueAttributesRequest.builder().queueUrl(hmppsQueue.queueUrl).attributeNames(QueueAttributeName.ALL).build())
+      hmppsQueue.sqsAsyncClient.getQueueAttributes(GetQueueAttributesRequest.builder().queueUrl(hmppsQueue.queueUrl).build()).get()
     }
   }
 
   private fun getDlqAttributes(): Result<GetQueueAttributesResponse> =
     runCatching {
-      hmppsQueue.sqsDlqClient?.getQueueAttributes(GetQueueAttributesRequest.builder().queueUrl(hmppsQueue.queueUrl).attributeNames(QueueAttributeName.ALL).build())
+      hmppsQueue.sqsAsyncClient.getQueueAttributes(GetQueueAttributesRequest.builder().queueUrl(hmppsQueue.queueUrl).build())?.get()
         ?: throw MissingDlqClientException(hmppsQueue.dlqName)
     }
 }
