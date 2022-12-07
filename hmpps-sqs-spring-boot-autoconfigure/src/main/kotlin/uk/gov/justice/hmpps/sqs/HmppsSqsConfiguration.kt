@@ -55,7 +55,7 @@ class HmppsSqsConfiguration {
   @Bean
   @ConditionalOnMissingBean
   @ConditionalOnExpression("'\${hmpps.sqs.reactiveApi:false}'.equals('false')")
-  fun hmppsQueueResource(hmppsQueueService: HmppsQueueService) = HmppsQueueResource(hmppsQueueService)
+  fun hmppsQueueResource(hmppsQueueService: HmppsQueueService, hmppsAsyncQueueService: HmppsAsyncQueueService) = HmppsQueueResource(hmppsQueueService, hmppsAsyncQueueService)
 
   @Bean
   @ConditionalOnMissingBean
