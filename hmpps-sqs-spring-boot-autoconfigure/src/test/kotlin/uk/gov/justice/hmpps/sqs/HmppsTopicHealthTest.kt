@@ -1,20 +1,19 @@
 package uk.gov.justice.hmpps.sqs
 
+import com.amazonaws.services.sns.AmazonSNS
+import com.amazonaws.services.sns.model.GetTopicAttributesResult
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.any
+import org.mockito.ArgumentMatchers.anyString
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import org.springframework.boot.actuate.health.Status
-import software.amazon.awssdk.services.sns.SnsClient
-import software.amazon.awssdk.services.sns.model.GetTopicAttributesRequest
-import software.amazon.awssdk.services.sns.model.GetTopicAttributesResponse
 
 class HmppsTopicHealthTest {
 
   private val topicId = "some-topic-id"
   private val topicArn = "some-topic-arn"
-  private val snsClient = mock<SnsClient>()
+  private val snsClient = mock<AmazonSNS>()
   private val topicHealth = HmppsTopicHealth(HmppsTopic(topicId, topicArn, snsClient))
 
   @Test
@@ -65,15 +64,14 @@ class HmppsTopicHealthTest {
   }
 
   fun mockUnhealthyTopic() {
-    whenever(snsClient.getTopicAttributes(any<GetTopicAttributesRequest>()))
+    whenever(snsClient.getTopicAttributes(anyString()))
       .thenThrow(RuntimeException("some exception"))
   }
 
   fun mockHealthyTopic() {
-    whenever(snsClient.getTopicAttributes(any<GetTopicAttributesRequest>())).thenReturn(
-      GetTopicAttributesResponse.builder()
-        .attributes(mapOf("SubscriptionsConfirmed" to "1", "SubscriptionsPending" to "2"))
-        .build()
+    whenever(snsClient.getTopicAttributes(anyString())).thenReturn(
+      GetTopicAttributesResult()
+        .withAttributes(mapOf("SubscriptionsConfirmed" to "1", "SubscriptionsPending" to "2"))
     )
   }
 }

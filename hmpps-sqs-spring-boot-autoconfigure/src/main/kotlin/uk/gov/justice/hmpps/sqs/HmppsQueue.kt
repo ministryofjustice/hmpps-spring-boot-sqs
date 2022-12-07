@@ -1,15 +1,14 @@
 package uk.gov.justice.hmpps.sqs
 
-import software.amazon.awssdk.services.sqs.SqsClient
-import software.amazon.awssdk.services.sqs.model.GetQueueUrlRequest
+import com.amazonaws.services.sqs.AmazonSQS
 
 class HmppsQueue(
   val id: String,
-  val sqsClient: SqsClient,
+  val sqsClient: AmazonSQS,
   val queueName: String,
-  val sqsDlqClient: SqsClient? = null,
+  val sqsDlqClient: AmazonSQS? = null,
   val dlqName: String? = null
 ) {
-  val queueUrl: String by lazy { sqsClient.getQueueUrl(GetQueueUrlRequest.builder().queueName(queueName).build()).queueUrl() }
-  val dlqUrl: String? by lazy { sqsDlqClient?.getQueueUrl(GetQueueUrlRequest.builder().queueName(dlqName).build())?.queueUrl() }
+  val queueUrl: String by lazy { sqsClient.getQueueUrl(queueName).queueUrl }
+  val dlqUrl by lazy { sqsDlqClient?.getQueueUrl(dlqName)?.queueUrl }
 }

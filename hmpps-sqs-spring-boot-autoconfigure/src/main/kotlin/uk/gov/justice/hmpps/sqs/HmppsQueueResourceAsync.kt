@@ -17,15 +17,13 @@ import org.springframework.web.server.ResponseStatusException
  */
 @RestController
 @RequestMapping("/queue-admin")
-class HmppsAsyncQueueResource(private val hmppsQueueService: HmppsQueueService, private val hmppsAsyncQueueService: HmppsAsyncQueueService) {
+class HmppsQueueResourceAsync(private val hmppsQueueService: HmppsQueueService) {
 
   @PutMapping("/retry-dlq/{dlqName}")
   @PreAuthorize("hasRole(@environment.getProperty('hmpps.sqs.queueAdminRole', 'ROLE_QUEUE_ADMIN'))")
   suspend fun retryDlq(@PathVariable("dlqName") dlqName: String) =
     hmppsQueueService.findByDlqName(dlqName)
       ?.let { hmppsQueue -> hmppsQueueService.retryDlqMessages(RetryDlqRequest(hmppsQueue)) }
-      ?: hmppsAsyncQueueService.findByDlqName(dlqName)
-        ?.let { hmppsQueue -> hmppsAsyncQueueService.retryDlqMessages(RetryAsyncDlqRequest(hmppsQueue)) }
       ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "$dlqName not found")
 
   /*
@@ -34,15 +32,13 @@ class HmppsAsyncQueueResource(private val hmppsQueueService: HmppsQueueService, 
    * See test-app/helm_deploy/hmpps-template-kotlin/example/housekeeping-cronjob.yaml and ingress.yaml for Kubernetes config.
    */
   @PutMapping("/retry-all-dlqs")
-  suspend fun retryAllDlqs() = hmppsQueueService.retryAllDlqs() + hmppsAsyncQueueService.retryAllDlqs()
+  suspend fun retryAllDlqs() = hmppsQueueService.retryAllDlqs()
 
   @PutMapping("/purge-queue/{queueName}")
   @PreAuthorize("hasRole(@environment.getProperty('hmpps.sqs.queueAdminRole', 'ROLE_QUEUE_ADMIN'))")
   suspend fun purgeQueue(@PathVariable("queueName") queueName: String) =
     hmppsQueueService.findQueueToPurge(queueName)
       ?.let { request -> hmppsQueueService.purgeQueue(request) }
-      ?: hmppsAsyncQueueService.findQueueToPurge(queueName)
-        ?.let { request -> hmppsAsyncQueueService.purgeQueue(request) }
       ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "$queueName not found")
 
   /*
@@ -54,7 +50,5 @@ class HmppsAsyncQueueResource(private val hmppsQueueService: HmppsQueueService, 
   suspend fun getDlqMessages(@PathVariable("dlqName") dlqName: String, @RequestParam("maxMessages", required = false, defaultValue = "100") maxMessages: Int) =
     hmppsQueueService.findByDlqName(dlqName)
       ?.let { hmppsQueue -> hmppsQueueService.getDlqMessages(GetDlqRequest(hmppsQueue, maxMessages)) }
-      ?: hmppsAsyncQueueService.findByDlqName(dlqName)
-        ?.let { hmppsAsyncQueue -> hmppsAsyncQueueService.getDlqMessages(GetAsyncDlqRequest(hmppsAsyncQueue, maxMessages)) }
       ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "$dlqName not found")
 }

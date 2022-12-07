@@ -20,19 +20,11 @@ class HmppsSqsConfiguration {
 
   @Bean
   @ConditionalOnMissingBean
-  fun hmppsTopicFactory(applicationContext: ConfigurableApplicationContext) = HmppsTopicFactory(applicationContext, SnsClientFactory())
+  fun hmppsTopicFactory(applicationContext: ConfigurableApplicationContext) = HmppsTopicFactory(applicationContext, AmazonSnsFactory())
 
   @Bean
   @ConditionalOnMissingBean
-  fun hmppsAsyncTopicFactory(applicationContext: ConfigurableApplicationContext) = HmppsAsyncTopicFactory(applicationContext, SnsAsyncClientFactory())
-
-  @Bean
-  @ConditionalOnMissingBean
-  fun hmppsQueueFactory(applicationContext: ConfigurableApplicationContext) = HmppsQueueFactory(applicationContext, SqsClientFactory())
-
-  @Bean
-  @ConditionalOnMissingBean
-  fun hmppsAsyncQueueFactory(applicationContext: ConfigurableApplicationContext) = HmppsAsyncQueueFactory(applicationContext, SqsAsyncClientFactory())
+  fun hmppsQueueFactory(applicationContext: ConfigurableApplicationContext) = HmppsQueueFactory(applicationContext, AmazonSqsFactory())
 
   @Bean
   @ConditionalOnMissingBean
@@ -45,22 +37,13 @@ class HmppsSqsConfiguration {
 
   @Bean
   @ConditionalOnMissingBean
-  fun hmppsAsyncQueueService(
-    telemetryClient: TelemetryClient?,
-    hmppsAsyncTopicFactory: HmppsAsyncTopicFactory,
-    hmppsAsyncQueueFactory: HmppsAsyncQueueFactory,
-    hmppsSqsProperties: HmppsSqsProperties,
-  ) = HmppsAsyncQueueService(telemetryClient, hmppsAsyncTopicFactory, hmppsAsyncQueueFactory, hmppsSqsProperties)
-
-  @Bean
-  @ConditionalOnMissingBean
   @ConditionalOnExpression("'\${hmpps.sqs.reactiveApi:false}'.equals('false')")
   fun hmppsQueueResource(hmppsQueueService: HmppsQueueService) = HmppsQueueResource(hmppsQueueService)
 
   @Bean
   @ConditionalOnMissingBean
   @ConditionalOnExpression("\${hmpps.sqs.reactiveApi:false}")
-  fun hmppsQueueResourceAsync(hmppsQueueService: HmppsQueueService, hmppsAsyncQueueService: HmppsAsyncQueueService) = HmppsAsyncQueueResource(hmppsQueueService, hmppsAsyncQueueService)
+  fun hmppsQueueResourceAsync(hmppsQueueService: HmppsQueueService) = HmppsQueueResourceAsync(hmppsQueueService)
 
   @Bean
   @ConditionalOnMissingBean
