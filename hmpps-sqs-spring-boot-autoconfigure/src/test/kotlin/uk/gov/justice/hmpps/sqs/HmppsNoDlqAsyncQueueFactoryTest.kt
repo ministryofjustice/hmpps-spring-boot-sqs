@@ -1,5 +1,6 @@
 package uk.gov.justice.hmpps.sqs
 
+import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
@@ -42,12 +43,14 @@ class HmppsNoDlqAsyncQueueFactoryTest {
 
     @BeforeEach
     fun `configure mocks and register queues`() {
-      whenever(sqsAsyncFactory.awsSqsAsyncClient(anyString(), anyString(), anyString()))
-        .thenReturn(sqsClient)
-      whenever(sqsClient.getQueueUrl(GetQueueUrlRequest.builder().queueName("some queue name").build()))
-        .thenReturn(CompletableFuture.completedFuture(GetQueueUrlResponse.builder().queueUrl("some queue url").build()))
+      runBlocking {
+        whenever(sqsAsyncFactory.awsSqsAsyncClient(anyString(), anyString(), anyString()))
+          .thenReturn(sqsClient)
+        whenever(sqsClient.getQueueUrl(GetQueueUrlRequest.builder().queueName("some queue name").build()))
+          .thenReturn(CompletableFuture.completedFuture(GetQueueUrlResponse.builder().queueUrl("some queue url").build()))
 
-      hmppsQueues = hmppsQueueFactory.createHmppsAsyncQueues(hmppsSqsProperties)
+        hmppsQueues = hmppsQueueFactory.createHmppsAsyncQueues(hmppsSqsProperties)
+      }
     }
 
     @Test
@@ -87,12 +90,14 @@ class HmppsNoDlqAsyncQueueFactoryTest {
 
     @BeforeEach
     fun `configure mocks and register queues`() {
-      whenever(sqsAsyncFactory.localstackSqsAsyncClient(anyString(), anyString()))
-        .thenReturn(sqsClient)
-      whenever(sqsClient.getQueueUrl(GetQueueUrlRequest.builder().queueName("some queue name").build()))
-        .thenReturn(CompletableFuture.completedFuture(GetQueueUrlResponse.builder().queueUrl("some queue url").build()))
+      runBlocking {
+        whenever(sqsAsyncFactory.localstackSqsAsyncClient(anyString(), anyString()))
+          .thenReturn(sqsClient)
+        whenever(sqsClient.getQueueUrl(GetQueueUrlRequest.builder().queueName("some queue name").build()))
+          .thenReturn(CompletableFuture.completedFuture(GetQueueUrlResponse.builder().queueUrl("some queue url").build()))
 
-      hmppsQueues = hmppsQueueFactory.createHmppsAsyncQueues(hmppsSqsProperties)
+        hmppsQueues = hmppsQueueFactory.createHmppsAsyncQueues(hmppsSqsProperties)
+      }
     }
 
     @Test

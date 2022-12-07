@@ -46,17 +46,19 @@ class HmppsAsyncQueueServiceTest {
 
     @BeforeEach
     fun `add test data`() {
-      whenever(sqsAsyncClient.getQueueUrl(any<GetQueueUrlRequest>()))
-        .thenReturn(CompletableFuture.completedFuture(GetQueueUrlResponse.builder().queueUrl("some queue url").build()))
-      whenever(sqsAsyncDlqClient.getQueueUrl(any<GetQueueUrlRequest>()))
-        .thenReturn(CompletableFuture.completedFuture(GetQueueUrlResponse.builder().queueUrl("some dlq url").build()))
-      whenever(hmppsAsyncQueueFactory.createHmppsAsyncQueues(any(), any()))
-        .thenReturn(
-          listOf(
-            HmppsAsyncQueue("some queue id", sqsAsyncClient, "some queue name", sqsAsyncDlqClient, "some dlq name"),
-            HmppsAsyncQueue("another queue id", mock(), "another queue name", mock(), "another dlq name"),
+      runBlocking {
+        whenever(sqsAsyncClient.getQueueUrl(any<GetQueueUrlRequest>()))
+          .thenReturn(CompletableFuture.completedFuture(GetQueueUrlResponse.builder().queueUrl("some queue url").build()))
+        whenever(sqsAsyncDlqClient.getQueueUrl(any<GetQueueUrlRequest>()))
+          .thenReturn(CompletableFuture.completedFuture(GetQueueUrlResponse.builder().queueUrl("some dlq url").build()))
+        whenever(hmppsAsyncQueueFactory.createHmppsAsyncQueues(any(), any()))
+          .thenReturn(
+            listOf(
+              HmppsAsyncQueue("some queue id", sqsAsyncClient, "some queue name", sqsAsyncDlqClient, "some dlq name"),
+              HmppsAsyncQueue("another queue id", mock(), "another queue name", mock(), "another dlq name"),
+            )
           )
-        )
+      }
 
       hmppsAsyncQueueService = HmppsAsyncQueueService(telemetryClient, hmppsAsyncTopicFactory, hmppsAsyncQueueFactory, hmppsSqsProperties)
     }
@@ -594,17 +596,19 @@ class HmppsAsyncQueueServiceTest {
 
     @BeforeEach
     fun `add test data`() {
-      whenever(sqsClient.getQueueUrl(any<GetQueueUrlRequest>()))
-        .thenReturn(CompletableFuture.completedFuture(GetQueueUrlResponse.builder().queueUrl("some queue url").build()))
-      whenever(sqsDlqClient.getQueueUrl(any<GetQueueUrlRequest>()))
-        .thenReturn(CompletableFuture.completedFuture(GetQueueUrlResponse.builder().queueUrl("some dlq url").build()))
-      whenever(hmppsAsyncQueueFactory.createHmppsAsyncQueues(any(), any()))
-        .thenReturn(
-          listOf(
-            HmppsAsyncQueue("some queue id", sqsClient, "some queue name", sqsDlqClient, "some dlq name"),
-            HmppsAsyncQueue("another queue id", mock(), "another queue name", mock(), "another dlq name"),
+      runBlocking {
+        whenever(sqsClient.getQueueUrl(any<GetQueueUrlRequest>()))
+          .thenReturn(CompletableFuture.completedFuture(GetQueueUrlResponse.builder().queueUrl("some queue url").build()))
+        whenever(sqsDlqClient.getQueueUrl(any<GetQueueUrlRequest>()))
+          .thenReturn(CompletableFuture.completedFuture(GetQueueUrlResponse.builder().queueUrl("some dlq url").build()))
+        whenever(hmppsAsyncQueueFactory.createHmppsAsyncQueues(any(), any()))
+          .thenReturn(
+            listOf(
+              HmppsAsyncQueue("some queue id", sqsClient, "some queue name", sqsDlqClient, "some dlq name"),
+              HmppsAsyncQueue("another queue id", mock(), "another queue name", mock(), "another dlq name"),
+            )
           )
-        )
+      }
 
       hmppsAsyncQueueService = HmppsAsyncQueueService(telemetryClient, hmppsAsyncTopicFactory, hmppsAsyncQueueFactory, hmppsSqsProperties)
     }

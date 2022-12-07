@@ -1,5 +1,6 @@
 package uk.gov.justice.hmpps.sqs
 
+import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
@@ -40,10 +41,12 @@ class HmppsAsyncTopicFactoryTest {
 
     @BeforeEach
     fun `configure mocks and register queues`() {
-      whenever(snsAsyncFactory.awsSnsAsyncClient(anyString(), anyString(), anyString()))
-        .thenReturn(snsClient)
+      runBlocking {
+        whenever(snsAsyncFactory.awsSnsAsyncClient(anyString(), anyString(), anyString()))
+          .thenReturn(snsClient)
 
-      hmppsTopics = hmppsAsyncTopicFactory.createHmppsAsyncTopics(hmppsSqsProperties)
+        hmppsTopics = hmppsAsyncTopicFactory.createHmppsAsyncTopics(hmppsSqsProperties)
+      }
     }
 
     @Test
@@ -66,12 +69,14 @@ class HmppsAsyncTopicFactoryTest {
 
     @BeforeEach
     fun `configure mocks and register queues`() {
-      whenever(snsAsyncFactory.localstackSnsAsyncClient(anyString(), anyString()))
-        .thenReturn(snsClient)
-      whenever(snsClient.createTopic(any<CreateTopicRequest>()))
-        .thenReturn(CompletableFuture.completedFuture(CreateTopicResponse.builder().build()))
+      runBlocking {
+        whenever(snsAsyncFactory.localstackSnsAsyncClient(anyString(), anyString()))
+          .thenReturn(snsClient)
+        whenever(snsClient.createTopic(any<CreateTopicRequest>()))
+          .thenReturn(CompletableFuture.completedFuture(CreateTopicResponse.builder().build()))
 
-      hmppsTopics = hmppsAsyncTopicFactory.createHmppsAsyncTopics(hmppsSqsProperties)
+        hmppsTopics = hmppsAsyncTopicFactory.createHmppsAsyncTopics(hmppsSqsProperties)
+      }
     }
 
     @Test
