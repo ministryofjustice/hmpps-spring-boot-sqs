@@ -8,7 +8,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.future.await
-import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
 import software.amazon.awssdk.services.sqs.SqsAsyncClient
 import software.amazon.awssdk.services.sqs.model.DeleteMessageRequest
@@ -31,8 +30,8 @@ open class HmppsAsyncQueueService(
     private val gson = GsonBuilder().setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE).create()
   }
 
-  private val hmppsAsyncTopics: List<HmppsAsyncTopic> = runBlocking { hmppsAsyncTopicFactory.createHmppsAsyncTopics(hmppsSqsProperties) }
-  private val hmppsAsyncQueues: List<HmppsAsyncQueue> = runBlocking { hmppsAsyncQueueFactory.createHmppsAsyncQueues(hmppsSqsProperties, hmppsAsyncTopics) }
+  private val hmppsAsyncTopics: List<HmppsAsyncTopic> = hmppsAsyncTopicFactory.createHmppsAsyncTopics(hmppsSqsProperties)
+  private val hmppsAsyncQueues: List<HmppsAsyncQueue> = hmppsAsyncQueueFactory.createHmppsAsyncQueues(hmppsSqsProperties, hmppsAsyncTopics)
 
   open fun findByQueueId(queueId: String) = hmppsAsyncQueues.associateBy { it.id }.getOrDefault(queueId, null)
   open fun findByQueueName(queueName: String) = hmppsAsyncQueues.associateBy { it.queueName }.getOrDefault(queueName, null)

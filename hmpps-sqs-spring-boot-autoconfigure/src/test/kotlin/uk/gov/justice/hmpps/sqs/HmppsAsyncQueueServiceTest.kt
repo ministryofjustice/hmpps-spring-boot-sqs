@@ -18,16 +18,20 @@ import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 import software.amazon.awssdk.services.sqs.SqsAsyncClient
 import software.amazon.awssdk.services.sqs.model.DeleteMessageRequest
+import software.amazon.awssdk.services.sqs.model.DeleteMessageResponse
 import software.amazon.awssdk.services.sqs.model.GetQueueAttributesRequest
 import software.amazon.awssdk.services.sqs.model.GetQueueAttributesResponse
 import software.amazon.awssdk.services.sqs.model.GetQueueUrlRequest
 import software.amazon.awssdk.services.sqs.model.GetQueueUrlResponse
 import software.amazon.awssdk.services.sqs.model.Message
 import software.amazon.awssdk.services.sqs.model.MessageAttributeValue
+import software.amazon.awssdk.services.sqs.model.PurgeQueueRequest
+import software.amazon.awssdk.services.sqs.model.PurgeQueueResponse
 import software.amazon.awssdk.services.sqs.model.QueueAttributeName
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest
+import software.amazon.awssdk.services.sqs.model.SendMessageResponse
 import java.util.concurrent.CompletableFuture
 
 class HmppsAsyncQueueServiceTest {
@@ -46,19 +50,17 @@ class HmppsAsyncQueueServiceTest {
 
     @BeforeEach
     fun `add test data`() {
-      runBlocking {
-        whenever(sqsAsyncClient.getQueueUrl(any<GetQueueUrlRequest>()))
-          .thenReturn(CompletableFuture.completedFuture(GetQueueUrlResponse.builder().queueUrl("some queue url").build()))
-        whenever(sqsAsyncDlqClient.getQueueUrl(any<GetQueueUrlRequest>()))
-          .thenReturn(CompletableFuture.completedFuture(GetQueueUrlResponse.builder().queueUrl("some dlq url").build()))
-        whenever(hmppsAsyncQueueFactory.createHmppsAsyncQueues(any(), any()))
-          .thenReturn(
-            listOf(
-              HmppsAsyncQueue("some queue id", sqsAsyncClient, "some queue name", sqsAsyncDlqClient, "some dlq name"),
-              HmppsAsyncQueue("another queue id", mock(), "another queue name", mock(), "another dlq name"),
-            )
+      whenever(sqsAsyncClient.getQueueUrl(any<GetQueueUrlRequest>()))
+        .thenReturn(CompletableFuture.completedFuture(GetQueueUrlResponse.builder().queueUrl("some queue url").build()))
+      whenever(sqsAsyncDlqClient.getQueueUrl(any<GetQueueUrlRequest>()))
+        .thenReturn(CompletableFuture.completedFuture(GetQueueUrlResponse.builder().queueUrl("some dlq url").build()))
+      whenever(hmppsAsyncQueueFactory.createHmppsAsyncQueues(any(), any()))
+        .thenReturn(
+          listOf(
+            HmppsAsyncQueue("some queue id", sqsAsyncClient, "some queue name", sqsAsyncDlqClient, "some dlq name"),
+            HmppsAsyncQueue("another queue id", mock(), "another queue name", mock(), "another dlq name"),
           )
-      }
+        )
 
       hmppsAsyncQueueService = HmppsAsyncQueueService(telemetryClient, hmppsAsyncTopicFactory, hmppsAsyncQueueFactory, hmppsSqsProperties)
     }
@@ -106,6 +108,10 @@ class HmppsAsyncQueueServiceTest {
         .thenReturn(CompletableFuture.completedFuture(GetQueueUrlResponse.builder().queueUrl("queueUrl").build()))
       whenever(dlqSqs.getQueueUrl(any<GetQueueUrlRequest>()))
         .thenReturn(CompletableFuture.completedFuture(GetQueueUrlResponse.builder().queueUrl("dlqUrl").build()))
+      whenever(queueSqs.sendMessage(any<SendMessageRequest>()))
+        .thenReturn(CompletableFuture.completedFuture(SendMessageResponse.builder().build()))
+      whenever(dlqSqs.deleteMessage(any<DeleteMessageRequest>()))
+        .thenReturn(CompletableFuture.completedFuture(DeleteMessageResponse.builder().build()))
 
       hmppsAsyncQueueService = HmppsAsyncQueueService(telemetryClient, hmppsAsyncTopicFactory, hmppsAsyncQueueFactory, hmppsSqsProperties)
     }
@@ -497,8 +503,6 @@ class HmppsAsyncQueueServiceTest {
       whenever(dlqSqs.getQueueUrl(any<GetQueueUrlRequest>())).thenReturn(
         CompletableFuture.completedFuture(GetQueueUrlResponse.builder().queueUrl("dlqUrl").build())
       )
-
-      hmppsAsyncQueueService = HmppsAsyncQueueService(telemetryClient, hmppsAsyncTopicFactory, hmppsAsyncQueueFactory, hmppsSqsProperties)
     }
 
     @BeforeEach
@@ -596,19 +600,17 @@ class HmppsAsyncQueueServiceTest {
 
     @BeforeEach
     fun `add test data`() {
-      runBlocking {
-        whenever(sqsClient.getQueueUrl(any<GetQueueUrlRequest>()))
-          .thenReturn(CompletableFuture.completedFuture(GetQueueUrlResponse.builder().queueUrl("some queue url").build()))
-        whenever(sqsDlqClient.getQueueUrl(any<GetQueueUrlRequest>()))
-          .thenReturn(CompletableFuture.completedFuture(GetQueueUrlResponse.builder().queueUrl("some dlq url").build()))
-        whenever(hmppsAsyncQueueFactory.createHmppsAsyncQueues(any(), any()))
-          .thenReturn(
-            listOf(
-              HmppsAsyncQueue("some queue id", sqsClient, "some queue name", sqsDlqClient, "some dlq name"),
-              HmppsAsyncQueue("another queue id", mock(), "another queue name", mock(), "another dlq name"),
-            )
+      whenever(sqsClient.getQueueUrl(any<GetQueueUrlRequest>()))
+        .thenReturn(CompletableFuture.completedFuture(GetQueueUrlResponse.builder().queueUrl("some queue url").build()))
+      whenever(sqsDlqClient.getQueueUrl(any<GetQueueUrlRequest>()))
+        .thenReturn(CompletableFuture.completedFuture(GetQueueUrlResponse.builder().queueUrl("some dlq url").build()))
+      whenever(hmppsAsyncQueueFactory.createHmppsAsyncQueues(any(), any()))
+        .thenReturn(
+          listOf(
+            HmppsAsyncQueue("some queue id", sqsClient, "some queue name", sqsDlqClient, "some dlq name"),
+            HmppsAsyncQueue("another queue id", mock(), "another queue name", mock(), "another dlq name"),
           )
-      }
+        )
 
       hmppsAsyncQueueService = HmppsAsyncQueueService(telemetryClient, hmppsAsyncTopicFactory, hmppsAsyncQueueFactory, hmppsSqsProperties)
     }
@@ -638,24 +640,30 @@ class HmppsAsyncQueueServiceTest {
   @Nested
   inner class PurgeQueue {
 
-    private val sqsClient = mock<SqsAsyncClient>()
+    private val sqsAsyncClient = mock<SqsAsyncClient>()
     private val hmppsQueueService =
       HmppsAsyncQueueService(telemetryClient, hmppsAsyncTopicFactory, hmppsAsyncQueueFactory, hmppsSqsProperties)
+
+    @BeforeEach
+    fun `mock purge queue`() {
+      whenever(sqsAsyncClient.purgeQueue(any<PurgeQueueRequest>()))
+        .thenReturn(CompletableFuture.completedFuture(PurgeQueueResponse.builder().build()))
+    }
 
     @Test
     fun `no messages found, should not attempt to purge queue`() = runBlocking<Unit> {
       stubMessagesOnQueue(0)
 
-      hmppsQueueService.purgeQueue(PurgeAsyncQueueRequest("some queue", sqsClient, "some queue url"))
+      hmppsQueueService.purgeQueue(PurgeAsyncQueueRequest("some queue", sqsAsyncClient, "some queue url"))
 
-      verify(sqsClient, times(0)).purgeQueue(any<software.amazon.awssdk.services.sqs.model.PurgeQueueRequest>())
+      verify(sqsAsyncClient, times(0)).purgeQueue(any<PurgeQueueRequest>())
     }
 
     @Test
     fun `no messages found, should not create telemetry event`() = runBlocking<Unit> {
       stubMessagesOnQueue(0)
 
-      hmppsQueueService.purgeQueue(PurgeAsyncQueueRequest("some queue", sqsClient, "some queue url"))
+      hmppsQueueService.purgeQueue(PurgeAsyncQueueRequest("some queue", sqsAsyncClient, "some queue url"))
 
       verifyNoMoreInteractions(telemetryClient)
     }
@@ -664,16 +672,16 @@ class HmppsAsyncQueueServiceTest {
     fun `messages found, should attempt to purge queue`() = runBlocking<Unit> {
       stubMessagesOnQueue(1)
 
-      hmppsQueueService.purgeQueue(PurgeAsyncQueueRequest("some queue", sqsClient, "some queue url"))
+      hmppsQueueService.purgeQueue(PurgeAsyncQueueRequest("some queue", sqsAsyncClient, "some queue url"))
 
-      verify(sqsClient).purgeQueue(software.amazon.awssdk.services.sqs.model.PurgeQueueRequest.builder().queueUrl("some queue url").build())
+      verify(sqsAsyncClient).purgeQueue(PurgeQueueRequest.builder().queueUrl("some queue url").build())
     }
 
     @Test
     fun `messages found, should create telemetry event`() = runBlocking<Unit> {
       stubMessagesOnQueue(1)
 
-      hmppsQueueService.purgeQueue(PurgeAsyncQueueRequest("some queue", sqsClient, "some queue url"))
+      hmppsQueueService.purgeQueue(PurgeAsyncQueueRequest("some queue", sqsAsyncClient, "some queue url"))
 
       verify(telemetryClient).trackEvent(
         eq("PurgeQueue"),
@@ -689,15 +697,15 @@ class HmppsAsyncQueueServiceTest {
     fun `should return number of messages found to purge`() = runBlocking<Unit> {
       stubMessagesOnQueue(5)
 
-      val result = hmppsQueueService.purgeQueue(PurgeAsyncQueueRequest("some queue", sqsClient, "some queue url"))
+      val result = hmppsQueueService.purgeQueue(PurgeAsyncQueueRequest("some queue", sqsAsyncClient, "some queue url"))
 
       assertThat(result.messagesFoundCount).isEqualTo(5)
     }
 
     private fun stubMessagesOnQueue(messageCount: Int) {
-      whenever(sqsClient.getQueueUrl(any<GetQueueUrlRequest>()))
+      whenever(sqsAsyncClient.getQueueUrl(any<GetQueueUrlRequest>()))
         .thenReturn(CompletableFuture.completedFuture(GetQueueUrlResponse.builder().queueUrl("some queue url").build()))
-      whenever(sqsClient.getQueueAttributes(any<GetQueueAttributesRequest>()))
+      whenever(sqsAsyncClient.getQueueAttributes(any<GetQueueAttributesRequest>()))
         .thenReturn(
           CompletableFuture.completedFuture(GetQueueAttributesResponse.builder().attributes(mapOf(QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES to "$messageCount")).build())
         )

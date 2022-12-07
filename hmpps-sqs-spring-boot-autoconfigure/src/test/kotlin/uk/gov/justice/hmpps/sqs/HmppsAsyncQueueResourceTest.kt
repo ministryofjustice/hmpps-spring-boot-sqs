@@ -36,7 +36,7 @@ class HmppsAsyncQueueResourceTest {
   @Nested
   inner class RetryDlq {
     @Test
-    fun `should call the service for a sync queue client`() = runBlocking<Unit> {
+    fun `should call the service for a sync queue client`() {
       val hmppsQueue = mock<HmppsQueue>()
       whenever(hmppsQueueService.findByDlqName("some dlq name"))
         .thenReturn(hmppsQueue)
@@ -82,7 +82,7 @@ class HmppsAsyncQueueResourceTest {
     }
 
     @Test
-    fun `should return not found`() = runBlocking<Unit> {
+    fun `should return not found`() {
       whenever(hmppsQueueService.findByDlqName("some dlq name")).thenReturn(null)
       whenever(hmppsAsyncQueueService.findByDlqName("some dlq name")).thenReturn(null)
 
@@ -113,7 +113,7 @@ class HmppsAsyncQueueResourceTest {
   @Nested
   inner class PurgeQueue {
     @Test
-    fun `should attempt to purge with sync queue client`() = runBlocking<Unit> {
+    fun `should attempt to purge with sync queue client`() {
       whenever(hmppsQueueService.findQueueToPurge("some queue"))
         .thenReturn(PurgeQueueRequest("some queue", mock(), "some queue url"))
       whenever(hmppsQueueService.purgeQueue(any())).thenReturn(PurgeQueueResult(10))
@@ -159,7 +159,7 @@ class HmppsAsyncQueueResourceTest {
     }
 
     @Test
-    fun `should return not found`() = runBlocking<Unit> {
+    fun `should return not found`() {
       whenever(hmppsQueueService.findQueueToPurge("some queue"))
         .thenReturn(null)
       whenever(hmppsAsyncQueueService.findQueueToPurge("some queue"))
@@ -178,7 +178,7 @@ class HmppsAsyncQueueResourceTest {
   @Nested
   inner class GetDlq {
     @Test
-    fun `should get dlq messages with sync queue client`() = runBlocking<Unit> {
+    fun `should get dlq messages with sync queue client`() {
       val hmppsQueue = mock<HmppsQueue>()
       whenever(hmppsQueueService.findByDlqName("some dlq"))
         .thenReturn(hmppsQueue)
@@ -227,7 +227,7 @@ class HmppsAsyncQueueResourceTest {
     }
 
     @Test
-    fun `should return not found`() = runBlocking<Unit> {
+    fun `should return not found`() {
       whenever(hmppsQueueService.findByDlqName("some dlq"))
         .thenReturn(null)
       whenever(hmppsAsyncQueueService.findByDlqName("some dlq"))

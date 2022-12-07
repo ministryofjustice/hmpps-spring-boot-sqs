@@ -1,6 +1,7 @@
 package uk.gov.justice.hmpps.sqs
 
 import kotlinx.coroutines.future.await
+import kotlinx.coroutines.runBlocking
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.boot.actuate.health.HealthIndicator
@@ -21,7 +22,7 @@ class HmppsAsyncQueueFactory(
     val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
-  suspend fun createHmppsAsyncQueues(hmppsSqsProperties: HmppsSqsProperties, hmppsTopics: List<HmppsAsyncTopic> = listOf()) =
+  fun createHmppsAsyncQueues(hmppsSqsProperties: HmppsSqsProperties, hmppsTopics: List<HmppsAsyncTopic> = listOf()) =
     hmppsSqsProperties.queues
       .filter { (_, queueConfig) -> queueConfig.asyncQueueClient }
       .map { (queueId, queueConfig) ->
@@ -32,7 +33,7 @@ class HmppsAsyncQueueFactory(
           .also { getOrDefaultAsyncHealthIndicator(it) }
       }.toList()
 
-  private suspend fun getOrDefaultSqsAsyncDlqClient(queueId: String, queueConfig: QueueConfig, hmppsSqsProperties: HmppsSqsProperties): SqsAsyncClient? =
+  private fun getOrDefaultSqsAsyncDlqClient(queueId: String, queueConfig: QueueConfig, hmppsSqsProperties: HmppsSqsProperties): SqsAsyncClient? =
     if (queueConfig.dlqName.isNotEmpty()) {
       getOrDefaultBean("$queueId-sqs-dlq-client") {
         createSqsAsyncDlqClient(queueConfig, hmppsSqsProperties)
@@ -40,7 +41,7 @@ class HmppsAsyncQueueFactory(
       }
     } else null
 
-  private suspend fun getOrDefaultSqsAsyncClient(queueId: String, queueConfig: QueueConfig, hmppsSqsProperties: HmppsSqsProperties, sqsDlqClient: SqsAsyncClient?): SqsAsyncClient =
+  private fun getOrDefaultSqsAsyncClient(queueId: String, queueConfig: QueueConfig, hmppsSqsProperties: HmppsSqsProperties, sqsDlqClient: SqsAsyncClient?): SqsAsyncClient =
     getOrDefaultBean("$queueId-sqs-client") {
       createSqsAsyncClient(queueConfig, hmppsSqsProperties, sqsDlqClient)
         .also { log.info("Created ${hmppsSqsProperties.provider} SqsAsyncClient for queue queueId $queueId with name ${queueConfig.queueName}") }
@@ -58,7 +59,7 @@ class HmppsAsyncQueueFactory(
         createDefaultBean().also { bean -> context.beanFactory.registerSingleton(beanName, bean) }
       }
 
-  suspend fun createSqsAsyncDlqClient(queueConfig: QueueConfig, hmppsSqsProperties: HmppsSqsProperties): SqsAsyncClient {
+  fun createSqsAsyncDlqClient(queueConfig: QueueConfig, hmppsSqsProperties: HmppsSqsProperties): SqsAsyncClient {
     val region = hmppsSqsProperties.region
     val provider = findProvider(hmppsSqsProperties.provider)
     if (queueConfig.dlqName.isEmpty()) throw MissingDlqNameException()
@@ -66,18 +67,18 @@ class HmppsAsyncQueueFactory(
       Provider.AWS -> sqsAsyncClientFactory.awsSqsAsyncClient(queueConfig.dlqAccessKeyId, queueConfig.dlqSecretAccessKey, region)
       Provider.LOCALSTACK -> {
         sqsAsyncClientFactory.localstackSqsAsyncClient(hmppsSqsProperties.localstackUrl, region)
-          .also { sqsDlqClient -> sqsDlqClient.createQueue(CreateQueueRequest.builder().queueName(queueConfig.dlqName).build()).await() }
+          .also { sqsDlqClient -> runBlocking { sqsDlqClient.createQueue(CreateQueueRequest.builder().queueName(queueConfig.dlqName).build()).await() } }
       }
     }
   }
 
-  suspend fun createSqsAsyncClient(queueConfig: QueueConfig, hmppsSqsProperties: HmppsSqsProperties, sqsDlqClient: SqsAsyncClient?): SqsAsyncClient {
+  fun createSqsAsyncClient(queueConfig: QueueConfig, hmppsSqsProperties: HmppsSqsProperties, sqsDlqClient: SqsAsyncClient?): SqsAsyncClient {
     val region = hmppsSqsProperties.region
     return when (findProvider(hmppsSqsProperties.provider)) {
       Provider.AWS -> sqsAsyncClientFactory.awsSqsAsyncClient(queueConfig.queueAccessKeyId, queueConfig.queueSecretAccessKey, region)
       Provider.LOCALSTACK -> {
         sqsAsyncClientFactory.localstackSqsAsyncClient(hmppsSqsProperties.localstackUrl, region)
-          .also { sqsClient -> createLocalStackQueueAsync(sqsClient, sqsDlqClient, queueConfig.queueName, queueConfig.dlqName) }
+          .also { sqsClient -> runBlocking { createLocalStackQueueAsync(sqsClient, sqsDlqClient, queueConfig.queueName, queueConfig.dlqName, queueConfig.dlqMaxReceiveCount) } }
       }
     }
   }
@@ -87,40 +88,36 @@ class HmppsAsyncQueueFactory(
     sqsDlqAsyncClient: SqsAsyncClient?,
     queueName: String,
     dlqName: String,
+    maxReceiveCount: Int,
   ) {
     if (dlqName.isEmpty() || sqsDlqAsyncClient == null) {
       sqsAsyncClient.createQueue(CreateQueueRequest.builder().queueName(queueName).build()).await()
     } else {
-      sqsDlqAsyncClient.getQueueUrl(GetQueueUrlRequest.builder().queueName(dlqName).build())
-        .let { urlResponse ->
-          sqsDlqAsyncClient.getQueueAttributes(GetQueueAttributesRequest.builder().queueUrl(urlResponse.await().queueUrl()).attributeNames(QueueAttributeName.QUEUE_ARN).build())
-        }
-        .let { attributesResponse ->
-          val dlqArn = attributesResponse.await().attributes()[QueueAttributeName.QUEUE_ARN]
-          sqsAsyncClient.createQueue(
-            CreateQueueRequest.builder().queueName(queueName).attributes(mapOf(QueueAttributeName.REDRIVE_POLICY to """{"deadLetterTargetArn":"$dlqArn","maxReceiveCount":"5"}""")).build()
-          ).await()
-        }
+      val dlqUrl = sqsDlqAsyncClient.getQueueUrl(GetQueueUrlRequest.builder().queueName(dlqName).build())
+      val dlqArn = sqsDlqAsyncClient.getQueueAttributes(GetQueueAttributesRequest.builder().queueUrl(dlqUrl.await().queueUrl()).attributeNames(QueueAttributeName.QUEUE_ARN).build()).await().attributes()[QueueAttributeName.QUEUE_ARN]
+      sqsAsyncClient.createQueue(
+        CreateQueueRequest.builder().queueName(queueName).attributes(mapOf(QueueAttributeName.REDRIVE_POLICY to """{"deadLetterTargetArn":"$dlqArn","maxReceiveCount":"$maxReceiveCount"}""")).build()
+      ).await()
     }
   }
 
-  private suspend fun subscribeToLocalStackAsyncTopic(hmppsSqsProperties: HmppsSqsProperties, queueConfig: QueueConfig, hmppsTopics: List<HmppsAsyncTopic>) {
+  private fun subscribeToLocalStackAsyncTopic(hmppsSqsProperties: HmppsSqsProperties, queueConfig: QueueConfig, hmppsTopics: List<HmppsAsyncTopic>) {
     if (findProvider(hmppsSqsProperties.provider) == Provider.LOCALSTACK) {
       hmppsTopics.firstOrNull { topic -> topic.id == queueConfig.subscribeTopicId }
         ?.also { topic ->
           val subscribeAttribute = if (queueConfig.subscribeFilter.isEmpty()) mapOf() else mapOf("FilterPolicy" to queueConfig.subscribeFilter)
-          topic.snsClient.subscribe(
-            SubscribeRequest.builder()
-              .topicArn(topic.arn)
-              .protocol("sqs")
-              .endpoint("${hmppsSqsProperties.localstackUrl}/queue/${queueConfig.queueName}")
-              .attributes(subscribeAttribute)
-              .build()
-          )
-            .await()
-            .also {
-              log.info("Queue ${queueConfig.queueName} has subscribed to topic with arn ${topic.arn}")
-            }
+          runBlocking {
+            topic.snsClient.subscribe(
+              SubscribeRequest.builder()
+                .topicArn(topic.arn)
+                .protocol("sqs")
+                .endpoint("${hmppsSqsProperties.localstackUrl}/queue/${queueConfig.queueName}")
+                .attributes(subscribeAttribute)
+                .build()
+            )
+          }.also {
+            log.info("Queue ${queueConfig.queueName} has subscribed to topic with arn ${topic.arn}")
+          }
         }
     }
   }

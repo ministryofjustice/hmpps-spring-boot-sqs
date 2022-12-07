@@ -1,6 +1,5 @@
 package uk.gov.justice.hmpps.sqs
 
-import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
@@ -55,7 +54,7 @@ class HmppsAsyncQueueFactoryTest {
       whenever(sqsDlqClient.getQueueUrl(GetQueueUrlRequest.builder().queueName("some dlq name").build()))
         .thenReturn(CompletableFuture.completedFuture(GetQueueUrlResponse.builder().queueUrl("some dlq url").build()))
 
-      hmppsQueues = runBlocking { hmppsQueueFactory.createHmppsAsyncQueues(hmppsSqsProperties) }
+      hmppsQueues = hmppsQueueFactory.createHmppsAsyncQueues(hmppsSqsProperties)
     }
 
     @Test
@@ -110,9 +109,7 @@ class HmppsAsyncQueueFactoryTest {
       whenever(sqsClient.createQueue(any<CreateQueueRequest>()))
         .thenReturn(CompletableFuture.completedFuture(CreateQueueResponse.builder().build()))
 
-      runBlocking {
-        hmppsQueues = hmppsQueueFactory.createHmppsAsyncQueues(hmppsSqsProperties)
-      }
+      hmppsQueues = hmppsQueueFactory.createHmppsAsyncQueues(hmppsSqsProperties)
     }
 
     @Test
