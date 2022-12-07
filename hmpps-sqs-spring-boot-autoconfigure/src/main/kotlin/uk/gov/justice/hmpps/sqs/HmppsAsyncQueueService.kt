@@ -52,21 +52,24 @@ open class HmppsAsyncQueueService(
 
   private suspend fun HmppsAsyncQueue.retryDlqMessages(): RetryDlqResult {
     if (sqsAsyncDlqClient == null || dlqUrl == null) return RetryDlqResult(0, listOf())
+
     val messageCount = sqsAsyncDlqClient.countMessagesOnQueue(dlqUrl!!)
     val map: Map<String, Any> = HashMap()
 
     val messages = (1..messageCount)
-      .map { sqsAsyncDlqClient.receiveMessage(ReceiveMessageRequest.builder().queueUrl(dlqUrl).maxNumberOfMessages(1).attributeNames(QueueAttributeName.ALL).build()).await() }
-      .mapNotNull { it.messages().firstOrNull() }
+      .asFlow()
+      .map { sqsAsyncDlqClient.receiveMessage(ReceiveMessageRequest.builder().queueUrl(dlqUrl).maxNumberOfMessages(1).attributeNames(QueueAttributeName.ALL).build()) }
+      .mapNotNull { it.await().messages().firstOrNull() }
       .map { msg ->
-        sqsAsyncClient.sendMessage(SendMessageRequest.builder().queueUrl(queueUrl).messageBody(msg.body()).messageAttributes(msg.messageAttributes()).build())
-        sqsAsyncDlqClient.deleteMessage(DeleteMessageRequest.builder().queueUrl(dlqUrl).receiptHandle(msg.receiptHandle()).build())
+        sqsAsyncClient.sendMessage(SendMessageRequest.builder().queueUrl(queueUrl).messageBody(msg.body()).messageAttributes(msg.messageAttributes()).build()).await()
+        sqsAsyncDlqClient.deleteMessage(DeleteMessageRequest.builder().queueUrl(dlqUrl).receiptHandle(msg.receiptHandle()).build()).await()
         DlqMessage(messageId = msg.messageId(), body = gson.fromJson(msg.body(), map.javaClass))
-      }
+      }.toList()
 
-    messageCount.takeIf { it > 0 }
-      ?.also { log.info("For dlq ${this.dlqName} we found $messageCount messages, attempted to retry ${messages.size}") }
-      ?.also { telemetryClient?.trackEvent("RetryDLQ", mapOf("dlq-name" to dlqName, "messages-found" to "$messageCount", "messages-retried" to "${messages.size}"), null) }
+    if (messageCount > 0) {
+      log.info("For dlq ${this.dlqName} we found $messageCount messages, attempted to retry ${messages.size}")
+      telemetryClient?.trackEvent("RetryDLQ", mapOf("dlq-name" to dlqName, "messages-found" to "$messageCount", "messages-retried" to "${messages.size}"), null)
+    }
 
     return RetryDlqResult(messageCount, messages)
   }
@@ -90,13 +93,18 @@ open class HmppsAsyncQueueService(
 
   open suspend fun purgeQueue(request: PurgeAsyncQueueRequest): PurgeQueueResult =
     with(request) {
-      sqsClient.countMessagesOnQueue(queueUrl)
-        .takeIf { it > 0 }
-        ?.also { sqsClient.purgeQueue(AwsPurgeQueueRequest.builder().queueUrl(queueUrl).build()) }
-        ?.also { log.info("For queue $queueName attempted to purge $it messages from queue") }
-        ?.also { telemetryClient?.trackEvent("PurgeQueue", mapOf("queue-name" to queueName, "messages-found" to "$it"), null) }
-        ?.let { PurgeQueueResult(it) }
-        ?: PurgeQueueResult(0)
+      val messageCount = sqsAsyncClient.countMessagesOnQueue(queueUrl)
+      return if (messageCount > 0) {
+        sqsAsyncClient.purgeQueue(AwsPurgeQueueRequest.builder().queueUrl(queueUrl).build())
+          .await()
+          .let { PurgeQueueResult(messageCount) }
+          .also {
+            log.info("For queue $queueName attempted to purge $messageCount messages from queue")
+            telemetryClient?.trackEvent("PurgeQueue", mapOf("queue-name" to queueName, "messages-found" to "$messageCount"), null)
+          }
+      } else {
+        PurgeQueueResult(0)
+      }
     }
 
   open fun findQueueToPurge(queueName: String): PurgeAsyncQueueRequest? =
@@ -109,7 +117,7 @@ open class HmppsAsyncQueueService(
 data class RetryAsyncDlqRequest(val hmppsQueue: HmppsAsyncQueue)
 
 data class GetAsyncDlqRequest(val hmppsQueue: HmppsAsyncQueue, val maxMessages: Int)
-data class PurgeAsyncQueueRequest(val queueName: String, val sqsClient: SqsAsyncClient, val queueUrl: String)
+data class PurgeAsyncQueueRequest(val queueName: String, val sqsAsyncClient: SqsAsyncClient, val queueUrl: String)
 
 internal suspend fun SqsAsyncClient.countMessagesOnQueue(queueUrl: String): Int =
   this.getQueueAttributes(GetQueueAttributesRequest.builder().queueUrl(queueUrl).attributeNames(QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES).build())

@@ -62,9 +62,11 @@ open class HmppsQueueService(
           messages += DlqMessage(messageId = msg.messageId(), body = gson.fromJson(msg.body(), map.javaClass))
         }
     }
-    messageCount.takeIf { it > 0 }
-      ?.also { log.info("For dlq ${this.dlqName} we found $messageCount messages, attempted to retry ${messages.size}") }
-      ?.also { telemetryClient?.trackEvent("RetryDLQ", mapOf("dlq-name" to dlqName, "messages-found" to "$messageCount", "messages-retried" to "${messages.size}"), null) }
+    if (messageCount > 0) {
+      log.info("For dlq ${this.dlqName} we found $messageCount messages, attempted to retry ${messages.size}")
+      telemetryClient?.trackEvent("RetryDLQ", mapOf("dlq-name" to dlqName, "messages-found" to "$messageCount", "messages-retried" to "${messages.size}"), null)
+    }
+
     return RetryDlqResult(messageCount, messages.toList())
   }
 
@@ -88,13 +90,15 @@ open class HmppsQueueService(
 
   open fun purgeQueue(request: PurgeQueueRequest): PurgeQueueResult =
     with(request) {
-      sqsClient.countMessagesOnQueue(queueUrl)
-        .takeIf { it > 0 }
-        ?.also { sqsClient.purgeQueue(AwsPurgeQueueRequest.builder().queueUrl(queueUrl).build()) }
-        ?.also { log.info("For queue $queueName attempted to purge $it messages from queue") }
-        ?.also { telemetryClient?.trackEvent("PurgeQueue", mapOf("queue-name" to queueName, "messages-found" to "$it"), null) }
-        ?.let { PurgeQueueResult(it) }
-        ?: PurgeQueueResult(0)
+      val messageCount = sqsClient.countMessagesOnQueue(queueUrl)
+      return if (messageCount > 0) {
+        sqsClient.purgeQueue(AwsPurgeQueueRequest.builder().queueUrl(queueUrl).build())
+        log.info("For queue $queueName attempted to purge $messageCount messages from queue")
+        telemetryClient?.trackEvent("PurgeQueue", mapOf("queue-name" to queueName, "messages-found" to "$messageCount"), null)
+        PurgeQueueResult(messageCount)
+      } else {
+        PurgeQueueResult(0)
+      }
     }
 
   open fun findQueueToPurge(queueName: String): PurgeQueueRequest? =

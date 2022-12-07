@@ -1,5 +1,7 @@
 package uk.gov.justice.hmpps.sqs
 
+import kotlinx.coroutines.future.await
+import kotlinx.coroutines.runBlocking
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.context.ConfigurableApplicationContext
@@ -47,10 +49,8 @@ class HmppsAsyncTopicFactory(
       when (provider) {
         "aws" -> snsAsyncClientFactory.awsSnsAsyncClient(topicConfig.accessKeyId, topicConfig.secretAccessKey, region)
         "localstack" -> snsAsyncClientFactory.localstackSnsAsyncClient(localstackUrl, region)
-          .also {
-            it.createTopic(CreateTopicRequest.builder().name(topicConfig.name).build())
-              .thenRun { log.info("Created a LocalStack SNS topic for topicId $topicId with ARN ${topicConfig.arn}") } // TODO handle the error?
-          }
+          .also { runBlocking { it.createTopic(CreateTopicRequest.builder().name(topicConfig.name).build()).await() } }
+          .also { log.info("Created a LocalStack SNS topic for topicId $topicId with ARN ${topicConfig.arn}") }
         else -> throw IllegalStateException("Unrecognised HMPPS SQS provider $provider")
       }
     }

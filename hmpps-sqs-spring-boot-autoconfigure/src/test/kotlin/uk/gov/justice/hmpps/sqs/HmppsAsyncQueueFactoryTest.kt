@@ -15,6 +15,8 @@ import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory
 import org.springframework.context.ConfigurableApplicationContext
 import software.amazon.awssdk.services.sqs.SqsAsyncClient
+import software.amazon.awssdk.services.sqs.model.CreateQueueRequest
+import software.amazon.awssdk.services.sqs.model.CreateQueueResponse
 import software.amazon.awssdk.services.sqs.model.GetQueueAttributesRequest
 import software.amazon.awssdk.services.sqs.model.GetQueueAttributesResponse
 import software.amazon.awssdk.services.sqs.model.GetQueueUrlRequest
@@ -96,12 +98,16 @@ class HmppsAsyncQueueFactoryTest {
       whenever(sqsFactory.localstackSqsAsyncClient(anyString(), anyString()))
         .thenReturn(sqsDlqClient)
         .thenReturn(sqsClient)
-      whenever(sqsClient.getQueueUrl(GetQueueUrlRequest.builder().queueName("some queue name").build()))
+      whenever(sqsClient.getQueueUrl(any<GetQueueUrlRequest>()))
         .thenReturn(CompletableFuture.completedFuture(GetQueueUrlResponse.builder().queueUrl("some queue url").build()))
-      whenever(sqsDlqClient.getQueueUrl(GetQueueUrlRequest.builder().queueName("some dlq name").build()))
+      whenever(sqsDlqClient.getQueueUrl(any<GetQueueUrlRequest>()))
         .thenReturn(CompletableFuture.completedFuture(GetQueueUrlResponse.builder().queueUrl("some dlq url").build()))
-      whenever(sqsDlqClient.getQueueAttributes(GetQueueAttributesRequest.builder().attributeNames(QueueAttributeName.QUEUE_ARN).build()))
+      whenever(sqsDlqClient.getQueueAttributes(any<GetQueueAttributesRequest>()))
         .thenReturn(CompletableFuture.completedFuture(GetQueueAttributesResponse.builder().attributes(mapOf(QueueAttributeName.QUEUE_ARN to "some dlq arn")).build()))
+      whenever(sqsDlqClient.createQueue(any<CreateQueueRequest>()))
+        .thenReturn(CompletableFuture.completedFuture(CreateQueueResponse.builder().build()))
+      whenever(sqsClient.createQueue(any<CreateQueueRequest>()))
+        .thenReturn(CompletableFuture.completedFuture(CreateQueueResponse.builder().build()))
 
       hmppsQueues = hmppsQueueFactory.createHmppsAsyncQueues(hmppsSqsProperties)
     }

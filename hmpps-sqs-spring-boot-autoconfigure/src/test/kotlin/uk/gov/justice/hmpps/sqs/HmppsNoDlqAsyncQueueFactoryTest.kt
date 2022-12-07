@@ -17,6 +17,8 @@ import org.springframework.beans.factory.config.ConfigurableListableBeanFactory
 import org.springframework.context.ConfigurableApplicationContext
 import software.amazon.awssdk.services.sqs.SqsAsyncClient
 import software.amazon.awssdk.services.sqs.SqsClient
+import software.amazon.awssdk.services.sqs.model.CreateQueueRequest
+import software.amazon.awssdk.services.sqs.model.CreateQueueResponse
 import software.amazon.awssdk.services.sqs.model.GetQueueUrlRequest
 import software.amazon.awssdk.services.sqs.model.GetQueueUrlResponse
 import uk.gov.justice.hmpps.sqs.HmppsSqsProperties.QueueConfig
@@ -82,15 +84,17 @@ class HmppsNoDlqAsyncQueueFactoryTest {
   inner class `Create LocalStack HmppsQueue with asynchronous SQS clients` {
     private val someQueueConfig = QueueConfig(asyncQueueClient = true, asyncDlqClient = true, queueName = "some queue name")
     private val hmppsSqsProperties = HmppsSqsProperties(provider = "localstack", queues = mapOf("somequeueid" to someQueueConfig))
-    private val sqsClient = mock<SqsAsyncClient>()
+    private val sqsAsyncClient = mock<SqsAsyncClient>()
     private lateinit var hmppsQueues: List<HmppsAsyncQueue>
 
     @BeforeEach
     fun `configure mocks and register queues`() {
       whenever(sqsAsyncFactory.localstackSqsAsyncClient(anyString(), anyString()))
-        .thenReturn(sqsClient)
-      whenever(sqsClient.getQueueUrl(GetQueueUrlRequest.builder().queueName("some queue name").build()))
+        .thenReturn(sqsAsyncClient)
+      whenever(sqsAsyncClient.getQueueUrl(GetQueueUrlRequest.builder().queueName("some queue name").build()))
         .thenReturn(CompletableFuture.completedFuture(GetQueueUrlResponse.builder().queueUrl("some queue url").build()))
+      whenever(sqsAsyncClient.createQueue(any<CreateQueueRequest>()))
+        .thenReturn(CompletableFuture.completedFuture(CreateQueueResponse.builder().build()))
 
       hmppsQueues = hmppsQueueFactory.createHmppsAsyncQueues(hmppsSqsProperties)
     }
