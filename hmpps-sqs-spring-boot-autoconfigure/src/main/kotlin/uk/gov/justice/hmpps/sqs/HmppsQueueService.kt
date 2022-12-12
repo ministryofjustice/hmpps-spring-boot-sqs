@@ -18,7 +18,7 @@ class MissingTopicException(message: String) : RuntimeException(message)
 
 open class HmppsQueueService(
   private val telemetryClient: TelemetryClient?,
-  hmppsTopicFactory: HmppsTopicFactory,
+  hmppsTopicService: HmppsTopicService,
   hmppsQueueFactory: HmppsQueueFactory,
   hmppsSqsProperties: HmppsSqsProperties,
 ) {
@@ -28,14 +28,11 @@ open class HmppsQueueService(
     private val gson = GsonBuilder().setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE).create()
   }
 
-  private val hmppsTopics: List<HmppsTopic> = hmppsTopicFactory.createHmppsTopics(hmppsSqsProperties)
-  private val hmppsQueues: List<HmppsQueue> = hmppsQueueFactory.createHmppsQueues(hmppsSqsProperties, hmppsTopics)
+  private val hmppsQueues: List<HmppsQueue> = hmppsQueueFactory.createHmppsQueues(hmppsSqsProperties, hmppsTopicService.hmppsTopics, hmppsTopicService.hmppsAsyncTopics)
 
   open fun findByQueueId(queueId: String) = hmppsQueues.associateBy { it.id }.getOrDefault(queueId, null)
   open fun findByQueueName(queueName: String) = hmppsQueues.associateBy { it.queueName }.getOrDefault(queueName, null)
   open fun findByDlqName(dlqName: String) = hmppsQueues.associateBy { it.dlqName }.getOrDefault(dlqName, null)
-
-  open fun findByTopicId(topicId: String) = hmppsTopics.associateBy { it.id }.getOrDefault(topicId, null)
 
   open fun retryDlqMessages(request: RetryDlqRequest): RetryDlqResult =
     request.hmppsQueue.retryDlqMessages()

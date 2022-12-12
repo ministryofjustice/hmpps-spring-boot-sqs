@@ -32,7 +32,7 @@ import software.amazon.awssdk.services.sqs.model.SendMessageRequest
 class HmppsQueueServiceTest {
 
   private val telemetryClient = mock<TelemetryClient>()
-  private val hmppsTopicFactory = mock<HmppsTopicFactory>()
+  private val hmppsTopicService = mock<HmppsTopicService>()
   private val hmppsQueueFactory = mock<HmppsQueueFactory>()
   private val hmppsSqsProperties = mock<HmppsSqsProperties>()
   private lateinit var hmppsQueueService: HmppsQueueService
@@ -47,7 +47,7 @@ class HmppsQueueServiceTest {
     fun `add test data`() {
       whenever(sqsClient.getQueueUrl(any<GetQueueUrlRequest>())).thenReturn(GetQueueUrlResponse.builder().queueUrl("some queue url").build())
       whenever(sqsDlqClient.getQueueUrl(any<GetQueueUrlRequest>())).thenReturn(GetQueueUrlResponse.builder().queueUrl("some dlq url").build())
-      whenever(hmppsQueueFactory.createHmppsQueues(any(), any()))
+      whenever(hmppsQueueFactory.createHmppsQueues(any(), any(), any()))
         .thenReturn(
           listOf(
             HmppsQueue("some queue id", sqsClient, "some queue name", sqsDlqClient, "some dlq name"),
@@ -55,7 +55,7 @@ class HmppsQueueServiceTest {
           )
         )
 
-      hmppsQueueService = HmppsQueueService(telemetryClient, hmppsTopicFactory, hmppsQueueFactory, hmppsSqsProperties)
+      hmppsQueueService = HmppsQueueService(telemetryClient, hmppsTopicService, hmppsQueueFactory, hmppsSqsProperties)
     }
 
     @Test
@@ -100,7 +100,7 @@ class HmppsQueueServiceTest {
       whenever(queueSqs.getQueueUrl(any<GetQueueUrlRequest>())).thenReturn(GetQueueUrlResponse.builder().queueUrl("queueUrl").build())
       whenever(dlqSqs.getQueueUrl(any<GetQueueUrlRequest>())).thenReturn(GetQueueUrlResponse.builder().queueUrl("dlqUrl").build())
 
-      hmppsQueueService = HmppsQueueService(telemetryClient, hmppsTopicFactory, hmppsQueueFactory, hmppsSqsProperties)
+      hmppsQueueService = HmppsQueueService(telemetryClient, hmppsTopicService, hmppsQueueFactory, hmppsSqsProperties)
     }
 
     @Nested
@@ -167,7 +167,7 @@ class HmppsQueueServiceTest {
             ).build()
           )
 
-        hmppsQueueService = HmppsQueueService(telemetryClient, hmppsTopicFactory, hmppsQueueFactory, hmppsSqsProperties)
+        hmppsQueueService = HmppsQueueService(telemetryClient, hmppsTopicService, hmppsQueueFactory, hmppsSqsProperties)
       }
 
       @Test
@@ -282,7 +282,7 @@ class HmppsQueueServiceTest {
             ).build()
           )
 
-        hmppsQueueService = HmppsQueueService(telemetryClient, hmppsTopicFactory, hmppsQueueFactory, hmppsSqsProperties)
+        hmppsQueueService = HmppsQueueService(telemetryClient, hmppsTopicService, hmppsQueueFactory, hmppsSqsProperties)
       }
 
       @Test
@@ -365,7 +365,7 @@ class HmppsQueueServiceTest {
         )
           .thenReturn(ReceiveMessageResponse.builder().build())
 
-        hmppsQueueService = HmppsQueueService(telemetryClient, hmppsTopicFactory, hmppsQueueFactory, hmppsSqsProperties)
+        hmppsQueueService = HmppsQueueService(telemetryClient, hmppsTopicService, hmppsQueueFactory, hmppsSqsProperties)
       }
 
       @Test
@@ -440,7 +440,7 @@ class HmppsQueueServiceTest {
       whenever(queueSqs.getQueueUrl(any<GetQueueUrlRequest>())).thenReturn(GetQueueUrlResponse.builder().queueUrl("queueUrl").build())
       whenever(dlqSqs.getQueueUrl(any<GetQueueUrlRequest>())).thenReturn(GetQueueUrlResponse.builder().queueUrl("dlqUrl").build())
 
-      hmppsQueueService = HmppsQueueService(telemetryClient, hmppsTopicFactory, hmppsQueueFactory, hmppsSqsProperties)
+      hmppsQueueService = HmppsQueueService(telemetryClient, hmppsTopicService, hmppsQueueFactory, hmppsSqsProperties)
     }
 
     @BeforeEach
@@ -467,7 +467,7 @@ class HmppsQueueServiceTest {
           ).build()
         )
 
-      hmppsQueueService = HmppsQueueService(telemetryClient, hmppsTopicFactory, hmppsQueueFactory, hmppsSqsProperties)
+      hmppsQueueService = HmppsQueueService(telemetryClient, hmppsTopicService, hmppsQueueFactory, hmppsSqsProperties)
     }
 
     @Test
@@ -497,7 +497,7 @@ class HmppsQueueServiceTest {
     fun `add test data`() {
       whenever(sqsClient.getQueueUrl(any<GetQueueUrlRequest>())).thenReturn(GetQueueUrlResponse.builder().queueUrl("some queue url").build())
       whenever(sqsDlqClient.getQueueUrl(any<GetQueueUrlRequest>())).thenReturn(GetQueueUrlResponse.builder().queueUrl("some dlq url").build())
-      whenever(hmppsQueueFactory.createHmppsQueues(any(), any()))
+      whenever(hmppsQueueFactory.createHmppsQueues(any(), any(), any()))
         .thenReturn(
           listOf(
             HmppsQueue("some queue id", sqsClient, "some queue name", sqsDlqClient, "some dlq name"),
@@ -505,7 +505,7 @@ class HmppsQueueServiceTest {
           )
         )
 
-      hmppsQueueService = HmppsQueueService(telemetryClient, hmppsTopicFactory, hmppsQueueFactory, hmppsSqsProperties)
+      hmppsQueueService = HmppsQueueService(telemetryClient, hmppsTopicService, hmppsQueueFactory, hmppsSqsProperties)
     }
 
     @Test
@@ -534,7 +534,7 @@ class HmppsQueueServiceTest {
   inner class PurgeQueue {
 
     private val sqsClient = mock<SqsClient>()
-    private val hmppsQueueService = HmppsQueueService(telemetryClient, hmppsTopicFactory, hmppsQueueFactory, hmppsSqsProperties)
+    private val hmppsQueueService = HmppsQueueService(telemetryClient, hmppsTopicService, hmppsQueueFactory, hmppsSqsProperties)
 
     @Test
     fun `no messages found, should not attempt to purge queue`() {
