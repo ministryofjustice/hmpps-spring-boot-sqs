@@ -20,9 +20,14 @@ ext["snakeyaml.version"] = "1.33"
 // Pinned to counter various CVEs. Please remove once Spring Boot brings in at least this version.
 ext["spring-security.version"] = "5.7.5"
 
+dependencyManagement {
+  imports {
+    mavenBom("software.amazon.awssdk:bom:2.18.28")
+  }
+}
+
 dependencies {
   implementation("com.amazonaws:amazon-sqs-java-messaging-lib:2.0.1")
-  implementation(platform("software.amazon.awssdk:bom:2.18.28"))
   implementation("software.amazon.awssdk:sns")
   implementation("org.springframework.boot:spring-boot-starter-web")
   implementation("org.springframework.boot:spring-boot-starter-webflux")
