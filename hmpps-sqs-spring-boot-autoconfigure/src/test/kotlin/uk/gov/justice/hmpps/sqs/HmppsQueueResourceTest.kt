@@ -1,12 +1,17 @@
 package uk.gov.justice.hmpps.sqs
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.mockito.ArgumentMatchers.anyString
 import org.mockito.kotlin.any
 import org.mockito.kotlin.check
+import org.mockito.kotlin.doSuspendableAnswer
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -31,10 +36,13 @@ class HmppsQueueResourceTest {
   @MockBean
   private lateinit var hmppsQueueService: HmppsQueueService
 
+  @MockBean
+  private lateinit var hmppsAsyncQueueService: HmppsAsyncQueueService
+
   @Nested
   inner class RetryDlq {
     @Test
-    fun `should call the service`() {
+    fun `should call the service for a sync queue client`() {
       val hmppsQueue = mock<HmppsQueue>()
       whenever(hmppsQueueService.findByDlqName("some dlq name"))
         .thenReturn(hmppsQueue)
@@ -52,6 +60,28 @@ class HmppsQueueResourceTest {
     }
 
     @Test
+    fun `should call the service for an async queue client`() = runBlocking<Unit> {
+      val hmppsAsyncQueue = mock<HmppsAsyncQueue>()
+      whenever(hmppsQueueService.findByDlqName("some dlq name"))
+        .thenReturn(null)
+      whenever(hmppsAsyncQueueService.findByDlqName("some dlq name"))
+        .thenReturn(hmppsAsyncQueue)
+      whenever(hmppsAsyncQueueService.retryDlqMessages(any())).doSuspendableAnswer {
+        withContext(Dispatchers.Default) { RetryDlqResult(2, listOf(DlqMessage(mapOf("key" to "value"), "id"))) }
+      }
+
+      mockMvc.perform(put("/queue-admin/retry-dlq/some dlq name"))
+        .andExpect(status().isOk)
+        .andExpect(jsonPath("$.messagesFoundCount").value(2))
+        .andExpect(jsonPath("$.messages.length()").value(1))
+        .andExpect(jsonPath("$.messages[0].messageId").value("id"))
+        .andExpect(jsonPath("$.messages[0].body.key").value("value"))
+
+      verify(hmppsQueueService, never()).retryDlqMessages(any())
+      verify(hmppsAsyncQueueService).retryDlqMessages(RetryAsyncDlqRequest(hmppsAsyncQueue))
+    }
+
+    @Test
     fun `should return not found`() {
       whenever(hmppsQueueService.findByDlqName("some dlq name")).thenReturn(null)
 
@@ -65,20 +95,22 @@ class HmppsQueueResourceTest {
   @Nested
   inner class RetryAllDlqs {
     @Test
-    fun `should call the service`() {
+    fun `should call the service`() = runBlocking<Unit> {
       whenever(hmppsQueueService.retryAllDlqs()).thenReturn(listOf())
+      whenever(hmppsAsyncQueueService.retryAllDlqs()).thenReturn(listOf())
 
       mockMvc.perform(put("/queue-admin/retry-all-dlqs"))
         .andExpect(status().isOk)
 
       verify(hmppsQueueService).retryAllDlqs()
+      verify(hmppsAsyncQueueService).retryAllDlqs()
     }
   }
 
   @Nested
   inner class PurgeQueue {
     @Test
-    fun `should attempt to purge queue if found`() {
+    fun `should attempt to purge with sync queue client`() {
       whenever(hmppsQueueService.findQueueToPurge("some queue"))
         .thenReturn(PurgeQueueRequest("some queue", mock(), "some queue url"))
       whenever(hmppsQueueService.purgeQueue(any()))
@@ -89,7 +121,31 @@ class HmppsQueueResourceTest {
         .andExpect(jsonPath("$.messagesFoundCount").value(10))
 
       verify(hmppsQueueService).findQueueToPurge("some queue")
+      verify(hmppsAsyncQueueService, never()).findQueueToPurge("some queue")
       verify(hmppsQueueService).purgeQueue(
+        check {
+          assertThat(it.queueName).isEqualTo("some queue")
+        }
+      )
+    }
+
+    @Test
+    fun `should attempt to purge with async queue client`() = runBlocking<Unit> {
+      whenever(hmppsQueueService.findQueueToPurge("some queue"))
+        .thenReturn(null)
+      whenever(hmppsAsyncQueueService.findQueueToPurge("some queue"))
+        .thenReturn(PurgeAsyncQueueRequest("some queue", mock(), "some queue url"))
+      whenever(hmppsAsyncQueueService.purgeQueue(any())).doSuspendableAnswer {
+        withContext(Dispatchers.Default) { PurgeQueueResult(10) }
+      }
+
+      mockMvc.perform(put("/queue-admin/purge-queue/some queue"))
+        .andExpect(status().isOk)
+        .andExpect(jsonPath("$.messagesFoundCount").value(10))
+
+      verify(hmppsQueueService).findQueueToPurge("some queue")
+      verify(hmppsAsyncQueueService).findQueueToPurge("some queue")
+      verify(hmppsAsyncQueueService).purgeQueue(
         check {
           assertThat(it.queueName).isEqualTo("some queue")
         }

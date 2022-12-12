@@ -45,4 +45,24 @@ class QueueHealthCheckTest : IntegrationTestBase() {
       .jsonPath("components.outboundqueue-health.details.dlqStatus").isEqualTo("UP")
       .jsonPath("components.outboundqueue-health.details.messagesOnDlq").isEqualTo(0)
   }
+
+  @Test
+  fun `Async queue health ok`() {
+    oAuthApi.stubHealthPing(200)
+
+    webTestClient.get()
+      .uri("/health")
+      .exchange()
+      .expectStatus()
+      .isOk
+      .expectBody()
+      .jsonPath("status").isEqualTo("UP")
+      .jsonPath("components.asyncqueue-health.status").isEqualTo("UP")
+      .jsonPath("components.asyncqueue-health.details.queueName").isEqualTo(hmppsSqsPropertiesSpy.asyncQueueConfig().queueName)
+      .jsonPath("components.asyncqueue-health.details.messagesOnQueue").isEqualTo(0)
+      .jsonPath("components.asyncqueue-health.details.messagesInFlight").isEqualTo(0)
+      .jsonPath("components.asyncqueue-health.details.dlqName").isEqualTo(hmppsSqsPropertiesSpy.asyncQueueConfig().dlqName)
+      .jsonPath("components.asyncqueue-health.details.dlqStatus").isEqualTo("UP")
+      .jsonPath("components.asyncqueue-health.details.messagesOnDlq").isEqualTo(0)
+  }
 }
