@@ -36,8 +36,8 @@ class HmppsSqsConfiguration {
 
   @Bean
   @ConditionalOnMissingBean
-  fun hmppsTopicService(hmppsTopicFactory: HmppsTopicFactory, hmppsAsyncTopicFactory: HmppsAsyncTopicFactory, hmppsSqsProperties: HmppsSqsProperties)
-    = HmppsTopicService(hmppsTopicFactory, hmppsAsyncTopicFactory, hmppsSqsProperties)
+  fun hmppsTopicService(hmppsTopicFactory: HmppsTopicFactory, hmppsAsyncTopicFactory: HmppsAsyncTopicFactory, hmppsSqsProperties: HmppsSqsProperties) =
+    HmppsTopicService(hmppsTopicFactory, hmppsAsyncTopicFactory, hmppsSqsProperties)
 
   @Bean
   @ConditionalOnMissingBean

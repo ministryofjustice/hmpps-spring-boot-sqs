@@ -131,7 +131,7 @@ class HmppsQueueFactory(
     return SubscribeRequest.builder()
       .topicArn(topicArn)
       .protocol("sqs")
-      .endpoint("${localstackUrl}/queue/${queueConfig.queueName}")
+      .endpoint("$localstackUrl/queue/${queueConfig.queueName}")
       .attributes(subscribeAttribute)
       .build()
   }
