@@ -99,6 +99,7 @@ class HmppsAsyncQueueResourceTest {
   inner class RetryAllDlqs {
     @Test
     fun `should call the service`() = runBlocking<Unit> {
+      whenever(hmppsQueueService.retryAllDlqs()).thenReturn(listOf())
       whenever(hmppsAsyncQueueService.retryAllDlqs()).thenReturn(listOf())
 
       webTestClient.put()
@@ -106,6 +107,7 @@ class HmppsAsyncQueueResourceTest {
         .exchange()
         .expectStatus().isOk
 
+      verify(hmppsQueueService).retryAllDlqs()
       verify(hmppsAsyncQueueService).retryAllDlqs()
     }
   }

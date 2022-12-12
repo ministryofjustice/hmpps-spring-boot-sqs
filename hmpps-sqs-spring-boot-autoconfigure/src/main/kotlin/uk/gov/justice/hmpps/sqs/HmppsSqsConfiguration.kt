@@ -1,10 +1,10 @@
 package uk.gov.justice.hmpps.sqs
 
 import com.microsoft.applicationinsights.TelemetryClient
-import org.springframework.boot.actuate.autoconfigure.health.HealthEndpointAutoConfiguration
 import org.springframework.boot.autoconfigure.AutoConfigureBefore
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
+import org.springframework.boot.autoconfigure.web.reactive.WebFluxAutoConfiguration
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.ConfigurableApplicationContext
 import org.springframework.context.annotation.Bean
@@ -15,7 +15,7 @@ import org.springframework.jms.annotation.EnableJms
 @Configuration
 @EnableConfigurationProperties(HmppsSqsProperties::class)
 @EnableJms
-@AutoConfigureBefore(HealthEndpointAutoConfiguration::class)
+@AutoConfigureBefore(WebFluxAutoConfiguration::class)
 class HmppsSqsConfiguration {
 
   @Bean

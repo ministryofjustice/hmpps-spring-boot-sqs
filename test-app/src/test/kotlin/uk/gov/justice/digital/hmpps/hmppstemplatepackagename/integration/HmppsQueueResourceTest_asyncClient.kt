@@ -109,7 +109,7 @@ class HmppsQueueResourceTest_asyncClient : IntegrationTestBase() {
         .jsonPath("messagesFoundCount").isEqualTo(3)
         .jsonPath("messagesReturnedCount").isEqualTo(3)
         .jsonPath("messages..body.MessageId").value(
-          Matchers.contains(
+          Matchers.containsInAnyOrder(
             "message-id-1",
             "message-id-2",
             "message-id-3"

@@ -89,13 +89,13 @@ class HmppsAsyncQueueHealth(private val hmppsQueue: HmppsAsyncQueue) : HealthInd
 
   private fun getQueueAttributes(): Result<GetQueueAttributesResponse> {
     return runCatching {
-      hmppsQueue.sqsAsyncClient.getQueueAttributes(GetQueueAttributesRequest.builder().queueUrl(hmppsQueue.queueUrl).build()).get()
+      hmppsQueue.sqsAsyncClient.getQueueAttributes(GetQueueAttributesRequest.builder().queueUrl(hmppsQueue.queueUrl).attributeNames(QueueAttributeName.ALL).build()).get()
     }
   }
 
   private fun getDlqAttributes(): Result<GetQueueAttributesResponse> =
     runCatching {
-      hmppsQueue.sqsAsyncClient.getQueueAttributes(GetQueueAttributesRequest.builder().queueUrl(hmppsQueue.queueUrl).build())?.get()
+      hmppsQueue.sqsAsyncClient.getQueueAttributes(GetQueueAttributesRequest.builder().queueUrl(hmppsQueue.queueUrl).attributeNames(QueueAttributeName.ALL).build())?.get()
         ?: throw MissingDlqClientException(hmppsQueue.dlqName)
     }
 }
