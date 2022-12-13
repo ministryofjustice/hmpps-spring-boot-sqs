@@ -53,6 +53,11 @@
         <appender-ref ref="consoleAppender"/>
     </logger>
 
+    <logger name="io.awspring.cloud" additivity="false" level="DEBUG">
+        <appender-ref ref="logAppender"/>
+        <appender-ref ref="consoleAppender"/>
+    </logger>
+
     <root level="INFO">
         <appender-ref ref="logAppender"/>
     </root>

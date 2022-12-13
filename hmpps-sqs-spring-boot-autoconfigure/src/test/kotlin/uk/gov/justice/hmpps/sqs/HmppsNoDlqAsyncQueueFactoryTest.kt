@@ -75,7 +75,7 @@ class HmppsNoDlqAsyncQueueFactoryTest {
     fun `should register a health indicator but not for dlq`() {
       verify(beanFactory).registerSingleton(eq("somequeueid-health"), any<HmppsAsyncQueueHealth>())
       verify(beanFactory).registerSingleton(eq("somequeueid-sqs-client"), any<SqsAsyncClient>())
-      verify(beanFactory, never()).registerSingleton(anyString(), any<HmppsQueueDestinationContainerFactory>())
+      verify(beanFactory).registerSingleton(anyString(), any<HmppsQueueDestinationContainerFactory>())
       verify(beanFactory, never()).registerSingleton(contains("dlq-client"), any<SqsAsyncClient>())
     }
   }
@@ -122,7 +122,7 @@ class HmppsNoDlqAsyncQueueFactoryTest {
     fun `should register all beans created`() {
       verify(beanFactory).registerSingleton(eq("somequeueid-health"), any<HmppsAsyncQueueHealth>())
       verify(beanFactory).registerSingleton(eq("somequeueid-sqs-client"), any<SqsAsyncClient>())
-      verify(beanFactory, never()).registerSingleton(eq("somequeueid-jms-listener-factory"), any<HmppsQueueDestinationContainerFactory>())
+      verify(beanFactory).registerSingleton(eq("somequeueid-sqs-listener-factory"), any<HmppsQueueDestinationContainerFactory>())
       verify(beanFactory, never()).registerSingleton(anyString(), any<SqsClient>())
     }
   }

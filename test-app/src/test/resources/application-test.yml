@@ -13,11 +13,15 @@ hmpps.sqs:
       queueName: ${random.uuid}
       subscribeTopicId: inboundtopic
       subscribeFilter: '{"eventType":[ "OFFENDER_MOVEMENT-RECEPTION", "OFFENDER_MOVEMENT-DISCHARGE", "test.type"] }'
+      asyncDlqClient: true
+      asyncQueueClient: true
     outboundqueue:
       dlqName: ${random.uuid}
       queueName: ${random.uuid}
       subscribeTopicId: outboundtopic
       subscribeFilter: '{"eventType":[ "offender.movement.reception", "test.type"] }'
+      asyncDlqClient: true
+      asyncQueueClient: true
     outboundtestqueue:
       dlqName: ${random.uuid}
       queueName: ${random.uuid}

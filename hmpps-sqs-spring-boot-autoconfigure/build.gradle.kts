@@ -17,25 +17,20 @@ plugins {
 
 // Pinned to counter various CVEs with previous versions. Please remove this once Spring pulls in at least this version: https://docs.spring.io/spring-boot/docs/current/reference/html/dependency-versions.html
 ext["snakeyaml.version"] = "1.33"
-// Pinned to counter various CVEs. Please remove once Spring Boot brings in at least this version.
-ext["spring-security.version"] = "5.7.5"
-
-dependencyManagement {
-  imports {
-    mavenBom("software.amazon.awssdk:bom:2.18.28")
-  }
-}
 
 dependencies {
-  implementation("com.amazonaws:amazon-sqs-java-messaging-lib:2.0.1")
-  implementation("software.amazon.awssdk:sns")
+  implementation(platform("io.awspring.cloud:spring-cloud-aws-dependencies:3.0.0-M3"))
+  implementation(platform("software.amazon.awssdk:bom:2.18.28"))
+
   implementation("org.springframework.boot:spring-boot-starter-web")
   implementation("org.springframework.boot:spring-boot-starter-webflux")
   implementation("org.springframework.boot:spring-boot-starter-security")
   implementation("org.springframework.boot:spring-boot-starter-actuator")
+  api("io.awspring.cloud:spring-cloud-aws-starter") { exclude("io.awspring.cloud", "spring-cloud-aws-autoconfigure") }
+  implementation("io.awspring.cloud:spring-cloud-aws-sns")
+  implementation("io.awspring.cloud:spring-cloud-aws-sqs")
   implementation("com.google.code.gson:gson:2.10")
   implementation("com.microsoft.azure:applicationinsights-core:3.4.4")
-  implementation("org.springframework:spring-jms")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8")
 

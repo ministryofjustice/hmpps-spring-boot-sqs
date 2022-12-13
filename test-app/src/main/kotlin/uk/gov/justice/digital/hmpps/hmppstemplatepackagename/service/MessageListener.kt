@@ -1,13 +1,13 @@
 package uk.gov.justice.digital.hmpps.hmppstemplatepackagename.service
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import org.springframework.jms.annotation.JmsListener
+import io.awspring.cloud.sqs.annotation.SqsListener
 import org.springframework.stereotype.Service
 
 @Service
 class InboundMessageListener(private val inboundMessageService: InboundMessageService, private val objectMapper: ObjectMapper) {
 
-  @JmsListener(destination = "inboundqueue", containerFactory = "hmppsQueueContainerFactoryProxy")
+  @SqsListener(queueNames = ["inboundqueue"], factory = "hmppsQueueContainerFactoryProxy")
   fun processMessage(rawMessage: String?) {
     val (Message) = objectMapper.readValue(rawMessage, Message::class.java)
     val event = objectMapper.readValue(Message, HmppsEvent::class.java)
@@ -18,7 +18,7 @@ class InboundMessageListener(private val inboundMessageService: InboundMessageSe
 @Service
 class OutboundMessageListener(private val outboundMessageService: OutboundMessageService, private val objectMapper: ObjectMapper) {
 
-  @JmsListener(destination = "outboundqueue", containerFactory = "hmppsQueueContainerFactoryProxy")
+  @SqsListener(queueNames = ["outboundqueue"], factory = "hmppsQueueContainerFactoryProxy")
   fun processMessage(rawMessage: String?) {
     val (message) = objectMapper.readValue(rawMessage, Message::class.java)
     val event = objectMapper.readValue(message, HmppsEvent::class.java)

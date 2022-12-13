@@ -54,7 +54,7 @@ implementation 'uk.gov.justice.service.hmpps:hmpps-sqs-spring-boot-starter:<libr
 
 Then create some properties defining the queue(s) in the application. See [HMPPS Queue Properties](#hmpps-queue-properties) for information on the properties, and check the [test-app](https://github.com/ministryofjustice/hmpps-spring-boot-sqs/tree/main/test-app) for an example.
 
-You will now get features like HealthIndicators, queue admin endpoints, AmazonSQS/SNS beans and a custom JmsListenerContainerFactory - all for free. Read more about all available features [here](#features).
+You will now get features like HealthIndicators, queue admin endpoints, AmazonSQS/SNS beans and a custom SqsMessageListenerContainerFactory - all for free. Read more about all available features [here](#features).
 
 ## How To Run This Locally
 
@@ -72,7 +72,7 @@ This library is driven by some configuration properties prefixed `hmpps.sqs` tha
 * create `AmazonSNS` beans for each topic defined which are configured for AWS (or LocalStack for testing / running locally)
 * create a `HealthIndicator` for each queue and topic which is registered with Spring Boot Actuator and appears on your `/health` page
 * add `HmpspQueueResource` to the project which provides endpoints for retrying DLQ messages and purging queues
-* create a JMS listener connection factory for each queue defined
+* create a SQS listener connection factory for each queue defined
 * create LocalStack queues and topics for testing against, and subscribe queues to topics where configured
 
 Examples of property usage can be found in the test project in the following places:
@@ -123,29 +123,29 @@ Each topic declared in the `topics` map is defined in the `TopicConfig` property
 
 As we define the production queue and topic properties in environment variables that map to a complex object in `HmppsSqsProperties` Spring is unable to handle a mixed case `queueId` or `topicId`.
 
-### JmsListener
+### SqsListener
 
-The `@EnableJms` annotation is included by this library.
+The `@Import(SqsBootstrapConfiguration::class)` annotation is included by this library which bootstraps the parts of the AWS Cloud Spring library required to register the listeners.
 
-### JmsListenerContainerFactory
+### SqsMessageListenerContainerFactory
 
-To read from a queue with JMS we need a `JmsListenerContainerFactory` for each queue which can then be referenced in the `@JmsListener` annotation.
+To read from a queue with SQS we need a `SqsMessageListenerContainerFactory` for each queue which can then be referenced in the `@SqsListener` annotation.
 
 This library will create a container factory for each queue defined in `HmppsSqsProperties` and save them in proxy class `HmppsQueueContainerFactoryProxy` with a link from each `queueId` to the relevant container factory.
 
-This means that to get a JMS listener working for each queue in `HmppsSqsProperties` you need to declare your `@JmsListener` annotation in the following format:
+This means that to get a SQS listener working for each queue in `HmppsSqsProperties` you need to declare your `@SqsListener` annotation in the following format:
 
 ```kotlin
-  @JmsListener(destination = "<queueId>", containerFactory = "hmppsQueueContainerFactoryProxy")
+  @SqsListener(queueNames = ["<queueId>"], containerFactory = "hmppsQueueContainerFactoryProxy")
 ```
 
 where `<queueId>` is taken from [HmppsSqsProperties Definitions](#hmppssqsproperties-definitions)
 
 An example is available in the `test-app`'s [listeners](https://github.com/ministryofjustice/hmpps-spring-boot-sqs/blob/main/test-app/src/main/kotlin/uk/gov/justice/digital/hmpps/hmppstemplatepackagename/service/MessageListener.kt).
 
-#### Overriding the JmsListenerContainerFactory
+#### Overriding the SqsMessageListenerContainerFactory
 
-If you don't wish to use the `HmppsQueueContainerFactoryProxy` because you want to configure your listener in a different way then simply create your own `DefaultJmsListenerContainerFactory` and reference it on the `@JmsListener` annotation.
+If you don't wish to use the `HmppsQueueContainerFactoryProxy` because you want to configure your listener in a different way then simply create your own `SqsMessageListenerContainerFactory` and reference it on the `@SqsListener` annotation.
 
 ### AmazonSQS Beans
 

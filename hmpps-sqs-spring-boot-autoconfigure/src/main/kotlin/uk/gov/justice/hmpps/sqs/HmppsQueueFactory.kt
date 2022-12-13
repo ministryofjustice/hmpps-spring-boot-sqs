@@ -1,13 +1,10 @@
 package uk.gov.justice.hmpps.sqs
 
-import com.amazon.sqs.javamessaging.ProviderConfiguration
-import com.amazon.sqs.javamessaging.SQSConnectionFactory
 import kotlinx.coroutines.runBlocking
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.boot.actuate.health.HealthIndicator
 import org.springframework.context.ConfigurableApplicationContext
-import org.springframework.jms.config.DefaultJmsListenerContainerFactory
 import software.amazon.awssdk.services.sns.model.SubscribeRequest
 import software.amazon.awssdk.services.sqs.SqsClient
 import software.amazon.awssdk.services.sqs.model.CreateQueueRequest
@@ -15,7 +12,6 @@ import software.amazon.awssdk.services.sqs.model.GetQueueAttributesRequest
 import software.amazon.awssdk.services.sqs.model.GetQueueUrlRequest
 import software.amazon.awssdk.services.sqs.model.QueueAttributeName
 import uk.gov.justice.hmpps.sqs.HmppsSqsProperties.QueueConfig
-import javax.jms.Session
 
 class HmppsQueueFactory(
   private val context: ConfigurableApplicationContext,
@@ -34,7 +30,6 @@ class HmppsQueueFactory(
           .also { subscribeToLocalStackTopic(hmppsSqsProperties, queueConfig, hmppsTopics, hmppsAsyncTopics) }
         HmppsQueue(queueId, sqsClient, queueConfig.queueName, sqsDlqClient, queueConfig.dlqName.ifEmpty { null })
           .also { getOrDefaultHealthIndicator(it) }
-          .also { createJmsListenerContainerFactory(it, hmppsSqsProperties) }
       }.toList()
 
   private fun getOrDefaultSqsDlqClient(queueId: String, queueConfig: QueueConfig, hmppsSqsProperties: HmppsSqsProperties): SqsClient? =
@@ -54,11 +49,6 @@ class HmppsQueueFactory(
   private fun getOrDefaultHealthIndicator(hmppsQueue: HmppsQueue): HealthIndicator =
     getOrDefaultBean("${hmppsQueue.id}-health") {
       HmppsQueueHealth(hmppsQueue)
-    }
-
-  private fun createJmsListenerContainerFactory(hmppsQueue: HmppsQueue, hmppsSqsProperties: HmppsSqsProperties): HmppsQueueDestinationContainerFactory =
-    getOrDefaultBean("${hmppsQueue.id}-jms-listener-factory") {
-      HmppsQueueDestinationContainerFactory(hmppsQueue.id, createJmsListenerContainerFactory(hmppsQueue.sqsClient, hmppsSqsProperties))
     }
 
   @Suppress("NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
@@ -135,13 +125,4 @@ class HmppsQueueFactory(
       .attributes(subscribeAttribute)
       .build()
   }
-
-  fun createJmsListenerContainerFactory(awsSqsClient: SqsClient, hmppsSqsProperties: HmppsSqsProperties): DefaultJmsListenerContainerFactory =
-    DefaultJmsListenerContainerFactory().apply {
-      setConnectionFactory(SQSConnectionFactory(ProviderConfiguration(), awsSqsClient))
-      setDestinationResolver(HmppsQueueDestinationResolver(hmppsSqsProperties))
-      setConcurrency("1-1")
-      setSessionAcknowledgeMode(Session.CLIENT_ACKNOWLEDGE)
-      setErrorHandler { t: Throwable? -> log.error("Error caught in jms listener", t) }
-    }
 }

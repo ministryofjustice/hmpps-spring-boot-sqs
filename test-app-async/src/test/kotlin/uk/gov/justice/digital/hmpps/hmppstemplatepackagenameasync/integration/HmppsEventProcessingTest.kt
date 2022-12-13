@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.integration
 
+import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.awaitility.kotlin.await
 import org.awaitility.kotlin.matches
@@ -15,7 +16,7 @@ import uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.service.Messag
 class HmppsEventProcessingTest : IntegrationTestBase() {
 
   @Test
-  fun `event is published to outbound topic`() {
+  fun `event is published to outbound topic`() = runBlocking<Unit> {
     val event = HmppsEvent("event-id", "OFFENDER_MOVEMENT-RECEPTION", "some event contents")
     inboundSnsClient.publish(
       PublishRequest.builder().topicArn(inboundTopicArn).message(gsonString(event)).messageAttributes(
@@ -26,7 +27,7 @@ class HmppsEventProcessingTest : IntegrationTestBase() {
     await untilCallTo { outboundTestSqsClient.countMessagesOnQueue(outboundTestQueueUrl) } matches { it == 1 }
 
     val receivedEvent = ReceiveMessageRequest.builder().queueUrl(outboundTestQueueUrl).build()
-      .let { request -> outboundTestSqsClient.receiveMessage(request).messages()[0].body() }
+      .let { request -> outboundTestSqsClient.receiveMessage(request).get().messages()[0].body() }
       .let { response -> objectMapper.readValue(response, Message::class.java) }
       .Message
       .let { message -> objectMapper.readValue(message, HmppsEvent::class.java) }
@@ -51,7 +52,7 @@ class HmppsEventProcessingTest : IntegrationTestBase() {
   }
 
   @Test
-  fun `event is published to outbound topic received by queue with no dlq`() {
+  fun `event is published to outbound topic received by queue with no dlq`() = runBlocking<Unit> {
     val event = HmppsEvent("event-id", "OFFENDER_MOVEMENT-RECEPTION", "some event contents")
     inboundSnsClient.publish(
       PublishRequest.builder().topicArn(inboundTopicArn).message(gsonString(event)).messageAttributes(
@@ -62,7 +63,7 @@ class HmppsEventProcessingTest : IntegrationTestBase() {
     await untilCallTo { outboundTestNoDlqSqsClient.countMessagesOnQueue(outboundTestNoDlqQueueUrl) } matches { it == 1 }
 
     val receivedEvent = ReceiveMessageRequest.builder().queueUrl(outboundTestNoDlqQueueUrl).build()
-      .let { request -> outboundTestSqsClient.receiveMessage(request).messages()[0].body() }
+      .let { request -> outboundTestSqsClient.receiveMessage(request).get().messages()[0].body() }
       .let { response -> objectMapper.readValue(response, Message::class.java) }
       .Message
       .let { message -> objectMapper.readValue(message, HmppsEvent::class.java) }
