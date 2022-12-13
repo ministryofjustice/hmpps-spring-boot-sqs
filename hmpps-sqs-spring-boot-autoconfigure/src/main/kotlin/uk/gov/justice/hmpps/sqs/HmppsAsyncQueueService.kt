@@ -20,7 +20,7 @@ import software.amazon.awssdk.services.sqs.model.PurgeQueueRequest as AwsPurgeQu
 
 open class HmppsAsyncQueueService(
   private val telemetryClient: TelemetryClient?,
-  hmppsAsyncTopicFactory: HmppsAsyncTopicFactory,
+  hmppsTopicService: HmppsTopicService,
   hmppsAsyncQueueFactory: HmppsAsyncQueueFactory,
   hmppsSqsProperties: HmppsSqsProperties,
 ) {
@@ -30,14 +30,11 @@ open class HmppsAsyncQueueService(
     private val gson = GsonBuilder().setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE).create()
   }
 
-  private val hmppsAsyncTopics: List<HmppsAsyncTopic> = hmppsAsyncTopicFactory.createHmppsAsyncTopics(hmppsSqsProperties)
-  private val hmppsAsyncQueues: List<HmppsAsyncQueue> = hmppsAsyncQueueFactory.createHmppsAsyncQueues(hmppsSqsProperties, hmppsAsyncTopics)
+  private val hmppsAsyncQueues: List<HmppsAsyncQueue> = hmppsAsyncQueueFactory.createHmppsAsyncQueues(hmppsSqsProperties, hmppsTopicService.hmppsTopics, hmppsTopicService.hmppsAsyncTopics)
 
   open fun findByQueueId(queueId: String) = hmppsAsyncQueues.associateBy { it.id }.getOrDefault(queueId, null)
   open fun findByQueueName(queueName: String) = hmppsAsyncQueues.associateBy { it.queueName }.getOrDefault(queueName, null)
   open fun findByDlqName(dlqName: String) = hmppsAsyncQueues.associateBy { it.dlqName }.getOrDefault(dlqName, null)
-
-  open fun findByTopicId(topicId: String) = hmppsAsyncTopics.associateBy { it.id }.getOrDefault(topicId, null)
 
   open suspend fun retryDlqMessages(request: RetryAsyncDlqRequest): RetryDlqResult =
     request.hmppsQueue.retryDlqMessages()

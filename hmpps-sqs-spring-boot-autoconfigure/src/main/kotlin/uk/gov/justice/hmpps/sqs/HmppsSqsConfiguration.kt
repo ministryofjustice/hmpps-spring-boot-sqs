@@ -36,21 +36,26 @@ class HmppsSqsConfiguration {
 
   @Bean
   @ConditionalOnMissingBean
+  fun hmppsTopicService(hmppsTopicFactory: HmppsTopicFactory, hmppsAsyncTopicFactory: HmppsAsyncTopicFactory, hmppsSqsProperties: HmppsSqsProperties) =
+    HmppsTopicService(hmppsTopicFactory, hmppsAsyncTopicFactory, hmppsSqsProperties)
+
+  @Bean
+  @ConditionalOnMissingBean
   fun hmppsQueueService(
     telemetryClient: TelemetryClient?,
-    hmppsTopicFactory: HmppsTopicFactory,
+    hmppsTopicService: HmppsTopicService,
     hmppsQueueFactory: HmppsQueueFactory,
     hmppsSqsProperties: HmppsSqsProperties,
-  ) = HmppsQueueService(telemetryClient, hmppsTopicFactory, hmppsQueueFactory, hmppsSqsProperties)
+  ) = HmppsQueueService(telemetryClient, hmppsTopicService, hmppsQueueFactory, hmppsSqsProperties)
 
   @Bean
   @ConditionalOnMissingBean
   fun hmppsAsyncQueueService(
     telemetryClient: TelemetryClient?,
-    hmppsAsyncTopicFactory: HmppsAsyncTopicFactory,
+    hmppsTopicService: HmppsTopicService,
     hmppsAsyncQueueFactory: HmppsAsyncQueueFactory,
     hmppsSqsProperties: HmppsSqsProperties,
-  ) = HmppsAsyncQueueService(telemetryClient, hmppsAsyncTopicFactory, hmppsAsyncQueueFactory, hmppsSqsProperties)
+  ) = HmppsAsyncQueueService(telemetryClient, hmppsTopicService, hmppsAsyncQueueFactory, hmppsSqsProperties)
 
   @Bean
   @ConditionalOnMissingBean
