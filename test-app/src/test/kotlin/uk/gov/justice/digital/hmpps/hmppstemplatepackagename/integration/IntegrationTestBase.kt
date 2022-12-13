@@ -28,8 +28,8 @@ import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.integration.testcon
 import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.service.InboundMessageService
 import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.service.OutboundEventsEmitter
 import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.service.OutboundMessageService
+import uk.gov.justice.hmpps.sqs.HmppsAsyncQueueFactory
 import uk.gov.justice.hmpps.sqs.HmppsAsyncQueueService
-import uk.gov.justice.hmpps.sqs.HmppsQueueFactory
 import uk.gov.justice.hmpps.sqs.HmppsQueueService
 import uk.gov.justice.hmpps.sqs.HmppsSqsProperties
 import uk.gov.justice.hmpps.sqs.HmppsTopicService
@@ -69,15 +69,15 @@ abstract class IntegrationTestBase {
   fun HmppsSqsProperties.outboundTopicConfig() =
     topics["outboundtopic"] ?: throw MissingTopicException("outboundtopic has not been loaded from configuration properties")
 
-  private val inboundQueue by lazy { hmppsQueueService.findByQueueId("inboundqueue") ?: throw MissingQueueException("HmppsQueue inboundqueue not found") }
-  private val outboundQueue by lazy { hmppsQueueService.findByQueueId("outboundqueue") ?: throw MissingQueueException("HmppsQueue outboundqueue not found") }
+  private val inboundQueue by lazy { hmppsAsyncQueueService.findByQueueId("inboundqueue") ?: throw MissingQueueException("HmppsQueue inboundqueue not found") }
+  private val outboundQueue by lazy { hmppsAsyncQueueService.findByQueueId("outboundqueue") ?: throw MissingQueueException("HmppsQueue outboundqueue not found") }
   private val outboundTestQueue by lazy { hmppsQueueService.findByQueueId("outboundtestqueue") ?: throw MissingQueueException("HmppsQueue outboundtestqueue not found") }
   private val inboundTopic by lazy { hmppsTopicService.findByTopicId("inboundtopic") ?: throw MissingQueueException("HmppsTopic inboundtopic not found") }
   private val outboundTestNoDlqQueue by lazy { hmppsQueueService.findByQueueId("outboundtestnodlqqueue") ?: throw MissingQueueException("HmppsQueue outboundtestnodlqqueue not found") }
   private val asyncQueue by lazy { hmppsAsyncQueueService.findByQueueId("asyncqueue") ?: throw MissingQueueException("HmppsQueue asyncqueue not found") }
 
-  protected val inboundSqsClient by lazy { inboundQueue.sqsClient }
-  protected val inboundSqsDlqClient by lazy { inboundQueue.sqsDlqClient as SqsClient }
+  protected val inboundSqsClient by lazy { inboundQueue.sqsAsyncClient }
+  protected val inboundSqsDlqClient by lazy { inboundQueue.sqsAsyncDlqClient as SqsAsyncClient }
   protected val inboundSnsClient by lazy { inboundTopic.snsClient }
   protected val outboundTestSqsClient by lazy { outboundTestQueue.sqsClient }
   protected val outboundTestNoDlqSqsClient by lazy { outboundTestNoDlqQueue.sqsClient }
@@ -86,11 +86,11 @@ abstract class IntegrationTestBase {
 
   @SpyBean
   @Qualifier("outboundqueue-sqs-client")
-  protected lateinit var outboundSqsClientSpy: SqsClient
+  protected lateinit var outboundSqsClientSpy: SqsAsyncClient
 
   @SpyBean
   @Qualifier("outboundqueue-sqs-dlq-client")
-  protected lateinit var outboundSqsDlqClientSpy: SqsClient
+  protected lateinit var outboundSqsDlqClientSpy: SqsAsyncClient
 
   protected val inboundQueueUrl by lazy { inboundQueue.queueUrl }
   protected val inboundDlqUrl by lazy { inboundQueue.dlqUrl as String }
@@ -154,23 +154,23 @@ abstract class IntegrationTestBase {
   protected fun gsonString(any: Any) = Gson().toJson(any) as String
 
   @TestConfiguration
-  class SqsConfig(private val hmppsQueueFactory: HmppsQueueFactory) {
+  class SqsConfig(private val hmppsQueueFactory: HmppsAsyncQueueFactory) {
 
     @Bean("outboundqueue-sqs-client")
     fun outboundQueueSqsClient(
       hmppsSqsProperties: HmppsSqsProperties,
-      @Qualifier("outboundqueue-sqs-dlq-client") outboundQueueSqsDlqClient: SqsClient
-    ): SqsClient =
+      @Qualifier("outboundqueue-sqs-dlq-client") outboundQueueSqsDlqClient: SqsAsyncClient
+    ): SqsAsyncClient =
       with(hmppsSqsProperties) {
         val config = queues["outboundqueue"] ?: throw MissingQueueException("HmppsSqsProperties config for outboundqueue not found")
-        hmppsQueueFactory.createSqsClient(config, hmppsSqsProperties, outboundQueueSqsDlqClient)
+        hmppsQueueFactory.createSqsAsyncClient(config, hmppsSqsProperties, outboundQueueSqsDlqClient)
       }
 
     @Bean("outboundqueue-sqs-dlq-client")
-    fun outboundQueueSqsDlqClient(hmppsSqsProperties: HmppsSqsProperties): SqsClient =
+    fun outboundQueueSqsDlqClient(hmppsSqsProperties: HmppsSqsProperties): SqsAsyncClient =
       with(hmppsSqsProperties) {
         val config = queues["outboundqueue"] ?: throw MissingQueueException("HmppsSqsProperties config for outboundqueue not found")
-        hmppsQueueFactory.createSqsDlqClient(config, hmppsSqsProperties)
+        hmppsQueueFactory.createSqsAsyncDlqClient(config, hmppsSqsProperties)
       }
   }
 

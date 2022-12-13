@@ -23,19 +23,20 @@ ext["spring-security.version"] = "5.7.5"
 dependencyManagement {
   imports {
     mavenBom("software.amazon.awssdk:bom:2.18.28")
+    mavenBom("io.awspring.cloud:spring-cloud-aws-dependencies:3.0.0-M3")
   }
 }
 
 dependencies {
-  implementation("com.amazonaws:amazon-sqs-java-messaging-lib:2.0.1")
-  implementation("software.amazon.awssdk:sns")
   implementation("org.springframework.boot:spring-boot-starter-web")
   implementation("org.springframework.boot:spring-boot-starter-webflux")
   implementation("org.springframework.boot:spring-boot-starter-security")
   implementation("org.springframework.boot:spring-boot-starter-actuator")
+  api("io.awspring.cloud:spring-cloud-aws-starter") { exclude("io.awspring.cloud", "spring-cloud-aws-autoconfigure") }
+  implementation("io.awspring.cloud:spring-cloud-aws-sns")
+  implementation("io.awspring.cloud:spring-cloud-aws-sqs")
   implementation("com.google.code.gson:gson:2.10")
   implementation("com.microsoft.azure:applicationinsights-core:3.4.4")
-  implementation("org.springframework:spring-jms")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8")
 
@@ -87,7 +88,7 @@ signing {
   useInMemoryPgpKeys(signingKey, signingPassword)
   sign(publishing.publications["autoconfigure"])
 }
-java.sourceCompatibility = JavaVersion.VERSION_11
+java.sourceCompatibility = JavaVersion.VERSION_17
 
 tasks.bootJar {
   enabled = false
@@ -117,7 +118,7 @@ fun isNonStable(version: String): Boolean {
 tasks {
   withType<KotlinCompile> {
     kotlinOptions {
-      jvmTarget = "11"
+      jvmTarget = "17"
     }
   }
 

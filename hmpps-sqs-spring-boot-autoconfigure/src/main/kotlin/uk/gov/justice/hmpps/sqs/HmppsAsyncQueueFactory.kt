@@ -1,5 +1,6 @@
 package uk.gov.justice.hmpps.sqs
 
+import io.awspring.cloud.sqs.config.SqsMessageListenerContainerFactory
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
 import org.slf4j.Logger
@@ -31,6 +32,7 @@ class HmppsAsyncQueueFactory(
           .also { subscribeToLocalStackTopic(hmppsSqsProperties, queueConfig, hmppsTopics, hmppsAsyncTopics) }
         HmppsAsyncQueue(queueId, sqsClient, queueConfig.queueName, sqsDlqClient, queueConfig.dlqName.ifEmpty { null })
           .also { getOrDefaultAsyncHealthIndicator(it) }
+          .also { createSqsListenerContainerFactory(it) }
       }.toList()
 
   private fun getOrDefaultSqsAsyncDlqClient(queueId: String, queueConfig: QueueConfig, hmppsSqsProperties: HmppsSqsProperties): SqsAsyncClient? =
@@ -58,6 +60,17 @@ class HmppsAsyncQueueFactory(
       .getOrElse {
         createDefaultBean().also { bean -> context.beanFactory.registerSingleton(beanName, bean) }
       }
+
+  private fun createSqsListenerContainerFactory(hmppsQueue: HmppsAsyncQueue): HmppsQueueDestinationContainerFactory =
+    getOrDefaultBean("${hmppsQueue.id}-sqs-listener-factory") {
+      HmppsQueueDestinationContainerFactory(hmppsQueue.id, createSqsListenerContainerFactory(hmppsQueue.sqsAsyncClient))
+    }
+
+  fun createSqsListenerContainerFactory(awsSqsClient: SqsAsyncClient): SqsMessageListenerContainerFactory<String> =
+    SqsMessageListenerContainerFactory
+      .builder<String>()
+      .sqsAsyncClient(awsSqsClient)
+      .build()
 
   fun createSqsAsyncDlqClient(queueConfig: QueueConfig, hmppsSqsProperties: HmppsSqsProperties): SqsAsyncClient {
     val region = hmppsSqsProperties.region

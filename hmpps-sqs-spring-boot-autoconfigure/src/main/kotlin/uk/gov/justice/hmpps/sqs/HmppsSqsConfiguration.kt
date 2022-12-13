@@ -1,6 +1,7 @@
 package uk.gov.justice.hmpps.sqs
 
 import com.microsoft.applicationinsights.TelemetryClient
+import io.awspring.cloud.sqs.config.SqsBootstrapConfiguration
 import org.springframework.boot.autoconfigure.AutoConfigureBefore
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
@@ -10,12 +11,12 @@ import org.springframework.context.ConfigurableApplicationContext
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.DependsOn
-import org.springframework.jms.annotation.EnableJms
+import org.springframework.context.annotation.Import
 
 @Configuration
 @EnableConfigurationProperties(HmppsSqsProperties::class)
-@EnableJms
 @AutoConfigureBefore(WebFluxAutoConfiguration::class)
+@Import(SqsBootstrapConfiguration::class)
 class HmppsSqsConfiguration {
 
   @Bean
@@ -69,6 +70,9 @@ class HmppsSqsConfiguration {
 
   @Bean
   @ConditionalOnMissingBean
-  @DependsOn("hmppsQueueService")
-  fun hmppsQueueContainerFactoryProxy(factories: List<HmppsQueueDestinationContainerFactory>) = HmppsQueueJmsListenerContainerFactory(factories)
+  @DependsOn("hmppsQueueService", "hmppsAsyncQueueService")
+  fun hmppsQueueContainerFactoryProxy(
+    factories: List<HmppsQueueDestinationContainerFactory>,
+    hmppsSqsProperties: HmppsSqsProperties,
+  ) = HmppsQueueSqsListenerContainerFactory(factories, hmppsSqsProperties)
 }

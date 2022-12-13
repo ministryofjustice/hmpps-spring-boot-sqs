@@ -9,6 +9,7 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.check
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
@@ -120,8 +121,8 @@ class HmppsQueueFactoryTest {
     }
 
     @Test
-    fun `should register the jms listener factory`() {
-      verify(beanFactory).registerSingleton(eq("somequeueid-jms-listener-factory"), any<HmppsQueueDestinationContainerFactory>())
+    fun `should not register the sqs listener factory`() {
+      verify(beanFactory, never()).registerSingleton(eq("somequeueid-sqs-listener-factory"), any<HmppsQueueDestinationContainerFactory>())
     }
   }
 

@@ -3,7 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppstemplatepackagename.integration
 import org.awaitility.kotlin.await
 import org.awaitility.kotlin.matches
 import org.awaitility.kotlin.untilCallTo
-import org.hamcrest.Matchers
+import org.hamcrest.Matchers.containsInAnyOrder
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
@@ -224,7 +224,7 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
         .jsonPath("messagesFoundCount").isEqualTo(3)
         .jsonPath("messagesReturnedCount").isEqualTo(3)
         .jsonPath("messages..body.MessageId").value(
-          Matchers.contains(
+          containsInAnyOrder(
             "message-id-1",
             "message-id-2",
             "message-id-3"

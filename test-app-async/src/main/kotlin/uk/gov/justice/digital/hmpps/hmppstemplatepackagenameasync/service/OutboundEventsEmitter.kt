@@ -15,7 +15,7 @@ class OutboundEventsEmitter(hmppsTopicService: HmppsTopicService, private val ob
     val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
-  private val outboundTopic = hmppsTopicService.findByTopicId("outboundtopic") ?: throw MissingTopicException("Could not find topic outboundtopic")
+  private val outboundTopic = hmppsTopicService.findAsyncByTopicId("outboundtopic") ?: throw MissingTopicException("Could not find topic outboundtopic")
 
   fun sendEvent(hmppsEvent: HmppsEvent) {
     when (hmppsEvent.type) {

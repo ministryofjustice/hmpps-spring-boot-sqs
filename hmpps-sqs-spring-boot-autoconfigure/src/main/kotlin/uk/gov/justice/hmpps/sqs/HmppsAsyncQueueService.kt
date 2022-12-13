@@ -55,7 +55,7 @@ open class HmppsAsyncQueueService(
 
     val messages = (1..messageCount)
       .asFlow()
-      .map { sqsAsyncDlqClient.receiveMessage(ReceiveMessageRequest.builder().queueUrl(dlqUrl).maxNumberOfMessages(1).attributeNames(QueueAttributeName.ALL).build()) }
+      .map { sqsAsyncDlqClient.receiveMessage(ReceiveMessageRequest.builder().queueUrl(dlqUrl).maxNumberOfMessages(1).messageAttributeNames("All").build()) }
       .mapNotNull { it.await().messages().firstOrNull() }
       .map { msg ->
         sqsAsyncClient.sendMessage(SendMessageRequest.builder().queueUrl(queueUrl).messageBody(msg.body()).messageAttributes(msg.messageAttributes()).build()).await()

@@ -11,6 +11,11 @@ plugins {
 allprojects {
   group = "uk.gov.justice.service.hmpps"
   version = "2.0.0-beta"
+
+  repositories {
+    maven { url = uri("https://repo.spring.io/milestone") }
+    mavenCentral()
+  }
 }
 
 nexusPublishing {

@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.integration
 
+import kotlinx.coroutines.runBlocking
 import org.awaitility.kotlin.await
 import org.awaitility.kotlin.matches
 import org.awaitility.kotlin.untilCallTo
@@ -19,7 +20,7 @@ class HmppsQueueResourceTest_asyncClient : IntegrationTestBase() {
   @Nested
   inner class RetryDlq {
     @Test
-    fun `should transfer messages from the async DLQ to the async queue`() {
+    fun `should transfer messages from the async DLQ to the async queue`() = runBlocking<Unit> {
       val event1 = HmppsEvent("id1", "test.type", "message3")
       val event2 = HmppsEvent("id2", "test.type", "message4")
       val message1 = Message(gsonString(event1), "message-id1", MessageAttributes(EventType("test.type", "String")))
@@ -93,6 +94,7 @@ class HmppsQueueResourceTest_asyncClient : IntegrationTestBase() {
     val defaultMessageAttributes = MessageAttributes(EventType("test.type", "String"))
     val defaultEvent = HmppsEvent("event-id", "test.type", "event-contents")
     fun testMessage(id: String) = Message(gsonString(defaultEvent), "message-$id", defaultMessageAttributes)
+
     @Test
     fun `should get all messages from the async dlq`() {
       for (i in 1..3) {

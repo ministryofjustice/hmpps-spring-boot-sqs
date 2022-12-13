@@ -108,8 +108,8 @@ class HmppsNoDlqQueueFactoryTest {
     }
 
     @Test
-    fun `should register the jms listener factory`() {
-      verify(beanFactory).registerSingleton(eq("somequeueid-jms-listener-factory"), any<HmppsQueueDestinationContainerFactory>())
+    fun `should not register the sqs listener factory`() {
+      verify(beanFactory, never()).registerSingleton(eq("somequeueid-sqs-listener-factory"), any<HmppsQueueDestinationContainerFactory>())
     }
   }
 
