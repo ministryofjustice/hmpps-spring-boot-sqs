@@ -82,7 +82,7 @@ signing {
   useInMemoryPgpKeys(signingKey, signingPassword)
   sign(publishing.publications["autoconfigure"])
 }
-java.sourceCompatibility = JavaVersion.VERSION_11
+java.sourceCompatibility = JavaVersion.VERSION_17
 
 tasks.bootJar {
   enabled = false
@@ -112,7 +112,7 @@ fun isNonStable(version: String): Boolean {
 tasks {
   withType<KotlinCompile> {
     kotlinOptions {
-      jvmTarget = "11"
+      jvmTarget = "17"
     }
   }
 
