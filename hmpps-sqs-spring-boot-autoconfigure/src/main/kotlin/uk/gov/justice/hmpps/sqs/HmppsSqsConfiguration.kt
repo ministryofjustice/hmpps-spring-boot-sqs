@@ -70,7 +70,7 @@ class HmppsSqsConfiguration {
 
   @Bean
   @ConditionalOnMissingBean
-  @DependsOn("hmppsQueueService")
+  @DependsOn("hmppsQueueService", "hmppsAsyncQueueService")
   fun hmppsQueueContainerFactoryProxy(
     factories: List<HmppsQueueDestinationContainerFactory>,
     hmppsSqsProperties: HmppsSqsProperties,
