@@ -3,7 +3,6 @@ package uk.gov.justice.hmpps.sqs
 import com.microsoft.applicationinsights.TelemetryClient
 import io.awspring.cloud.sqs.config.SqsBootstrapConfiguration
 import org.springframework.boot.autoconfigure.AutoConfigureBefore
-import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.web.reactive.WebFluxAutoConfiguration
 import org.springframework.boot.context.properties.EnableConfigurationProperties
@@ -25,20 +24,12 @@ class HmppsSqsConfiguration {
 
   @Bean
   @ConditionalOnMissingBean
-  fun hmppsAsyncTopicFactory(applicationContext: ConfigurableApplicationContext) = HmppsAsyncTopicFactory(applicationContext, SnsAsyncClientFactory())
-
-  @Bean
-  @ConditionalOnMissingBean
   fun hmppsQueueFactory(applicationContext: ConfigurableApplicationContext) = HmppsQueueFactory(applicationContext, SqsClientFactory())
 
   @Bean
   @ConditionalOnMissingBean
-  fun hmppsAsyncQueueFactory(applicationContext: ConfigurableApplicationContext) = HmppsAsyncQueueFactory(applicationContext, SqsAsyncClientFactory())
-
-  @Bean
-  @ConditionalOnMissingBean
-  fun hmppsTopicService(hmppsTopicFactory: HmppsTopicFactory, hmppsAsyncTopicFactory: HmppsAsyncTopicFactory, hmppsSqsProperties: HmppsSqsProperties) =
-    HmppsTopicService(hmppsTopicFactory, hmppsAsyncTopicFactory, hmppsSqsProperties)
+  fun hmppsTopicService(hmppsTopicFactory: HmppsTopicFactory, hmppsSqsProperties: HmppsSqsProperties) =
+    HmppsTopicService(hmppsTopicFactory, hmppsSqsProperties)
 
   @Bean
   @ConditionalOnMissingBean
@@ -51,26 +42,11 @@ class HmppsSqsConfiguration {
 
   @Bean
   @ConditionalOnMissingBean
-  fun hmppsAsyncQueueService(
-    telemetryClient: TelemetryClient?,
-    hmppsTopicService: HmppsTopicService,
-    hmppsAsyncQueueFactory: HmppsAsyncQueueFactory,
-    hmppsSqsProperties: HmppsSqsProperties,
-  ) = HmppsAsyncQueueService(telemetryClient, hmppsTopicService, hmppsAsyncQueueFactory, hmppsSqsProperties)
+  fun hmppsQueueResource(hmppsQueueService: HmppsQueueService) = HmppsQueueResource(hmppsQueueService)
 
   @Bean
   @ConditionalOnMissingBean
-  @ConditionalOnExpression("'\${hmpps.sqs.reactiveApi:false}'.equals('false')")
-  fun hmppsQueueResource(hmppsQueueService: HmppsQueueService, hmppsAsyncQueueService: HmppsAsyncQueueService) = HmppsQueueResource(hmppsQueueService, hmppsAsyncQueueService)
-
-  @Bean
-  @ConditionalOnMissingBean
-  @ConditionalOnExpression("\${hmpps.sqs.reactiveApi:false}")
-  fun hmppsQueueResourceAsync(hmppsQueueService: HmppsQueueService, hmppsAsyncQueueService: HmppsAsyncQueueService) = HmppsAsyncQueueResource(hmppsQueueService, hmppsAsyncQueueService)
-
-  @Bean
-  @ConditionalOnMissingBean
-  @DependsOn("hmppsQueueService", "hmppsAsyncQueueService")
+  @DependsOn("hmppsQueueService")
   fun hmppsQueueContainerFactoryProxy(
     factories: List<HmppsQueueDestinationContainerFactory>,
     hmppsSqsProperties: HmppsSqsProperties,

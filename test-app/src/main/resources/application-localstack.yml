@@ -2,22 +2,23 @@ hmpps.sqs:
   provider: localstack
   queues:
     inboundqueue:
-      queueName: inbound-queue
-      dlqName: inbound-dlq
+      queueName: async-inbound-queue
+      dlqName: async-inbound-dlq
       subscribeTopicId: inboundtopic
       subscribeFilter: '{"eventType":[ "OFFENDER_MOVEMENT-RECEPTION", "OFFENDER_MOVEMENT-DISCHARGE"] }'
     outboundqueue:
-      queueName: outbound-queue
-      dlqName: outbound-dlq
+      queueName: async-outbound-queue
+      dlqName: async-outbound-dlq
       subscribeTopicId: outboundtopic
       subscribeFilter: '{"eventType":[ "offender.movement.reception"] }'
     asyncqueue:
-      dlqName: async-dlq
-      queueName: async-queue
+      dlqName: async-async-dlq
+      queueName: async-async-queue
       asyncDlqClient: true
       asyncQueueClient: true
   topics:
     inboundtopic:
-      arn: arn:aws:sns:eu-west-2:000000000000:inbound-topic
+      arn: arn:aws:sns:eu-west-2:000000000000:async-inbound-topic
     outboundtopic:
-      arn: arn:aws:sns:eu-west-2:000000000000:outbond-topic
+      arn: arn:aws:sns:eu-west-2:000000000000:async-outbond-topic
+

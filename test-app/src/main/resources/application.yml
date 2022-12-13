@@ -59,3 +59,7 @@ management:
 oauth:
   endpoint.url: http://localhost:8090/auth
 
+azure:
+  application-insights:
+    web:
+      enabled: false

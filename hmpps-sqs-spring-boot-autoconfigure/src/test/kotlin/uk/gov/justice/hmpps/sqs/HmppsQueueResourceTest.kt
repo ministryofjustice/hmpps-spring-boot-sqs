@@ -6,12 +6,10 @@ import kotlinx.coroutines.withContext
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import org.mockito.ArgumentMatchers.anyString
 import org.mockito.kotlin.any
 import org.mockito.kotlin.check
 import org.mockito.kotlin.doSuspendableAnswer
 import org.mockito.kotlin.mock
-import org.mockito.kotlin.never
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -21,72 +19,51 @@ import org.springframework.boot.runApplication
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
 import org.springframework.boot.test.mock.mockito.MockBean
-import org.springframework.test.web.servlet.MockMvc
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+import org.springframework.test.web.reactive.server.WebTestClient
 
 @WebMvcTest(HmppsQueueResource::class)
 @AutoConfigureMockMvc(addFilters = false)
 class HmppsQueueResourceTest {
 
   @Autowired
-  private lateinit var mockMvc: MockMvc
+  private lateinit var webTestClient: WebTestClient
 
   @MockBean
   private lateinit var hmppsQueueService: HmppsQueueService
 
-  @MockBean
-  private lateinit var hmppsAsyncQueueService: HmppsAsyncQueueService
-
   @Nested
   inner class RetryDlq {
     @Test
-    fun `should call the service for a sync queue client`() {
-      val hmppsQueue = mock<HmppsQueue>()
-      whenever(hmppsQueueService.findByDlqName("some dlq name"))
-        .thenReturn(hmppsQueue)
-      whenever(hmppsQueueService.retryDlqMessages(any()))
-        .thenReturn(RetryDlqResult(2, listOf(DlqMessage(mapOf("key" to "value"), "id"))))
-
-      mockMvc.perform(put("/queue-admin/retry-dlq/some dlq name"))
-        .andExpect(status().isOk)
-        .andExpect(jsonPath("$.messagesFoundCount").value(2))
-        .andExpect(jsonPath("$.messages.length()").value(1))
-        .andExpect(jsonPath("$.messages[0].messageId").value("id"))
-        .andExpect(jsonPath("$.messages[0].body.key").value("value"))
-
-      verify(hmppsQueueService).retryDlqMessages(check { it.hmppsQueue === hmppsQueue })
-    }
-
-    @Test
     fun `should call the service for an async queue client`() = runBlocking<Unit> {
-      val hmppsAsyncQueue = mock<HmppsAsyncQueue>()
+      val hmppsAsyncQueue = mock<HmppsQueue>()
       whenever(hmppsQueueService.findByDlqName("some dlq name"))
-        .thenReturn(null)
-      whenever(hmppsAsyncQueueService.findByDlqName("some dlq name"))
         .thenReturn(hmppsAsyncQueue)
-      whenever(hmppsAsyncQueueService.retryDlqMessages(any())).doSuspendableAnswer {
+      whenever(hmppsQueueService.retryDlqMessages(any())).doSuspendableAnswer {
         withContext(Dispatchers.Default) { RetryDlqResult(2, listOf(DlqMessage(mapOf("key" to "value"), "id"))) }
       }
 
-      mockMvc.perform(put("/queue-admin/retry-dlq/some dlq name"))
-        .andExpect(status().isOk)
-        .andExpect(jsonPath("$.messagesFoundCount").value(2))
-        .andExpect(jsonPath("$.messages.length()").value(1))
-        .andExpect(jsonPath("$.messages[0].messageId").value("id"))
-        .andExpect(jsonPath("$.messages[0].body.key").value("value"))
+      webTestClient.put()
+        .uri("/queue-admin/retry-dlq/some dlq name")
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.messagesFoundCount").isEqualTo(2)
+        .jsonPath("$.messages.length()").isEqualTo(1)
+        .jsonPath("$.messages[0].messageId").isEqualTo("id")
+        .jsonPath("$.messages[0].body.key").isEqualTo("value")
 
-      verify(hmppsQueueService, never()).retryDlqMessages(any())
-      verify(hmppsAsyncQueueService).retryDlqMessages(RetryAsyncDlqRequest(hmppsAsyncQueue))
+      verify(hmppsQueueService).retryDlqMessages(RetryDlqRequest(hmppsAsyncQueue))
     }
 
     @Test
-    fun `should return not found`() {
+    fun `should return not found`() = runBlocking<Unit> {
+      whenever(hmppsQueueService.findByDlqName("some dlq name")).thenReturn(null)
       whenever(hmppsQueueService.findByDlqName("some dlq name")).thenReturn(null)
 
-      mockMvc.perform(put("/queue-admin/retry-dlq/some dlq name"))
-        .andExpect(status().isNotFound)
+      webTestClient.put()
+        .uri("/queue-admin/retry-dlq/some dlq name")
+        .exchange()
+        .expectStatus().isNotFound
 
       verify(hmppsQueueService, times(0)).retryDlqMessages(any())
     }
@@ -97,31 +74,38 @@ class HmppsQueueResourceTest {
     @Test
     fun `should call the service`() = runBlocking<Unit> {
       whenever(hmppsQueueService.retryAllDlqs()).thenReturn(listOf())
-      whenever(hmppsAsyncQueueService.retryAllDlqs()).thenReturn(listOf())
+      whenever(hmppsQueueService.retryAllDlqs()).thenReturn(listOf())
 
-      mockMvc.perform(put("/queue-admin/retry-all-dlqs"))
-        .andExpect(status().isOk)
+      webTestClient.put()
+        .uri("/queue-admin/retry-all-dlqs")
+        .exchange()
+        .expectStatus().isOk
 
       verify(hmppsQueueService).retryAllDlqs()
-      verify(hmppsAsyncQueueService).retryAllDlqs()
+      verify(hmppsQueueService).retryAllDlqs()
     }
   }
 
   @Nested
   inner class PurgeQueue {
     @Test
-    fun `should attempt to purge with sync queue client`() {
+    fun `should attempt to purge with async queue client`() = runBlocking<Unit> {
+      whenever(hmppsQueueService.findQueueToPurge("some queue"))
+        .thenReturn(null)
       whenever(hmppsQueueService.findQueueToPurge("some queue"))
         .thenReturn(PurgeQueueRequest("some queue", mock(), "some queue url"))
-      whenever(hmppsQueueService.purgeQueue(any()))
-        .thenReturn(PurgeQueueResult(10))
+      whenever(hmppsQueueService.purgeQueue(any())).doSuspendableAnswer {
+        withContext(Dispatchers.Default) { PurgeQueueResult(10) }
+      }
 
-      mockMvc.perform(put("/queue-admin/purge-queue/some queue"))
-        .andExpect(status().isOk)
-        .andExpect(jsonPath("$.messagesFoundCount").value(10))
+      webTestClient.put()
+        .uri("/queue-admin/purge-queue/some queue")
+        .exchange()
+        .expectStatus().isOk
+        .expectBody().jsonPath("$.messagesFoundCount").isEqualTo(10)
 
       verify(hmppsQueueService).findQueueToPurge("some queue")
-      verify(hmppsAsyncQueueService, never()).findQueueToPurge("some queue")
+      verify(hmppsQueueService).findQueueToPurge("some queue")
       verify(hmppsQueueService).purgeQueue(
         check {
           assertThat(it.queueName).isEqualTo("some queue")
@@ -130,36 +114,64 @@ class HmppsQueueResourceTest {
     }
 
     @Test
-    fun `should attempt to purge with async queue client`() = runBlocking<Unit> {
+    fun `should return not found`() {
       whenever(hmppsQueueService.findQueueToPurge("some queue"))
         .thenReturn(null)
-      whenever(hmppsAsyncQueueService.findQueueToPurge("some queue"))
-        .thenReturn(PurgeAsyncQueueRequest("some queue", mock(), "some queue url"))
-      whenever(hmppsAsyncQueueService.purgeQueue(any())).doSuspendableAnswer {
-        withContext(Dispatchers.Default) { PurgeQueueResult(10) }
-      }
+      whenever(hmppsQueueService.findQueueToPurge("some queue"))
+        .thenReturn(null)
 
-      mockMvc.perform(put("/queue-admin/purge-queue/some queue"))
-        .andExpect(status().isOk)
-        .andExpect(jsonPath("$.messagesFoundCount").value(10))
+      webTestClient.put()
+        .uri("/queue-admin/purge-queue/some queue")
+        .exchange()
+        .expectStatus().isNotFound
 
       verify(hmppsQueueService).findQueueToPurge("some queue")
-      verify(hmppsAsyncQueueService).findQueueToPurge("some queue")
-      verify(hmppsAsyncQueueService).purgeQueue(
-        check {
-          assertThat(it.queueName).isEqualTo("some queue")
-        }
-      )
+      verify(hmppsQueueService).findQueueToPurge("some queue")
+    }
+  }
+
+  @Nested
+  inner class GetDlq {
+    @Test
+    fun `should get dlq messages with an async queue client`() = runBlocking<Unit> {
+      val hmppsAsyncQueue = mock<HmppsQueue>()
+      whenever(hmppsQueueService.findByDlqName("some dlq"))
+        .thenReturn(null)
+      whenever(hmppsQueueService.findByDlqName("some dlq"))
+        .thenReturn(hmppsAsyncQueue)
+      whenever(hmppsQueueService.getDlqMessages(any())).doSuspendableAnswer {
+        withContext(Dispatchers.Default) { GetDlqResult(2, 1, listOf(DlqMessage(messageId = "id", body = mapOf("key" to "value")))) }
+      }
+
+      webTestClient.get()
+        .uri("/queue-admin/get-dlq-messages/some dlq")
+        .exchange()
+        .expectStatus().isOk
+        .expectBody()
+        .jsonPath("$.messagesFoundCount").isEqualTo(2)
+        .jsonPath("$.messagesReturnedCount").isEqualTo(1)
+        .jsonPath("$.messages[0].messageId").isEqualTo("id")
+        .jsonPath("$.messages[0].body.key").isEqualTo("value")
+
+      verify(hmppsQueueService).findByDlqName("some dlq")
+      verify(hmppsQueueService).findByDlqName("some dlq")
+      verify(hmppsQueueService).getDlqMessages(GetDlqRequest(hmppsAsyncQueue, 100))
     }
 
     @Test
     fun `should return not found`() {
-      whenever(hmppsQueueService.findQueueToPurge(anyString())).thenReturn(null)
+      whenever(hmppsQueueService.findByDlqName("some dlq"))
+        .thenReturn(null)
+      whenever(hmppsQueueService.findByDlqName("some dlq"))
+        .thenReturn(null)
 
-      mockMvc.perform(put("/queue-admin/purge-queue/some queue"))
-        .andExpect(status().isNotFound)
+      webTestClient.get()
+        .uri("/queue-admin/get-dlq-messages/some queue")
+        .exchange()
+        .expectStatus().isNotFound
 
-      verify(hmppsQueueService, times(0)).purgeQueue(any())
+      verify(hmppsQueueService).findByDlqName("some queue")
+      verify(hmppsQueueService).findByDlqName("some queue")
     }
   }
 }

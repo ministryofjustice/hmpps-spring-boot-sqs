@@ -1,6 +1,5 @@
 package uk.gov.justice.hmpps.sqs
 
-import kotlinx.coroutines.runBlocking
 import org.springframework.http.HttpStatus
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
@@ -13,15 +12,13 @@ import org.springframework.web.server.ResponseStatusException
 
 @RestController
 @RequestMapping("/queue-admin")
-class HmppsQueueResource(private val hmppsQueueService: HmppsQueueService, private val hmppsAsyncQueueService: HmppsAsyncQueueService) {
+class HmppsQueueResource(private val hmppsQueueService: HmppsQueueService) {
 
   @PutMapping("/retry-dlq/{dlqName}")
   @PreAuthorize("hasRole(@environment.getProperty('hmpps.sqs.queueAdminRole', 'ROLE_QUEUE_ADMIN'))")
-  fun retryDlq(@PathVariable("dlqName") dlqName: String) =
+  suspend fun retryDlq(@PathVariable("dlqName") dlqName: String) =
     hmppsQueueService.findByDlqName(dlqName)
       ?.let { hmppsQueue -> hmppsQueueService.retryDlqMessages(RetryDlqRequest(hmppsQueue)) }
-      ?: hmppsAsyncQueueService.findByDlqName(dlqName)
-        ?.let { hmppsQueue -> runBlocking { hmppsAsyncQueueService.retryDlqMessages(RetryAsyncDlqRequest(hmppsQueue)) } }
       ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "$dlqName not found")
 
   /*
@@ -30,15 +27,13 @@ class HmppsQueueResource(private val hmppsQueueService: HmppsQueueService, priva
    * See test-app/helm_deploy/hmpps-template-kotlin/example/housekeeping-cronjob.yaml and ingress.yaml for Kubernetes config.
    */
   @PutMapping("/retry-all-dlqs")
-  fun retryAllDlqs() = hmppsQueueService.retryAllDlqs() + runBlocking { hmppsAsyncQueueService.retryAllDlqs() }
+  suspend fun retryAllDlqs() = hmppsQueueService.retryAllDlqs()
 
   @PutMapping("/purge-queue/{queueName}")
   @PreAuthorize("hasRole(@environment.getProperty('hmpps.sqs.queueAdminRole', 'ROLE_QUEUE_ADMIN'))")
-  fun purgeQueue(@PathVariable("queueName") queueName: String) =
+  suspend fun purgeQueue(@PathVariable("queueName") queueName: String) =
     hmppsQueueService.findQueueToPurge(queueName)
       ?.let { request -> hmppsQueueService.purgeQueue(request) }
-      ?: hmppsAsyncQueueService.findQueueToPurge(queueName)
-        ?.let { request -> runBlocking { hmppsAsyncQueueService.purgeQueue(request) } }
       ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "$queueName not found")
 
   /*
@@ -47,10 +42,8 @@ class HmppsQueueResource(private val hmppsQueueService: HmppsQueueService, priva
    */
   @GetMapping("/get-dlq-messages/{dlqName}")
   @PreAuthorize("hasRole(@environment.getProperty('hmpps.sqs.queueAdminRole', 'ROLE_QUEUE_ADMIN'))")
-  fun getDlqMessages(@PathVariable("dlqName") dlqName: String, @RequestParam("maxMessages", required = false, defaultValue = "100") maxMessages: Int) =
+  suspend fun getDlqMessages(@PathVariable("dlqName") dlqName: String, @RequestParam("maxMessages", required = false, defaultValue = "100") maxMessages: Int) =
     hmppsQueueService.findByDlqName(dlqName)
       ?.let { hmppsQueue -> hmppsQueueService.getDlqMessages(GetDlqRequest(hmppsQueue, maxMessages)) }
-      ?: hmppsAsyncQueueService.findByDlqName(dlqName)
-        ?.let { hmppsAsyncQueue -> runBlocking { hmppsAsyncQueueService.getDlqMessages(GetAsyncDlqRequest(hmppsAsyncQueue, maxMessages)) } }
       ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "$dlqName not found")
 }
