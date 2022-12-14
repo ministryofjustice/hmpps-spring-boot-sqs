@@ -10,7 +10,7 @@ Start localstack with command from the project root directory:
 
 `docker-compose -f docker-compose-test.yml up`
 
-The run the app in Intellij from class `ReactiveApp` with Spring active profiles `stdout,localstack`.
+The run the app in Intellij from class `App` with Spring active profiles `stdout,localstack`.
 
 You should now be able to see the health page at `http://localhost:8080/health`.
 

@@ -24,15 +24,15 @@ class HmppsTopicFactoryTest {
 
   private val context = mock<ConfigurableApplicationContext>()
   private val beanFactory = mock<ConfigurableListableBeanFactory>()
-  private val snsAsyncFactory = mock<SnsClientFactory>()
-  private val hmppsTopicFactory = HmppsTopicFactory(context, snsAsyncFactory)
+  private val snsClientFactory = mock<SnsClientFactory>()
+  private val hmppsTopicFactory = HmppsTopicFactory(context, snsClientFactory)
 
   init {
     whenever(context.beanFactory).thenReturn(beanFactory)
   }
 
   @Nested
-  inner class `Create async AWS HmppsTopics` {
+  inner class `Create AWS HmppsTopics` {
     private val someTopicConfig = TopicConfig(arn = "some arn", accessKeyId = "some access key id", secretAccessKey = "some secret access key")
     private val hmppsSqsProperties = HmppsSqsProperties(queues = mock(), topics = mapOf("sometopicid" to someTopicConfig))
     private val snsClient = mock<SnsAsyncClient>()
@@ -40,7 +40,7 @@ class HmppsTopicFactoryTest {
 
     @BeforeEach
     fun `configure mocks and register queues`() {
-      whenever(snsAsyncFactory.awsSnsAsyncClient(anyString(), anyString(), anyString()))
+      whenever(snsClientFactory.awsSnsAsyncClient(anyString(), anyString(), anyString()))
         .thenReturn(snsClient)
 
       hmppsTopics = hmppsTopicFactory.createHmppsTopics(hmppsSqsProperties)
@@ -48,7 +48,7 @@ class HmppsTopicFactoryTest {
 
     @Test
     fun `should create async aws sns clients`() {
-      verify(snsAsyncFactory).awsSnsAsyncClient("some access key id", "some secret access key", "eu-west-2")
+      verify(snsClientFactory).awsSnsAsyncClient("some access key id", "some secret access key", "eu-west-2")
     }
 
     @Test
@@ -66,7 +66,7 @@ class HmppsTopicFactoryTest {
 
     @BeforeEach
     fun `configure mocks and register queues`() {
-      whenever(snsAsyncFactory.localstackSnsAsyncClient(anyString(), anyString()))
+      whenever(snsClientFactory.localstackSnsAsyncClient(anyString(), anyString()))
         .thenReturn(snsClient)
       whenever(snsClient.createTopic(any<CreateTopicRequest>()))
         .thenReturn(CompletableFuture.completedFuture(CreateTopicResponse.builder().build()))
@@ -76,7 +76,7 @@ class HmppsTopicFactoryTest {
 
     @Test
     fun `should create async aws sns clients`() {
-      verify(snsAsyncFactory).localstackSnsAsyncClient("http://localhost:4566", "eu-west-2")
+      verify(snsClientFactory).localstackSnsAsyncClient("http://localhost:4566", "eu-west-2")
     }
 
     @Test

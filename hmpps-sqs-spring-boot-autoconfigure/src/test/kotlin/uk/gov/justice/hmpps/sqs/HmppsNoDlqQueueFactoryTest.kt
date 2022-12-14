@@ -28,8 +28,8 @@ class HmppsNoDlqQueueFactoryTest {
 
   private val context = mock<ConfigurableApplicationContext>()
   private val beanFactory = mock<ConfigurableListableBeanFactory>()
-  private val sqsAsyncFactory = mock<SqsClientFactory>()
-  private val hmppsQueueFactory = HmppsQueueFactory(context, sqsAsyncFactory)
+  private val sqsClientFactory = mock<SqsClientFactory>()
+  private val hmppsQueueFactory = HmppsQueueFactory(context, sqsClientFactory)
 
   init {
     whenever(context.beanFactory).thenReturn(beanFactory)
@@ -44,7 +44,7 @@ class HmppsNoDlqQueueFactoryTest {
 
     @BeforeEach
     fun `configure mocks and register queues`() {
-      whenever(sqsAsyncFactory.awsSqsAsyncClient(anyString(), anyString(), anyString()))
+      whenever(sqsClientFactory.awsSqsAsyncClient(anyString(), anyString(), anyString()))
         .thenReturn(sqsClient)
       whenever(sqsClient.getQueueUrl(GetQueueUrlRequest.builder().queueName("some queue name").build()))
         .thenReturn(CompletableFuture.completedFuture(GetQueueUrlResponse.builder().queueUrl("some queue url").build()))
@@ -54,8 +54,8 @@ class HmppsNoDlqQueueFactoryTest {
 
     @Test
     fun `should create async client but no dlq client from sqs factory`() {
-      verify(sqsAsyncFactory).awsSqsAsyncClient("some access key id", "some secret access key", "eu-west-2")
-      verifyNoMoreInteractions(sqsAsyncFactory)
+      verify(sqsClientFactory).awsSqsAsyncClient("some access key id", "some secret access key", "eu-west-2")
+      verifyNoMoreInteractions(sqsClientFactory)
     }
 
     @Test
@@ -89,7 +89,7 @@ class HmppsNoDlqQueueFactoryTest {
 
     @BeforeEach
     fun `configure mocks and register queues`() {
-      whenever(sqsAsyncFactory.localstackSqsAsyncClient(anyString(), anyString()))
+      whenever(sqsClientFactory.localstackSqsAsyncClient(anyString(), anyString()))
         .thenReturn(sqsAsyncClient)
       whenever(sqsAsyncClient.getQueueUrl(GetQueueUrlRequest.builder().queueName("some queue name").build()))
         .thenReturn(CompletableFuture.completedFuture(GetQueueUrlResponse.builder().queueUrl("some queue url").build()))
@@ -101,8 +101,8 @@ class HmppsNoDlqQueueFactoryTest {
 
     @Test
     fun `should create async client but no dlq from sqs factory`() {
-      verify(sqsAsyncFactory).localstackSqsAsyncClient("http://localhost:4566", "eu-west-2")
-      verifyNoMoreInteractions(sqsAsyncFactory)
+      verify(sqsClientFactory).localstackSqsAsyncClient("http://localhost:4566", "eu-west-2")
+      verifyNoMoreInteractions(sqsClientFactory)
     }
 
     @Test

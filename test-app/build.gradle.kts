@@ -4,8 +4,6 @@ plugins {
 }
 
 configurations {
-  implementation { exclude(module = "spring-boot-starter-web") }
-  implementation { exclude(module = "spring-boot-starter-tomcat") }
   testImplementation { exclude(group = "org.junit.vintage") }
 }
 
@@ -14,8 +12,6 @@ dependencies {
   implementation("org.springframework.boot:spring-boot-starter-webflux")
   implementation("org.springframework.boot:spring-boot-starter-security")
   implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
-  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
-  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8")
 
   implementation("org.springdoc:springdoc-openapi-ui:1.6.13")
   implementation("org.springdoc:springdoc-openapi-webflux-ui:1.6.13")
@@ -33,5 +29,5 @@ dependencies {
   testImplementation("io.jsonwebtoken:jjwt:0.9.1")
   testImplementation("com.github.tomakehurst:wiremock-standalone:2.27.2")
   testImplementation("org.testcontainers:localstack:1.17.6")
-  testImplementation("com.amazonaws:aws-java-sdk-core:1.12.353") // needed so that Localstack has access to the AWS SDK V1 API
+  testImplementation("com.amazonaws:aws-java-sdk-core:1.12.353") // Needed so Localstack has access to the AWS SDK V1 API
 }

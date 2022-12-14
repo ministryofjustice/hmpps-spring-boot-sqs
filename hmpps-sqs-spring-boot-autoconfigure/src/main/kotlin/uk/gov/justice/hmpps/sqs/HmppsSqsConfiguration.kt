@@ -3,6 +3,7 @@ package uk.gov.justice.hmpps.sqs
 import com.microsoft.applicationinsights.TelemetryClient
 import io.awspring.cloud.sqs.config.SqsBootstrapConfiguration
 import org.springframework.boot.autoconfigure.AutoConfigureBefore
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.web.reactive.WebFluxAutoConfiguration
 import org.springframework.boot.context.properties.EnableConfigurationProperties
@@ -42,7 +43,13 @@ class HmppsSqsConfiguration {
 
   @Bean
   @ConditionalOnMissingBean
+  @ConditionalOnExpression("'\${hmpps.sqs.reactiveApi:false}'.equals('false')")
   fun hmppsQueueResource(hmppsQueueService: HmppsQueueService) = HmppsQueueResource(hmppsQueueService)
+
+  @Bean
+  @ConditionalOnMissingBean
+  @ConditionalOnExpression("\${hmpps.sqs.reactiveApi:false}")
+  fun hmppsReactiveQueueResource(hmppsQueueService: HmppsQueueService) = HmppsReactiveQueueResource(hmppsQueueService)
 
   @Bean
   @ConditionalOnMissingBean

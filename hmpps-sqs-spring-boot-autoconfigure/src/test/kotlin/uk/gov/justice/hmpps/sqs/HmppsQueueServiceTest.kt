@@ -54,7 +54,7 @@ class HmppsQueueServiceTest {
         .thenReturn(CompletableFuture.completedFuture(GetQueueUrlResponse.builder().queueUrl("some queue url").build()))
       whenever(sqsAsyncDlqClient.getQueueUrl(any<GetQueueUrlRequest>()))
         .thenReturn(CompletableFuture.completedFuture(GetQueueUrlResponse.builder().queueUrl("some dlq url").build()))
-      whenever(hmppsQueueFactory.createHmppsQueues(any(), any(), any()))
+      whenever(hmppsQueueFactory.createHmppsQueues(any(), any()))
         .thenReturn(
           listOf(
             HmppsQueue("some queue id", sqsAsyncClient, "some queue name", sqsAsyncDlqClient, "some dlq name"),
@@ -604,7 +604,7 @@ class HmppsQueueServiceTest {
         .thenReturn(CompletableFuture.completedFuture(GetQueueUrlResponse.builder().queueUrl("some queue url").build()))
       whenever(sqsDlqClient.getQueueUrl(any<GetQueueUrlRequest>()))
         .thenReturn(CompletableFuture.completedFuture(GetQueueUrlResponse.builder().queueUrl("some dlq url").build()))
-      whenever(hmppsQueueFactory.createHmppsQueues(any(), any(), any()))
+      whenever(hmppsQueueFactory.createHmppsQueues(any(), any()))
         .thenReturn(
           listOf(
             HmppsQueue("some queue id", sqsClient, "some queue name", sqsDlqClient, "some dlq name"),
