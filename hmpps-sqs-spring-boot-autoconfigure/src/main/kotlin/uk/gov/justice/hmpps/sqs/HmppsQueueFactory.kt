@@ -95,13 +95,13 @@ class HmppsQueueFactory(
     }
   }
 
-  private suspend fun createLocalStackQueueAsync(
+  private fun createLocalStackQueueAsync(
     sqsAsyncClient: SqsAsyncClient,
     sqsDlqAsyncClient: SqsAsyncClient?,
     queueName: String,
     dlqName: String,
     maxReceiveCount: Int,
-  ) {
+  ) = runBlocking {
     if (dlqName.isEmpty() || sqsDlqAsyncClient == null) {
       sqsAsyncClient.createQueue(CreateQueueRequest.builder().queueName(queueName).build()).await()
     } else {
@@ -119,7 +119,7 @@ class HmppsQueueFactory(
     }
 
     val topic = hmppsTopics.firstOrNull { topic -> topic.id == queueConfig.subscribeTopicId }
-    topic?.snsClient?.subscribe(subscribeRequest(queueConfig, topic.arn, hmppsSqsProperties.localstackUrl))?.also { HmppsQueueFactory.log.info("Queue ${queueConfig.queueName} has subscribed to topic with arn ${topic.arn}") }
+    topic?.snsClient?.subscribe(subscribeRequest(queueConfig, topic.arn, hmppsSqsProperties.localstackUrl))?.also { log.info("Queue ${queueConfig.queueName} has subscribed to topic with arn ${topic.arn}") }
   }
 
   private fun subscribeRequest(queueConfig: QueueConfig, topicArn: String, localstackUrl: String): SubscribeRequest {

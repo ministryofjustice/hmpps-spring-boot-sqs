@@ -374,6 +374,11 @@ Various queue related functionality has been added to the template project so th
 
 Note that this module does not produce an artifact for publishing - we only publish the library from the `hmpps-sqs-spring-boot-starter` module.
 
+
+#### test-app-reactive
+
+This is a copy of the `test-app` which uses a Reactive Spring configuration. This is required as more and more projects switch to using Reactive in their applications. It should be kept up-to-date with `test-app`. All following instructions relating to the test-app apply to test-app-reactive too.
+
 #### Running the Functional Tests
 
 From the root of the project run the following command to test only the test-app tests against a Testcontainers LocalStack instance:
