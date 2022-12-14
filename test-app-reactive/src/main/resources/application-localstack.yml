@@ -11,11 +11,6 @@ hmpps.sqs:
       dlqName: async-outbound-dlq
       subscribeTopicId: outboundtopic
       subscribeFilter: '{"eventType":[ "offender.movement.reception"] }'
-    asyncqueue:
-      dlqName: async-async-dlq
-      queueName: async-async-queue
-      asyncDlqClient: true
-      asyncQueueClient: true
   topics:
     inboundtopic:
       arn: arn:aws:sns:eu-west-2:000000000000:async-inbound-topic
