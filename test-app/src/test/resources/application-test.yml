@@ -13,15 +13,11 @@ hmpps.sqs:
       queueName: ${random.uuid}
       subscribeTopicId: inboundtopic
       subscribeFilter: '{"eventType":[ "OFFENDER_MOVEMENT-RECEPTION", "OFFENDER_MOVEMENT-DISCHARGE", "test.type"] }'
-      asyncDlqClient: true
-      asyncQueueClient: true
     outboundqueue:
       dlqName: ${random.uuid}
       queueName: ${random.uuid}
       subscribeTopicId: outboundtopic
       subscribeFilter: '{"eventType":[ "offender.movement.reception", "test.type"] }'
-      asyncDlqClient: true
-      asyncQueueClient: true
     outboundtestqueue:
       dlqName: ${random.uuid}
       queueName: ${random.uuid}
@@ -38,8 +34,6 @@ hmpps.sqs:
     asyncqueue:
       dlqName: ${random.uuid}
       queueName: ${random.uuid}
-      asyncDlqClient: true
-      asyncQueueClient: true
   topics:
     inboundtopic:
       arn: arn:aws:sns:eu-west-2:000000000000:${random.uuid}

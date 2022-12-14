@@ -27,7 +27,7 @@ class HmppsTopicHealth(private val hmppsTopic: HmppsTopic) : HealthIndicator {
 
   private fun getTopicAttributes(): Result<GetTopicAttributesResponse> {
     return runCatching {
-      hmppsTopic.snsClient.getTopicAttributes(GetTopicAttributesRequest.builder().topicArn(hmppsTopic.arn).build())
+      hmppsTopic.snsClient.getTopicAttributes(GetTopicAttributesRequest.builder().topicArn(hmppsTopic.arn).build()).get()
     }
   }
 }

@@ -25,7 +25,7 @@ class HmppsEventProcessingTest : IntegrationTestBase() {
 
     await untilCallTo { outboundTestSqsClient.countMessagesOnQueue(outboundTestQueueUrl) } matches { it == 1 }
 
-    val (Message) = objectMapper.readValue(outboundTestSqsClient.receiveMessage(ReceiveMessageRequest.builder().queueUrl(outboundTestQueueUrl).build()).messages()[0].body(), Message::class.java)
+    val (Message) = objectMapper.readValue(outboundTestSqsClient.receiveMessage(ReceiveMessageRequest.builder().queueUrl(outboundTestQueueUrl).build()).get().messages()[0].body(), Message::class.java)
     val receivedEvent = objectMapper.readValue(Message, HmppsEvent::class.java)
 
     assertThat(receivedEvent.id).isEqualTo("event-id")
@@ -59,7 +59,7 @@ class HmppsEventProcessingTest : IntegrationTestBase() {
     await untilCallTo { outboundTestNoDlqSqsClient.countMessagesOnQueue(outboundTestNoDlqQueueUrl) } matches { it == 1 }
 
     val (Message) = ReceiveMessageRequest.builder().queueUrl(outboundTestNoDlqQueueUrl).build()
-      .let { outboundTestNoDlqSqsClient.receiveMessage(it).messages()[0].body() }
+      .let { outboundTestNoDlqSqsClient.receiveMessage(it).get().messages()[0].body() }
       .let { objectMapper.readValue(it, Message::class.java) }
     val receivedEvent = objectMapper.readValue(Message, HmppsEvent::class.java)
 

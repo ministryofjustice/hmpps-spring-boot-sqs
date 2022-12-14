@@ -6,17 +6,18 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import org.springframework.boot.actuate.health.Status
-import software.amazon.awssdk.services.sqs.SqsClient
+import software.amazon.awssdk.services.sqs.SqsAsyncClient
 import software.amazon.awssdk.services.sqs.model.GetQueueAttributesRequest
 import software.amazon.awssdk.services.sqs.model.GetQueueAttributesResponse
 import software.amazon.awssdk.services.sqs.model.GetQueueUrlRequest
 import software.amazon.awssdk.services.sqs.model.GetQueueUrlResponse
 import software.amazon.awssdk.services.sqs.model.QueueAttributeName
 import software.amazon.awssdk.services.sqs.model.QueueDoesNotExistException
+import java.util.concurrent.CompletableFuture
 
 class HmppsNoDlqQueueHealthTest {
 
-  private val sqsClient = mock<SqsClient>()
+  private val sqsClient = mock<SqsAsyncClient>()
   private val queueId = "some queue id"
   private val queueUrl = "some queue url"
   private val queueName = "some queue"
@@ -81,7 +82,9 @@ class HmppsNoDlqQueueHealthTest {
 
   @Test
   fun `should show status DOWN if unable to retrieve queue attributes`() {
-    whenever(sqsClient.getQueueUrl(any<GetQueueUrlRequest>())).thenReturn(someGetQueueUrlResponse())
+    whenever(sqsClient.getQueueUrl(any<GetQueueUrlRequest>())).thenReturn(
+      CompletableFuture.completedFuture(someGetQueueUrlResponse())
+    )
     whenever(sqsClient.getQueueAttributes(someGetQueueAttributesRequest())).thenThrow(RuntimeException::class.java)
 
     val health = queueHealth.health()
@@ -109,9 +112,11 @@ class HmppsNoDlqQueueHealthTest {
 
   @Test
   fun `should not show DLQ name if no dlq exists`() {
-    whenever(sqsClient.getQueueUrl(GetQueueUrlRequest.builder().queueName(queueName).build())).thenReturn(someGetQueueUrlResponse())
+    whenever(sqsClient.getQueueUrl(GetQueueUrlRequest.builder().queueName(queueName).build())).thenReturn(
+      CompletableFuture.completedFuture(someGetQueueUrlResponse())
+    )
     whenever(sqsClient.getQueueAttributes(someGetQueueAttributesRequest())).thenReturn(
-      someGetQueueAttributesResponseWithoutDLQ()
+      CompletableFuture.completedFuture(someGetQueueAttributesResponseWithoutDLQ())
     )
 
     val health = queueHealth.health()
@@ -121,9 +126,11 @@ class HmppsNoDlqQueueHealthTest {
 
   @Test
   fun `should not show DLQ status if no dlq exists`() {
-    whenever(sqsClient.getQueueUrl(GetQueueUrlRequest.builder().queueName(queueName).build())).thenReturn(someGetQueueUrlResponse())
+    whenever(sqsClient.getQueueUrl(GetQueueUrlRequest.builder().queueName(queueName).build())).thenReturn(
+      CompletableFuture.completedFuture(someGetQueueUrlResponse())
+    )
     whenever(sqsClient.getQueueAttributes(someGetQueueAttributesRequest())).thenReturn(
-      someGetQueueAttributesResponseWithoutDLQ()
+      CompletableFuture.completedFuture(someGetQueueAttributesResponseWithoutDLQ())
     )
 
     val health = queueHealth.health()
@@ -132,9 +139,11 @@ class HmppsNoDlqQueueHealthTest {
   }
 
   private fun mockHealthyQueue() {
-    whenever(sqsClient.getQueueUrl(any<GetQueueUrlRequest>())).thenReturn(someGetQueueUrlResponse())
+    whenever(sqsClient.getQueueUrl(any<GetQueueUrlRequest>())).thenReturn(
+      CompletableFuture.completedFuture(someGetQueueUrlResponse())
+    )
     whenever(sqsClient.getQueueAttributes(any<GetQueueAttributesRequest>())).thenReturn(
-      someGetQueueAttributesResponseWithoutDLQ()
+      CompletableFuture.completedFuture(someGetQueueAttributesResponseWithoutDLQ())
     )
   }
 

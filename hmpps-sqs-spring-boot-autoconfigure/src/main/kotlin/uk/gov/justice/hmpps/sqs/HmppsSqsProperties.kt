@@ -11,19 +11,16 @@ data class HmppsSqsProperties(
   val localstackUrl: String = "http://localhost:4566",
   val queues: Map<String, QueueConfig> = mapOf(),
   val topics: Map<String, TopicConfig> = mapOf(),
-  val reactiveApi: Boolean = false,
 ) {
   data class QueueConfig(
     val queueName: String,
     val queueAccessKeyId: String = "",
     val queueSecretAccessKey: String = "",
-    val asyncQueueClient: Boolean = false,
     val subscribeTopicId: String = "",
     val subscribeFilter: String = "",
     val dlqName: String = "",
     val dlqAccessKeyId: String = "",
     val dlqSecretAccessKey: String = "",
-    val asyncDlqClient: Boolean = false,
     val dlqMaxReceiveCount: Int = 5,
   )
 
@@ -31,7 +28,6 @@ data class HmppsSqsProperties(
     val arn: String = "",
     val accessKeyId: String = "",
     val secretAccessKey: String = "",
-    val asyncClient: Boolean = false,
   ) {
     private val arnRegex = Regex("arn:aws:sns:.*:.*:(.*)$")
 

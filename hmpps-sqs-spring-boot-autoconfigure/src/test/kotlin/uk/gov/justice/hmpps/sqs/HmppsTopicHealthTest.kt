@@ -6,15 +6,16 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import org.springframework.boot.actuate.health.Status
-import software.amazon.awssdk.services.sns.SnsClient
+import software.amazon.awssdk.services.sns.SnsAsyncClient
 import software.amazon.awssdk.services.sns.model.GetTopicAttributesRequest
 import software.amazon.awssdk.services.sns.model.GetTopicAttributesResponse
+import java.util.concurrent.CompletableFuture
 
 class HmppsTopicHealthTest {
 
   private val topicId = "some-topic-id"
   private val topicArn = "some-topic-arn"
-  private val snsClient = mock<SnsClient>()
+  private val snsClient = mock<SnsAsyncClient>()
   private val topicHealth = HmppsTopicHealth(HmppsTopic(topicId, topicArn, snsClient))
 
   @Test
@@ -71,9 +72,11 @@ class HmppsTopicHealthTest {
 
   fun mockHealthyTopic() {
     whenever(snsClient.getTopicAttributes(any<GetTopicAttributesRequest>())).thenReturn(
-      GetTopicAttributesResponse.builder()
-        .attributes(mapOf("SubscriptionsConfirmed" to "1", "SubscriptionsPending" to "2"))
-        .build()
+      CompletableFuture.completedFuture(
+        GetTopicAttributesResponse.builder()
+          .attributes(mapOf("SubscriptionsConfirmed" to "1", "SubscriptionsPending" to "2"))
+          .build()
+      )
     )
   }
 }

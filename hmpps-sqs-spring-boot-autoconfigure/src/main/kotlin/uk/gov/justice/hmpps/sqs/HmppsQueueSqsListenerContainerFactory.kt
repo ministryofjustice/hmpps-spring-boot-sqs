@@ -18,13 +18,11 @@ class HmppsQueueSqsListenerContainerFactory(
   private val hmppsSqsProperties: HmppsSqsProperties,
 ) : SqsMessageListenerContainerFactory<String>() {
 
-  override fun createContainerInstance(endpoint: Endpoint, containerOptions: ContainerOptions): SqsMessageListenerContainer<String> {
-    return factories
-      .firstOrNull { endpoint.logicalNames.contains(it.destination) }
-      ?.factory
-      ?.createContainer(endpoint)
-      ?: throw SqsListenerContainerFactoryMissingException("Unable to find sqs listener container factory for endpoint ${endpoint.logicalNames}")
-  }
+  override fun createContainerInstance(endpoint: Endpoint, containerOptions: ContainerOptions): SqsMessageListenerContainer<String> = factories
+    .firstOrNull { endpoint.logicalNames.contains(it.destination) }
+    ?.factory
+    ?.createContainer(endpoint)
+    ?: throw SqsListenerContainerFactoryMissingException("Unable to find sqs listener container factory for endpoint ${endpoint.logicalNames}")
 
   override fun configureAbstractContainer(container: AbstractMessageListenerContainer<String>, endpoint: Endpoint) {
     super.configureAbstractContainer(container, endpoint)

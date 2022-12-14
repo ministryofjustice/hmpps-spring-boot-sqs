@@ -4,32 +4,35 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.check
 import org.mockito.kotlin.doSuspendableAnswer
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.reset
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.autoconfigure.SpringBootApplication
-import org.springframework.boot.runApplication
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.test.web.reactive.server.WebTestClient
 
-@WebMvcTest(HmppsQueueResource::class)
+@WebMvcTest(HmppsReactiveQueueResource::class, properties = ["hmpps.sqs.reactiveApi=true"])
 @AutoConfigureMockMvc(addFilters = false)
-class HmppsQueueResourceTest {
+class HmppsReactiveQueueResourceTest {
 
   @Autowired
   private lateinit var webTestClient: WebTestClient
 
   @MockBean
   private lateinit var hmppsQueueService: HmppsQueueService
+
+  @BeforeEach
+  fun setup() = reset(hmppsQueueService)
 
   @Nested
   inner class RetryDlq {
@@ -174,11 +177,4 @@ class HmppsQueueResourceTest {
       verify(hmppsQueueService).findByDlqName("some queue")
     }
   }
-}
-
-@SpringBootApplication
-class HmppsQueueResourceTestApplication
-
-fun main(args: Array<String>) {
-  runApplication<HmppsQueueResourceTestApplication>(*args)
 }

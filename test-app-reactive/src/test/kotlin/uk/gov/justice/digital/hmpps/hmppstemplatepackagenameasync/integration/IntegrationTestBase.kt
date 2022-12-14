@@ -1,4 +1,4 @@
-package uk.gov.justice.digital.hmpps.hmppstemplatepackagename.integration
+package uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.integration
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.microsoft.applicationinsights.core.dependencies.google.gson.Gson
@@ -21,12 +21,12 @@ import software.amazon.awssdk.services.sqs.SqsAsyncClient
 import software.amazon.awssdk.services.sqs.model.GetQueueAttributesRequest
 import software.amazon.awssdk.services.sqs.model.PurgeQueueRequest
 import software.amazon.awssdk.services.sqs.model.QueueAttributeName
-import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.integration.mocks.OAuthExtension
-import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.integration.testcontainers.LocalStackContainer
-import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.integration.testcontainers.LocalStackContainer.setLocalStackProperties
-import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.service.InboundMessageService
-import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.service.OutboundEventsEmitter
-import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.service.OutboundMessageService
+import uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.integration.mocks.OAuthExtension
+import uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.integration.testcontainers.LocalStackContainer
+import uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.integration.testcontainers.LocalStackContainer.setLocalStackProperties
+import uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.service.InboundMessageService
+import uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.service.OutboundEventsEmitter
+import uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.service.OutboundMessageService
 import uk.gov.justice.hmpps.sqs.HmppsQueueFactory
 import uk.gov.justice.hmpps.sqs.HmppsQueueService
 import uk.gov.justice.hmpps.sqs.HmppsSqsProperties
@@ -150,7 +150,7 @@ abstract class IntegrationTestBase {
     @Bean("outboundqueue-sqs-client")
     fun outboundQueueSqsClient(
       hmppsSqsProperties: HmppsSqsProperties,
-      @Qualifier("outboundqueue-sqs-dlq-client") outboundQueueSqsDlqClient: SqsAsyncClient
+      @Qualifier("outboundqueue-sqs-dlq-client") outboundQueueSqsDlqClient: SqsAsyncClient,
     ): SqsAsyncClient =
       with(hmppsSqsProperties) {
         val config = queues["outboundqueue"] ?: throw MissingQueueException("HmppsSqsProperties config for outboundqueue not found")
