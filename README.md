@@ -102,11 +102,9 @@ Each queue declared in the `queues` map is defined in the `QueueConfig` property
 | queueSecretAccessKey |         | Only used for `provider=aws`. The AWS secret access key, should be derived from an environment variable of format `HMPPS_SQS_QUEUES_<queueId>_QUEUE_SECRET_ACCESS_KEY`.                                                              |
 | subscribeTopicId     |         | Only used for `provider=localstack`. The `topicId` of the topic this queue subscribes to when either running integration tests or running locally.                                                                                   |
 | subscribeFilter      |         | Only used for `provider=localstack`. The filter policy to be applied when subscribing to the topic. Generally used to filter out certain messages. See your queue's `filter_policy` in `cloud-platform-environments` for an example. |
-| asyncQueueClient     | `false` | If true then the `AmazonSQS` bean created will be an `AmazonSQSAsync` instance.                                                                                                                                                      |
 | dlqName              |         | The name of the queue's dead letter queue (DLQ) as recognised by AWS or LocalStack. The AWS queue name of the DLQ, should be derived from an environment variable of format `HMPPS_SQS_QUEUES_<queueId>_DLQ_NAME`.                   |
 | dlqAccessKeyId       |         | Only used for `provider=aws`. The AWS access key ID of the DLQ, should be derived from an environment variable of format `HMPPS_SQS_QUEUES_<queueId>_DLQ_ACCESS_KEY_ID`.                                                             |
 | dlqSecretAccessKey   |         | Only used for `provider=aws`. The AWS secret access key of the DLQ, should be derived from an environment variable of format `HMPPS_SQS_QUEUES_<queueId>_DLQ_SECRET_ACCESS_KEY`.                                                     |
-| asyncDlqClient       | `false` | If true then the `AmazonSQS` bean created will be an `AmazonSQSAsync` instance.                                                                                                                                                      |
 | dlqMaxReceiveCount   | 5       | Only used for `provider=localstack`. Change the number of retries automatically provided by Localstack on DLQs. e.g. It can be useful to change this to 1 when testing DLQ retry functionality.                                      |
 
 Each topic declared in the `topics` map is defined in the `TopicConfig` property class
@@ -117,7 +115,6 @@ Each topic declared in the `topics` map is defined in the `TopicConfig` property
 | arn             |         | The ARN of the topic as recognised by AWS and LocalStack.                                                                                                         |
 | accessKeyId     |         | Only used for `provider=aws`. The AWS access key ID, should be derived from an environment variable of format `HMPPS_SQS_TOPICS_<topicId>_ACCESS_KEY_ID`.         | 
 | secretAccessKey |         | Only used for `provider=aws`. The AWS secret access key, should be derived from an environment variable of format `HMPPS_SQS_TOPICS_<topicId>_SECRET_ACCESS_KEY`. |
-| asyncClient     | `false` | If true then the `AmazonSNS` bean created will be an `AmazonSNSAsync` instance.                                                                                   |
 
 #### :warning: queueId and topicId Must Be All Lowercase
 
