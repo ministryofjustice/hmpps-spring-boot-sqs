@@ -48,6 +48,8 @@ abstract class IntegrationTestBase {
     outboundSqsDlqClientSpy.purgeQueue(PurgeQueueRequest.builder().queueUrl(outboundDlqUrl).build())
     outboundTestSqsClient.purgeQueue(PurgeQueueRequest.builder().queueUrl(outboundTestQueueUrl).build())
     outboundTestNoDlqSqsClient.purgeQueue(PurgeQueueRequest.builder().queueUrl(outboundTestNoDlqQueueUrl).build())
+    asyncSqsClient.purgeQueue(PurgeQueueRequest.builder().queueUrl(asyncQueueUrl).build()).get()
+    asyncSqsDlqClient.purgeQueue(PurgeQueueRequest.builder().queueUrl(asyncDlqUrl).build()).get()
   }
 
   fun HmppsSqsProperties.inboundQueueConfig() =
@@ -55,6 +57,9 @@ abstract class IntegrationTestBase {
 
   fun HmppsSqsProperties.outboundQueueConfig() =
     queues["outboundqueue"] ?: throw MissingQueueException("outboundqueue has not been loaded from configuration properties")
+
+  fun HmppsSqsProperties.asyncQueueConfig() =
+    queues["asyncqueue"] ?: throw MissingQueueException("asyncqueue has not been loaded from configuration properties")
 
   fun HmppsSqsProperties.inboundTopicConfig() =
     topics["inboundtopic"] ?: throw MissingTopicException("inboundtopic has not been loaded from configuration properties")
@@ -67,12 +72,15 @@ abstract class IntegrationTestBase {
   private val outboundTestQueue by lazy { hmppsQueueService.findByQueueId("outboundtestqueue") ?: throw MissingQueueException("HmppsQueue outboundtestqueue not found") }
   private val inboundTopic by lazy { hmppsTopicService.findByTopicId("inboundtopic") ?: throw MissingQueueException("HmppsTopic inboundtopic not found") }
   private val outboundTestNoDlqQueue by lazy { hmppsQueueService.findByQueueId("outboundtestnodlqqueue") ?: throw MissingQueueException("HmppsQueue outboundtestnodlqqueue not found") }
+  private val asyncQueue by lazy { hmppsQueueService.findByQueueId("asyncqueue") ?: throw MissingQueueException("HmppsQueue asyncqueue not found") }
 
   protected val inboundSqsClient by lazy { inboundQueue.sqsClient }
   protected val inboundSqsDlqClient by lazy { inboundQueue.sqsDlqClient as SqsAsyncClient }
   protected val inboundSnsClient by lazy { inboundTopic.snsClient }
   protected val outboundTestSqsClient by lazy { outboundTestQueue.sqsClient }
   protected val outboundTestNoDlqSqsClient by lazy { outboundTestNoDlqQueue.sqsClient }
+  protected val asyncSqsClient by lazy { asyncQueue.sqsClient }
+  protected val asyncSqsDlqClient by lazy { asyncQueue.sqsDlqClient as SqsAsyncClient }
 
   @SpyBean
   @Qualifier("outboundqueue-sqs-client")
@@ -88,6 +96,8 @@ abstract class IntegrationTestBase {
   protected val outboundDlqUrl by lazy { outboundQueue.dlqUrl as String }
   protected val outboundTestQueueUrl by lazy { outboundTestQueue.queueUrl }
   protected val outboundTestNoDlqQueueUrl by lazy { outboundTestNoDlqQueue.queueUrl }
+  protected val asyncQueueUrl by lazy { asyncQueue.queueUrl }
+  protected val asyncDlqUrl by lazy { asyncQueue.dlqUrl as String }
 
   protected val inboundTopicArn by lazy { inboundTopic.arn }
 
