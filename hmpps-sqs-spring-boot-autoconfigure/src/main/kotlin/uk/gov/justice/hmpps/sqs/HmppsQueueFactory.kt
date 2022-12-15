@@ -26,15 +26,15 @@ class HmppsQueueFactory(
   fun createHmppsQueues(hmppsSqsProperties: HmppsSqsProperties, hmppsTopics: List<HmppsTopic> = listOf()) =
     hmppsSqsProperties.queues
       .map { (queueId, queueConfig) ->
-        val sqsDlqClient = getOrDefaultSqsAsyncDlqClient(queueId, queueConfig, hmppsSqsProperties)
-        val sqsClient = getOrDefaultSqsAsyncClient(queueId, queueConfig, hmppsSqsProperties, sqsDlqClient)
+        val sqsDlqClient = getOrDefaultSqsDlqClient(queueId, queueConfig, hmppsSqsProperties)
+        val sqsClient = getOrDefaultSqsClient(queueId, queueConfig, hmppsSqsProperties, sqsDlqClient)
           .also { subscribeToLocalStackTopic(hmppsSqsProperties, queueConfig, hmppsTopics) }
         HmppsQueue(queueId, sqsClient, queueConfig.queueName, sqsDlqClient, queueConfig.dlqName.ifEmpty { null })
-          .also { getOrDefaultAsyncHealthIndicator(it) }
+          .also { getOrDefaultHealthIndicator(it) }
           .also { createSqsListenerContainerFactory(it) }
       }.toList()
 
-  private fun getOrDefaultSqsAsyncDlqClient(queueId: String, queueConfig: QueueConfig, hmppsSqsProperties: HmppsSqsProperties): SqsAsyncClient? =
+  private fun getOrDefaultSqsDlqClient(queueId: String, queueConfig: QueueConfig, hmppsSqsProperties: HmppsSqsProperties): SqsAsyncClient? =
     if (queueConfig.dlqName.isNotEmpty()) {
       getOrDefaultBean("$queueId-sqs-dlq-client") {
         createSqsAsyncDlqClient(queueConfig, hmppsSqsProperties)
@@ -42,13 +42,13 @@ class HmppsQueueFactory(
       }
     } else null
 
-  private fun getOrDefaultSqsAsyncClient(queueId: String, queueConfig: QueueConfig, hmppsSqsProperties: HmppsSqsProperties, sqsDlqClient: SqsAsyncClient?): SqsAsyncClient =
+  private fun getOrDefaultSqsClient(queueId: String, queueConfig: QueueConfig, hmppsSqsProperties: HmppsSqsProperties, sqsDlqClient: SqsAsyncClient?): SqsAsyncClient =
     getOrDefaultBean("$queueId-sqs-client") {
       createSqsAsyncClient(queueConfig, hmppsSqsProperties, sqsDlqClient)
         .also { log.info("Created ${hmppsSqsProperties.provider} SqsAsyncClient for queue queueId $queueId with name ${queueConfig.queueName}") }
     }
 
-  private fun getOrDefaultAsyncHealthIndicator(hmppsQueue: HmppsQueue): HealthIndicator =
+  private fun getOrDefaultHealthIndicator(hmppsQueue: HmppsQueue): HealthIndicator =
     getOrDefaultBean("${hmppsQueue.id}-health") {
       HmppsQueueHealth(hmppsQueue)
     }
@@ -90,36 +90,37 @@ class HmppsQueueFactory(
       Provider.AWS -> sqsClientFactory.awsSqsAsyncClient(queueConfig.queueAccessKeyId, queueConfig.queueSecretAccessKey, region)
       Provider.LOCALSTACK -> {
         sqsClientFactory.localstackSqsAsyncClient(hmppsSqsProperties.localstackUrl, region)
-          .also { sqsClient -> runBlocking { createLocalStackQueueAsync(sqsClient, sqsDlqClient, queueConfig.queueName, queueConfig.dlqName, queueConfig.dlqMaxReceiveCount) } }
+          .also { sqsClient -> runBlocking { createLocalStackQueue(sqsClient, sqsDlqClient, queueConfig.queueName, queueConfig.dlqName, queueConfig.dlqMaxReceiveCount) } }
       }
     }
   }
 
-  private fun createLocalStackQueueAsync(
-    sqsAsyncClient: SqsAsyncClient,
-    sqsDlqAsyncClient: SqsAsyncClient?,
+  private fun createLocalStackQueue(
+    sqsClient: SqsAsyncClient,
+    sqsDlqClient: SqsAsyncClient?,
     queueName: String,
     dlqName: String,
     maxReceiveCount: Int,
   ) = runBlocking {
-    if (dlqName.isEmpty() || sqsDlqAsyncClient == null) {
-      sqsAsyncClient.createQueue(CreateQueueRequest.builder().queueName(queueName).build()).await()
+    if (dlqName.isEmpty() || sqsDlqClient == null) {
+      sqsClient.createQueue(CreateQueueRequest.builder().queueName(queueName).build()).await()
     } else {
-      val dlqUrl = sqsDlqAsyncClient.getQueueUrl(GetQueueUrlRequest.builder().queueName(dlqName).build())
-      val dlqArn = sqsDlqAsyncClient.getQueueAttributes(GetQueueAttributesRequest.builder().queueUrl(dlqUrl.await().queueUrl()).attributeNames(QueueAttributeName.QUEUE_ARN).build()).await().attributes()[QueueAttributeName.QUEUE_ARN]
-      sqsAsyncClient.createQueue(
+      val dlqUrl = sqsDlqClient.getQueueUrl(GetQueueUrlRequest.builder().queueName(dlqName).build())
+      val dlqArn = sqsDlqClient.getQueueAttributes(GetQueueAttributesRequest.builder().queueUrl(dlqUrl.await().queueUrl()).attributeNames(QueueAttributeName.QUEUE_ARN).build()).await().attributes()[QueueAttributeName.QUEUE_ARN]
+      sqsClient.createQueue(
         CreateQueueRequest.builder().queueName(queueName).attributes(mapOf(QueueAttributeName.REDRIVE_POLICY to """{"deadLetterTargetArn":"$dlqArn","maxReceiveCount":"$maxReceiveCount"}""")).build()
       ).await()
     }
   }
 
-  private fun subscribeToLocalStackTopic(hmppsSqsProperties: HmppsSqsProperties, queueConfig: QueueConfig, hmppsTopics: List<HmppsTopic>) {
-    if (findProvider(hmppsSqsProperties.provider) != Provider.LOCALSTACK) {
-      return
+  private fun subscribeToLocalStackTopic(hmppsSqsProperties: HmppsSqsProperties, queueConfig: QueueConfig, hmppsTopics: List<HmppsTopic>) = runBlocking {
+    if (findProvider(hmppsSqsProperties.provider) == Provider.LOCALSTACK) {
+      val topic = hmppsTopics.firstOrNull { topic -> topic.id == queueConfig.subscribeTopicId }
+      topic?.snsClient
+        ?.subscribe(subscribeRequest(queueConfig, topic.arn, hmppsSqsProperties.localstackUrl))
+        ?.also { log.info("Queue ${queueConfig.queueName} has subscribed to topic with arn ${topic.arn}") }
+        ?.await()
     }
-
-    val topic = hmppsTopics.firstOrNull { topic -> topic.id == queueConfig.subscribeTopicId }
-    topic?.snsClient?.subscribe(subscribeRequest(queueConfig, topic.arn, hmppsSqsProperties.localstackUrl))?.also { log.info("Queue ${queueConfig.queueName} has subscribed to topic with arn ${topic.arn}") }
   }
 
   private fun subscribeRequest(queueConfig: QueueConfig, topicArn: String, localstackUrl: String): SubscribeRequest {
