@@ -1,3 +1,5 @@
+@file:Suppress("ClassName")
+
 package uk.gov.justice.hmpps.sqs
 
 import org.assertj.core.api.Assertions.assertThat
@@ -15,7 +17,7 @@ import software.amazon.awssdk.services.sqs.model.QueueAttributeName
 import software.amazon.awssdk.services.sqs.model.QueueDoesNotExistException
 import java.util.concurrent.CompletableFuture
 
-class HmppsNoDlqQueueHealthTest {
+class HmppsQueueHealthTest_NoDlq {
 
   private val sqsClient = mock<SqsAsyncClient>()
   private val queueId = "some queue id"
