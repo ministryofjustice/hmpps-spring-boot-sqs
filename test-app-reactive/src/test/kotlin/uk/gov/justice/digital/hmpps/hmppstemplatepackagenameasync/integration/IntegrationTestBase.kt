@@ -42,12 +42,12 @@ abstract class IntegrationTestBase {
 
   @BeforeEach
   fun `clear queues`() {
-    inboundSqsClient.purgeQueue(PurgeQueueRequest.builder().queueUrl(inboundQueueUrl).build())
-    inboundSqsDlqClient.purgeQueue(PurgeQueueRequest.builder().queueUrl(inboundDlqUrl).build())
-    outboundSqsClientSpy.purgeQueue(PurgeQueueRequest.builder().queueUrl(outboundQueueUrl).build())
-    outboundSqsDlqClientSpy.purgeQueue(PurgeQueueRequest.builder().queueUrl(outboundDlqUrl).build())
-    outboundTestSqsClient.purgeQueue(PurgeQueueRequest.builder().queueUrl(outboundTestQueueUrl).build())
-    outboundTestNoDlqSqsClient.purgeQueue(PurgeQueueRequest.builder().queueUrl(outboundTestNoDlqQueueUrl).build())
+    inboundSqsClient.purgeQueue(PurgeQueueRequest.builder().queueUrl(inboundQueueUrl).build()).get()
+    inboundSqsDlqClient.purgeQueue(PurgeQueueRequest.builder().queueUrl(inboundDlqUrl).build()).get()
+    outboundSqsClientSpy.purgeQueue(PurgeQueueRequest.builder().queueUrl(outboundQueueUrl).build()).get()
+    outboundSqsDlqClientSpy.purgeQueue(PurgeQueueRequest.builder().queueUrl(outboundDlqUrl).build()).get()
+    outboundTestSqsClient.purgeQueue(PurgeQueueRequest.builder().queueUrl(outboundTestQueueUrl).build()).get()
+    outboundTestNoDlqSqsClient.purgeQueue(PurgeQueueRequest.builder().queueUrl(outboundTestNoDlqQueueUrl).build()).get()
   }
 
   fun HmppsSqsProperties.inboundQueueConfig() =
