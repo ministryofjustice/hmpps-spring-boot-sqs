@@ -3,8 +3,10 @@ package uk.gov.justice.hmpps.sqs
 import com.microsoft.applicationinsights.TelemetryClient
 import io.awspring.cloud.sqs.config.SqsBootstrapConfiguration
 import org.springframework.boot.autoconfigure.AutoConfigureBefore
-import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
+import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication
+import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication.Type.REACTIVE
+import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication.Type.SERVLET
 import org.springframework.boot.autoconfigure.web.reactive.WebFluxAutoConfiguration
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.ConfigurableApplicationContext
@@ -29,26 +31,21 @@ class HmppsSqsConfiguration {
 
   @Bean
   @ConditionalOnMissingBean
-  fun hmppsTopicService(hmppsTopicFactory: HmppsTopicFactory, hmppsSqsProperties: HmppsSqsProperties) =
-    HmppsTopicService(hmppsTopicFactory, hmppsSqsProperties)
-
-  @Bean
-  @ConditionalOnMissingBean
   fun hmppsQueueService(
     telemetryClient: TelemetryClient?,
-    hmppsTopicService: HmppsTopicService,
+    hmppsTopicFactory: HmppsTopicFactory,
     hmppsQueueFactory: HmppsQueueFactory,
     hmppsSqsProperties: HmppsSqsProperties,
-  ) = HmppsQueueService(telemetryClient, hmppsTopicService, hmppsQueueFactory, hmppsSqsProperties)
+  ) = HmppsQueueService(telemetryClient, hmppsTopicFactory, hmppsQueueFactory, hmppsSqsProperties)
 
   @Bean
   @ConditionalOnMissingBean
-  @ConditionalOnExpression("'\${hmpps.sqs.reactiveApi:false}'.equals('false')")
+  @ConditionalOnWebApplication(type = SERVLET)
   fun hmppsQueueResource(hmppsQueueService: HmppsQueueService) = HmppsQueueResource(hmppsQueueService)
 
   @Bean
   @ConditionalOnMissingBean
-  @ConditionalOnExpression("\${hmpps.sqs.reactiveApi:false}")
+  @ConditionalOnWebApplication(type = REACTIVE)
   fun hmppsReactiveQueueResource(hmppsQueueService: HmppsQueueService) = HmppsReactiveQueueResource(hmppsQueueService)
 
   @Bean

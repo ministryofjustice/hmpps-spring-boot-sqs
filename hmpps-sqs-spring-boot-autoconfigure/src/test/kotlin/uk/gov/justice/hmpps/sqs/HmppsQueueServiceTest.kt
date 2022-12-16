@@ -37,7 +37,7 @@ import java.util.concurrent.CompletableFuture
 class HmppsQueueServiceTest {
 
   private val telemetryClient = mock<TelemetryClient>()
-  private val hmppsTopicService = mock<HmppsTopicService>()
+  private val hmppsTopicFactory = mock<HmppsTopicFactory>()
   private val hmppsQueueFactory = mock<HmppsQueueFactory>()
   private val hmppsSqsProperties = mock<HmppsSqsProperties>()
   private lateinit var hmppsQueueService: HmppsQueueService
@@ -62,7 +62,7 @@ class HmppsQueueServiceTest {
           )
         )
 
-      hmppsQueueService = HmppsQueueService(telemetryClient, hmppsTopicService, hmppsQueueFactory, hmppsSqsProperties)
+      hmppsQueueService = HmppsQueueService(telemetryClient, hmppsTopicFactory, hmppsQueueFactory, hmppsSqsProperties)
     }
 
     @Test
@@ -113,7 +113,7 @@ class HmppsQueueServiceTest {
       whenever(dlqSqs.deleteMessage(any<DeleteMessageRequest>()))
         .thenReturn(CompletableFuture.completedFuture(DeleteMessageResponse.builder().build()))
 
-      hmppsQueueService = HmppsQueueService(telemetryClient, hmppsTopicService, hmppsQueueFactory, hmppsSqsProperties)
+      hmppsQueueService = HmppsQueueService(telemetryClient, hmppsTopicFactory, hmppsQueueFactory, hmppsSqsProperties)
     }
 
     @Nested
@@ -191,7 +191,7 @@ class HmppsQueueServiceTest {
             )
           )
 
-        hmppsQueueService = HmppsQueueService(telemetryClient, hmppsTopicService, hmppsQueueFactory, hmppsSqsProperties)
+        hmppsQueueService = HmppsQueueService(telemetryClient, hmppsTopicFactory, hmppsQueueFactory, hmppsSqsProperties)
       }
 
       @Test
@@ -322,7 +322,7 @@ class HmppsQueueServiceTest {
             )
           )
 
-        hmppsQueueService = HmppsQueueService(telemetryClient, hmppsTopicService, hmppsQueueFactory, hmppsSqsProperties)
+        hmppsQueueService = HmppsQueueService(telemetryClient, hmppsTopicFactory, hmppsQueueFactory, hmppsSqsProperties)
       }
 
       @Test
@@ -417,7 +417,7 @@ class HmppsQueueServiceTest {
         )
           .thenReturn(CompletableFuture.completedFuture(ReceiveMessageResponse.builder().build()))
 
-        hmppsQueueService = HmppsQueueService(telemetryClient, hmppsTopicService, hmppsQueueFactory, hmppsSqsProperties)
+        hmppsQueueService = HmppsQueueService(telemetryClient, hmppsTopicFactory, hmppsQueueFactory, hmppsSqsProperties)
       }
 
       @Test
@@ -526,7 +526,7 @@ class HmppsQueueServiceTest {
           )
         )
 
-      hmppsQueueService = HmppsQueueService(telemetryClient, hmppsTopicService, hmppsQueueFactory, hmppsSqsProperties)
+      hmppsQueueService = HmppsQueueService(telemetryClient, hmppsTopicFactory, hmppsQueueFactory, hmppsSqsProperties)
     }
 
     @Test
@@ -612,7 +612,7 @@ class HmppsQueueServiceTest {
           )
         )
 
-      hmppsQueueService = HmppsQueueService(telemetryClient, hmppsTopicService, hmppsQueueFactory, hmppsSqsProperties)
+      hmppsQueueService = HmppsQueueService(telemetryClient, hmppsTopicFactory, hmppsQueueFactory, hmppsSqsProperties)
     }
 
     @Test
@@ -642,7 +642,7 @@ class HmppsQueueServiceTest {
 
     private val sqsAsyncClient = mock<SqsAsyncClient>()
     private val hmppsQueueService =
-      HmppsQueueService(telemetryClient, hmppsTopicService, hmppsQueueFactory, hmppsSqsProperties)
+      HmppsQueueService(telemetryClient, hmppsTopicFactory, hmppsQueueFactory, hmppsSqsProperties)
 
     @BeforeEach
     fun `mock purge queue`() {
