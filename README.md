@@ -12,6 +12,7 @@ The library relies on [Spring Boot Auto-configuration](https://docs.spring.io/sp
 
 ## Release Notes
 
+##### [2.0.0](release-notes/2.0.0.md)
 ##### [1.2.0](release-notes/1.2.0.md)
 ##### [1.1.13](release-notes/1.1.13.md)
 ##### [1.1.12](release-notes/1.1.12.md)
@@ -90,7 +91,6 @@ Examples of property usage can be found in the test project in the following pla
 | localstackUrl | `http://localhost:4566` | Only used for `provider=localstack`. The location of the running LocalStack instance.                                                                                                                                                   |
 | queues        |                         | A map of `queueId` to `QueueConfig`. One entry is required for each queue. In production these are derived from environment variables with the prefix `HMPPS_SQS_QUEUES_` that should be populated from Kubernetes secrets (see below). |
 | topics        |                         | A map of `topicId` to `TopicConfig`. One entry is required for each topic. In production these are derived from environment variables with the prefix `HMPPS_SQS_TOPICS_` that should be populated from Kubernetes secrets (see below). |
-| reactiveApi   | `false`                 | Publishes a reactive API for the Queue Admin Endpoints. See [Reactive Queue Admin Endpoints](#reactive-queue-admin-endpoints) for more details.                                                                                         |
 
 Each queue declared in the `queues` map is defined in the `QueueConfig` property class
 
@@ -298,7 +298,7 @@ Hopefully your Open API document generator can find the endpoints automatically 
 
 If you're building an application with Reactive endpoints then your ResourceServer or Node app will be configured to support Reactive.
 
-To switch to the reactive Queue admin endpoints add configuration `hmpps.sqs.reactiveApi=true` to your configuration properties. Note that this will disable the non-reactive endpoints (which are enabled by default).
+The library will automatically switch to the reactive Queue admin endpoints if it detects a running a reactive application (`@ConditionalOnWebApplication(type = REACTIVE)`). Note that this will disable the non-reactive endpoints (which are enabled by default).
 
 ### Testcontainers
 

@@ -1,23 +1,25 @@
 package uk.gov.justice.digital.hmpps.hmppstemplatepackagename.config
 
+import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter
 import org.springframework.security.config.http.SessionCreationPolicy
+import org.springframework.security.web.SecurityFilterChain
 
 @Configuration
 @EnableWebSecurity
-@EnableGlobalMethodSecurity(prePostEnabled = true, proxyTargetClass = true)
-class ResourceServerConfiguration : WebSecurityConfigurerAdapter() {
-  override fun configure(http: HttpSecurity) {
+@EnableMethodSecurity(prePostEnabled = true, proxyTargetClass = true)
+class ResourceServerConfiguration() {
+  @Bean
+  fun filterChain(http: HttpSecurity): SecurityFilterChain {
     http
       .sessionManagement()
       .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
       .and().csrf().disable()
-      .authorizeRequests { auth ->
-        auth.antMatchers(
+      .authorizeHttpRequests { auth ->
+        auth.requestMatchers(
           "/webjars/**",
           "/favicon.ico",
           "/health/**",
@@ -29,5 +31,6 @@ class ResourceServerConfiguration : WebSecurityConfigurerAdapter() {
         )
           .permitAll().anyRequest().authenticated()
       }.oauth2ResourceServer().jwt().jwtAuthenticationConverter(AuthAwareTokenConverter())
+    return http.build()
   }
 }

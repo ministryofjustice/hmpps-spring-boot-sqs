@@ -1,9 +1,7 @@
 package uk.gov.justice.hmpps.sqs
 
 import org.springframework.boot.context.properties.ConfigurationProperties
-import org.springframework.boot.context.properties.ConstructorBinding
 
-@ConstructorBinding
 @ConfigurationProperties(prefix = "hmpps.sqs")
 data class HmppsSqsProperties(
   val provider: String = "aws",

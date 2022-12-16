@@ -11,14 +11,9 @@ plugins {
   id("se.patrikerdes.use-latest-versions") version "0.2.18"
   id("io.spring.dependency-management") version "1.1.0"
   id("org.jlleitschuh.gradle.ktlint") version "11.0.0"
-  id("org.owasp.dependencycheck") version "7.3.2"
-  id("org.springframework.boot") version "2.7.6"
+  id("org.owasp.dependencycheck") version "7.4.1"
+  id("org.springframework.boot") version "3.0.0"
 }
-
-// Pinned to counter various CVEs with previous versions. Please remove this once Spring pulls in at least this version: https://docs.spring.io/spring-boot/docs/current/reference/html/dependency-versions.html
-ext["snakeyaml.version"] = "1.33"
-// Pinned to counter various CVEs. Please remove once Spring Boot brings in at least this version.
-ext["spring-security.version"] = "5.7.5"
 
 dependencyManagement {
   imports {
@@ -36,7 +31,7 @@ dependencies {
   implementation("io.awspring.cloud:spring-cloud-aws-sns")
   implementation("io.awspring.cloud:spring-cloud-aws-sqs")
   implementation("com.google.code.gson:gson:2.10")
-  implementation("com.microsoft.azure:applicationinsights-core:3.4.4")
+  implementation("com.microsoft.azure:applicationinsights-core:3.4.7")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8")
 
@@ -45,7 +40,7 @@ dependencies {
   testImplementation("org.mockito:mockito-junit-jupiter:4.9.0")
   testImplementation("org.springframework.boot:spring-boot-starter-test")
   testImplementation("org.mockito.kotlin:mockito-kotlin:4.1.0")
-  testImplementation("org.mockito:mockito-inline:4.9.0")
+  testImplementation("org.mockito:mockito-inline:4.10.0")
   testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.6.4")
   testImplementation("org.jetbrains.kotlin:kotlin-reflect")
 }
