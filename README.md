@@ -404,7 +404,7 @@ Start localstack with command:
 
 `docker-compose -f docker-compose-test.yml up localstack`
 
-Then run the `test-app` in your IDE from main class `HmppsTemplateKotlin` using Spring profiles `localstack` and `stdout`.
+Then run the `test-app` in your IDE from main class `HmppsTemplateKotlin` using Spring profiles `localstack`.
 
 Some messages to process can be found in `test-app/src/test/resources/test-messages`. These can be sent to the inbound topic with the following commands:
 

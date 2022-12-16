@@ -6,16 +6,16 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import software.amazon.awssdk.services.sns.model.MessageAttributeValue
 import software.amazon.awssdk.services.sns.model.PublishRequest
-import uk.gov.justice.hmpps.sqs.HmppsTopicService
+import uk.gov.justice.hmpps.sqs.HmppsQueueService
 import uk.gov.justice.hmpps.sqs.MissingTopicException
 
 @Service
-class OutboundEventsEmitter(hmppsTopicService: HmppsTopicService, private val objectMapper: ObjectMapper) {
+class OutboundEventsEmitter(hmppsQueueService: HmppsQueueService, private val objectMapper: ObjectMapper) {
   companion object {
     val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
-  private val outboundTopic = hmppsTopicService.findByTopicId("outboundtopic") ?: throw MissingTopicException("Could not find topic outboundtopic")
+  private val outboundTopic = hmppsQueueService.findByTopicId("outboundtopic") ?: throw MissingTopicException("Could not find topic outboundtopic")
 
   fun sendEvent(hmppsEvent: HmppsEvent) {
     when (hmppsEvent.type) {

@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppstemplatepackagename.integration
 
 import io.jsonwebtoken.Jwts
+import io.jsonwebtoken.SignatureAlgorithm
 import io.jsonwebtoken.SignatureAlgorithm.RS256
 import org.springframework.context.annotation.Bean
 import org.springframework.security.oauth2.jwt.JwtDecoder
@@ -43,7 +44,7 @@ class JwtAuthHelper {
       .setSubject(subject)
       .addClaims(claims)
       .setExpiration(Date(System.currentTimeMillis() + expiryTime.toMillis()))
-      .signWith(RS256, keyPair.private)
+      .signWith(keyPair.private, SignatureAlgorithm.RS256)
       .compact()
   }
 }
