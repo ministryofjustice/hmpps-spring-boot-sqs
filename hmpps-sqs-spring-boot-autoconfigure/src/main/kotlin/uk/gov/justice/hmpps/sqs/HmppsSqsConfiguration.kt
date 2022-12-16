@@ -8,6 +8,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplicat
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication.Type.REACTIVE
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication.Type.SERVLET
 import org.springframework.boot.autoconfigure.web.reactive.WebFluxAutoConfiguration
+import org.springframework.boot.autoconfigure.web.servlet.WebMvcAutoConfiguration
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.ConfigurableApplicationContext
 import org.springframework.context.annotation.Bean
@@ -17,7 +18,7 @@ import org.springframework.context.annotation.Import
 
 @Configuration
 @EnableConfigurationProperties(HmppsSqsProperties::class)
-@AutoConfigureBefore(WebFluxAutoConfiguration::class)
+@AutoConfigureBefore(WebFluxAutoConfiguration::class, WebMvcAutoConfiguration::class)
 @Import(SqsBootstrapConfiguration::class)
 class HmppsSqsConfiguration {
 

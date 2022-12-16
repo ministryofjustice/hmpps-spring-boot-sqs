@@ -11,16 +11,16 @@ plugins {
 dependencies {
   api(platform("io.awspring.cloud:spring-cloud-aws-dependencies:3.0.0-M3"))
   api(project(":hmpps-sqs-spring-boot-autoconfigure"))
-  api(platform("software.amazon.awssdk:bom:2.18.28"))
+  api(platform("software.amazon.awssdk:bom:2.18.39"))
   api("software.amazon.awssdk:sns")
   api("io.awspring.cloud:spring-cloud-aws-starter") { exclude("io.awspring.cloud", "spring-cloud-aws-autoconfigure")}
   api("io.awspring.cloud:spring-cloud-aws-sns")
   api("io.awspring.cloud:spring-cloud-aws-sqs")
-  api(platform("org.springframework.boot:spring-boot-dependencies:2.7.6"))
+  api(platform("org.springframework.boot:spring-boot-dependencies:3.0.0"))
   api("org.springframework.boot:spring-boot-starter-web")
   api("org.springframework.boot:spring-boot-starter-security")
   api("org.springframework.boot:spring-boot-starter-actuator")
-  api("com.microsoft.azure:applicationinsights-core:3.4.4")
+  api("com.microsoft.azure:applicationinsights-core:3.4.7")
 }
 
 publishing {
