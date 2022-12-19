@@ -95,7 +95,7 @@ class HmppsQueueHealth(private val hmppsQueue: HmppsQueue) : HealthIndicator {
 
   private fun getDlqAttributes(): Result<GetQueueAttributesResponse> =
     runCatching {
-      hmppsQueue.sqsDlqClient?.getQueueAttributes(GetQueueAttributesRequest.builder().queueUrl(hmppsQueue.queueUrl).attributeNames(QueueAttributeName.ALL).build())?.get()
+      hmppsQueue.sqsDlqClient?.getQueueAttributes(GetQueueAttributesRequest.builder().queueUrl(hmppsQueue.dlqUrl).attributeNames(QueueAttributeName.ALL).build())?.get()
         ?: throw MissingDlqClientException(hmppsQueue.dlqName)
     }
 }
