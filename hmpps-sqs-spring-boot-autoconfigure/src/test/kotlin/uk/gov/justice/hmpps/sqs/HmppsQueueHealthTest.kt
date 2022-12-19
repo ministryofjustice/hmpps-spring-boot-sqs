@@ -3,9 +3,9 @@ package uk.gov.justice.hmpps.sqs
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
+import org.mockito.kotlin.check
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
-import org.mockito.kotlin.check
 import org.mockito.kotlin.whenever
 import org.springframework.boot.actuate.health.Status
 import software.amazon.awssdk.services.sqs.SqsAsyncClient
@@ -122,9 +122,11 @@ class HmppsQueueHealthTest {
 
     queueHealth.health()
 
-    verify(sqsClient).getQueueAttributes(check<GetQueueAttributesRequest> {
-      assertThat(it.queueUrl()).isEqualTo(queueUrl)
-    })
+    verify(sqsClient).getQueueAttributes(
+      check<GetQueueAttributesRequest> {
+        assertThat(it.queueUrl()).isEqualTo(queueUrl)
+      }
+    )
   }
 
   @Test
@@ -133,9 +135,11 @@ class HmppsQueueHealthTest {
 
     queueHealth.health()
 
-    verify(sqsDlqClient).getQueueAttributes(check<GetQueueAttributesRequest> {
-      assertThat(it.queueUrl()).isEqualTo(dlqUrl)
-    })
+    verify(sqsDlqClient).getQueueAttributes(
+      check<GetQueueAttributesRequest> {
+        assertThat(it.queueUrl()).isEqualTo(dlqUrl)
+      }
+    )
   }
 
   @Test
