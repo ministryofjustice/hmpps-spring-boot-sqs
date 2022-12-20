@@ -1,7 +1,9 @@
 package uk.gov.justice.hmpps.sqs
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.microsoft.applicationinsights.TelemetryClient
 import io.awspring.cloud.sqs.config.SqsBootstrapConfiguration
+import io.awspring.cloud.sqs.config.SqsListenerConfigurer
 import org.springframework.boot.autoconfigure.AutoConfigureBefore
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication
@@ -56,4 +58,7 @@ class HmppsSqsConfiguration {
     factories: List<HmppsQueueDestinationContainerFactory>,
     hmppsSqsProperties: HmppsSqsProperties,
   ) = HmppsQueueSqsListenerContainerFactory(factories, hmppsSqsProperties)
+
+  @Bean
+  fun configurer(objectMapper: ObjectMapper): SqsListenerConfigurer = SqsListenerConfigurer { it.objectMapper = objectMapper }
 }

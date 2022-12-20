@@ -65,9 +65,9 @@ class HmppsQueueFactory(
       HmppsQueueDestinationContainerFactory(hmppsQueue.id, createSqsListenerContainerFactory(hmppsQueue.sqsClient))
     }
 
-  fun createSqsListenerContainerFactory(awsSqsClient: SqsAsyncClient): SqsMessageListenerContainerFactory<String> =
+  private fun createSqsListenerContainerFactory(awsSqsClient: SqsAsyncClient): SqsMessageListenerContainerFactory<Any> =
     SqsMessageListenerContainerFactory
-      .builder<String>()
+      .builder<Any>()
       .sqsAsyncClient(awsSqsClient)
       .build()
 
