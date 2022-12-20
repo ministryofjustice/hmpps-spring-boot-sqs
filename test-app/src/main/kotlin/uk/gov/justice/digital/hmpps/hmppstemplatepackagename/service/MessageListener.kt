@@ -7,10 +7,9 @@ import org.springframework.stereotype.Service
 @Service
 class InboundMessageListener(private val inboundMessageService: InboundMessageService, private val objectMapper: ObjectMapper) {
 
-  @SqsListener(queueNames = ["inboundqueue"], factory = "hmppsQueueContainerFactoryProxy")
-  fun processMessage(rawMessage: String?) {
-    val (Message) = objectMapper.readValue(rawMessage, Message::class.java)
-    val event = objectMapper.readValue(Message, HmppsEvent::class.java)
+  @SqsListener("inboundqueue", factory = "hmppsQueueContainerFactoryProxy")
+  fun processMessage(message: Message) {
+    val event = objectMapper.readValue(message.Message, HmppsEvent::class.java)
     inboundMessageService.handleMessage(event)
   }
 }
@@ -18,10 +17,9 @@ class InboundMessageListener(private val inboundMessageService: InboundMessageSe
 @Service
 class OutboundMessageListener(private val outboundMessageService: OutboundMessageService, private val objectMapper: ObjectMapper) {
 
-  @SqsListener(queueNames = ["outboundqueue"], factory = "hmppsQueueContainerFactoryProxy")
-  fun processMessage(rawMessage: String?) {
-    val (message) = objectMapper.readValue(rawMessage, Message::class.java)
-    val event = objectMapper.readValue(message, HmppsEvent::class.java)
+  @SqsListener("outboundqueue", factory = "hmppsQueueContainerFactoryProxy")
+  fun processMessage(message: Message) {
+    val event = objectMapper.readValue(message.Message, HmppsEvent::class.java)
     outboundMessageService.handleMessage(event)
   }
 }

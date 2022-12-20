@@ -10,7 +10,7 @@ plugins {
 
 allprojects {
   group = "uk.gov.justice.service.hmpps"
-  version = "2.0.0-beta-2"
+  version = "2.0.0-beta-3"
 
   repositories {
     maven { url = uri("https://repo.spring.io/milestone") }

@@ -10,21 +10,21 @@ class SqsListenerContainerFactoryMissingException(message: String) : RuntimeExce
 
 data class HmppsQueueDestinationContainerFactory(
   val destination: String,
-  val factory: SqsMessageListenerContainerFactory<String>,
+  val factory: SqsMessageListenerContainerFactory<Any>,
 )
 
 class HmppsQueueSqsListenerContainerFactory(
   private val factories: List<HmppsQueueDestinationContainerFactory>,
   private val hmppsSqsProperties: HmppsSqsProperties,
-) : SqsMessageListenerContainerFactory<String>() {
+) : SqsMessageListenerContainerFactory<Any>() {
 
-  override fun createContainerInstance(endpoint: Endpoint, containerOptions: ContainerOptions): SqsMessageListenerContainer<String> = factories
+  override fun createContainerInstance(endpoint: Endpoint, containerOptions: ContainerOptions): SqsMessageListenerContainer<Any> = factories
     .firstOrNull { endpoint.logicalNames.contains(it.destination) }
     ?.factory
     ?.createContainer(endpoint)
     ?: throw SqsListenerContainerFactoryMissingException("Unable to find sqs listener container factory for endpoint ${endpoint.logicalNames}")
 
-  override fun configureAbstractContainer(container: AbstractMessageListenerContainer<String>, endpoint: Endpoint) {
+  override fun configureAbstractContainer(container: AbstractMessageListenerContainer<Any>, endpoint: Endpoint) {
     super.configureAbstractContainer(container, endpoint)
     val destinationNames = endpoint.logicalNames.map {
       hmppsSqsProperties.queues[it]?.queueName ?: it
