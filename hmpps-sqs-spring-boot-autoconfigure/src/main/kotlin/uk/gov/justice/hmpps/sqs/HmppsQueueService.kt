@@ -95,9 +95,9 @@ open class HmppsQueueService(
 
   open suspend fun purgeQueue(request: PurgeQueueRequest): PurgeQueueResult =
     with(request) {
-      val messageCount = sqsAsyncClient.countMessagesOnQueue(queueUrl)
+      val messageCount = sqsClient.countMessagesOnQueue(queueUrl)
       return if (messageCount > 0) {
-        sqsAsyncClient.purgeQueue(AwsPurgeQueueRequest.builder().queueUrl(queueUrl).build())
+        sqsClient.purgeQueue(AwsPurgeQueueRequest.builder().queueUrl(queueUrl).build())
           .await()
           .let { PurgeQueueResult(messageCount) }
           .also {
@@ -120,7 +120,7 @@ data class RetryDlqResult(val messagesFoundCount: Int, val messages: List<DlqMes
 data class GetDlqRequest(val hmppsQueue: HmppsQueue, val maxMessages: Int)
 data class GetDlqResult(val messagesFoundCount: Int, val messagesReturnedCount: Int, val messages: List<DlqMessage>)
 data class DlqMessage(val body: Map<String, Any>, val messageId: String)
-data class PurgeQueueRequest(val queueName: String, val sqsAsyncClient: SqsAsyncClient, val queueUrl: String)
+data class PurgeQueueRequest(val queueName: String, val sqsClient: SqsAsyncClient, val queueUrl: String)
 data class PurgeQueueResult(val messagesFoundCount: Int)
 
 internal suspend fun SqsAsyncClient.countMessagesOnQueue(queueUrl: String): Int =
