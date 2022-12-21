@@ -15,6 +15,7 @@ import software.amazon.awssdk.services.sqs.model.GetQueueAttributesRequest
 import software.amazon.awssdk.services.sqs.model.QueueAttributeName
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest
+import java.util.concurrent.CompletableFuture
 import kotlin.math.min
 import software.amazon.awssdk.services.sqs.model.PurgeQueueRequest as AwsPurgeQueueRequest
 
@@ -55,7 +56,7 @@ open class HmppsQueueService(
   private suspend fun HmppsQueue.retryDlqMessages(): RetryDlqResult {
     if (sqsDlqClient == null || dlqUrl == null) return RetryDlqResult(0, listOf())
 
-    val messageCount = sqsDlqClient.countMessagesOnQueue(dlqUrl!!)
+    val messageCount = sqsDlqClient.countMessagesOnQueue(dlqUrl!!).await()
     val map: Map<String, Any> = HashMap()
 
     val messages = (1..messageCount)
@@ -79,7 +80,7 @@ open class HmppsQueueService(
   private suspend fun HmppsQueue.getDlqMessages(maxMessages: Int): GetDlqResult {
     if (sqsDlqClient == null || dlqUrl == null) return GetDlqResult(0, 0, listOf())
 
-    val messageCount = sqsDlqClient.countMessagesOnQueue(dlqUrl!!)
+    val messageCount = sqsDlqClient.countMessagesOnQueue(dlqUrl!!).await()
     val messagesToReturnCount = min(messageCount, maxMessages)
     val map: Map<String, Any> = HashMap()
 
@@ -95,7 +96,7 @@ open class HmppsQueueService(
 
   open suspend fun purgeQueue(request: PurgeQueueRequest): PurgeQueueResult =
     with(request) {
-      val messageCount = sqsClient.countMessagesOnQueue(queueUrl)
+      val messageCount = sqsClient.countMessagesOnQueue(queueUrl).await()
       return if (messageCount > 0) {
         sqsClient.purgeQueue(AwsPurgeQueueRequest.builder().queueUrl(queueUrl).build())
           .await()
@@ -123,9 +124,8 @@ data class DlqMessage(val body: Map<String, Any>, val messageId: String)
 data class PurgeQueueRequest(val queueName: String, val sqsClient: SqsAsyncClient, val queueUrl: String)
 data class PurgeQueueResult(val messagesFoundCount: Int)
 
-internal suspend fun SqsAsyncClient.countMessagesOnQueue(queueUrl: String): Int =
+fun SqsAsyncClient.countMessagesOnQueue(queueUrl: String): CompletableFuture<Int> =
   this.getQueueAttributes(GetQueueAttributesRequest.builder().queueUrl(queueUrl).attributeNames(QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES).build())
-    .await()
-    .let {
+    .thenApply {
       it.attributes()[QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES]?.toInt() ?: 0
     }

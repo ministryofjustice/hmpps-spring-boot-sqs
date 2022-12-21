@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.service
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import kotlinx.coroutines.future.await
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -17,14 +18,14 @@ class OutboundEventsEmitter(hmppsQueueService: HmppsQueueService, private val ob
 
   private val outboundTopic = hmppsQueueService.findByTopicId("outboundtopic") ?: throw MissingTopicException("Could not find topic outboundtopic")
 
-  fun sendEvent(hmppsEvent: HmppsEvent) {
+  suspend fun sendEvent(hmppsEvent: HmppsEvent) {
     when (hmppsEvent.type) {
       "offender.movement.reception", "test.type" -> publishToOutboundTopic(hmppsEvent)
       else -> "Ignoring event of type ${hmppsEvent.type}"
     }
   }
 
-  private fun publishToOutboundTopic(hmppsEvent: HmppsEvent) {
+  private suspend fun publishToOutboundTopic(hmppsEvent: HmppsEvent) {
     outboundTopic.snsClient.publish(
       PublishRequest.builder()
         .topicArn(outboundTopic.arn)
@@ -34,6 +35,6 @@ class OutboundEventsEmitter(hmppsQueueService: HmppsQueueService, private val ob
         )
         .build()
         .also { log.info("Published event $hmppsEvent to outbound topic") }
-    )
+    ).await()
   }
 }
