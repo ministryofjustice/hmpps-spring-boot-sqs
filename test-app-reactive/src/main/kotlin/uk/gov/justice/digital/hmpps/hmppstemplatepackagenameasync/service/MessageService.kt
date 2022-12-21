@@ -10,7 +10,7 @@ class InboundMessageService(private val outboundEventsEmitter: OutboundEventsEmi
     val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
-  fun handleMessage(hmppsEvent: HmppsEvent) {
+  suspend fun handleMessage(hmppsEvent: HmppsEvent) {
     log.info("received event: $hmppsEvent")
     val outboundEventType = when (hmppsEvent.type) {
       "OFFENDER_MOVEMENT-RECEPTION" -> "offender.movement.reception"

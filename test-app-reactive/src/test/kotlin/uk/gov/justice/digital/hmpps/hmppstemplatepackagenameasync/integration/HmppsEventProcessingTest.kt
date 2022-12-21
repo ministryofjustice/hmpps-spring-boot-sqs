@@ -12,6 +12,7 @@ import software.amazon.awssdk.services.sns.model.PublishRequest
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest
 import uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.service.HmppsEvent
 import uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.service.Message
+import uk.gov.justice.hmpps.sqs.countMessagesOnQueue
 
 class HmppsEventProcessingTest : IntegrationTestBase() {
 
@@ -24,7 +25,7 @@ class HmppsEventProcessingTest : IntegrationTestBase() {
       ).build()
     )
 
-    await untilCallTo { outboundTestSqsClient.countMessagesOnQueue(outboundTestQueueUrl) } matches { it == 1 }
+    await untilCallTo { outboundTestSqsClient.countMessagesOnQueue(outboundTestQueueUrl).get() } matches { it == 1 }
 
     val receivedEvent = ReceiveMessageRequest.builder().queueUrl(outboundTestQueueUrl).build()
       .let { request -> outboundTestSqsClient.receiveMessage(request).get().messages()[0].body() }
@@ -48,7 +49,7 @@ class HmppsEventProcessingTest : IntegrationTestBase() {
 
     await untilCallTo { mockingDetails(outboundEventsEmitterSpy).invocations!! } matches { it?.isNotEmpty() ?: false } // Don't understand why it is nullable here
 
-    assertThat(outboundTestSqsClient.countMessagesOnQueue(outboundTestQueueUrl)).isEqualTo(0)
+    assertThat(outboundTestSqsClient.countMessagesOnQueue(outboundTestQueueUrl).get()).isEqualTo(0)
   }
 
   @Test
@@ -60,7 +61,7 @@ class HmppsEventProcessingTest : IntegrationTestBase() {
       ).build()
     )
 
-    await untilCallTo { outboundTestNoDlqSqsClient.countMessagesOnQueue(outboundTestNoDlqQueueUrl) } matches { it == 1 }
+    await untilCallTo { outboundTestNoDlqSqsClient.countMessagesOnQueue(outboundTestNoDlqQueueUrl).get() } matches { it == 1 }
 
     val receivedEvent = ReceiveMessageRequest.builder().queueUrl(outboundTestNoDlqQueueUrl).build()
       .let { request -> outboundTestSqsClient.receiveMessage(request).get().messages()[0].body() }

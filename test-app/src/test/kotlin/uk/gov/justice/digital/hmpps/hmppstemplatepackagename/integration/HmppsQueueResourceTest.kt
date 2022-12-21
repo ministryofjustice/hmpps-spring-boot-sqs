@@ -16,6 +16,7 @@ import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.service.EventType
 import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.service.HmppsEvent
 import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.service.Message
 import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.service.MessageAttributes
+import uk.gov.justice.hmpps.sqs.countMessagesOnQueue
 
 class HmppsQueueResourceTest : IntegrationTestBase() {
 
@@ -70,7 +71,7 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
       val message2 = Message(gsonString(event2), "message-id2", MessageAttributes(EventType("test.type", "String")))
       inboundSqsDlqClient.sendMessage(SendMessageRequest.builder().queueUrl(inboundDlqUrl).messageBody(gsonString(message1)).build())
       inboundSqsDlqClient.sendMessage(SendMessageRequest.builder().queueUrl(inboundDlqUrl).messageBody(gsonString(message2)).build())
-      await untilCallTo { inboundSqsDlqClient.countMessagesOnQueue(inboundDlqUrl) } matches { it == 2 }
+      await untilCallTo { inboundSqsDlqClient.countMessagesOnQueue(inboundDlqUrl).get() } matches { it == 2 }
 
       webTestClient.put()
         .uri("/queue-admin/retry-dlq/${hmppsSqsPropertiesSpy.inboundQueueConfig().dlqName}")
@@ -79,8 +80,8 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isOk
 
-      await untilCallTo { inboundSqsDlqClient.countMessagesOnQueue(inboundDlqUrl) } matches { it == 0 }
-      await untilCallTo { inboundSqsClient.countMessagesOnQueue(inboundQueueUrl) } matches { it == 0 }
+      await untilCallTo { inboundSqsDlqClient.countMessagesOnQueue(inboundDlqUrl).get() } matches { it == 0 }
+      await untilCallTo { inboundSqsClient.countMessagesOnQueue(inboundQueueUrl).get() } matches { it == 0 }
 
       verify(inboundMessageServiceSpy).handleMessage(event1)
       verify(inboundMessageServiceSpy).handleMessage(event2)
@@ -94,7 +95,7 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
       val message4 = Message(gsonString(event4), "message-id4", MessageAttributes(EventType("test.type", "String")))
       outboundSqsDlqClientSpy.sendMessage(SendMessageRequest.builder().queueUrl(outboundDlqUrl).messageBody(gsonString(message3)).build())
       outboundSqsDlqClientSpy.sendMessage(SendMessageRequest.builder().queueUrl(outboundDlqUrl).messageBody(gsonString(message4)).build())
-      await untilCallTo { outboundSqsDlqClientSpy.countMessagesOnQueue(outboundDlqUrl) } matches { it == 2 }
+      await untilCallTo { outboundSqsDlqClientSpy.countMessagesOnQueue(outboundDlqUrl).get() } matches { it == 2 }
 
       webTestClient.put()
         .uri("/queue-admin/retry-dlq/${hmppsSqsPropertiesSpy.outboundQueueConfig().dlqName}")
@@ -103,8 +104,8 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isOk
 
-      await untilCallTo { outboundSqsDlqClientSpy.countMessagesOnQueue(outboundDlqUrl) } matches { it == 0 }
-      await untilCallTo { outboundSqsClientSpy.countMessagesOnQueue(outboundQueueUrl) } matches { it == 0 }
+      await untilCallTo { outboundSqsDlqClientSpy.countMessagesOnQueue(outboundDlqUrl).get() } matches { it == 0 }
+      await untilCallTo { outboundSqsClientSpy.countMessagesOnQueue(outboundQueueUrl).get() } matches { it == 0 }
 
       verify(outboundMessageServiceSpy).handleMessage(event3)
       verify(outboundMessageServiceSpy).handleMessage(event4)
@@ -121,8 +122,8 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
       val message6 = Message(gsonString(event6), "message-id6", MessageAttributes(EventType("test.type", "String")))
       inboundSqsDlqClient.sendMessage(SendMessageRequest.builder().queueUrl(inboundDlqUrl).messageBody(gsonString(message5)).build())
       outboundSqsDlqClientSpy.sendMessage(SendMessageRequest.builder().queueUrl(outboundDlqUrl).messageBody(gsonString(message6)).build())
-      await untilCallTo { inboundSqsDlqClient.countMessagesOnQueue(inboundDlqUrl) } matches { it == 1 }
-      await untilCallTo { outboundSqsDlqClientSpy.countMessagesOnQueue(outboundDlqUrl) } matches { it == 1 }
+      await untilCallTo { inboundSqsDlqClient.countMessagesOnQueue(inboundDlqUrl).get() } matches { it == 1 }
+      await untilCallTo { outboundSqsDlqClientSpy.countMessagesOnQueue(outboundDlqUrl).get() } matches { it == 1 }
 
       webTestClient.put()
         .uri("/queue-admin/retry-all-dlqs")
@@ -131,10 +132,10 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isOk
 
-      await untilCallTo { inboundSqsDlqClient.countMessagesOnQueue(inboundDlqUrl) } matches { it == 0 }
-      await untilCallTo { inboundSqsClient.countMessagesOnQueue(inboundQueueUrl) } matches { it == 0 }
-      await untilCallTo { outboundSqsDlqClientSpy.countMessagesOnQueue(outboundDlqUrl) } matches { it == 0 }
-      await untilCallTo { outboundSqsClientSpy.countMessagesOnQueue(outboundQueueUrl) } matches { it == 0 }
+      await untilCallTo { inboundSqsDlqClient.countMessagesOnQueue(inboundDlqUrl).get() } matches { it == 0 }
+      await untilCallTo { inboundSqsClient.countMessagesOnQueue(inboundQueueUrl).get() } matches { it == 0 }
+      await untilCallTo { outboundSqsDlqClientSpy.countMessagesOnQueue(outboundDlqUrl).get() } matches { it == 0 }
+      await untilCallTo { outboundSqsClientSpy.countMessagesOnQueue(outboundQueueUrl).get() } matches { it == 0 }
 
       verify(inboundMessageServiceSpy).handleMessage(event5)
       verify(outboundMessageServiceSpy).handleMessage(event6)
@@ -147,7 +148,7 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
     fun `should purge the inbound dlq`() {
       inboundSqsDlqClient.sendMessage(SendMessageRequest.builder().queueUrl(inboundDlqUrl).messageBody(gsonString(HmppsEvent("id1", "test.type", "message1"))).build())
       inboundSqsDlqClient.sendMessage(SendMessageRequest.builder().queueUrl(inboundDlqUrl).messageBody(gsonString(HmppsEvent("id2", "test.type", "message2"))).build())
-      await untilCallTo { inboundSqsDlqClient.countMessagesOnQueue(inboundDlqUrl) } matches { it == 2 }
+      await untilCallTo { inboundSqsDlqClient.countMessagesOnQueue(inboundDlqUrl).get() } matches { it == 2 }
 
       webTestClient.put()
         .uri("/queue-admin/purge-queue/${hmppsSqsPropertiesSpy.inboundQueueConfig().dlqName}")
@@ -156,14 +157,14 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isOk
 
-      await untilCallTo { inboundSqsDlqClient.countMessagesOnQueue(inboundDlqUrl) } matches { it == 0 }
+      await untilCallTo { inboundSqsDlqClient.countMessagesOnQueue(inboundDlqUrl).get() } matches { it == 0 }
     }
 
     @Test
     fun `should purge the outbound dlq`() {
       outboundSqsDlqClientSpy.sendMessage(SendMessageRequest.builder().queueUrl(outboundDlqUrl).messageBody(gsonString(HmppsEvent("id3", "test.type", "message3"))).build())
       outboundSqsDlqClientSpy.sendMessage(SendMessageRequest.builder().queueUrl(outboundDlqUrl).messageBody(gsonString(HmppsEvent("id4", "test.type", "message4"))).build())
-      await untilCallTo { outboundSqsDlqClientSpy.countMessagesOnQueue(outboundDlqUrl) } matches { it == 2 }
+      await untilCallTo { outboundSqsDlqClientSpy.countMessagesOnQueue(outboundDlqUrl).get() } matches { it == 2 }
 
       webTestClient.put()
         .uri("/queue-admin/purge-queue/${hmppsSqsPropertiesSpy.outboundQueueConfig().dlqName}")
@@ -172,7 +173,7 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
         .exchange()
         .expectStatus().isOk
 
-      await untilCallTo { outboundSqsDlqClientSpy.countMessagesOnQueue(outboundDlqUrl) } matches { it == 0 }
+      await untilCallTo { outboundSqsDlqClientSpy.countMessagesOnQueue(outboundDlqUrl).get() } matches { it == 0 }
     }
   }
 
@@ -213,7 +214,7 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
       for (i in 1..3) {
         inboundSqsDlqClient.sendMessage(SendMessageRequest.builder().queueUrl(inboundDlqUrl).messageBody(gsonString(testMessage("id-$i"))).build())
       }
-      await untilCallTo { inboundSqsDlqClient.countMessagesOnQueue(inboundDlqUrl) } matches { it == 3 }
+      await untilCallTo { inboundSqsDlqClient.countMessagesOnQueue(inboundDlqUrl).get() } matches { it == 3 }
 
       webTestClient.get()
         .uri("/queue-admin/get-dlq-messages/${hmppsSqsPropertiesSpy.inboundQueueConfig().dlqName}")
@@ -237,7 +238,7 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
       for (i in 1..20) {
         inboundSqsDlqClient.sendMessage(SendMessageRequest.builder().queueUrl(inboundDlqUrl).messageBody(gsonString(testMessage("id-$i"))).build())
       }
-      await untilCallTo { inboundSqsDlqClient.countMessagesOnQueue(inboundDlqUrl) } matches { it == 20 }
+      await untilCallTo { inboundSqsDlqClient.countMessagesOnQueue(inboundDlqUrl).get() } matches { it == 20 }
 
       webTestClient.get()
         .uri("/queue-admin/get-dlq-messages/${hmppsSqsPropertiesSpy.inboundQueueConfig().dlqName}?maxMessages=12")

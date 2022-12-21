@@ -20,6 +20,7 @@ import uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.service.EventT
 import uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.service.HmppsEvent
 import uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.service.Message
 import uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.service.MessageAttributes
+import uk.gov.justice.hmpps.sqs.countMessagesOnQueue
 
 class HmppsQueueSpyBeanTest : IntegrationTestBase() {
 
@@ -42,7 +43,7 @@ class HmppsQueueSpyBeanTest : IntegrationTestBase() {
     val message = Message(gsonString(event), "message-id", MessageAttributes(EventType("test.type", "String")))
     val messageAttributes = mutableMapOf("eventType" to software.amazon.awssdk.services.sqs.model.MessageAttributeValue.builder().dataType("String").stringValue("test value").build())
     outboundSqsDlqClientSpy.sendMessage(SendMessageRequest.builder().queueUrl(outboundDlqUrl).messageBody(gsonString(message)).messageAttributes(messageAttributes).build())
-    await untilCallTo { outboundSqsDlqClientSpy.countMessagesOnQueue(outboundDlqUrl) } matches { it == 1 }
+    await untilCallTo { outboundSqsDlqClientSpy.countMessagesOnQueue(outboundDlqUrl).get() } matches { it == 1 }
 
     webTestClient.put()
       .uri("/queue-admin/retry-dlq/${hmppsSqsPropertiesSpy.outboundQueueConfig().dlqName}")
@@ -51,8 +52,8 @@ class HmppsQueueSpyBeanTest : IntegrationTestBase() {
       .exchange()
       .expectStatus().isOk
 
-    await untilCallTo { outboundSqsDlqClientSpy.countMessagesOnQueue(outboundDlqUrl) } matches { it == 0 }
-    await untilCallTo { outboundSqsClientSpy.countMessagesOnQueue(outboundQueueUrl) } matches { it == 0 }
+    await untilCallTo { outboundSqsDlqClientSpy.countMessagesOnQueue(outboundDlqUrl).get() } matches { it == 0 }
+    await untilCallTo { outboundSqsClientSpy.countMessagesOnQueue(outboundQueueUrl).get() } matches { it == 0 }
 
     val captor = argumentCaptor<SendMessageRequest>()
 
@@ -70,7 +71,7 @@ class HmppsQueueSpyBeanTest : IntegrationTestBase() {
   @Test
   fun `Can verify usage of spy bean for purge-queue endpoint`() = runBlocking<Unit> {
     outboundSqsDlqClientSpy.sendMessage(SendMessageRequest.builder().queueUrl(outboundDlqUrl).messageBody(gsonString(HmppsEvent("id", "test.type", "message1"))).build())
-    await untilCallTo { outboundSqsDlqClientSpy.countMessagesOnQueue(outboundDlqUrl) } matches { it == 1 }
+    await untilCallTo { outboundSqsDlqClientSpy.countMessagesOnQueue(outboundDlqUrl).get() } matches { it == 1 }
 
     webTestClient.put()
       .uri("/queue-admin/purge-queue/${hmppsSqsPropertiesSpy.outboundQueueConfig().dlqName}")
@@ -79,7 +80,7 @@ class HmppsQueueSpyBeanTest : IntegrationTestBase() {
       .exchange()
       .expectStatus().isOk
 
-    await untilCallTo { outboundSqsDlqClientSpy.countMessagesOnQueue(outboundDlqUrl) } matches { it == 0 }
+    await untilCallTo { outboundSqsDlqClientSpy.countMessagesOnQueue(outboundDlqUrl).get() } matches { it == 0 }
 
     // One of these was in the @BeforeEach!
     verify(outboundSqsDlqClientSpy, times(2)).purgeQueue(any<PurgeQueueRequest>())
