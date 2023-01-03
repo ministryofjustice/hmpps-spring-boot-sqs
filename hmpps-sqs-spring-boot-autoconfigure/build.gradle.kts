@@ -2,8 +2,8 @@ import com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-  kotlin("jvm") version "1.7.22"
-  kotlin("plugin.spring") version "1.7.22"
+  kotlin("jvm") version "1.8.0"
+  kotlin("plugin.spring") version "1.8.0"
   id("maven-publish")
   id("signing")
   id("com.adarshr.test-logger") version "3.2.0"
@@ -11,8 +11,8 @@ plugins {
   id("se.patrikerdes.use-latest-versions") version "0.2.18"
   id("io.spring.dependency-management") version "1.1.0"
   id("org.jlleitschuh.gradle.ktlint") version "11.0.0"
-  id("org.owasp.dependencycheck") version "7.4.1"
-  id("org.springframework.boot") version "3.0.0"
+  id("org.owasp.dependencycheck") version "7.4.3"
+  id("org.springframework.boot") version "3.0.1"
 }
 
 dependencyManagement {
@@ -37,10 +37,10 @@ dependencies {
 
   testImplementation("org.assertj:assertj-core:3.23.1")
   testImplementation("org.junit.jupiter:junit-jupiter:5.9.1")
-  testImplementation("org.mockito:mockito-junit-jupiter:4.9.0")
+  testImplementation("org.mockito:mockito-junit-jupiter:4.11.0")
   testImplementation("org.springframework.boot:spring-boot-starter-test")
   testImplementation("org.mockito.kotlin:mockito-kotlin:4.1.0")
-  testImplementation("org.mockito:mockito-inline:4.10.0")
+  testImplementation("org.mockito:mockito-inline:4.11.0")
   testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.6.4")
   testImplementation("org.jetbrains.kotlin:kotlin-reflect")
 }
