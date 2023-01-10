@@ -509,6 +509,6 @@ In `build.gradle.kts` we use environment variables `ORG_GRADLE_PROJECT_signingKe
 
 * Generate a new key - follow the [Sonatype guide](https://central.sonatype.org/publish/requirements/gpg/).
 * Export the private key to a file - google for `gpg export private key` and you should find several guides for using `gpg --export-secret-keys`.
-* To allow the private key to be inserted into Circle make sure newlines in the private key are `\n`. This seems OK on MacOS but needed the following command on Ubuntu (assuming the private key is stored in file `private.key`): `cat private.key | sed -E '/\r{0,1}\n/\\n/g'`
+* To allow the private key to be inserted into Circle make sure newlines in the private key are `\n`.
 * Delete the environment variables `ORG_GRADLE_PROJECT_signingKey` and `ORG_GRADLE_PROJECT_signingPassword` from the [Circle CI env vars page](https://app.circleci.com/settings/project/github/ministryofjustice/hmpps-spring-boot-sqs/environment-variables)
 * Recreate the environment variables where `ORG_GRADLE_PROJECT_signingKey` contains the private key (with newlines) and `ORG_GRADLE_PROJECT_signingPassword` contains the passphrase  
