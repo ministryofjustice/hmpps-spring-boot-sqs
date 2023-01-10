@@ -1,5 +1,5 @@
 plugins {
-  id("uk.gov.justice.hmpps.gradle-spring-boot") version "5.0.0-beta-1"
+  id("uk.gov.justice.hmpps.gradle-spring-boot") version "5.0.0-beta-4"
   kotlin("plugin.spring") version "1.8.0"
 }
 
@@ -28,4 +28,5 @@ dependencies {
   testImplementation("com.github.tomakehurst:wiremock-jre8-standalone:2.35.0")
   testImplementation("org.testcontainers:localstack:1.17.6")
   testImplementation("com.amazonaws:aws-java-sdk-core:1.12.376") // Needed so Localstack has access to the AWS SDK V1 API
+  testImplementation("com.google.code.gson:gson:2.10.1")
 }

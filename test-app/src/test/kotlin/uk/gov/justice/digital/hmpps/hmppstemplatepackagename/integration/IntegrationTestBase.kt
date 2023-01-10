@@ -1,7 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppstemplatepackagename.integration
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.microsoft.applicationinsights.core.dependencies.google.gson.Gson
+import com.google.gson.Gson
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.beans.factory.annotation.Autowired
