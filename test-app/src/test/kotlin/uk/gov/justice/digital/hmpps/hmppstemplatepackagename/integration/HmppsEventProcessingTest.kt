@@ -83,5 +83,6 @@ class HmppsEventProcessingTest : IntegrationTestBase() {
     )
 
     await untilCallTo { inboundSqsDlqClient.countMessagesOnQueue(inboundDlqUrl) } matches { it == 1 }
+    assertThat(inboundSqsClient.countMessagesOnQueue(inboundQueueUrl)).isEqualTo(0)
   }
 }
