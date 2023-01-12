@@ -7,9 +7,13 @@ import org.awaitility.kotlin.await
 import org.awaitility.kotlin.matches
 import org.awaitility.kotlin.untilCallTo
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.any
+import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.mockingDetails
+import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.service.HmppsEvent
 import uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.service.Message
+import java.lang.RuntimeException
 
 class HmppsEventProcessingTest : IntegrationTestBase() {
 
@@ -64,5 +68,20 @@ class HmppsEventProcessingTest : IntegrationTestBase() {
     assertThat(receivedEvent.id).isEqualTo("event-id")
     assertThat(receivedEvent.type).isEqualTo("offender.movement.reception")
     assertThat(receivedEvent.contents).isEqualTo("some event contents")
+  }
+
+  @Test
+  fun `event is moved to the dead letter queue when an exception is thrown`() {
+    doThrow(RuntimeException("some error")).whenever(inboundMessageServiceSpy).handleMessage(any())
+
+    val event = HmppsEvent("event-id", "OFFENDER_MOVEMENT-RECEPTION", "some event contents")
+    inboundSnsClient.publish(
+      PublishRequest(inboundTopicArn, gsonString(event))
+        .withMessageAttributes(
+          mapOf("eventType" to MessageAttributeValue().withDataType("String").withStringValue(event.type))
+        )
+    )
+
+    await untilCallTo { inboundSqsDlqClient.countMessagesOnQueue(inboundDlqUrl) } matches { it == 1 }
   }
 }
