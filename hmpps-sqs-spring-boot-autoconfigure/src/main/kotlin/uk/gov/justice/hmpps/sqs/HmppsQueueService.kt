@@ -12,7 +12,8 @@ import org.slf4j.LoggerFactory
 import software.amazon.awssdk.services.sqs.SqsAsyncClient
 import software.amazon.awssdk.services.sqs.model.DeleteMessageRequest
 import software.amazon.awssdk.services.sqs.model.GetQueueAttributesRequest
-import software.amazon.awssdk.services.sqs.model.QueueAttributeName
+import software.amazon.awssdk.services.sqs.model.QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES
+import software.amazon.awssdk.services.sqs.model.QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES_NOT_VISIBLE
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest
 import java.util.concurrent.CompletableFuture
@@ -124,8 +125,40 @@ data class DlqMessage(val body: Map<String, Any>, val messageId: String)
 data class PurgeQueueRequest(val queueName: String, val sqsClient: SqsAsyncClient, val queueUrl: String)
 data class PurgeQueueResult(val messagesFoundCount: Int)
 
+/**
+ * Count the approximate number of messages currently on the queue.  This only takes into account visible messages.
+ * When a message is read from a queue it is marked as invisible and then either acknowledged and removed from the queue
+ * or not acknowledged (after the visibility timeout has passed) and made visible again so that it can be retried.
+ * After dlqMaxReceiveCount tries it is then moved onto the dead letter queue. See also countAllMessagesOnQueue that
+ * counts the number of messages that are both visible and invisible.
+ *
+ * See https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-visibility-timeout.html for further information.
+ *
+ * @param queueUrl String
+ * @return CompletableFuture<Int>
+ */
 fun SqsAsyncClient.countMessagesOnQueue(queueUrl: String): CompletableFuture<Int> =
-  this.getQueueAttributes(GetQueueAttributesRequest.builder().queueUrl(queueUrl).attributeNames(QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES).build())
+  this.getQueueAttributes(GetQueueAttributesRequest.builder().queueUrl(queueUrl).attributeNames(APPROXIMATE_NUMBER_OF_MESSAGES).build())
     .thenApply {
-      it.attributes()[QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES]?.toInt() ?: 0
+      it.attributes()[APPROXIMATE_NUMBER_OF_MESSAGES]?.toInt() ?: 0
+    }
+
+/**
+ * Count the approximate number of both visible and invisible messages currently on the queue.  This takes into account
+ * messages that have been read from a queue and haven't been acknowledged yet.  See also countMessagesOnQueue that
+ * only counts the number of messages that are visible on the queue.
+ *
+ * @param queueUrl String
+ * @return CompletableFuture<Int>
+ */
+fun SqsAsyncClient.countAllMessagesOnQueue(queueUrl: String): CompletableFuture<Int> =
+  this.getQueueAttributes(
+    GetQueueAttributesRequest.builder()
+      .queueUrl(queueUrl)
+      .attributeNames(APPROXIMATE_NUMBER_OF_MESSAGES, APPROXIMATE_NUMBER_OF_MESSAGES_NOT_VISIBLE)
+      .build()
+  )
+    .thenApply {
+      (it.attributes()[APPROXIMATE_NUMBER_OF_MESSAGES]?.toInt() ?: 0) +
+        (it.attributes()[APPROXIMATE_NUMBER_OF_MESSAGES_NOT_VISIBLE]?.toInt() ?: 0)
     }
