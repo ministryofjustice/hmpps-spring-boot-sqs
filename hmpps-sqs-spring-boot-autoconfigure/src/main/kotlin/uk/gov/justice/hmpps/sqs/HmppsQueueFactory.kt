@@ -90,7 +90,18 @@ class HmppsQueueFactory(
       Provider.AWS -> sqsClientFactory.awsSqsAsyncClient(queueConfig.queueAccessKeyId, queueConfig.queueSecretAccessKey, region)
       Provider.LOCALSTACK -> {
         sqsClientFactory.localstackSqsAsyncClient(hmppsSqsProperties.localstackUrl, region)
-          .also { sqsClient -> runBlocking { createLocalStackQueue(sqsClient, sqsDlqClient, queueConfig.queueName, queueConfig.dlqName, queueConfig.dlqMaxReceiveCount) } }
+          .also { sqsClient ->
+            runBlocking {
+              createLocalStackQueue(
+                sqsClient = sqsClient,
+                sqsDlqClient = sqsDlqClient,
+                queueName = queueConfig.queueName,
+                dlqName = queueConfig.dlqName,
+                maxReceiveCount = queueConfig.dlqMaxReceiveCount,
+                visibilityTimeout = queueConfig.visibilityTimeout,
+              )
+            }
+          }
       }
     }
   }
@@ -101,6 +112,7 @@ class HmppsQueueFactory(
     queueName: String,
     dlqName: String,
     maxReceiveCount: Int,
+    visibilityTimeout: Int,
   ) = runBlocking {
     if (dlqName.isEmpty() || sqsDlqClient == null) {
       sqsClient.createQueue(CreateQueueRequest.builder().queueName(queueName).build()).await()
@@ -108,7 +120,12 @@ class HmppsQueueFactory(
       val dlqUrl = sqsDlqClient.getQueueUrl(GetQueueUrlRequest.builder().queueName(dlqName).build())
       val dlqArn = sqsDlqClient.getQueueAttributes(GetQueueAttributesRequest.builder().queueUrl(dlqUrl.await().queueUrl()).attributeNames(QueueAttributeName.QUEUE_ARN).build()).await().attributes()[QueueAttributeName.QUEUE_ARN]
       sqsClient.createQueue(
-        CreateQueueRequest.builder().queueName(queueName).attributes(mapOf(QueueAttributeName.REDRIVE_POLICY to """{"deadLetterTargetArn":"$dlqArn","maxReceiveCount":"$maxReceiveCount"}""")).build()
+        CreateQueueRequest.builder().queueName(queueName).attributes(
+          mapOf(
+            QueueAttributeName.REDRIVE_POLICY to """{"deadLetterTargetArn":"$dlqArn","maxReceiveCount":"$maxReceiveCount"}""",
+            QueueAttributeName.VISIBILITY_TIMEOUT to "$visibilityTimeout",
+          )
+        ).build()
       ).await()
     }
   }
