@@ -6,13 +6,18 @@ import org.awaitility.kotlin.await
 import org.awaitility.kotlin.matches
 import org.awaitility.kotlin.untilCallTo
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.any
+import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.mockingDetails
+import org.mockito.kotlin.whenever
 import software.amazon.awssdk.services.sns.model.MessageAttributeValue
 import software.amazon.awssdk.services.sns.model.PublishRequest
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest
 import uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.service.HmppsEvent
 import uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.service.Message
+import uk.gov.justice.hmpps.sqs.countAllMessagesOnQueue
 import uk.gov.justice.hmpps.sqs.countMessagesOnQueue
+import java.time.Duration
 
 class HmppsEventProcessingTest : IntegrationTestBase() {
 
@@ -73,4 +78,24 @@ class HmppsEventProcessingTest : IntegrationTestBase() {
     assertThat(receivedEvent.type).isEqualTo("offender.movement.reception")
     assertThat(receivedEvent.contents).isEqualTo("some event contents")
   }
+
+  @Test
+  fun `event is moved to the dead letter queue when an exception is thrown`() = runBlocking<Unit> {
+    doThrow(RuntimeException("some error")).whenever(inboundMessageServiceSpy).handleMessage(any())
+
+    val event = HmppsEvent("event-id", "OFFENDER_MOVEMENT-RECEPTION", "some event contents")
+    inboundSnsClient.publish(
+      PublishRequest.builder()
+        .topicArn(inboundTopicArn)
+        .message(gsonString(event))
+        .messageAttributes(
+          mapOf("eventType" to MessageAttributeValue.builder().dataType("String").stringValue(event.type).build())
+        )
+        .build()
+    ).get()
+
+    await.atMost(Duration.ofSeconds(300)) untilCallTo { inboundSqsDlqClient.countMessagesOnQueue(inboundDlqUrl).get() } matches { it == 1 }
+    assertThat(inboundSqsClient.countAllMessagesOnQueue(inboundQueueUrl).get()).isEqualTo(0)
+  }
+
 }

@@ -91,34 +91,4 @@ class HmppsEventProcessingTest : IntegrationTestBase() {
     await untilCallTo { inboundSqsDlqClient.countMessagesOnQueue(inboundDlqUrl).get() } matches { it == 1 }
     assertThat(inboundSqsClient.countAllMessagesOnQueue(inboundQueueUrl).get()).isEqualTo(0)
   }
-
-  @Test
-  fun `event is not visible on queue when an exception is thrown`() {
-    doThrow(RuntimeException("some error")).whenever(outboundMessageServiceSpy).handleMessage(any())
-
-    val event = HmppsEvent("event-id", "OFFENDER_MOVEMENT-RECEPTION", "some event contents")
-    // message flow is:
-    // 1. Message is published to inbound topic
-    // 2. Message is received by inbound queue listener which publishes the message to the outbound topic
-    // 3. Message is received by the outbound queue listener which throws an exception
-    // 4. Message is then in limbo for 30 seconds (visibility timeout) as message hasn't been acknowledged
-    inboundSnsClient.publish(
-      PublishRequest.builder()
-        .topicArn(inboundTopicArn)
-        .message(gsonString(event))
-        .messageAttributes(
-          mapOf("eventType" to MessageAttributeValue.builder().dataType("String").stringValue(event.type).build())
-        )
-        .build()
-    ).get()
-
-    // wait until the message has been emitted
-    await untilCallTo { mockingDetails(outboundEventsEmitterSpy).invocations.size } matches { it == 1 }
-    // and then been received by the outbound message service too
-    await untilCallTo { mockingDetails(outboundMessageServiceSpy).invocations.size } matches { it == 1 }
-    // at which point it won't be visible
-    await untilCallTo { outboundSqsClientSpy.countMessagesOnQueue(outboundQueueUrl).get() } matches { it == 0 }
-    // but it will still be on the queue
-    await untilCallTo { outboundSqsClientSpy.countAllMessagesOnQueue(outboundQueueUrl).get() } matches { it == 1 }
-  }
 }

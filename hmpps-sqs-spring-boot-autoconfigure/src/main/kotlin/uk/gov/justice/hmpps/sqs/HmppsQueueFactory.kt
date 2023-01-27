@@ -1,6 +1,8 @@
 package uk.gov.justice.hmpps.sqs
 
 import io.awspring.cloud.sqs.config.SqsMessageListenerContainerFactory
+import io.awspring.cloud.sqs.listener.QueueMessageVisibility
+import io.awspring.cloud.sqs.listener.errorhandler.ErrorHandler
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
 import org.slf4j.Logger
@@ -31,7 +33,7 @@ class HmppsQueueFactory(
           .also { subscribeToLocalStackTopic(hmppsSqsProperties, queueConfig, hmppsTopics) }
         HmppsQueue(queueId, sqsClient, queueConfig.queueName, sqsDlqClient, queueConfig.dlqName.ifEmpty { null })
           .also { getOrDefaultHealthIndicator(it) }
-          .also { createSqsListenerContainerFactory(it) }
+          .also { createSqsListenerContainerFactory(it, queueConfig.errorVisibilityTimeout) }
       }.toList()
 
   private fun getOrDefaultSqsDlqClient(queueId: String, queueConfig: QueueConfig, hmppsSqsProperties: HmppsSqsProperties): SqsAsyncClient? =
@@ -60,15 +62,23 @@ class HmppsQueueFactory(
         createDefaultBean().also { bean -> context.beanFactory.registerSingleton(beanName, bean) }
       }
 
-  private fun createSqsListenerContainerFactory(hmppsQueue: HmppsQueue): HmppsQueueDestinationContainerFactory =
+  private fun createSqsListenerContainerFactory(hmppsQueue: HmppsQueue, errorVisibilityTimeout: Int): HmppsQueueDestinationContainerFactory =
     getOrDefaultBean("${hmppsQueue.id}-sqs-listener-factory") {
-      HmppsQueueDestinationContainerFactory(hmppsQueue.id, createSqsListenerContainerFactory(hmppsQueue.sqsClient))
+      HmppsQueueDestinationContainerFactory(hmppsQueue.id, createSqsListenerContainerFactory(hmppsQueue.sqsClient, errorVisibilityTimeout))
     }
 
-  private fun createSqsListenerContainerFactory(awsSqsClient: SqsAsyncClient): SqsMessageListenerContainerFactory<Any> =
+  private fun createSqsListenerContainerFactory(awsSqsClient: SqsAsyncClient, errorVisibilityTimeout: Int): SqsMessageListenerContainerFactory<Any> =
     SqsMessageListenerContainerFactory
       .builder<Any>()
       .sqsAsyncClient(awsSqsClient)
+      .errorHandler(object : ErrorHandler<Any> {
+        override fun handle(message: org.springframework.messaging.Message<Any>, t: Throwable) {
+          // SDI-477 remove this logging when we are comfortable that all is working as expected - instant retries
+          log.info("Setting visibility of messageId ${message.headers["id"]} to $errorVisibilityTimeout (to initiate faster retry) after receiving exception $t")
+          val sqsVisibility = message.headers["Sqs_Visibility"] as QueueMessageVisibility
+          sqsVisibility.changeTo(errorVisibilityTimeout)
+        }
+      })
       .build()
 
   fun createSqsAsyncDlqClient(queueConfig: QueueConfig, hmppsSqsProperties: HmppsSqsProperties): SqsAsyncClient {
