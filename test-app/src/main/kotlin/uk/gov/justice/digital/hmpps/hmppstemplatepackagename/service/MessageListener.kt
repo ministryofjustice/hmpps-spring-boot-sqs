@@ -2,15 +2,21 @@ package uk.gov.justice.digital.hmpps.hmppstemplatepackagename.service
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.awspring.cloud.sqs.annotation.SqsListener
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.future.future
 import org.springframework.stereotype.Service
+import java.util.concurrent.CompletableFuture
 
 @Service
 class InboundMessageListener(private val inboundMessageService: InboundMessageService, private val objectMapper: ObjectMapper) {
 
   @SqsListener("inboundqueue", factory = "hmppsQueueContainerFactoryProxy")
-  fun processMessage(message: Message) {
+  fun processMessage(message: Message): CompletableFuture<Void> {
     val event = objectMapper.readValue(message.Message, HmppsEvent::class.java)
-    inboundMessageService.handleMessage(event)
+    return CoroutineScope(Dispatchers.Default).future {
+      inboundMessageService.handleMessage(event)
+    }.thenAccept {}
   }
 }
 

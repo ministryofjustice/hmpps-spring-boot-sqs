@@ -12,6 +12,8 @@ dependencies {
   implementation("org.springframework.boot:spring-boot-starter-webflux")
   implementation("org.springframework.boot:spring-boot-starter-security")
   implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
+  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
+  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8")
 
   implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.0.2")
 

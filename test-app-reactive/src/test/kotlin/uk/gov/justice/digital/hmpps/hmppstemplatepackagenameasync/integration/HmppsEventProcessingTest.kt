@@ -17,7 +17,6 @@ import uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.service.HmppsE
 import uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.service.Message
 import uk.gov.justice.hmpps.sqs.countAllMessagesOnQueue
 import uk.gov.justice.hmpps.sqs.countMessagesOnQueue
-import java.time.Duration
 
 class HmppsEventProcessingTest : IntegrationTestBase() {
 
@@ -32,11 +31,8 @@ class HmppsEventProcessingTest : IntegrationTestBase() {
 
     await untilCallTo { outboundTestSqsClient.countMessagesOnQueue(outboundTestQueueUrl).get() } matches { it == 1 }
 
-    val receivedEvent = ReceiveMessageRequest.builder().queueUrl(outboundTestQueueUrl).build()
-      .let { request -> outboundTestSqsClient.receiveMessage(request).get().messages()[0].body() }
-      .let { response -> objectMapper.readValue(response, Message::class.java) }
-      .Message
-      .let { message -> objectMapper.readValue(message, HmppsEvent::class.java) }
+    val (message) = objectMapper.readValue(outboundTestSqsClient.receiveMessage(ReceiveMessageRequest.builder().queueUrl(outboundTestQueueUrl).build()).get().messages()[0].body(), Message::class.java)
+    val receivedEvent = objectMapper.readValue(message, HmppsEvent::class.java)
 
     assertThat(receivedEvent.id).isEqualTo("event-id")
     assertThat(receivedEvent.type).isEqualTo("offender.movement.reception")
@@ -68,11 +64,10 @@ class HmppsEventProcessingTest : IntegrationTestBase() {
 
     await untilCallTo { outboundTestNoDlqSqsClient.countMessagesOnQueue(outboundTestNoDlqQueueUrl).get() } matches { it == 1 }
 
-    val receivedEvent = ReceiveMessageRequest.builder().queueUrl(outboundTestNoDlqQueueUrl).build()
-      .let { request -> outboundTestSqsClient.receiveMessage(request).get().messages()[0].body() }
-      .let { response -> objectMapper.readValue(response, Message::class.java) }
-      .Message
-      .let { message -> objectMapper.readValue(message, HmppsEvent::class.java) }
+    val (message) = ReceiveMessageRequest.builder().queueUrl(outboundTestNoDlqQueueUrl).build()
+      .let { outboundTestNoDlqSqsClient.receiveMessage(it).get().messages()[0].body() }
+      .let { objectMapper.readValue(it, Message::class.java) }
+    val receivedEvent = objectMapper.readValue(message, HmppsEvent::class.java)
 
     assertThat(receivedEvent.id).isEqualTo("event-id")
     assertThat(receivedEvent.type).isEqualTo("offender.movement.reception")
@@ -92,10 +87,9 @@ class HmppsEventProcessingTest : IntegrationTestBase() {
           mapOf("eventType" to MessageAttributeValue.builder().dataType("String").stringValue(event.type).build())
         )
         .build()
-    ).get()
+    )
 
-    await.atMost(Duration.ofSeconds(300)) untilCallTo { inboundSqsDlqClient.countMessagesOnQueue(inboundDlqUrl).get() } matches { it == 1 }
+    await untilCallTo { inboundSqsDlqClient.countMessagesOnQueue(inboundDlqUrl).get() } matches { it == 1 }
     assertThat(inboundSqsClient.countAllMessagesOnQueue(inboundQueueUrl).get()).isEqualTo(0)
   }
-
 }

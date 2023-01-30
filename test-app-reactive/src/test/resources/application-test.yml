@@ -21,6 +21,7 @@ hmpps.sqs:
       queueName: ${random.uuid}
       subscribeTopicId: outboundtopic
       subscribeFilter: '{"eventType":[ "offender.movement.reception", "test.type"] }'
+      dlqMaxReceiveCount: 1
     outboundtestqueue:
       dlqName: ${random.uuid}
       queueName: ${random.uuid}
