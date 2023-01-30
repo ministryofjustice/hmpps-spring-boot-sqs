@@ -2,31 +2,30 @@ package uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.service
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.awspring.cloud.sqs.annotation.SqsListener
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.future.asCompletableFuture
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.future.future
 import org.springframework.stereotype.Service
 import java.util.concurrent.CompletableFuture
 
 @Service
 class InboundMessageListener(private val inboundMessageService: InboundMessageService, private val objectMapper: ObjectMapper) {
 
-  @SqsListener(queueNames = ["inboundqueue"], factory = "hmppsQueueContainerFactoryProxy")
-  fun processMessage(rawMessage: String?): CompletableFuture<Unit> {
-    val (Message) = objectMapper.readValue(rawMessage, Message::class.java)
-    val event = objectMapper.readValue(Message, HmppsEvent::class.java)
-    @Suppress("OPT_IN_USAGE")
-    return GlobalScope.launch { inboundMessageService.handleMessage(event) }.asCompletableFuture()
+  @SqsListener("inboundqueue", factory = "hmppsQueueContainerFactoryProxy")
+  fun processMessage(message: Message): CompletableFuture<Void> {
+    val event = objectMapper.readValue(message.Message, HmppsEvent::class.java)
+    return CoroutineScope(Dispatchers.Default).future {
+      inboundMessageService.handleMessage(event)
+    }.thenAccept {}
   }
 }
 
 @Service
 class OutboundMessageListener(private val outboundMessageService: OutboundMessageService, private val objectMapper: ObjectMapper) {
 
-  @SqsListener(queueNames = ["outboundqueue"], factory = "hmppsQueueContainerFactoryProxy")
-  fun processMessage(rawMessage: String?) {
-    val (message) = objectMapper.readValue(rawMessage, Message::class.java)
-    val event = objectMapper.readValue(message, HmppsEvent::class.java)
+  @SqsListener("outboundqueue", factory = "hmppsQueueContainerFactoryProxy")
+  fun processMessage(message: Message) {
+    val event = objectMapper.readValue(message.Message, HmppsEvent::class.java)
     outboundMessageService.handleMessage(event)
   }
 }

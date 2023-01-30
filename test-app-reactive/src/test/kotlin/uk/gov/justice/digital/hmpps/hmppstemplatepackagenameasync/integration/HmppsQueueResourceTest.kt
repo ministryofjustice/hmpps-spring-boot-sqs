@@ -89,6 +89,30 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
         verify(inboundMessageServiceSpy).handleMessage(event2)
       }
     }
+
+    @Test
+    fun `should transfer messages from outbound DLQ to outbound queue and process them`() {
+      val event3 = HmppsEvent("id3", "test.type", "message3")
+      val event4 = HmppsEvent("id4", "test.type", "message4")
+      val message3 = Message(gsonString(event3), "message-id3", MessageAttributes(EventType("test.type", "String")))
+      val message4 = Message(gsonString(event4), "message-id4", MessageAttributes(EventType("test.type", "String")))
+      outboundSqsDlqClientSpy.sendMessage(SendMessageRequest.builder().queueUrl(outboundDlqUrl).messageBody(gsonString(message3)).build())
+      outboundSqsDlqClientSpy.sendMessage(SendMessageRequest.builder().queueUrl(outboundDlqUrl).messageBody(gsonString(message4)).build())
+      await untilCallTo { outboundSqsDlqClientSpy.countMessagesOnQueue(outboundDlqUrl).get() } matches { it == 2 }
+
+      webTestClient.put()
+        .uri("/queue-admin/retry-dlq/${hmppsSqsPropertiesSpy.outboundQueueConfig().dlqName}")
+        .headers { it.authToken() }
+        .accept(MediaType.APPLICATION_JSON)
+        .exchange()
+        .expectStatus().isOk
+
+      await untilCallTo { outboundSqsDlqClientSpy.countMessagesOnQueue(outboundDlqUrl).get() } matches { it == 0 }
+      await untilCallTo { outboundSqsClientSpy.countMessagesOnQueue(outboundQueueUrl).get() } matches { it == 0 }
+
+      verify(outboundMessageServiceSpy).handleMessage(event3)
+      verify(outboundMessageServiceSpy).handleMessage(event4)
+    }
   }
 
   @Nested
