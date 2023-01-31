@@ -77,6 +77,7 @@ class HmppsQueueFactory(
           log.info("Setting visibility of messageId ${message.headers["id"]} to $errorVisibilityTimeout (to initiate faster retry) after receiving exception ${t.cause?.cause?.cause}")
           val sqsVisibility = message.headers["Sqs_Visibility"] as QueueMessageVisibility
           sqsVisibility.changeTo(errorVisibilityTimeout)
+          throw t
         }
       })
       .build()
