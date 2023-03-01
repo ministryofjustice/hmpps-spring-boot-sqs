@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.microsoft.applicationinsights.TelemetryClient
 import io.awspring.cloud.sqs.config.SqsBootstrapConfiguration
 import io.awspring.cloud.sqs.config.SqsListenerConfigurer
+import org.springframework.boot.actuate.health.HealthContributorRegistry
 import org.springframework.boot.autoconfigure.AutoConfigureBefore
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication
@@ -26,11 +27,13 @@ class HmppsSqsConfiguration {
 
   @Bean
   @ConditionalOnMissingBean
-  fun hmppsTopicFactory(applicationContext: ConfigurableApplicationContext) = HmppsTopicFactory(applicationContext, SnsClientFactory())
+  fun hmppsTopicFactory(applicationContext: ConfigurableApplicationContext, healthContributorRegistry: HealthContributorRegistry) =
+    HmppsTopicFactory(applicationContext, healthContributorRegistry, SnsClientFactory())
 
   @Bean
   @ConditionalOnMissingBean
-  fun hmppsQueueFactory(applicationContext: ConfigurableApplicationContext) = HmppsQueueFactory(applicationContext, SqsClientFactory())
+  fun hmppsQueueFactory(applicationContext: ConfigurableApplicationContext, healthContributorRegistry: HealthContributorRegistry) =
+    HmppsQueueFactory(applicationContext, healthContributorRegistry, SqsClientFactory())
 
   @Bean
   @ConditionalOnMissingBean

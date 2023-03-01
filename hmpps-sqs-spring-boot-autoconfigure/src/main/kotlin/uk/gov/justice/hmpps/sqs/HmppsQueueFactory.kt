@@ -7,6 +7,7 @@ import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import org.springframework.boot.actuate.health.HealthContributorRegistry
 import org.springframework.boot.actuate.health.HealthIndicator
 import org.springframework.context.ConfigurableApplicationContext
 import software.amazon.awssdk.services.sns.model.SubscribeRequest
@@ -19,6 +20,7 @@ import uk.gov.justice.hmpps.sqs.HmppsSqsProperties.QueueConfig
 
 class HmppsQueueFactory(
   private val context: ConfigurableApplicationContext,
+  private val healthContributorRegistry: HealthContributorRegistry,
   private val sqsClientFactory: SqsClientFactory,
 ) {
   companion object {
@@ -59,9 +61,10 @@ class HmppsQueueFactory(
     }
 
   private fun getOrDefaultHealthIndicator(hmppsQueue: HmppsQueue): HealthIndicator =
-    getOrDefaultBean("${hmppsQueue.id}-health") {
-      HmppsQueueHealth(hmppsQueue)
-    }
+    runCatching { healthContributorRegistry.getContributor("${hmppsQueue.id}-health") as HealthIndicator }
+      .getOrElse {
+        HmppsQueueHealth(hmppsQueue).also { healthContributorRegistry.registerContributor("${hmppsQueue.id}-health", it) }
+      }
 
   @Suppress("NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
   private inline fun <reified T> getOrDefaultBean(beanName: String, createDefaultBean: () -> T) =

@@ -4,12 +4,15 @@ import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import org.springframework.boot.actuate.health.HealthContributorRegistry
+import org.springframework.boot.actuate.health.HealthIndicator
 import org.springframework.context.ConfigurableApplicationContext
 import software.amazon.awssdk.services.sns.SnsAsyncClient
 import software.amazon.awssdk.services.sns.model.CreateTopicRequest
 
 class HmppsTopicFactory(
   private val context: ConfigurableApplicationContext,
+  private val healthContributorRegistry: HealthContributorRegistry,
   private val snsClientFactory: SnsClientFactory,
 ) {
   companion object {
@@ -25,13 +28,10 @@ class HmppsTopicFactory(
       }.toList()
 
   private fun getOrDefaultHealthIndicator(topic: HmppsTopic) {
-    "${topic.id}-health".let { beanName ->
-      runCatching { context.beanFactory.getBean(beanName) as SnsAsyncClient }
-        .getOrElse {
-          HmppsTopicHealth(topic)
-            .also { context.beanFactory.registerSingleton(beanName, it) }
-        }
-    }
+    runCatching { healthContributorRegistry.getContributor("${topic.id}-health") as HealthIndicator }
+      .getOrElse {
+        HmppsTopicHealth(topic).also { healthContributorRegistry.registerContributor("${topic.id}-health", it) }
+      }
   }
 
   private fun getOrDefaultSnsAsyncClient(topicId: String, topicConfig: HmppsSqsProperties.TopicConfig, hmppsSqsProperties: HmppsSqsProperties): SnsAsyncClient =

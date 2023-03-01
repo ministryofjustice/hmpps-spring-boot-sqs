@@ -10,6 +10,7 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory
+import org.springframework.boot.actuate.health.HealthContributorRegistry
 import org.springframework.context.ConfigurableApplicationContext
 import software.amazon.awssdk.services.sns.SnsAsyncClient
 import software.amazon.awssdk.services.sns.model.CreateTopicRequest
@@ -23,9 +24,10 @@ class HmppsTopicFactoryTest {
   private val localstackArnPrefix = "arn:aws:sns:eu-west-2:000000000000:"
 
   private val context = mock<ConfigurableApplicationContext>()
+  private val healthContributorRegistry = mock<HealthContributorRegistry>()
   private val beanFactory = mock<ConfigurableListableBeanFactory>()
   private val snsClientFactory = mock<SnsClientFactory>()
-  private val hmppsTopicFactory = HmppsTopicFactory(context, snsClientFactory)
+  private val hmppsTopicFactory = HmppsTopicFactory(context, healthContributorRegistry, snsClientFactory)
 
   init {
     whenever(context.beanFactory).thenReturn(beanFactory)
