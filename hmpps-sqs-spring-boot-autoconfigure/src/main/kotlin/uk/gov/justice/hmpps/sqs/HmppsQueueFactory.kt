@@ -30,7 +30,15 @@ class HmppsQueueFactory(
       .map { (queueId, queueConfig) ->
         val sqsDlqClient = getOrDefaultSqsDlqClient(queueId, queueConfig, hmppsSqsProperties)
         val sqsClient = getOrDefaultSqsClient(queueId, queueConfig, hmppsSqsProperties, sqsDlqClient)
-          .also { subscribeToLocalStackTopic(hmppsSqsProperties, queueConfig, hmppsTopics) }
+          .also {
+            val queueArn = it.getQueueAttributes(
+              GetQueueAttributesRequest.builder()
+                .queueUrl("${hmppsSqsProperties.localstackUrl}/queue/${queueConfig.queueName}")
+                .attributeNames(QueueAttributeName.QUEUE_ARN).build()
+            ).get()
+              .attributes()[QueueAttributeName.QUEUE_ARN]
+            subscribeToLocalStackTopic(hmppsSqsProperties, queueConfig, queueArn!!, hmppsTopics)
+          }
         HmppsQueue(queueId, sqsClient, queueConfig.queueName, sqsDlqClient, queueConfig.dlqName.ifEmpty { null })
           .also { getOrDefaultHealthIndicator(it) }
           .also { createSqsListenerContainerFactory(it, queueConfig.errorVisibilityTimeout) }
@@ -141,22 +149,22 @@ class HmppsQueueFactory(
     }
   }
 
-  private fun subscribeToLocalStackTopic(hmppsSqsProperties: HmppsSqsProperties, queueConfig: QueueConfig, hmppsTopics: List<HmppsTopic>) = runBlocking {
+  private fun subscribeToLocalStackTopic(hmppsSqsProperties: HmppsSqsProperties, queueConfig: QueueConfig, queueArn: String, hmppsTopics: List<HmppsTopic>) = runBlocking {
     if (findProvider(hmppsSqsProperties.provider) == Provider.LOCALSTACK) {
       val topic = hmppsTopics.firstOrNull { topic -> topic.id == queueConfig.subscribeTopicId }
       topic?.snsClient
-        ?.subscribe(subscribeRequest(queueConfig, topic.arn, hmppsSqsProperties.localstackUrl))
+        ?.subscribe(subscribeRequest(queueConfig, queueArn, topic.arn))
         ?.also { log.info("Queue ${queueConfig.queueName} has subscribed to topic with arn ${topic.arn}") }
         ?.await()
     }
   }
 
-  private fun subscribeRequest(queueConfig: QueueConfig, topicArn: String, localstackUrl: String): SubscribeRequest {
+  private fun subscribeRequest(queueConfig: QueueConfig, queueArn: String, topicArn: String): SubscribeRequest {
     val subscribeAttribute = if (queueConfig.subscribeFilter.isEmpty()) mapOf() else mapOf("FilterPolicy" to queueConfig.subscribeFilter)
     return SubscribeRequest.builder()
       .topicArn(topicArn)
       .protocol("sqs")
-      .endpoint("$localstackUrl/queue/${queueConfig.queueName}")
+      .endpoint(queueArn)
       .attributes(subscribeAttribute)
       .build()
   }

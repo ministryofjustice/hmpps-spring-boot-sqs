@@ -52,6 +52,13 @@ class HmppsQueueFactoryTest {
         .thenReturn(CompletableFuture.completedFuture(GetQueueUrlResponse.builder().queueUrl("some queue url").build()))
       whenever(sqsDlqClient.getQueueUrl(GetQueueUrlRequest.builder().queueName("some dlq name").build()))
         .thenReturn(CompletableFuture.completedFuture(GetQueueUrlResponse.builder().queueUrl("some dlq url").build()))
+      whenever(sqsClient.getQueueAttributes(any<GetQueueAttributesRequest>()))
+        .thenReturn(
+          CompletableFuture.completedFuture(
+            GetQueueAttributesResponse.builder()
+              .attributes(mutableMapOf(QueueAttributeName.QUEUE_ARN to "queue:arn")).build()
+          )
+        )
 
       hmppsQueues = hmppsQueueFactory.createHmppsQueues(hmppsSqsProperties)
     }
@@ -99,6 +106,13 @@ class HmppsQueueFactoryTest {
         .thenReturn(sqsClient)
       whenever(sqsClient.getQueueUrl(any<GetQueueUrlRequest>()))
         .thenReturn(CompletableFuture.completedFuture(GetQueueUrlResponse.builder().queueUrl("some queue url").build()))
+      whenever(sqsClient.getQueueAttributes(any<GetQueueAttributesRequest>()))
+        .thenReturn(
+          CompletableFuture.completedFuture(
+            GetQueueAttributesResponse.builder()
+              .attributes(mutableMapOf(QueueAttributeName.QUEUE_ARN to "queue:arn")).build()
+          )
+        )
       whenever(sqsDlqClient.getQueueUrl(any<GetQueueUrlRequest>()))
         .thenReturn(CompletableFuture.completedFuture(GetQueueUrlResponse.builder().queueUrl("some dlq url").build()))
       whenever(sqsDlqClient.getQueueAttributes(any<GetQueueAttributesRequest>()))
