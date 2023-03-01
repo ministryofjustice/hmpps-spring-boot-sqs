@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.microsoft.applicationinsights.TelemetryClient
 import io.awspring.cloud.sqs.config.SqsBootstrapConfiguration
 import io.awspring.cloud.sqs.config.SqsListenerConfigurer
+import org.springframework.boot.actuate.autoconfigure.health.HealthContributorAutoConfiguration
 import org.springframework.boot.autoconfigure.AutoConfigureBefore
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication
@@ -20,7 +21,7 @@ import org.springframework.context.annotation.Import
 
 @Configuration
 @EnableConfigurationProperties(HmppsSqsProperties::class)
-@AutoConfigureBefore(WebFluxAutoConfiguration::class, WebMvcAutoConfiguration::class)
+@AutoConfigureBefore(WebFluxAutoConfiguration::class, WebMvcAutoConfiguration::class, HealthContributorAutoConfiguration::class)
 @Import(SqsBootstrapConfiguration::class)
 class HmppsSqsConfiguration {
 
