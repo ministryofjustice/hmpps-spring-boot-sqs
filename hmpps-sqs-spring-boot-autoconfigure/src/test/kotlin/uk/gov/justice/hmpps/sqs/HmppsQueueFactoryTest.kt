@@ -12,7 +12,6 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory
-import org.springframework.boot.actuate.health.HealthContributorRegistry
 import org.springframework.context.ConfigurableApplicationContext
 import software.amazon.awssdk.services.sqs.SqsAsyncClient
 import software.amazon.awssdk.services.sqs.model.CreateQueueRequest
@@ -28,7 +27,7 @@ import java.util.concurrent.CompletableFuture
 class HmppsQueueFactoryTest {
 
   private val context = mock<ConfigurableApplicationContext>()
-  private val healthContributorRegistry = mock<HealthContributorRegistry>()
+  private val healthContributorRegistry = mock<HmppsHealthContributorRegistry>()
   private val beanFactory = mock<ConfigurableListableBeanFactory>()
   private val sqsFactory = mock<SqsClientFactory>()
   private val hmppsQueueFactory = HmppsQueueFactory(context, healthContributorRegistry, sqsFactory)
@@ -86,7 +85,7 @@ class HmppsQueueFactoryTest {
 
     @Test
     fun `should register a health indicator`() {
-      verify(healthContributorRegistry).registerContributor(eq("somequeueid-health"), any<HmppsQueueHealth>())
+      verify(healthContributorRegistry).registerContributor(eq("somequeueid-health"), any())
       verify(beanFactory).registerSingleton(eq("somequeueid-sqs-client"), any<SqsAsyncClient>())
       verify(beanFactory).registerSingleton(eq("somequeueid-sqs-dlq-client"), any<SqsAsyncClient>())
       verify(beanFactory).registerSingleton(eq("somequeueid-sqs-listener-factory"), any<HmppsQueueDestinationContainerFactory>())
@@ -147,7 +146,7 @@ class HmppsQueueFactoryTest {
 
     @Test
     fun `should register all beans created`() {
-      verify(healthContributorRegistry).registerContributor(eq("somequeueid-health"), any<HmppsQueueHealth>())
+      verify(healthContributorRegistry).registerContributor(eq("somequeueid-health"), any())
       verify(beanFactory).registerSingleton(eq("somequeueid-sqs-client"), any<SqsAsyncClient>())
       verify(beanFactory).registerSingleton(eq("somequeueid-sqs-dlq-client"), any<SqsAsyncClient>())
       verify(beanFactory).registerSingleton(eq("somequeueid-sqs-listener-factory"), any<HmppsQueueDestinationContainerFactory>())

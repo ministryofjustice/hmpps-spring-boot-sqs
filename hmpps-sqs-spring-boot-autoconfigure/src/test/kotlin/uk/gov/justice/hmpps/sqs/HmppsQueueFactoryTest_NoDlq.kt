@@ -18,7 +18,6 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory
-import org.springframework.boot.actuate.health.HealthContributorRegistry
 import org.springframework.context.ConfigurableApplicationContext
 import software.amazon.awssdk.services.sns.SnsAsyncClient
 import software.amazon.awssdk.services.sns.model.SubscribeRequest
@@ -39,7 +38,7 @@ class HmppsQueueFactoryTest_NoDlq {
   private val localstackArnPrefix = "arn:aws:sns:eu-west-2:000000000000:"
 
   private val context = mock<ConfigurableApplicationContext>()
-  private val healthContributorRegistry = mock<HealthContributorRegistry>()
+  private val healthContributorRegistry = mock<HmppsHealthContributorRegistry>()
   private val beanFactory = mock<ConfigurableListableBeanFactory>()
   private val sqsFactory = mock<SqsClientFactory>()
   private val hmppsQueueFactory = HmppsQueueFactory(context, healthContributorRegistry, sqsFactory)
@@ -116,7 +115,7 @@ class HmppsQueueFactoryTest_NoDlq {
 
     @Test
     fun `should register a health indicator`() {
-      verify(healthContributorRegistry).registerContributor(eq("somequeueid-health"), any<HmppsQueueHealth>())
+      verify(healthContributorRegistry).registerContributor(eq("somequeueid-health"), any())
     }
 
     @Test
@@ -202,7 +201,7 @@ class HmppsQueueFactoryTest_NoDlq {
 
     @Test
     fun `should register a health indicator`() {
-      verify(healthContributorRegistry).registerContributor(eq("somequeueid-health"), any<HmppsQueueHealth>())
+      verify(healthContributorRegistry).registerContributor(eq("somequeueid-health"), any())
     }
 
     @Test
@@ -263,8 +262,8 @@ class HmppsQueueFactoryTest_NoDlq {
 
     @Test
     fun `should register multiple health indicators`() {
-      verify(healthContributorRegistry).registerContributor(eq("somequeueid-health"), any<HmppsQueueHealth>())
-      verify(healthContributorRegistry).registerContributor(eq("anotherqueueid-health"), any<HmppsQueueHealth>())
+      verify(healthContributorRegistry).registerContributor(eq("somequeueid-health"), any())
+      verify(healthContributorRegistry).registerContributor(eq("anotherqueueid-health"), any())
     }
   }
 

@@ -4,7 +4,10 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.microsoft.applicationinsights.TelemetryClient
 import io.awspring.cloud.sqs.config.SqsBootstrapConfiguration
 import io.awspring.cloud.sqs.config.SqsListenerConfigurer
+import org.springframework.boot.actuate.health.HealthContributor
 import org.springframework.boot.actuate.health.HealthContributorRegistry
+import org.springframework.boot.actuate.health.ReactiveHealthContributor
+import org.springframework.boot.actuate.health.ReactiveHealthContributorRegistry
 import org.springframework.boot.autoconfigure.AutoConfigureBefore
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication
@@ -19,6 +22,30 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.DependsOn
 import org.springframework.context.annotation.Import
 
+interface HmppsHealthContributorRegistry {
+  fun registerContributor(name: String, contribute: () -> HealthContributor)
+}
+
+class HmppsBlockingHealthContributorRegistry(
+  private val healthContributorRegistry: HealthContributorRegistry
+) : HmppsHealthContributorRegistry {
+  override fun registerContributor(name: String, contribute: () -> HealthContributor) {
+    if (healthContributorRegistry.getContributor(name) == null) {
+      healthContributorRegistry.registerContributor(name, contribute())
+    }
+  }
+}
+
+class HmppsReactiveHealthContributorRepository(
+  private val reactiveHealthContributorRegistry: ReactiveHealthContributorRegistry
+) : HmppsHealthContributorRegistry {
+  override fun registerContributor(name: String, contribute: () -> HealthContributor) {
+    if (reactiveHealthContributorRegistry.getContributor(name) == null) {
+      reactiveHealthContributorRegistry.registerContributor(name, ReactiveHealthContributor.adapt(contribute()))
+    }
+  }
+}
+
 @Configuration
 @EnableConfigurationProperties(HmppsSqsProperties::class)
 @AutoConfigureBefore(WebFluxAutoConfiguration::class, WebMvcAutoConfiguration::class)
@@ -27,12 +54,24 @@ class HmppsSqsConfiguration {
 
   @Bean
   @ConditionalOnMissingBean
-  fun hmppsTopicFactory(applicationContext: ConfigurableApplicationContext, healthContributorRegistry: HealthContributorRegistry) =
+  @ConditionalOnWebApplication(type = SERVLET)
+  fun hmppsBlockingHealthContributorRegistry(healthContributorRegistry: HealthContributorRegistry) =
+    HmppsBlockingHealthContributorRegistry(healthContributorRegistry)
+
+  @Bean
+  @ConditionalOnMissingBean
+  @ConditionalOnWebApplication(type = REACTIVE)
+  fun hmppsReactiveHealthContributorRepository(reactiveHealthContributorRegistry: ReactiveHealthContributorRegistry) =
+    HmppsReactiveHealthContributorRepository(reactiveHealthContributorRegistry)
+
+  @Bean
+  @ConditionalOnMissingBean
+  fun hmppsTopicFactory(applicationContext: ConfigurableApplicationContext, healthContributorRegistry: HmppsHealthContributorRegistry) =
     HmppsTopicFactory(applicationContext, healthContributorRegistry, SnsClientFactory())
 
   @Bean
   @ConditionalOnMissingBean
-  fun hmppsQueueFactory(applicationContext: ConfigurableApplicationContext, healthContributorRegistry: HealthContributorRegistry) =
+  fun hmppsQueueFactory(applicationContext: ConfigurableApplicationContext, healthContributorRegistry: HmppsHealthContributorRegistry) =
     HmppsQueueFactory(applicationContext, healthContributorRegistry, SqsClientFactory())
 
   @Bean
