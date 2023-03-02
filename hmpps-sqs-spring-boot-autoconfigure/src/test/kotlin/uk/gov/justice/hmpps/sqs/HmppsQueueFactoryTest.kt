@@ -6,13 +6,17 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.mockito.ArgumentMatchers.anyString
 import org.mockito.kotlin.any
+import org.mockito.kotlin.check
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory
 import org.springframework.context.ConfigurableApplicationContext
+import software.amazon.awssdk.services.sns.SnsAsyncClient
+import software.amazon.awssdk.services.sns.model.SubscribeRequest
 import software.amazon.awssdk.services.sqs.SqsAsyncClient
 import software.amazon.awssdk.services.sqs.model.CreateQueueRequest
 import software.amazon.awssdk.services.sqs.model.CreateQueueResponse
@@ -22,6 +26,7 @@ import software.amazon.awssdk.services.sqs.model.GetQueueUrlRequest
 import software.amazon.awssdk.services.sqs.model.GetQueueUrlResponse
 import software.amazon.awssdk.services.sqs.model.QueueAttributeName
 import uk.gov.justice.hmpps.sqs.HmppsSqsProperties.QueueConfig
+import uk.gov.justice.hmpps.sqs.HmppsSqsProperties.TopicConfig
 import java.util.concurrent.CompletableFuture
 
 class HmppsQueueFactoryTest {
@@ -90,6 +95,18 @@ class HmppsQueueFactoryTest {
       verify(beanFactory).registerSingleton(eq("somequeueid-sqs-dlq-client"), any<SqsAsyncClient>())
       verify(beanFactory).registerSingleton(eq("somequeueid-sqs-listener-factory"), any<HmppsQueueDestinationContainerFactory>())
     }
+
+    @Test
+    fun `should not subscribe to topics`() {
+      val someQueueConfig = QueueConfig(queueName = "any", queueAccessKeyId = "any", queueSecretAccessKey = "any", subscribeTopicId = "sometopicid")
+      val hmppsSqsProperties = HmppsSqsProperties(queues = mapOf("somequeueid" to someQueueConfig), topics = mapOf("sometopicid" to TopicConfig("arn:aws:sns:1:2:3", "any", "any")))
+      val snsClient = mock<SnsAsyncClient>()
+      val topics = listOf(HmppsTopic("sometopicid", "arn:aws:sns:1:2:3", snsClient))
+
+      hmppsQueues = hmppsQueueFactory.createHmppsQueues(hmppsSqsProperties, topics)
+
+      verify(snsClient, never()).subscribe(any<SubscribeRequest>())
+    }
   }
 
   @Nested
@@ -150,6 +167,20 @@ class HmppsQueueFactoryTest {
       verify(beanFactory).registerSingleton(eq("somequeueid-sqs-client"), any<SqsAsyncClient>())
       verify(beanFactory).registerSingleton(eq("somequeueid-sqs-dlq-client"), any<SqsAsyncClient>())
       verify(beanFactory).registerSingleton(eq("somequeueid-sqs-listener-factory"), any<HmppsQueueDestinationContainerFactory>())
+    }
+
+    @Test
+    fun `should subscribe to topics`() {
+      val someQueueConfig = QueueConfig(queueName = "any", queueAccessKeyId = "any", queueSecretAccessKey = "any", subscribeTopicId = "sometopicid")
+      val hmppsSqsProperties = HmppsSqsProperties(provider = "localstack", queues = mapOf("somequeueid" to someQueueConfig), topics = mapOf("sometopicid" to TopicConfig("arn:aws:sns:1:2:3", "any", "any")))
+      val snsClient = mock<SnsAsyncClient>()
+      val topics = listOf(HmppsTopic("sometopicid", "arn:aws:sns:1:2:3", snsClient))
+
+      hmppsQueues = hmppsQueueFactory.createHmppsQueues(hmppsSqsProperties, topics)
+
+      verify(snsClient).subscribe(check<SubscribeRequest> {
+        assertThat(it.topicArn()).isEqualTo("arn:aws:sns:1:2:3")
+      })
     }
   }
 }
