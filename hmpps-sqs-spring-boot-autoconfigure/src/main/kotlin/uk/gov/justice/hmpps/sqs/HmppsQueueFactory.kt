@@ -31,13 +31,7 @@ class HmppsQueueFactory(
         val sqsDlqClient = getOrDefaultSqsDlqClient(queueId, queueConfig, hmppsSqsProperties)
         val sqsClient = getOrDefaultSqsClient(queueId, queueConfig, hmppsSqsProperties, sqsDlqClient)
           .also {
-            val queueArn = it.getQueueAttributes(
-              GetQueueAttributesRequest.builder()
-                .queueUrl("${hmppsSqsProperties.localstackUrl}/queue/${queueConfig.queueName}")
-                .attributeNames(QueueAttributeName.QUEUE_ARN).build()
-            ).get()
-              .attributes()[QueueAttributeName.QUEUE_ARN]
-            subscribeToLocalStackTopic(hmppsSqsProperties, queueConfig, queueArn!!, hmppsTopics)
+            subscribeToLocalStackTopic(it, hmppsSqsProperties, queueConfig, hmppsTopics)
           }
         HmppsQueue(queueId, sqsClient, queueConfig.queueName, sqsDlqClient, queueConfig.dlqName.ifEmpty { null })
           .also { registerHealthIndicator(it) }
@@ -149,13 +143,20 @@ class HmppsQueueFactory(
     }
   }
 
-  private fun subscribeToLocalStackTopic(hmppsSqsProperties: HmppsSqsProperties, queueConfig: QueueConfig, queueArn: String, hmppsTopics: List<HmppsTopic>) = runBlocking {
+  private fun subscribeToLocalStackTopic(sqsClient: SqsAsyncClient, hmppsSqsProperties: HmppsSqsProperties, queueConfig: QueueConfig, hmppsTopics: List<HmppsTopic>) = runBlocking {
     if (findProvider(hmppsSqsProperties.provider) == Provider.LOCALSTACK) {
+      val queueArn = sqsClient.getQueueAttributes(
+        GetQueueAttributesRequest.builder()
+          .queueUrl("${hmppsSqsProperties.localstackUrl}/queue/${queueConfig.queueName}")
+          .attributeNames(QueueAttributeName.QUEUE_ARN).build()
+      ).await().attributes()[QueueAttributeName.QUEUE_ARN]
       val topic = hmppsTopics.firstOrNull { topic -> topic.id == queueConfig.subscribeTopicId }
-      topic?.snsClient
-        ?.subscribe(subscribeRequest(queueConfig, queueArn, topic.arn))
-        ?.also { log.info("Queue ${queueConfig.queueName} has subscribed to topic with arn ${topic.arn}") }
-        ?.await()
+      if (topic != null && queueArn != null) {
+        topic.snsClient
+          .subscribe(subscribeRequest(queueConfig, queueArn, topic.arn))
+          ?.also { log.info("Queue ${queueConfig.queueName} has subscribed to topic with arn ${topic.arn}") }
+          ?.await()
+      }
     }
   }
 
