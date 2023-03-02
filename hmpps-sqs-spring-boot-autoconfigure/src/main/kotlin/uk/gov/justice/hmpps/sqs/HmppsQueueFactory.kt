@@ -7,7 +7,6 @@ import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import org.springframework.boot.actuate.health.HealthIndicator
 import org.springframework.context.ConfigurableApplicationContext
 import software.amazon.awssdk.services.sns.model.SubscribeRequest
 import software.amazon.awssdk.services.sqs.SqsAsyncClient
@@ -19,6 +18,7 @@ import uk.gov.justice.hmpps.sqs.HmppsSqsProperties.QueueConfig
 
 class HmppsQueueFactory(
   private val context: ConfigurableApplicationContext,
+  private val healthContributorRegistry: HmppsHealthContributorRegistry,
   private val sqsClientFactory: SqsClientFactory,
 ) {
   companion object {
@@ -40,7 +40,7 @@ class HmppsQueueFactory(
             subscribeToLocalStackTopic(hmppsSqsProperties, queueConfig, queueArn!!, hmppsTopics)
           }
         HmppsQueue(queueId, sqsClient, queueConfig.queueName, sqsDlqClient, queueConfig.dlqName.ifEmpty { null })
-          .also { getOrDefaultHealthIndicator(it) }
+          .also { registerHealthIndicator(it) }
           .also { createSqsListenerContainerFactory(it, queueConfig.errorVisibilityTimeout) }
       }.toList()
 
@@ -58,8 +58,8 @@ class HmppsQueueFactory(
         .also { log.info("Created ${hmppsSqsProperties.provider} SqsAsyncClient for queue queueId $queueId with name ${queueConfig.queueName}") }
     }
 
-  private fun getOrDefaultHealthIndicator(hmppsQueue: HmppsQueue): HealthIndicator =
-    getOrDefaultBean("${hmppsQueue.id}-health") {
+  private fun registerHealthIndicator(hmppsQueue: HmppsQueue) =
+    healthContributorRegistry.registerContributor("${hmppsQueue.id}-health") {
       HmppsQueueHealth(hmppsQueue)
     }
 

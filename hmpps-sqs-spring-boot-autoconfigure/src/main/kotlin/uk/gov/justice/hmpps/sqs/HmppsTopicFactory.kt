@@ -10,6 +10,7 @@ import software.amazon.awssdk.services.sns.model.CreateTopicRequest
 
 class HmppsTopicFactory(
   private val context: ConfigurableApplicationContext,
+  private val healthContributorRegistry: HmppsHealthContributorRegistry,
   private val snsClientFactory: SnsClientFactory,
 ) {
   companion object {
@@ -21,16 +22,12 @@ class HmppsTopicFactory(
       .map { (topicId, topicConfig) ->
         val snsClient = getOrDefaultSnsAsyncClient(topicId, topicConfig, hmppsSqsProperties)
         HmppsTopic(topicId, topicConfig.arn, snsClient)
-          .also { getOrDefaultHealthIndicator(it) }
+          .also { registerHealthIndicator(it) }
       }.toList()
 
-  private fun getOrDefaultHealthIndicator(topic: HmppsTopic) {
-    "${topic.id}-health".let { beanName ->
-      runCatching { context.beanFactory.getBean(beanName) as SnsAsyncClient }
-        .getOrElse {
-          HmppsTopicHealth(topic)
-            .also { context.beanFactory.registerSingleton(beanName, it) }
-        }
+  private fun registerHealthIndicator(topic: HmppsTopic) {
+    healthContributorRegistry.registerContributor("${topic.id}-health") {
+      HmppsTopicHealth(topic)
     }
   }
 

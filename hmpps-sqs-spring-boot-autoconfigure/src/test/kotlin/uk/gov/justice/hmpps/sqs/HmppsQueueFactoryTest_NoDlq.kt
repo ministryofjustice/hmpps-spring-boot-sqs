@@ -38,9 +38,10 @@ class HmppsQueueFactoryTest_NoDlq {
   private val localstackArnPrefix = "arn:aws:sns:eu-west-2:000000000000:"
 
   private val context = mock<ConfigurableApplicationContext>()
+  private val healthContributorRegistry = mock<HmppsHealthContributorRegistry>()
   private val beanFactory = mock<ConfigurableListableBeanFactory>()
   private val sqsFactory = mock<SqsClientFactory>()
-  private val hmppsQueueFactory = HmppsQueueFactory(context, sqsFactory)
+  private val hmppsQueueFactory = HmppsQueueFactory(context, healthContributorRegistry, sqsFactory)
 
   init {
     whenever(context.beanFactory).thenReturn(beanFactory)
@@ -114,7 +115,7 @@ class HmppsQueueFactoryTest_NoDlq {
 
     @Test
     fun `should register a health indicator`() {
-      verify(beanFactory).registerSingleton(eq("somequeueid-health"), any<HmppsQueueHealth>())
+      verify(healthContributorRegistry).registerContributor(eq("somequeueid-health"), any())
     }
 
     @Test
@@ -200,7 +201,7 @@ class HmppsQueueFactoryTest_NoDlq {
 
     @Test
     fun `should register a health indicator`() {
-      verify(beanFactory).registerSingleton(eq("somequeueid-health"), any<HmppsQueueHealth>())
+      verify(healthContributorRegistry).registerContributor(eq("somequeueid-health"), any())
     }
 
     @Test
@@ -261,8 +262,8 @@ class HmppsQueueFactoryTest_NoDlq {
 
     @Test
     fun `should register multiple health indicators`() {
-      verify(beanFactory).registerSingleton(eq("somequeueid-health"), any<HmppsQueueHealth>())
-      verify(beanFactory).registerSingleton(eq("anotherqueueid-health"), any<HmppsQueueHealth>())
+      verify(healthContributorRegistry).registerContributor(eq("somequeueid-health"), any())
+      verify(healthContributorRegistry).registerContributor(eq("anotherqueueid-health"), any())
     }
   }
 

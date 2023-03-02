@@ -23,9 +23,10 @@ class HmppsTopicFactoryTest {
   private val localstackArnPrefix = "arn:aws:sns:eu-west-2:000000000000:"
 
   private val context = mock<ConfigurableApplicationContext>()
+  private val healthContributorRegistry = mock<HmppsHealthContributorRegistry>()
   private val beanFactory = mock<ConfigurableListableBeanFactory>()
   private val snsClientFactory = mock<SnsClientFactory>()
-  private val hmppsTopicFactory = HmppsTopicFactory(context, snsClientFactory)
+  private val hmppsTopicFactory = HmppsTopicFactory(context, healthContributorRegistry, snsClientFactory)
 
   init {
     whenever(context.beanFactory).thenReturn(beanFactory)

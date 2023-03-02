@@ -27,9 +27,10 @@ import java.util.concurrent.CompletableFuture
 class HmppsQueueFactoryTest {
 
   private val context = mock<ConfigurableApplicationContext>()
+  private val healthContributorRegistry = mock<HmppsHealthContributorRegistry>()
   private val beanFactory = mock<ConfigurableListableBeanFactory>()
   private val sqsFactory = mock<SqsClientFactory>()
-  private val hmppsQueueFactory = HmppsQueueFactory(context, sqsFactory)
+  private val hmppsQueueFactory = HmppsQueueFactory(context, healthContributorRegistry, sqsFactory)
 
   init {
     whenever(context.beanFactory).thenReturn(beanFactory)
@@ -84,7 +85,7 @@ class HmppsQueueFactoryTest {
 
     @Test
     fun `should register a health indicator`() {
-      verify(beanFactory).registerSingleton(eq("somequeueid-health"), any<HmppsQueueHealth>())
+      verify(healthContributorRegistry).registerContributor(eq("somequeueid-health"), any())
       verify(beanFactory).registerSingleton(eq("somequeueid-sqs-client"), any<SqsAsyncClient>())
       verify(beanFactory).registerSingleton(eq("somequeueid-sqs-dlq-client"), any<SqsAsyncClient>())
       verify(beanFactory).registerSingleton(eq("somequeueid-sqs-listener-factory"), any<HmppsQueueDestinationContainerFactory>())
@@ -145,7 +146,7 @@ class HmppsQueueFactoryTest {
 
     @Test
     fun `should register all beans created`() {
-      verify(beanFactory).registerSingleton(eq("somequeueid-health"), any<HmppsQueueHealth>())
+      verify(healthContributorRegistry).registerContributor(eq("somequeueid-health"), any())
       verify(beanFactory).registerSingleton(eq("somequeueid-sqs-client"), any<SqsAsyncClient>())
       verify(beanFactory).registerSingleton(eq("somequeueid-sqs-dlq-client"), any<SqsAsyncClient>())
       verify(beanFactory).registerSingleton(eq("somequeueid-sqs-listener-factory"), any<HmppsQueueDestinationContainerFactory>())
