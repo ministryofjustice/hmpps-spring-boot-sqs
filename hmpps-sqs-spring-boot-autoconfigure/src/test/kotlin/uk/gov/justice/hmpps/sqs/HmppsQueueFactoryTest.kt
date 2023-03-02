@@ -178,9 +178,11 @@ class HmppsQueueFactoryTest {
 
       hmppsQueues = hmppsQueueFactory.createHmppsQueues(hmppsSqsProperties, topics)
 
-      verify(snsClient).subscribe(check<SubscribeRequest> {
-        assertThat(it.topicArn()).isEqualTo("arn:aws:sns:1:2:3")
-      })
+      verify(snsClient).subscribe(
+        check<SubscribeRequest> {
+          assertThat(it.topicArn()).isEqualTo("arn:aws:sns:1:2:3")
+        }
+      )
     }
   }
 }
