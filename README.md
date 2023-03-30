@@ -338,7 +338,7 @@ Note that Testcontainers only starts if LocalStack is not running on port 4566.
 
 #### Running Tests in your own project without LocalStack dependency
 
-There maybe scenarios where you want to run SpringBoot tests in your own project, but you don't want all the autoconfigured beans
+There may be scenarios where you want to run SpringBoot tests in your own project, but you don't want all the autoconfigured beans
 this library would bring in, for instance you might want to test a portion of your application that does not depend on queues being present, so you don't 
 have the overhead of starting localstack. This can be achieved by disabling the HmppsSqsConfiguration autoconfigure bean, one way to do this would be
 

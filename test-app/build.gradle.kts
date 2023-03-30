@@ -1,6 +1,6 @@
 plugins {
-  id("uk.gov.justice.hmpps.gradle-spring-boot") version "5.0.0-beta-4"
-  kotlin("plugin.spring") version "1.8.0"
+  id("uk.gov.justice.hmpps.gradle-spring-boot") version "5.1.3-beta-2"
+  kotlin("plugin.spring") version "1.8.10"
 }
 
 configurations {
@@ -15,20 +15,20 @@ dependencies {
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8")
 
-  implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.0.2")
+  implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.0.4")
 
   implementation(project(":hmpps-sqs-spring-boot-starter"))
 
-  testImplementation("org.assertj:assertj-core:3.23.1")
-  testImplementation("org.junit.jupiter:junit-jupiter:5.9.1")
-  testImplementation("org.mockito:mockito-junit-jupiter:4.11.0")
+  testImplementation("org.assertj:assertj-core:3.24.2")
+  testImplementation("org.junit.jupiter:junit-jupiter:5.9.2")
+  testImplementation("org.mockito:mockito-junit-jupiter:5.2.0")
   testImplementation("org.mockito.kotlin:mockito-kotlin:4.1.0")
-  testImplementation("org.mockito:mockito-inline:4.11.0")
+  testImplementation("org.mockito:mockito-inline:5.2.0")
   testImplementation("org.awaitility:awaitility-kotlin:4.2.0")
   testImplementation("io.jsonwebtoken:jjwt-impl:0.11.5")
   testImplementation("io.jsonwebtoken:jjwt-jackson:0.11.5")
   testImplementation("com.github.tomakehurst:wiremock-jre8-standalone:2.35.0")
   testImplementation("org.testcontainers:localstack:1.17.6")
-  testImplementation("com.amazonaws:aws-java-sdk-core:1.12.376") // Needed so Localstack has access to the AWS SDK V1 API
+  testImplementation("com.amazonaws:aws-java-sdk-core:1.12.438") // Needed so Localstack has access to the AWS SDK V1 API
   testImplementation("com.google.code.gson:gson:2.10.1")
 }

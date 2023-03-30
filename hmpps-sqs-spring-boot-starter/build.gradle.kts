@@ -1,26 +1,26 @@
 import com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask
 
 plugins {
-  kotlin("jvm") version "1.8.0"
+  kotlin("jvm") version "1.8.10"
   id("maven-publish")
   id("signing")
-  id("com.github.ben-manes.versions") version "0.44.0"
+  id("com.github.ben-manes.versions") version "0.46.0"
   id("se.patrikerdes.use-latest-versions") version "0.2.18"
 }
 
 dependencies {
-  api(platform("io.awspring.cloud:spring-cloud-aws-dependencies:3.0.0-M3"))
+  api(platform("io.awspring.cloud:spring-cloud-aws-dependencies:3.0.0-RC2"))
   api(project(":hmpps-sqs-spring-boot-autoconfigure"))
-  api(platform("software.amazon.awssdk:bom:2.19.8"))
+  api(platform("software.amazon.awssdk:bom:2.20.35"))
   api("software.amazon.awssdk:sns")
   api("io.awspring.cloud:spring-cloud-aws-starter") { exclude("io.awspring.cloud", "spring-cloud-aws-autoconfigure")}
   api("io.awspring.cloud:spring-cloud-aws-sns")
   api("io.awspring.cloud:spring-cloud-aws-sqs")
-  api(platform("org.springframework.boot:spring-boot-dependencies:3.0.1"))
+  api(platform("org.springframework.boot:spring-boot-dependencies:3.0.5"))
   api("org.springframework.boot:spring-boot-starter-web")
   api("org.springframework.boot:spring-boot-starter-security")
   api("org.springframework.boot:spring-boot-starter-actuator")
-  api("com.microsoft.azure:applicationinsights-core:3.4.7")
+  api("com.microsoft.azure:applicationinsights-core:3.4.10")
 }
 
 publishing {
@@ -64,7 +64,7 @@ signing {
 java.sourceCompatibility = JavaVersion.VERSION_17
 
 repositories {
-  mavenLocal()
+  // mavenLocal()
   mavenCentral()
 }
 

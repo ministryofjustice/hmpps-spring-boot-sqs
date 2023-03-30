@@ -3,7 +3,8 @@ package uk.gov.justice.hmpps.sqs
 import io.awspring.cloud.sqs.config.Endpoint
 import io.awspring.cloud.sqs.config.SqsMessageListenerContainerFactory
 import io.awspring.cloud.sqs.listener.AbstractMessageListenerContainer
-import io.awspring.cloud.sqs.listener.ContainerOptions
+import io.awspring.cloud.sqs.listener.SqsContainerOptions
+import io.awspring.cloud.sqs.listener.SqsContainerOptionsBuilder
 import io.awspring.cloud.sqs.listener.SqsMessageListenerContainer
 
 class SqsListenerContainerFactoryMissingException(message: String) : RuntimeException(message)
@@ -18,13 +19,13 @@ class HmppsQueueSqsListenerContainerFactory(
   private val hmppsSqsProperties: HmppsSqsProperties,
 ) : SqsMessageListenerContainerFactory<Any>() {
 
-  override fun createContainerInstance(endpoint: Endpoint, containerOptions: ContainerOptions): SqsMessageListenerContainer<Any> = factories
+  override fun createContainerInstance(endpoint: Endpoint, containerOptions: SqsContainerOptions): SqsMessageListenerContainer<Any> = factories
     .firstOrNull { endpoint.logicalNames.contains(it.destination) }
     ?.factory
     ?.createContainer(endpoint)
     ?: throw SqsListenerContainerFactoryMissingException("Unable to find sqs listener container factory for endpoint ${endpoint.logicalNames}")
 
-  override fun configureAbstractContainer(container: AbstractMessageListenerContainer<Any>, endpoint: Endpoint) {
+  override fun configureAbstractContainer(container: AbstractMessageListenerContainer<Any, SqsContainerOptions, SqsContainerOptionsBuilder>, endpoint: Endpoint) {
     super.configureAbstractContainer(container, endpoint)
     val destinationNames = endpoint.logicalNames.map {
       hmppsSqsProperties.queues[it]?.queueName ?: it
