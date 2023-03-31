@@ -94,7 +94,7 @@ tasks.jar {
 }
 
 repositories {
-  // mavenLocal()
+  mavenLocal()
   mavenCentral()
 }
 

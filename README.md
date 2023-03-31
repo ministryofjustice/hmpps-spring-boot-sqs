@@ -400,7 +400,7 @@ The standalone LocalStack instance does not need stopping and starting between t
 
 ### Running the test-app
 
-Running `test-app` or ``test-app-reactive` locally can be useful for debugging features provided by this library.
+Running `test-app` or `test-app-reactive` locally can be useful for debugging features provided by this library.
 
 Start localstack with command:
 
