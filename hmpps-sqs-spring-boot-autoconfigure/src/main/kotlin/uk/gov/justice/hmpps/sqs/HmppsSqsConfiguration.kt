@@ -80,7 +80,7 @@ class HmppsSqsConfiguration {
     telemetryClient: TelemetryClient?,
     hmppsTopicFactory: HmppsTopicFactory,
     hmppsQueueFactory: HmppsQueueFactory,
-    hmppsSqsProperties: HmppsSqsProperties,
+    hmppsSqsProperties: HmppsSqsProperties
   ) = HmppsQueueService(telemetryClient, hmppsTopicFactory, hmppsQueueFactory, hmppsSqsProperties)
 
   @Bean
@@ -98,7 +98,7 @@ class HmppsSqsConfiguration {
   @DependsOn("hmppsQueueService")
   fun hmppsQueueContainerFactoryProxy(
     factories: List<HmppsQueueDestinationContainerFactory>,
-    hmppsSqsProperties: HmppsSqsProperties,
+    hmppsSqsProperties: HmppsSqsProperties
   ) = HmppsQueueSqsListenerContainerFactory(factories, hmppsSqsProperties)
 
   @Bean

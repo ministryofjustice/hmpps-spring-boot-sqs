@@ -27,7 +27,7 @@ open class HmppsQueueService(
   private val telemetryClient: TelemetryClient?,
   hmppsTopicFactory: HmppsTopicFactory,
   hmppsQueueFactory: HmppsQueueFactory,
-  hmppsSqsProperties: HmppsSqsProperties,
+  hmppsSqsProperties: HmppsSqsProperties
 ) {
 
   private companion object {

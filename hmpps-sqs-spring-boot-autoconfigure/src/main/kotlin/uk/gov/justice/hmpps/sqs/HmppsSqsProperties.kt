@@ -8,7 +8,7 @@ data class HmppsSqsProperties(
   val region: String = "eu-west-2",
   val localstackUrl: String = "http://localhost:4566",
   val queues: Map<String, QueueConfig> = mapOf(),
-  val topics: Map<String, TopicConfig> = mapOf(),
+  val topics: Map<String, TopicConfig> = mapOf()
 ) {
   data class QueueConfig(
     val queueName: String,
@@ -21,13 +21,13 @@ data class HmppsSqsProperties(
     val dlqSecretAccessKey: String = "",
     val dlqMaxReceiveCount: Int = 5,
     val visibilityTimeout: Int = 30,
-    val errorVisibilityTimeout: Int = 0,
+    val errorVisibilityTimeout: Int = 0
   )
 
   data class TopicConfig(
     val arn: String = "",
     val accessKeyId: String = "",
-    val secretAccessKey: String = "",
+    val secretAccessKey: String = ""
   ) {
     private val arnRegex = Regex("arn:aws:sns:.*:.*:(.*)$")
 
@@ -75,8 +75,9 @@ data class HmppsSqsProperties(
     queueId: String
   ) {
     if (provider == "localstack") {
-      if (queueConfig.subscribeTopicId.isNotEmpty().and(topics.containsKey(queueConfig.subscribeTopicId).not()))
+      if (queueConfig.subscribeTopicId.isNotEmpty().and(topics.containsKey(queueConfig.subscribeTopicId).not())) {
         throw InvalidHmppsSqsPropertiesException("queueId $queueId wants to subscribe to ${queueConfig.subscribeTopicId} but it does not exist")
+      }
     }
   }
 

@@ -19,7 +19,7 @@ import uk.gov.justice.hmpps.sqs.HmppsSqsProperties.QueueConfig
 class HmppsQueueFactory(
   private val context: ConfigurableApplicationContext,
   private val healthContributorRegistry: HmppsHealthContributorRegistry,
-  private val sqsClientFactory: SqsClientFactory,
+  private val sqsClientFactory: SqsClientFactory
 ) {
   companion object {
     val log: Logger = LoggerFactory.getLogger(this::class.java)
@@ -44,7 +44,9 @@ class HmppsQueueFactory(
         createSqsAsyncDlqClient(queueConfig, hmppsSqsProperties)
           .also { log.info("Created ${hmppsSqsProperties.provider} SqsAsyncClient for DLQ queueId $queueId with name ${queueConfig.dlqName}") }
       }
-    } else null
+    } else {
+      null
+    }
 
   private fun getOrDefaultSqsClient(queueId: String, queueConfig: QueueConfig, hmppsSqsProperties: HmppsSqsProperties, sqsDlqClient: SqsAsyncClient?): SqsAsyncClient =
     getOrDefaultBean("$queueId-sqs-client") {
@@ -111,7 +113,7 @@ class HmppsQueueFactory(
                 queueName = queueConfig.queueName,
                 dlqName = queueConfig.dlqName,
                 maxReceiveCount = queueConfig.dlqMaxReceiveCount,
-                visibilityTimeout = queueConfig.visibilityTimeout,
+                visibilityTimeout = queueConfig.visibilityTimeout
               )
             }
           }
@@ -125,7 +127,7 @@ class HmppsQueueFactory(
     queueName: String,
     dlqName: String,
     maxReceiveCount: Int,
-    visibilityTimeout: Int,
+    visibilityTimeout: Int
   ) = runBlocking {
     if (dlqName.isEmpty() || sqsDlqClient == null) {
       sqsClient.createQueue(CreateQueueRequest.builder().queueName(queueName).build()).await()
@@ -136,7 +138,7 @@ class HmppsQueueFactory(
         CreateQueueRequest.builder().queueName(queueName).attributes(
           mapOf(
             QueueAttributeName.REDRIVE_POLICY to """{"deadLetterTargetArn":"$dlqArn","maxReceiveCount":"$maxReceiveCount"}""",
-            QueueAttributeName.VISIBILITY_TIMEOUT to "$visibilityTimeout",
+            QueueAttributeName.VISIBILITY_TIMEOUT to "$visibilityTimeout"
           )
         ).build()
       ).await()

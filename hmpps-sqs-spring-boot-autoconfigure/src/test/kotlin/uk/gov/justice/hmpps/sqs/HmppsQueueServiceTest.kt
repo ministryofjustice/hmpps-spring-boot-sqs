@@ -58,7 +58,7 @@ class HmppsQueueServiceTest {
         .thenReturn(
           listOf(
             HmppsQueue("some queue id", sqsAsyncClient, "some queue name", sqsAsyncDlqClient, "some dlq name"),
-            HmppsQueue("another queue id", mock(), "another queue name", mock(), "another dlq name"),
+            HmppsQueue("another queue id", mock(), "another queue name", mock(), "another dlq name")
           )
         )
 
@@ -608,7 +608,7 @@ class HmppsQueueServiceTest {
         .thenReturn(
           listOf(
             HmppsQueue("some queue id", sqsClient, "some queue name", sqsDlqClient, "some dlq name"),
-            HmppsQueue("another queue id", mock(), "another queue name", mock(), "another dlq name"),
+            HmppsQueue("another queue id", mock(), "another queue name", mock(), "another dlq name")
           )
         )
 

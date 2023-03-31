@@ -25,8 +25,8 @@ class HmppsEventProcessingTest : IntegrationTestBase() {
     val event = HmppsEvent("event-id", "OFFENDER_MOVEMENT-RECEPTION", "some event contents")
     inboundSnsClient.publish(
       PublishRequest.builder().topicArn(inboundTopicArn).message(gsonString(event)).messageAttributes(
-        mapOf("eventType" to MessageAttributeValue.builder().dataType("String").stringValue(event.type).build())
-      ).build()
+        mapOf("eventType" to MessageAttributeValue.builder().dataType("String").stringValue(event.type).build()),
+      ).build(),
     )
 
     await untilCallTo { outboundTestSqsClient.countMessagesOnQueue(outboundTestQueueUrl).get() } matches { it == 1 }
@@ -44,8 +44,8 @@ class HmppsEventProcessingTest : IntegrationTestBase() {
     val event = HmppsEvent("event-id", "OFFENDER_MOVEMENT-DISCHARGE", "some event contents")
     inboundSnsClient.publish(
       PublishRequest.builder().topicArn(inboundTopicArn).message(gsonString(event)).messageAttributes(
-        mapOf("eventType" to MessageAttributeValue.builder().dataType("String").stringValue(event.type).build())
-      ).build()
+        mapOf("eventType" to MessageAttributeValue.builder().dataType("String").stringValue(event.type).build()),
+      ).build(),
     )
 
     await untilCallTo { mockingDetails(outboundEventsEmitterSpy).invocations!! } matches { it?.isNotEmpty() ?: false } // Don't understand why it is nullable here
@@ -58,8 +58,8 @@ class HmppsEventProcessingTest : IntegrationTestBase() {
     val event = HmppsEvent("event-id", "OFFENDER_MOVEMENT-RECEPTION", "some event contents")
     inboundSnsClient.publish(
       PublishRequest.builder().topicArn(inboundTopicArn).message(gsonString(event)).messageAttributes(
-        mapOf("eventType" to MessageAttributeValue.builder().dataType("String").stringValue(event.type).build())
-      ).build()
+        mapOf("eventType" to MessageAttributeValue.builder().dataType("String").stringValue(event.type).build()),
+      ).build(),
     )
 
     await untilCallTo { outboundTestNoDlqSqsClient.countMessagesOnQueue(outboundTestNoDlqQueueUrl).get() } matches { it == 1 }
@@ -84,9 +84,9 @@ class HmppsEventProcessingTest : IntegrationTestBase() {
         .topicArn(inboundTopicArn)
         .message(gsonString(event))
         .messageAttributes(
-          mapOf("eventType" to MessageAttributeValue.builder().dataType("String").stringValue(event.type).build())
+          mapOf("eventType" to MessageAttributeValue.builder().dataType("String").stringValue(event.type).build()),
         )
-        .build()
+        .build(),
     )
 
     await untilCallTo { inboundSqsDlqClient.countMessagesOnQueue(inboundDlqUrl).get() } matches { it == 1 }

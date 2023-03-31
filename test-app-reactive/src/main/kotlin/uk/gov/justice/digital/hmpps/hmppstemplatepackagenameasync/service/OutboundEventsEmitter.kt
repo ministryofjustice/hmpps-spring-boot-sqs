@@ -30,10 +30,10 @@ class OutboundEventsEmitter(hmppsQueueService: HmppsQueueService, private val ob
         .topicArn(outboundTopic.arn)
         .message(objectMapper.writeValueAsString(hmppsEvent))
         .messageAttributes(
-          mapOf("eventType" to MessageAttributeValue.builder().dataType("String").stringValue(hmppsEvent.type).build())
+          mapOf("eventType" to MessageAttributeValue.builder().dataType("String").stringValue(hmppsEvent.type).build()),
         )
         .build()
-        .also { log.info("Published event $hmppsEvent to outbound topic") }
+        .also { log.info("Published event $hmppsEvent to outbound topic") },
     )
   }
 }
