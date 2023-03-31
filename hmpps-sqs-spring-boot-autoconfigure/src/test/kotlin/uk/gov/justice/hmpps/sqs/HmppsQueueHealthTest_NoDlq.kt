@@ -85,7 +85,7 @@ class HmppsQueueHealthTest_NoDlq {
   @Test
   fun `should show status DOWN if unable to retrieve queue attributes`() {
     whenever(sqsClient.getQueueUrl(any<GetQueueUrlRequest>())).thenReturn(
-      CompletableFuture.completedFuture(someGetQueueUrlResponse())
+      CompletableFuture.completedFuture(someGetQueueUrlResponse()),
     )
     whenever(sqsClient.getQueueAttributes(someGetQueueAttributesRequest())).thenThrow(RuntimeException::class.java)
 
@@ -115,10 +115,10 @@ class HmppsQueueHealthTest_NoDlq {
   @Test
   fun `should not show DLQ name if no dlq exists`() {
     whenever(sqsClient.getQueueUrl(GetQueueUrlRequest.builder().queueName(queueName).build())).thenReturn(
-      CompletableFuture.completedFuture(someGetQueueUrlResponse())
+      CompletableFuture.completedFuture(someGetQueueUrlResponse()),
     )
     whenever(sqsClient.getQueueAttributes(someGetQueueAttributesRequest())).thenReturn(
-      CompletableFuture.completedFuture(someGetQueueAttributesResponseWithoutDLQ())
+      CompletableFuture.completedFuture(someGetQueueAttributesResponseWithoutDLQ()),
     )
 
     val health = queueHealth.health()
@@ -129,10 +129,10 @@ class HmppsQueueHealthTest_NoDlq {
   @Test
   fun `should not show DLQ status if no dlq exists`() {
     whenever(sqsClient.getQueueUrl(GetQueueUrlRequest.builder().queueName(queueName).build())).thenReturn(
-      CompletableFuture.completedFuture(someGetQueueUrlResponse())
+      CompletableFuture.completedFuture(someGetQueueUrlResponse()),
     )
     whenever(sqsClient.getQueueAttributes(someGetQueueAttributesRequest())).thenReturn(
-      CompletableFuture.completedFuture(someGetQueueAttributesResponseWithoutDLQ())
+      CompletableFuture.completedFuture(someGetQueueAttributesResponseWithoutDLQ()),
     )
 
     val health = queueHealth.health()
@@ -142,10 +142,10 @@ class HmppsQueueHealthTest_NoDlq {
 
   private fun mockHealthyQueue() {
     whenever(sqsClient.getQueueUrl(any<GetQueueUrlRequest>())).thenReturn(
-      CompletableFuture.completedFuture(someGetQueueUrlResponse())
+      CompletableFuture.completedFuture(someGetQueueUrlResponse()),
     )
     whenever(sqsClient.getQueueAttributes(any<GetQueueAttributesRequest>())).thenReturn(
-      CompletableFuture.completedFuture(someGetQueueAttributesResponseWithoutDLQ())
+      CompletableFuture.completedFuture(someGetQueueAttributesResponseWithoutDLQ()),
     )
   }
 
@@ -156,7 +156,7 @@ class HmppsQueueHealthTest_NoDlq {
   private fun someGetQueueAttributesResponseWithoutDLQ() = GetQueueAttributesResponse.builder().attributes(
     mapOf(
       QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES to "$messagesOnQueueCount",
-      QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES_NOT_VISIBLE to "$messagesInFlightCount"
-    )
+      QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES_NOT_VISIBLE to "$messagesInFlightCount",
+    ),
   ).build()
 }

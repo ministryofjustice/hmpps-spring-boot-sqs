@@ -338,7 +338,7 @@ Note that Testcontainers only starts if LocalStack is not running on port 4566.
 
 #### Running Tests in your own project without LocalStack dependency
 
-There maybe scenarios where you want to run SpringBoot tests in your own project, but you don't want all the autoconfigured beans
+There may be scenarios where you want to run SpringBoot tests in your own project, but you don't want all the autoconfigured beans
 this library would bring in, for instance you might want to test a portion of your application that does not depend on queues being present, so you don't 
 have the overhead of starting localstack. This can be achieved by disabling the HmppsSqsConfiguration autoconfigure bean, one way to do this would be
 
@@ -400,7 +400,7 @@ The standalone LocalStack instance does not need stopping and starting between t
 
 ### Running the test-app
 
-Running the `test-app` locally can be useful for debugging features provided by this library.
+Running `test-app` or `test-app-reactive` locally can be useful for debugging features provided by this library.
 
 Start localstack with command:
 
@@ -408,12 +408,7 @@ Start localstack with command:
 
 Then run the `test-app` in your IDE from main class `HmppsTemplateKotlin` using Spring profiles `localstack`.
 
-Some messages to process can be found in `test-app/src/test/resources/test-messages`. These can be sent to the inbound topic with the following commands:
-
-```bash
-bash $(find -name offender-movement-reception.sh)
-bash $(find -name offender-movement-discharge.sh)
-```
+Some messages to process can be found in `test-app[-reactive]/src/test/resources/test-messages`. These can be sent to the inbound topic by running the scripts.
 
 ## How To Contribute To This Library
 

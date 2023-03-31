@@ -59,7 +59,7 @@ class HmppsQueueServiceTest {
           listOf(
             HmppsQueue("some queue id", sqsAsyncClient, "some queue name", sqsAsyncDlqClient, "some dlq name"),
             HmppsQueue("another queue id", mock(), "another queue name", mock(), "another dlq name"),
-          )
+          ),
         )
 
       hmppsQueueService = HmppsQueueService(telemetryClient, hmppsTopicFactory, hmppsQueueFactory, hmppsSqsProperties)
@@ -121,19 +121,19 @@ class HmppsQueueServiceTest {
       @BeforeEach
       fun `finds zero messages on dlq`() {
         whenever(dlqSqs.getQueueAttributes(any<GetQueueAttributesRequest>())).thenReturn(
-          CompletableFuture.completedFuture(GetQueueAttributesResponse.builder().attributes(mapOf(QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES to "0")).build())
+          CompletableFuture.completedFuture(GetQueueAttributesResponse.builder().attributes(mapOf(QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES to "0")).build()),
         )
       }
 
       @Test
       fun `should not attempt any transfer`() = runBlocking<Unit> {
         hmppsQueueService.retryDlqMessages(
-          RetryDlqRequest(HmppsQueue("some queue id", queueSqs, "some queue name", dlqSqs, "some dlq name"))
+          RetryDlqRequest(HmppsQueue("some queue id", queueSqs, "some queue name", dlqSqs, "some dlq name")),
         )
 
         verify(dlqSqs).getQueueAttributes(
           GetQueueAttributesRequest.builder()
-            .queueUrl("dlqUrl").attributeNames(QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES).build()
+            .queueUrl("dlqUrl").attributeNames(QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES).build(),
         )
         verify(dlqSqs, times(0)).receiveMessage(any<ReceiveMessageRequest>())
       }
@@ -142,7 +142,7 @@ class HmppsQueueServiceTest {
       fun `should return empty result`() = runBlocking<Unit> {
         val result =
           hmppsQueueService.retryDlqMessages(
-            RetryDlqRequest(HmppsQueue("some queue id", queueSqs, "some queue name", dlqSqs, "some dlq name"))
+            RetryDlqRequest(HmppsQueue("some queue id", queueSqs, "some queue name", dlqSqs, "some dlq name")),
           )
 
         assertThat(result.messagesFoundCount).isEqualTo(0)
@@ -152,7 +152,7 @@ class HmppsQueueServiceTest {
       @Test
       fun `should not create telemetry event`() = runBlocking<Unit> {
         hmppsQueueService.retryDlqMessages(
-          RetryDlqRequest(HmppsQueue("some queue id", queueSqs, "some queue name", dlqSqs, "some dlq name"))
+          RetryDlqRequest(HmppsQueue("some queue id", queueSqs, "some queue name", dlqSqs, "some dlq name")),
         )
 
         verifyNoMoreInteractions(telemetryClient)
@@ -164,7 +164,7 @@ class HmppsQueueServiceTest {
       @BeforeEach
       fun `finds a single message on the dlq`() {
         whenever(dlqSqs.getQueueAttributes(any<GetQueueAttributesRequest>())).thenReturn(
-          CompletableFuture.completedFuture(GetQueueAttributesResponse.builder().attributes(mapOf(QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES to "1")).build())
+          CompletableFuture.completedFuture(GetQueueAttributesResponse.builder().attributes(mapOf(QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES to "1")).build()),
         )
         whenever(dlqSqs.receiveMessage(any<ReceiveMessageRequest>()))
           .thenReturn(
@@ -181,14 +181,14 @@ class HmppsQueueServiceTest {
                       },
                       "MessageId":"message-id-1"
                     }
-                    """.trimIndent()
+                    """.trimIndent(),
                   )
                   .receiptHandle("message-receipt-handle")
                   .messageId("external-message-id-1")
                   .messageAttributes(mutableMapOf("some" to stringAttributeOf("attribute")))
-                  .build()
-              ).build()
-            )
+                  .build(),
+              ).build(),
+            ),
           )
 
         hmppsQueueService = HmppsQueueService(telemetryClient, hmppsTopicFactory, hmppsQueueFactory, hmppsSqsProperties)
@@ -197,49 +197,49 @@ class HmppsQueueServiceTest {
       @Test
       fun `should receive message from the dlq`() = runBlocking<Unit> {
         hmppsQueueService.retryDlqMessages(
-          RetryDlqRequest(HmppsQueue("some queue id", queueSqs, "some queue name", dlqSqs, "some dlq name"))
+          RetryDlqRequest(HmppsQueue("some queue id", queueSqs, "some queue name", dlqSqs, "some dlq name")),
         )
 
         verify(dlqSqs).receiveMessage(
           check<ReceiveMessageRequest> {
             assertThat(it.queueUrl()).isEqualTo("dlqUrl")
             assertThat(it.maxNumberOfMessages()).isEqualTo(1)
-          }
+          },
         )
       }
 
       @Test
       fun `should delete message from the dlq`() = runBlocking<Unit> {
         hmppsQueueService.retryDlqMessages(
-          RetryDlqRequest(HmppsQueue("some queue id", queueSqs, "some queue name", dlqSqs, "some dlq name"))
+          RetryDlqRequest(HmppsQueue("some queue id", queueSqs, "some queue name", dlqSqs, "some dlq name")),
         )
 
         verify(dlqSqs).deleteMessage(
           check<DeleteMessageRequest> {
             assertThat(it.queueUrl()).isEqualTo("dlqUrl")
             assertThat(it.receiptHandle()).isEqualTo("message-receipt-handle")
-          }
+          },
         )
       }
 
       @Test
       fun `should send message to the main queue`() = runBlocking<Unit> {
         hmppsQueueService.retryDlqMessages(
-          RetryDlqRequest(HmppsQueue("some queue id", queueSqs, "some queue name", dlqSqs, "some dlq name"))
+          RetryDlqRequest(HmppsQueue("some queue id", queueSqs, "some queue name", dlqSqs, "some dlq name")),
         )
         verify(queueSqs).sendMessage(
           check<SendMessageRequest> {
             assertThat(it.queueUrl()).isEqualTo("queueUrl")
             assertThat(it.messageBody()).isNotEmpty
             assertThat(it.messageAttributes()).containsEntry("some", stringAttributeOf("attribute"))
-          }
+          },
         )
       }
 
       @Test
       fun `should return the message`() = runBlocking<Unit> {
         val result = hmppsQueueService.retryDlqMessages(
-          RetryDlqRequest(HmppsQueue("some queue id", queueSqs, "some queue name", dlqSqs, "some dlq name"))
+          RetryDlqRequest(HmppsQueue("some queue id", queueSqs, "some queue name", dlqSqs, "some dlq name")),
         )
 
         assertThat(result.messagesFoundCount).isEqualTo(1)
@@ -250,7 +250,7 @@ class HmppsQueueServiceTest {
       @Test
       fun `should create telemetry event`() = runBlocking<Unit> {
         hmppsQueueService.retryDlqMessages(
-          RetryDlqRequest(HmppsQueue("some queue id", queueSqs, "some queue name", dlqSqs, "some dlq name"))
+          RetryDlqRequest(HmppsQueue("some queue id", queueSqs, "some queue name", dlqSqs, "some dlq name")),
         )
 
         verify(telemetryClient).trackEvent(
@@ -260,7 +260,7 @@ class HmppsQueueServiceTest {
             assertThat(it).containsEntry("messages-found", "1")
             assertThat(it).containsEntry("messages-retried", "1")
           },
-          isNull()
+          isNull(),
         )
       }
     }
@@ -271,8 +271,8 @@ class HmppsQueueServiceTest {
       fun `finds two message on the dlq`() {
         whenever(dlqSqs.getQueueAttributes(any<GetQueueAttributesRequest>())).thenReturn(
           CompletableFuture.completedFuture(
-            GetQueueAttributesResponse.builder().attributes(mapOf(QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES to "2")).build()
-          )
+            GetQueueAttributesResponse.builder().attributes(mapOf(QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES to "2")).build(),
+          ),
         )
         whenever(dlqSqs.receiveMessage(any<ReceiveMessageRequest>()))
           .thenReturn(
@@ -289,14 +289,14 @@ class HmppsQueueServiceTest {
                       },
                       "MessageId":"message-id-1"
                     }
-                    """.trimIndent()
+                    """.trimIndent(),
                   )
                   .receiptHandle("message-1-receipt-handle")
                   .messageId("external-message-id-1")
                   .messageAttributes(mutableMapOf("some" to stringAttributeOf("attribute-1")))
-                  .build()
-              ).build()
-            )
+                  .build(),
+              ).build(),
+            ),
           )
           .thenReturn(
             CompletableFuture.completedFuture(
@@ -312,14 +312,14 @@ class HmppsQueueServiceTest {
                       },
                       "MessageId":"message-id-2"
                     }
-                    """.trimIndent()
+                    """.trimIndent(),
                   )
                   .receiptHandle("message-2-receipt-handle")
                   .messageId("external-message-id-2")
                   .messageAttributes(mutableMapOf("some" to stringAttributeOf("attribute-2")))
-                  .build()
-              ).build()
-            )
+                  .build(),
+              ).build(),
+            ),
           )
 
         hmppsQueueService = HmppsQueueService(telemetryClient, hmppsTopicFactory, hmppsQueueFactory, hmppsSqsProperties)
@@ -328,21 +328,21 @@ class HmppsQueueServiceTest {
       @Test
       fun `should receive message from the dlq`() = runBlocking<Unit> {
         hmppsQueueService.retryDlqMessages(
-          RetryDlqRequest(HmppsQueue("some queue id", queueSqs, "some queue name", dlqSqs, "some dlq name"))
+          RetryDlqRequest(HmppsQueue("some queue id", queueSqs, "some queue name", dlqSqs, "some dlq name")),
         )
 
         verify(dlqSqs, times(2)).receiveMessage(
           check<ReceiveMessageRequest> {
             assertThat(it.queueUrl()).isEqualTo("dlqUrl")
             assertThat(it.maxNumberOfMessages()).isEqualTo(1)
-          }
+          },
         )
       }
 
       @Test
       fun `should delete message from the dlq`() = runBlocking<Unit> {
         hmppsQueueService.retryDlqMessages(
-          RetryDlqRequest(HmppsQueue("some queue id", queueSqs, "some queue name", dlqSqs, "some dlq name"))
+          RetryDlqRequest(HmppsQueue("some queue id", queueSqs, "some queue name", dlqSqs, "some dlq name")),
         )
 
         val captor = argumentCaptor<DeleteMessageRequest>()
@@ -355,7 +355,7 @@ class HmppsQueueServiceTest {
       @Test
       fun `should send message to the main queue`() = runBlocking<Unit> {
         hmppsQueueService.retryDlqMessages(
-          RetryDlqRequest(HmppsQueue("some queue id", queueSqs, "some queue name", dlqSqs, "some dlq name"))
+          RetryDlqRequest(HmppsQueue("some queue id", queueSqs, "some queue name", dlqSqs, "some dlq name")),
         )
 
         val captor = argumentCaptor<SendMessageRequest>()
@@ -372,7 +372,7 @@ class HmppsQueueServiceTest {
       @Test
       fun `should return the message`() = runBlocking<Unit> {
         val result = hmppsQueueService.retryDlqMessages(
-          RetryDlqRequest(HmppsQueue("some queue id", queueSqs, "some queue name", dlqSqs, "some dlq name"))
+          RetryDlqRequest(HmppsQueue("some queue id", queueSqs, "some queue name", dlqSqs, "some dlq name")),
         )
 
         assertThat(result.messagesFoundCount).isEqualTo(2)
@@ -389,8 +389,8 @@ class HmppsQueueServiceTest {
       fun `finds only one of two message on the dlq`() {
         whenever(dlqSqs.getQueueAttributes(any<GetQueueAttributesRequest>())).thenReturn(
           CompletableFuture.completedFuture(
-            GetQueueAttributesResponse.builder().attributes(mapOf(QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES to "2")).build()
-          )
+            GetQueueAttributesResponse.builder().attributes(mapOf(QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES to "2")).build(),
+          ),
         )
         whenever(dlqSqs.receiveMessage(any<ReceiveMessageRequest>())).thenReturn(
           CompletableFuture.completedFuture(
@@ -406,14 +406,14 @@ class HmppsQueueServiceTest {
                       },
                       "MessageId":"message-id-1"
                     }
-                  """.trimIndent()
+                  """.trimIndent(),
                 )
                 .receiptHandle("message-1-receipt-handle")
                 .messageId("external-message-id-1")
                 .messageAttributes(mutableMapOf("some" to stringAttributeOf("attribute-1")))
-                .build()
-            ).build()
-          )
+                .build(),
+            ).build(),
+          ),
         )
           .thenReturn(CompletableFuture.completedFuture(ReceiveMessageResponse.builder().build()))
 
@@ -423,21 +423,21 @@ class HmppsQueueServiceTest {
       @Test
       fun `should receive message from the dlq`() = runBlocking<Unit> {
         hmppsQueueService.retryDlqMessages(
-          RetryDlqRequest(HmppsQueue("some queue id", queueSqs, "some queue name", dlqSqs, "some dlq name"))
+          RetryDlqRequest(HmppsQueue("some queue id", queueSqs, "some queue name", dlqSqs, "some dlq name")),
         )
 
         verify(dlqSqs, times(2)).receiveMessage(
           check<ReceiveMessageRequest> {
             assertThat(it.queueUrl()).isEqualTo("dlqUrl")
             assertThat(it.maxNumberOfMessages()).isEqualTo(1)
-          }
+          },
         )
       }
 
       @Test
       fun `should delete message from the dlq`() = runBlocking<Unit> {
         hmppsQueueService.retryDlqMessages(
-          RetryDlqRequest(HmppsQueue("some queue id", queueSqs, "some queue name", dlqSqs, "some dlq name"))
+          RetryDlqRequest(HmppsQueue("some queue id", queueSqs, "some queue name", dlqSqs, "some dlq name")),
         )
 
         val captor = argumentCaptor<DeleteMessageRequest>()
@@ -449,7 +449,7 @@ class HmppsQueueServiceTest {
       @Test
       fun `should send message to the main queue`() = runBlocking<Unit> {
         hmppsQueueService.retryDlqMessages(
-          RetryDlqRequest(HmppsQueue("some queue id", queueSqs, "some queue name", dlqSqs, "some dlq name"))
+          RetryDlqRequest(HmppsQueue("some queue id", queueSqs, "some queue name", dlqSqs, "some dlq name")),
         )
 
         val captor = argumentCaptor<SendMessageRequest>()
@@ -463,7 +463,7 @@ class HmppsQueueServiceTest {
       @Test
       fun `should return the message`() = runBlocking<Unit> {
         val result = hmppsQueueService.retryDlqMessages(
-          RetryDlqRequest(HmppsQueue("some queue id", queueSqs, "some queue name", dlqSqs, "some dlq name"))
+          RetryDlqRequest(HmppsQueue("some queue id", queueSqs, "some queue name", dlqSqs, "some dlq name")),
         )
 
         assertThat(result.messagesFoundCount).isEqualTo(2)
@@ -474,7 +474,7 @@ class HmppsQueueServiceTest {
       @Test
       fun `should create telemetry event`() = runBlocking<Unit> {
         hmppsQueueService.retryDlqMessages(
-          RetryDlqRequest(HmppsQueue("some queue id", queueSqs, "some queue name", dlqSqs, "some dlq name"))
+          RetryDlqRequest(HmppsQueue("some queue id", queueSqs, "some queue name", dlqSqs, "some dlq name")),
         )
 
         verify(telemetryClient).trackEvent(
@@ -484,7 +484,7 @@ class HmppsQueueServiceTest {
             assertThat(it).containsEntry("messages-found", "2")
             assertThat(it).containsEntry("messages-retried", "1")
           },
-          isNull()
+          isNull(),
         )
       }
     }
@@ -498,10 +498,10 @@ class HmppsQueueServiceTest {
     @BeforeEach
     fun `stub getting of queue url`() {
       whenever(queueSqs.getQueueUrl(any<GetQueueUrlRequest>())).thenReturn(
-        CompletableFuture.completedFuture(GetQueueUrlResponse.builder().queueUrl("queueUrl").build())
+        CompletableFuture.completedFuture(GetQueueUrlResponse.builder().queueUrl("queueUrl").build()),
       )
       whenever(dlqSqs.getQueueUrl(any<GetQueueUrlRequest>())).thenReturn(
-        CompletableFuture.completedFuture(GetQueueUrlResponse.builder().queueUrl("dlqUrl").build())
+        CompletableFuture.completedFuture(GetQueueUrlResponse.builder().queueUrl("dlqUrl").build()),
       )
     }
 
@@ -519,11 +519,11 @@ class HmppsQueueServiceTest {
                         "longProperty":12345678
                       },
                       "MessageId":"message-id-1"
-                    }"""
+                    }""",
               )
-                .receiptHandle("message-1-receipt-handle").messageId("external-message-id-1").build()
-            ).build()
-          )
+                .receiptHandle("message-1-receipt-handle").messageId("external-message-id-1").build(),
+            ).build(),
+          ),
         )
 
       hmppsQueueService = HmppsQueueService(telemetryClient, hmppsTopicFactory, hmppsQueueFactory, hmppsSqsProperties)
@@ -533,12 +533,12 @@ class HmppsQueueServiceTest {
     fun `should handle zero messages on the dlq`() = runBlocking {
       whenever(dlqSqs.getQueueAttributes(any<GetQueueAttributesRequest>())).thenReturn(
         CompletableFuture.completedFuture(
-          GetQueueAttributesResponse.builder().attributes(mapOf(QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES to "0")).build()
-        )
+          GetQueueAttributesResponse.builder().attributes(mapOf(QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES to "0")).build(),
+        ),
       )
 
       val dlqResult = hmppsQueueService.getDlqMessages(
-        GetDlqRequest(HmppsQueue("some queue id", queueSqs, "some queue name", dlqSqs, "some dlq name"), 10)
+        GetDlqRequest(HmppsQueue("some queue id", queueSqs, "some queue name", dlqSqs, "some dlq name"), 10),
       )
       assertThat(dlqResult.messagesFoundCount).isEqualTo(0)
       assertThat(dlqResult.messagesReturnedCount).isEqualTo(0)
@@ -549,12 +549,12 @@ class HmppsQueueServiceTest {
     fun `should get messages from the dlq`() = runBlocking<Unit> {
       whenever(dlqSqs.getQueueAttributes(any<GetQueueAttributesRequest>())).thenReturn(
         CompletableFuture.completedFuture(
-          GetQueueAttributesResponse.builder().attributes(mapOf(QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES to "1")).build()
-        )
+          GetQueueAttributesResponse.builder().attributes(mapOf(QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES to "1")).build(),
+        ),
       )
 
       val dlqResult = hmppsQueueService.getDlqMessages(
-        GetDlqRequest(HmppsQueue("some queue id", queueSqs, "some queue name", dlqSqs, "some dlq name"), 10)
+        GetDlqRequest(HmppsQueue("some queue id", queueSqs, "some queue name", dlqSqs, "some dlq name"), 10),
       )
 
       assertThat(dlqResult.messagesFoundCount).isEqualTo(1)
@@ -564,7 +564,7 @@ class HmppsQueueServiceTest {
       verify(dlqSqs).receiveMessage(
         check<ReceiveMessageRequest> {
           assertThat(it.queueUrl()).isEqualTo("dlqUrl")
-        }
+        },
       )
     }
 
@@ -572,12 +572,12 @@ class HmppsQueueServiceTest {
     fun `should get multiple messages from the dlq`() = runBlocking<Unit> {
       whenever(dlqSqs.getQueueAttributes(any<GetQueueAttributesRequest>())).thenReturn(
         CompletableFuture.completedFuture(
-          GetQueueAttributesResponse.builder().attributes(mapOf(QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES to "3")).build()
-        )
+          GetQueueAttributesResponse.builder().attributes(mapOf(QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES to "3")).build(),
+        ),
       )
 
       val dlqResult = hmppsQueueService.getDlqMessages(
-        GetDlqRequest(HmppsQueue("some queue id", queueSqs, "some queue name", dlqSqs, "some dlq name"), 10)
+        GetDlqRequest(HmppsQueue("some queue id", queueSqs, "some queue name", dlqSqs, "some dlq name"), 10),
       )
 
       assertThat(dlqResult.messagesFoundCount).isEqualTo(3)
@@ -587,7 +587,7 @@ class HmppsQueueServiceTest {
       verify(dlqSqs, times(3)).receiveMessage(
         check<ReceiveMessageRequest> {
           assertThat(it.queueUrl()).isEqualTo("dlqUrl")
-        }
+        },
       )
     }
   }
@@ -609,7 +609,7 @@ class HmppsQueueServiceTest {
           listOf(
             HmppsQueue("some queue id", sqsClient, "some queue name", sqsDlqClient, "some dlq name"),
             HmppsQueue("another queue id", mock(), "another queue name", mock(), "another dlq name"),
-          )
+          ),
         )
 
       hmppsQueueService = HmppsQueueService(telemetryClient, hmppsTopicFactory, hmppsQueueFactory, hmppsSqsProperties)
@@ -689,7 +689,7 @@ class HmppsQueueServiceTest {
           assertThat(it).containsEntry("queue-name", "some queue")
           assertThat(it).containsEntry("messages-found", "1")
         },
-        isNull()
+        isNull(),
       )
     }
 
@@ -707,7 +707,7 @@ class HmppsQueueServiceTest {
         .thenReturn(CompletableFuture.completedFuture(GetQueueUrlResponse.builder().queueUrl("some queue url").build()))
       whenever(sqsAsyncClient.getQueueAttributes(any<GetQueueAttributesRequest>()))
         .thenReturn(
-          CompletableFuture.completedFuture(GetQueueAttributesResponse.builder().attributes(mapOf(QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES to "$messageCount")).build())
+          CompletableFuture.completedFuture(GetQueueAttributesResponse.builder().attributes(mapOf(QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES to "$messageCount")).build()),
         )
     }
   }

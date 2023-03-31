@@ -89,7 +89,7 @@ class HmppsQueueHealthTest {
   @Test
   fun `should show status DOWN if unable to retrieve queue attributes`() {
     whenever(sqsClient.getQueueUrl(any<GetQueueUrlRequest>())).thenReturn(
-      CompletableFuture.completedFuture(someGetQueueUrlResponse())
+      CompletableFuture.completedFuture(someGetQueueUrlResponse()),
     )
     whenever(sqsClient.getQueueAttributes(someGetQueueAttributesRequest())).thenThrow(RuntimeException::class.java)
 
@@ -125,7 +125,7 @@ class HmppsQueueHealthTest {
     verify(sqsClient).getQueueAttributes(
       check<GetQueueAttributesRequest> {
         assertThat(it.queueUrl()).isEqualTo(queueUrl)
-      }
+      },
     )
   }
 
@@ -138,7 +138,7 @@ class HmppsQueueHealthTest {
     verify(sqsDlqClient).getQueueAttributes(
       check<GetQueueAttributesRequest> {
         assertThat(it.queueUrl()).isEqualTo(dlqUrl)
-      }
+      },
     )
   }
 
@@ -154,10 +154,10 @@ class HmppsQueueHealthTest {
   @Test
   fun `should show status DOWN if DLQ status is down`() {
     whenever(sqsClient.getQueueUrl(any<GetQueueUrlRequest>())).thenReturn(
-      CompletableFuture.completedFuture(someGetQueueUrlResponse())
+      CompletableFuture.completedFuture(someGetQueueUrlResponse()),
     )
     whenever(sqsClient.getQueueAttributes(any<GetQueueAttributesRequest>())).thenReturn(
-      CompletableFuture.completedFuture(someGetQueueAttributesResponseWithoutDLQ())
+      CompletableFuture.completedFuture(someGetQueueAttributesResponseWithoutDLQ()),
     )
 
     val health = queueHealth.health()
@@ -169,10 +169,10 @@ class HmppsQueueHealthTest {
   @Test
   fun `should show DLQ name if DLQ status is down`() {
     whenever(sqsClient.getQueueUrl(any<GetQueueUrlRequest>())).thenReturn(
-      CompletableFuture.completedFuture(someGetQueueUrlResponse())
+      CompletableFuture.completedFuture(someGetQueueUrlResponse()),
     )
     whenever(sqsClient.getQueueAttributes(any<GetQueueAttributesRequest>())).thenReturn(
-      CompletableFuture.completedFuture(someGetQueueAttributesResponseWithoutDLQ())
+      CompletableFuture.completedFuture(someGetQueueAttributesResponseWithoutDLQ()),
     )
 
     val health = queueHealth.health()
@@ -183,10 +183,10 @@ class HmppsQueueHealthTest {
   @Test
   fun `should show DLQ status DOWN if no RedrivePolicy attribute on main queue`() {
     whenever(sqsClient.getQueueUrl(any<GetQueueUrlRequest>())).thenReturn(
-      CompletableFuture.completedFuture(someGetQueueUrlResponse())
+      CompletableFuture.completedFuture(someGetQueueUrlResponse()),
     )
     whenever(sqsClient.getQueueAttributes(any<GetQueueAttributesRequest>())).thenReturn(
-      CompletableFuture.completedFuture(someGetQueueAttributesResponseWithoutDLQ())
+      CompletableFuture.completedFuture(someGetQueueAttributesResponseWithoutDLQ()),
     )
 
     val health = queueHealth.health()
@@ -197,10 +197,10 @@ class HmppsQueueHealthTest {
   @Test
   fun `should show DLQ status DOWN if DLQ not found`() {
     whenever(sqsClient.getQueueUrl(any<GetQueueUrlRequest>())).thenReturn(
-      CompletableFuture.completedFuture(someGetQueueUrlResponse())
+      CompletableFuture.completedFuture(someGetQueueUrlResponse()),
     )
     whenever(sqsClient.getQueueAttributes(any<GetQueueAttributesRequest>())).thenReturn(
-      CompletableFuture.completedFuture(someGetQueueAttributesResponseWithDLQ())
+      CompletableFuture.completedFuture(someGetQueueAttributesResponseWithDLQ()),
     )
     whenever(sqsDlqClient.getQueueUrl(GetQueueUrlRequest.builder().queueName(dlqName).build())).thenThrow(QueueDoesNotExistException::class.java)
 
@@ -212,10 +212,10 @@ class HmppsQueueHealthTest {
   @Test
   fun `should show exception causing DLQ status DOWN`() {
     whenever(sqsClient.getQueueUrl(any<GetQueueUrlRequest>())).thenReturn(
-      CompletableFuture.completedFuture(someGetQueueUrlResponse())
+      CompletableFuture.completedFuture(someGetQueueUrlResponse()),
     )
     whenever(sqsClient.getQueueAttributes(any<GetQueueAttributesRequest>())).thenReturn(
-      CompletableFuture.completedFuture(someGetQueueAttributesResponseWithDLQ())
+      CompletableFuture.completedFuture(someGetQueueAttributesResponseWithDLQ()),
     )
     whenever(sqsDlqClient.getQueueUrl(GetQueueUrlRequest.builder().queueName(dlqName).build())).thenThrow(QueueDoesNotExistException::class.java)
 
@@ -258,20 +258,20 @@ class HmppsQueueHealthTest {
   private fun someGetQueueAttributesResponseWithoutDLQ() = GetQueueAttributesResponse.builder().attributes(
     mapOf(
       QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES to "$messagesOnQueueCount",
-      QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES_NOT_VISIBLE to "$messagesInFlightCount"
-    )
+      QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES_NOT_VISIBLE to "$messagesInFlightCount",
+    ),
   ).build()
 
   private fun someGetQueueAttributesResponseWithDLQ() = GetQueueAttributesResponse.builder().attributes(
     mapOf(
       QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES to "$messagesOnQueueCount",
       QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES_NOT_VISIBLE to "$messagesInFlightCount",
-      QueueAttributeName.REDRIVE_POLICY to "any redrive policy"
-    )
+      QueueAttributeName.REDRIVE_POLICY to "any redrive policy",
+    ),
   ).build()
 
   private fun someGetQueueUrlResponseForDLQ(): GetQueueUrlResponse = GetQueueUrlResponse.builder().queueUrl(dlqUrl).build()
   private fun someGetQueueAttributesResponseForDLQ() = GetQueueAttributesResponse.builder().attributes(
-    mapOf(QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES to messagesOnDLQCount.toString())
+    mapOf(QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES to messagesOnDLQCount.toString()),
   ).build()
 }

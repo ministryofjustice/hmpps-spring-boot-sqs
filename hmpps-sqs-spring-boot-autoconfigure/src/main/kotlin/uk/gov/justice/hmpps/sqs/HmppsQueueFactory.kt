@@ -44,7 +44,9 @@ class HmppsQueueFactory(
         createSqsAsyncDlqClient(queueConfig, hmppsSqsProperties)
           .also { log.info("Created ${hmppsSqsProperties.provider} SqsAsyncClient for DLQ queueId $queueId with name ${queueConfig.dlqName}") }
       }
-    } else null
+    } else {
+      null
+    }
 
   private fun getOrDefaultSqsClient(queueId: String, queueConfig: QueueConfig, hmppsSqsProperties: HmppsSqsProperties, sqsDlqClient: SqsAsyncClient?): SqsAsyncClient =
     getOrDefaultBean("$queueId-sqs-client") {
@@ -73,15 +75,17 @@ class HmppsQueueFactory(
     SqsMessageListenerContainerFactory
       .builder<Any>()
       .sqsAsyncClient(awsSqsClient)
-      .errorHandler(object : ErrorHandler<Any> {
-        override fun handle(message: org.springframework.messaging.Message<Any>, t: Throwable) {
-          // SDI-477 remove this logging when we are comfortable that all is working as expected - instant retries
-          log.info("Setting visibility of messageId ${message.headers["id"]} to $errorVisibilityTimeout (to initiate faster retry) after receiving exception ${t.cause?.cause?.cause}")
-          val sqsVisibility = message.headers["Sqs_Visibility"] as QueueMessageVisibility
-          sqsVisibility.changeTo(errorVisibilityTimeout)
-          throw t
-        }
-      })
+      .errorHandler(
+        object : ErrorHandler<Any> {
+          override fun handle(message: org.springframework.messaging.Message<Any>, t: Throwable) {
+            // SDI-477 remove this logging when we are comfortable that all is working as expected - instant retries
+            log.info("Setting visibility of messageId ${message.headers["id"]} to $errorVisibilityTimeout (to initiate faster retry) after receiving exception ${t.cause?.cause?.cause}")
+            val sqsVisibility = message.headers["Sqs_VisibilityTimeout"] as QueueMessageVisibility
+            sqsVisibility.changeTo(errorVisibilityTimeout)
+            throw t
+          }
+        },
+      )
       .build()
 
   fun createSqsAsyncDlqClient(queueConfig: QueueConfig, hmppsSqsProperties: HmppsSqsProperties): SqsAsyncClient {
@@ -137,8 +141,8 @@ class HmppsQueueFactory(
           mapOf(
             QueueAttributeName.REDRIVE_POLICY to """{"deadLetterTargetArn":"$dlqArn","maxReceiveCount":"$maxReceiveCount"}""",
             QueueAttributeName.VISIBILITY_TIMEOUT to "$visibilityTimeout",
-          )
-        ).build()
+          ),
+        ).build(),
       ).await()
     }
   }
@@ -148,7 +152,7 @@ class HmppsQueueFactory(
       val queueArn = sqsClient.getQueueAttributes(
         GetQueueAttributesRequest.builder()
           .queueUrl("${hmppsSqsProperties.localstackUrl}/queue/${queueConfig.queueName}")
-          .attributeNames(QueueAttributeName.QUEUE_ARN).build()
+          .attributeNames(QueueAttributeName.QUEUE_ARN).build(),
       ).await().attributes()[QueueAttributeName.QUEUE_ARN]
       val topic = hmppsTopics.firstOrNull { topic -> topic.id == queueConfig.subscribeTopicId }
       if (topic != null && queueArn != null) {

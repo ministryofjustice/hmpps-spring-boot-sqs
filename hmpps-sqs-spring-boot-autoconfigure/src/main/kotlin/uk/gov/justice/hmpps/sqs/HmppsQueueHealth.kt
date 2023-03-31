@@ -50,8 +50,8 @@ class HmppsQueueHealth(private val hmppsQueue: HmppsQueue) : HealthIndicator {
           results += success(
             HealthDetail(
               "messagesOnDlq" to
-                """${attributesResult.attributes()[QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES]}"""
-            )
+                """${attributesResult.attributes()[QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES]}""",
+            ),
           )
         }.onFailure { throwable -> results += failure(throwable) }
       }

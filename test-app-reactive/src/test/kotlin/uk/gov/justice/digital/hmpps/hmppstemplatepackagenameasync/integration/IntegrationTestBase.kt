@@ -117,8 +117,8 @@ abstract class IntegrationTestBase {
       jwtAuthHelper.createJwt(
         subject = "SOME_USER",
         roles = roles,
-        clientId = "some-client"
-      )
+        clientId = "some-client",
+      ),
     )
   }
 

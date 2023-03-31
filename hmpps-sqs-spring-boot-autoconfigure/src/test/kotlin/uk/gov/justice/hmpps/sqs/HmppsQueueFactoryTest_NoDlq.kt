@@ -59,14 +59,14 @@ class HmppsQueueFactoryTest_NoDlq {
       whenever(sqsFactory.awsSqsAsyncClient(anyString(), anyString(), anyString()))
         .thenReturn(sqsClient)
       whenever(sqsClient.getQueueUrl(any<GetQueueUrlRequest>())).thenReturn(
-        CompletableFuture.completedFuture(GetQueueUrlResponse.builder().queueUrl("some queue url").build())
+        CompletableFuture.completedFuture(GetQueueUrlResponse.builder().queueUrl("some queue url").build()),
       )
       whenever(sqsClient.getQueueAttributes(any<GetQueueAttributesRequest>()))
         .thenReturn(
           CompletableFuture.completedFuture(
             GetQueueAttributesResponse.builder()
-              .attributes(mutableMapOf(QueueAttributeName.QUEUE_ARN to "queue:arn")).build()
-          )
+              .attributes(mutableMapOf(QueueAttributeName.QUEUE_ARN to "queue:arn")).build(),
+          ),
         )
 
       hmppsQueues = hmppsQueueFactory.createHmppsQueues(hmppsSqsProperties)
@@ -140,19 +140,19 @@ class HmppsQueueFactoryTest_NoDlq {
     @BeforeEach
     fun `configure mocks and register queues`() = runBlocking {
       whenever(sqsClient.createQueue(any<CreateQueueRequest>())).thenReturn(
-        CompletableFuture.completedFuture(CreateQueueResponse.builder().build())
+        CompletableFuture.completedFuture(CreateQueueResponse.builder().build()),
       )
       whenever(sqsFactory.localstackSqsAsyncClient(anyString(), anyString()))
         .thenReturn(sqsClient)
       whenever(sqsClient.getQueueUrl(any<GetQueueUrlRequest>())).thenReturn(
-        CompletableFuture.completedFuture(GetQueueUrlResponse.builder().queueUrl("some queue url").build())
+        CompletableFuture.completedFuture(GetQueueUrlResponse.builder().queueUrl("some queue url").build()),
       )
       whenever(sqsClient.getQueueAttributes(any<GetQueueAttributesRequest>()))
         .thenReturn(
           CompletableFuture.completedFuture(
             GetQueueAttributesResponse.builder()
-              .attributes(mutableMapOf(QueueAttributeName.QUEUE_ARN to "queue:arn")).build()
-          )
+              .attributes(mutableMapOf(QueueAttributeName.QUEUE_ARN to "queue:arn")).build(),
+          ),
         )
 
       hmppsQueues = hmppsQueueFactory.createHmppsQueues(hmppsSqsProperties)
@@ -215,7 +215,7 @@ class HmppsQueueFactoryTest_NoDlq {
       verify(sqsClient).createQueue(
         check<CreateQueueRequest> {
           assertThat(it.attributes()).doesNotContainEntry(QueueAttributeName.REDRIVE_POLICY, """{"deadLetterTargetArn":"some dlq arn","maxReceiveCount":"5"}""")
-        }
+        },
       )
     }
   }
@@ -240,8 +240,8 @@ class HmppsQueueFactoryTest_NoDlq {
         .thenReturn(
           CompletableFuture.completedFuture(
             GetQueueAttributesResponse.builder()
-              .attributes(mutableMapOf(QueueAttributeName.QUEUE_ARN to "queue:arn")).build()
-          )
+              .attributes(mutableMapOf(QueueAttributeName.QUEUE_ARN to "queue:arn")).build(),
+          ),
         )
 
       hmppsQueues = hmppsQueueFactory.createHmppsQueues(hmppsSqsProperties)
@@ -280,19 +280,19 @@ class HmppsQueueFactoryTest_NoDlq {
     @BeforeEach
     fun `configure mocks and register queues`() {
       whenever(sqsClient.createQueue(any<CreateQueueRequest>())).thenReturn(
-        CompletableFuture.completedFuture(CreateQueueResponse.builder().build())
+        CompletableFuture.completedFuture(CreateQueueResponse.builder().build()),
       )
       whenever(sqsFactory.localstackSqsAsyncClient(anyString(), anyString()))
         .thenReturn(sqsClient)
       whenever(sqsClient.getQueueUrl(any<GetQueueUrlRequest>())).thenReturn(
-        CompletableFuture.completedFuture(GetQueueUrlResponse.builder().queueUrl("some queue url").build())
+        CompletableFuture.completedFuture(GetQueueUrlResponse.builder().queueUrl("some queue url").build()),
       )
       whenever(sqsClient.getQueueAttributes(any<GetQueueAttributesRequest>()))
         .thenReturn(
           CompletableFuture.completedFuture(
             GetQueueAttributesResponse.builder()
-              .attributes(mutableMapOf(QueueAttributeName.QUEUE_ARN to "queue:arn")).build()
-          )
+              .attributes(mutableMapOf(QueueAttributeName.QUEUE_ARN to "queue:arn")).build(),
+          ),
         )
 
       hmppsQueues = hmppsQueueFactory.createHmppsQueues(hmppsSqsProperties, topics)
@@ -311,7 +311,7 @@ class HmppsQueueFactoryTest_NoDlq {
           assertThat(subscribeRequest.protocol()).isEqualTo("sqs")
           assertThat(subscribeRequest.endpoint()).isEqualTo("queue:arn")
           assertThat(subscribeRequest.attributes()["FilterPolicy"]).isEqualTo("some topic filter")
-        }
+        },
       )
     }
   }
@@ -331,14 +331,14 @@ class HmppsQueueFactoryTest_NoDlq {
       whenever(sqsFactory.awsSqsAsyncClient(anyString(), anyString(), anyString()))
         .thenReturn(sqsClient)
       whenever(sqsClient.getQueueUrl(any<GetQueueUrlRequest>())).thenReturn(
-        CompletableFuture.completedFuture(GetQueueUrlResponse.builder().queueUrl("some queue url").build())
+        CompletableFuture.completedFuture(GetQueueUrlResponse.builder().queueUrl("some queue url").build()),
       )
       whenever(sqsClient.getQueueAttributes(any<GetQueueAttributesRequest>()))
         .thenReturn(
           CompletableFuture.completedFuture(
             GetQueueAttributesResponse.builder()
-              .attributes(mutableMapOf(QueueAttributeName.QUEUE_ARN to "queue:arn")).build()
-          )
+              .attributes(mutableMapOf(QueueAttributeName.QUEUE_ARN to "queue:arn")).build(),
+          ),
         )
 
       hmppsQueues = hmppsQueueFactory.createHmppsQueues(hmppsSqsProperties, topics)

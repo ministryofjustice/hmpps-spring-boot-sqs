@@ -27,7 +27,7 @@ interface HmppsHealthContributorRegistry {
 }
 
 class HmppsBlockingHealthContributorRegistry(
-  private val healthContributorRegistry: HealthContributorRegistry
+  private val healthContributorRegistry: HealthContributorRegistry,
 ) : HmppsHealthContributorRegistry {
   override fun registerContributor(name: String, contribute: () -> HealthContributor) {
     if (healthContributorRegistry.getContributor(name) == null) {
@@ -37,7 +37,7 @@ class HmppsBlockingHealthContributorRegistry(
 }
 
 class HmppsReactiveHealthContributorRepository(
-  private val reactiveHealthContributorRegistry: ReactiveHealthContributorRegistry
+  private val reactiveHealthContributorRegistry: ReactiveHealthContributorRegistry,
 ) : HmppsHealthContributorRegistry {
   override fun registerContributor(name: String, contribute: () -> HealthContributor) {
     if (reactiveHealthContributorRegistry.getContributor(name) == null) {
