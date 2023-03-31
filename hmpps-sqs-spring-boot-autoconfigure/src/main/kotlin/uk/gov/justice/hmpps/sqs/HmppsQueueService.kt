@@ -27,7 +27,7 @@ open class HmppsQueueService(
   private val telemetryClient: TelemetryClient?,
   hmppsTopicFactory: HmppsTopicFactory,
   hmppsQueueFactory: HmppsQueueFactory,
-  hmppsSqsProperties: HmppsSqsProperties
+  hmppsSqsProperties: HmppsSqsProperties,
 ) {
 
   private companion object {
@@ -156,7 +156,7 @@ fun SqsAsyncClient.countAllMessagesOnQueue(queueUrl: String): CompletableFuture<
     GetQueueAttributesRequest.builder()
       .queueUrl(queueUrl)
       .attributeNames(APPROXIMATE_NUMBER_OF_MESSAGES, APPROXIMATE_NUMBER_OF_MESSAGES_NOT_VISIBLE)
-      .build()
+      .build(),
   )
     .thenApply {
       (it.attributes()[APPROXIMATE_NUMBER_OF_MESSAGES]?.toInt() ?: 0) +

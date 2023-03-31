@@ -19,7 +19,7 @@ import uk.gov.justice.hmpps.sqs.HmppsSqsProperties.QueueConfig
 class HmppsQueueFactory(
   private val context: ConfigurableApplicationContext,
   private val healthContributorRegistry: HmppsHealthContributorRegistry,
-  private val sqsClientFactory: SqsClientFactory
+  private val sqsClientFactory: SqsClientFactory,
 ) {
   companion object {
     val log: Logger = LoggerFactory.getLogger(this::class.java)
@@ -83,7 +83,7 @@ class HmppsQueueFactory(
           sqsVisibility.changeTo(errorVisibilityTimeout)
           throw t
         }
-      })
+      },)
       .build()
 
   fun createSqsAsyncDlqClient(queueConfig: QueueConfig, hmppsSqsProperties: HmppsSqsProperties): SqsAsyncClient {
@@ -113,7 +113,7 @@ class HmppsQueueFactory(
                 queueName = queueConfig.queueName,
                 dlqName = queueConfig.dlqName,
                 maxReceiveCount = queueConfig.dlqMaxReceiveCount,
-                visibilityTimeout = queueConfig.visibilityTimeout
+                visibilityTimeout = queueConfig.visibilityTimeout,
               )
             }
           }
@@ -127,7 +127,7 @@ class HmppsQueueFactory(
     queueName: String,
     dlqName: String,
     maxReceiveCount: Int,
-    visibilityTimeout: Int
+    visibilityTimeout: Int,
   ) = runBlocking {
     if (dlqName.isEmpty() || sqsDlqClient == null) {
       sqsClient.createQueue(CreateQueueRequest.builder().queueName(queueName).build()).await()
@@ -138,9 +138,9 @@ class HmppsQueueFactory(
         CreateQueueRequest.builder().queueName(queueName).attributes(
           mapOf(
             QueueAttributeName.REDRIVE_POLICY to """{"deadLetterTargetArn":"$dlqArn","maxReceiveCount":"$maxReceiveCount"}""",
-            QueueAttributeName.VISIBILITY_TIMEOUT to "$visibilityTimeout"
-          )
-        ).build()
+            QueueAttributeName.VISIBILITY_TIMEOUT to "$visibilityTimeout",
+          ),
+        ).build(),
       ).await()
     }
   }
@@ -150,7 +150,7 @@ class HmppsQueueFactory(
       val queueArn = sqsClient.getQueueAttributes(
         GetQueueAttributesRequest.builder()
           .queueUrl("${hmppsSqsProperties.localstackUrl}/queue/${queueConfig.queueName}")
-          .attributeNames(QueueAttributeName.QUEUE_ARN).build()
+          .attributeNames(QueueAttributeName.QUEUE_ARN).build(),
       ).await().attributes()[QueueAttributeName.QUEUE_ARN]
       val topic = hmppsTopics.firstOrNull { topic -> topic.id == queueConfig.subscribeTopicId }
       if (topic != null && queueArn != null) {

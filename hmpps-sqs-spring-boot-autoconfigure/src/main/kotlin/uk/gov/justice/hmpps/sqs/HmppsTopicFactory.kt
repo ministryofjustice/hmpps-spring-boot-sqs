@@ -11,7 +11,7 @@ import software.amazon.awssdk.services.sns.model.CreateTopicRequest
 class HmppsTopicFactory(
   private val context: ConfigurableApplicationContext,
   private val healthContributorRegistry: HmppsHealthContributorRegistry,
-  private val snsClientFactory: SnsClientFactory
+  private val snsClientFactory: SnsClientFactory,
 ) {
   companion object {
     val log: Logger = LoggerFactory.getLogger(this::class.java)

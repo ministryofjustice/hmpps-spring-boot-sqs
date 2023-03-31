@@ -29,7 +29,7 @@ class HmppsSqsPropertiesTest {
       assertThatThrownBy {
         HmppsSqsProperties(
           queues = mapOf("queueid" to validAwsQueueConfig()),
-          topics = mapOf("notLowerCaseTopicId" to validAwsTopicConfig())
+          topics = mapOf("notLowerCaseTopicId" to validAwsTopicConfig()),
         )
       }.isInstanceOf(InvalidHmppsSqsPropertiesException::class.java)
         .hasMessageContaining("notLowerCaseTopicId")
@@ -41,7 +41,7 @@ class HmppsSqsPropertiesTest {
       val properties = HmppsSqsProperties(
         provider = "localstack",
         queues = mapOf("queueid" to validLocalstackQueueConfig()),
-        topics = mapOf("topicid" to validLocalstackTopicConfig().copy(arn = "${localstackArnPrefix}topic-name"))
+        topics = mapOf("topicid" to validLocalstackTopicConfig().copy(arn = "${localstackArnPrefix}topic-name")),
       )
 
       assertThat(properties.topics["topicid"]?.name).isEqualTo("topic-name")
@@ -105,7 +105,7 @@ class HmppsSqsPropertiesTest {
       assertThatThrownBy {
         HmppsSqsProperties(
           queues = mapOf("queueid" to validAwsQueueConfig()),
-          topics = mapOf("topicid" to validAwsTopicConfig().copy(arn = ""))
+          topics = mapOf("topicid" to validAwsTopicConfig().copy(arn = "")),
         )
       }.isInstanceOf(InvalidHmppsSqsPropertiesException::class.java)
         .hasMessageContaining("topicid")
@@ -117,7 +117,7 @@ class HmppsSqsPropertiesTest {
       assertThatThrownBy {
         HmppsSqsProperties(
           queues = mapOf("queueid" to validAwsQueueConfig()),
-          topics = mapOf("topicid" to validAwsTopicConfig().copy(accessKeyId = ""))
+          topics = mapOf("topicid" to validAwsTopicConfig().copy(accessKeyId = "")),
         )
       }.isInstanceOf(InvalidHmppsSqsPropertiesException::class.java)
         .hasMessageContaining("topicid")
@@ -129,7 +129,7 @@ class HmppsSqsPropertiesTest {
       assertThatThrownBy {
         HmppsSqsProperties(
           queues = mapOf("queueid" to validAwsQueueConfig()),
-          topics = mapOf("topicid" to validAwsTopicConfig().copy(secretAccessKey = ""))
+          topics = mapOf("topicid" to validAwsTopicConfig().copy(secretAccessKey = "")),
         )
       }.isInstanceOf(InvalidHmppsSqsPropertiesException::class.java)
         .hasMessageContaining("topicid")
@@ -146,7 +146,7 @@ class HmppsSqsPropertiesTest {
         HmppsSqsProperties(
           provider = "localstack",
           queues = mapOf("queueid" to validLocalstackQueueConfig()),
-          topics = mapOf("topicid" to validLocalstackTopicConfig().copy(arn = localstackArnPrefix))
+          topics = mapOf("topicid" to validLocalstackTopicConfig().copy(arn = localstackArnPrefix)),
         )
       }.isInstanceOf(InvalidHmppsSqsPropertiesException::class.java)
         .hasMessageContaining("topicid")
@@ -174,9 +174,9 @@ class HmppsSqsPropertiesTest {
           queues = mapOf(
             "queueid1" to validAwsQueueConfig(1).copy(queueName = "1stQueueName"),
             "queueid2" to validAwsQueueConfig(2).copy(queueName = "2ndQueueName"),
-            "queueid3" to validAwsQueueConfig(3).copy(queueName = "1stQueueName")
+            "queueid3" to validAwsQueueConfig(3).copy(queueName = "1stQueueName"),
           ),
-          topics = mapOf()
+          topics = mapOf(),
         )
       }.isInstanceOf(InvalidHmppsSqsPropertiesException::class.java)
         .hasMessageContaining("Found duplicated queue name")
@@ -193,9 +193,9 @@ class HmppsSqsPropertiesTest {
             "queueid2" to validAwsQueueConfig(2).copy(queueAccessKeyId = "2ndAccessKey"),
             "queueid3" to validAwsQueueConfig(3).copy(queueAccessKeyId = "1stAccessKey"),
             "queueid4" to validAwsQueueConfig(4).copy(queueAccessKeyId = "2ndAccessKey"),
-            "queueid5" to validAwsQueueConfig(5).copy(queueAccessKeyId = "3rdAccessKey")
+            "queueid5" to validAwsQueueConfig(5).copy(queueAccessKeyId = "3rdAccessKey"),
           ),
-          topics = mapOf()
+          topics = mapOf(),
         )
       }.isInstanceOf(InvalidHmppsSqsPropertiesException::class.java)
         .hasMessageContaining("Found duplicated queue access key id")
@@ -211,9 +211,9 @@ class HmppsSqsPropertiesTest {
           queues = mapOf(
             "queueid1" to validAwsQueueConfig(1).copy(queueSecretAccessKey = "1stSecretKey"),
             "queueid2" to validAwsQueueConfig(2).copy(queueSecretAccessKey = "1stSecretKey"),
-            "queueid3" to validAwsQueueConfig(3).copy(queueSecretAccessKey = "2ndSecretKey")
+            "queueid3" to validAwsQueueConfig(3).copy(queueSecretAccessKey = "2ndSecretKey"),
           ),
-          topics = mapOf()
+          topics = mapOf(),
         )
       }.isInstanceOf(InvalidHmppsSqsPropertiesException::class.java)
         .hasMessageContaining("Found duplicated queue secret access keys")
@@ -228,9 +228,9 @@ class HmppsSqsPropertiesTest {
           queues = mapOf(
             "queueid1" to validAwsQueueConfig(1).copy(dlqName = "1stDlqName"),
             "queueid2" to validAwsQueueConfig(2).copy(dlqName = "2ndDlqName"),
-            "queueid3" to validAwsQueueConfig(3).copy(dlqName = "2ndDlqName")
+            "queueid3" to validAwsQueueConfig(3).copy(dlqName = "2ndDlqName"),
           ),
-          topics = mapOf()
+          topics = mapOf(),
         )
       }.isInstanceOf(InvalidHmppsSqsPropertiesException::class.java)
         .hasMessageContaining("Found duplicated dlq name")
@@ -245,9 +245,9 @@ class HmppsSqsPropertiesTest {
           queues = mapOf(
             "queueid1" to validAwsQueueConfig(1).copy(dlqAccessKeyId = "1stAccessKey"),
             "queueid2" to validAwsQueueConfig(2).copy(dlqAccessKeyId = "2ndAccessKey"),
-            "queueid3" to validAwsQueueConfig(3).copy(dlqAccessKeyId = "1stAccessKey")
+            "queueid3" to validAwsQueueConfig(3).copy(dlqAccessKeyId = "1stAccessKey"),
           ),
-          topics = mapOf()
+          topics = mapOf(),
         )
       }.isInstanceOf(InvalidHmppsSqsPropertiesException::class.java)
         .hasMessageContaining("Found duplicated dlq access key id")
@@ -262,9 +262,9 @@ class HmppsSqsPropertiesTest {
           queues = mapOf(
             "queueid1" to validAwsQueueConfig(1).copy(dlqSecretAccessKey = "1stSecretKey"),
             "queueid2" to validAwsQueueConfig(2).copy(dlqSecretAccessKey = "1stSecretKey"),
-            "queueid3" to validAwsQueueConfig(3).copy(dlqSecretAccessKey = "2ndSecretKey")
+            "queueid3" to validAwsQueueConfig(3).copy(dlqSecretAccessKey = "2ndSecretKey"),
           ),
-          topics = mapOf()
+          topics = mapOf(),
         )
       }.isInstanceOf(InvalidHmppsSqsPropertiesException::class.java)
         .hasMessageContaining("Found duplicated dlq secret access keys")
@@ -280,8 +280,8 @@ class HmppsSqsPropertiesTest {
           topics = mapOf(
             "topic1" to validAwsTopicConfig(1).copy(arn = "1stArn"),
             "topic2" to validAwsTopicConfig(2).copy(arn = "2ndArn"),
-            "topic3" to validAwsTopicConfig(3).copy(arn = "1stArn")
-          )
+            "topic3" to validAwsTopicConfig(3).copy(arn = "1stArn"),
+          ),
         )
       }.isInstanceOf(InvalidHmppsSqsPropertiesException::class.java)
         .hasMessageContaining("Found duplicated topic arns")
@@ -297,8 +297,8 @@ class HmppsSqsPropertiesTest {
           topics = mapOf(
             "topic1" to validAwsTopicConfig(1).copy(accessKeyId = "1stAccessKey"),
             "topic2" to validAwsTopicConfig(2).copy(accessKeyId = "2ndAccessKey"),
-            "topic3" to validAwsTopicConfig(3).copy(accessKeyId = "1stAccessKey")
-          )
+            "topic3" to validAwsTopicConfig(3).copy(accessKeyId = "1stAccessKey"),
+          ),
         )
       }.isInstanceOf(InvalidHmppsSqsPropertiesException::class.java)
         .hasMessageContaining("Found duplicated topic access key ids")
@@ -314,8 +314,8 @@ class HmppsSqsPropertiesTest {
           topics = mapOf(
             "topic1" to validAwsTopicConfig(1).copy(secretAccessKey = "1stSecretKey"),
             "topic2" to validAwsTopicConfig(2).copy(secretAccessKey = "2ndSecretKey"),
-            "topic3" to validAwsTopicConfig(3).copy(secretAccessKey = "1stSecretKey")
-          )
+            "topic3" to validAwsTopicConfig(3).copy(secretAccessKey = "1stSecretKey"),
+          ),
         )
       }.isInstanceOf(InvalidHmppsSqsPropertiesException::class.java)
         .hasMessageContaining("Found duplicated topic secret access keys")
@@ -335,9 +335,9 @@ class HmppsSqsPropertiesTest {
           queues = mapOf(
             "queueid1" to validLocalstackQueueConfig(1).copy(queueName = "1stQueueName"),
             "queueid2" to validLocalstackQueueConfig(2).copy(queueName = "2ndQueueName"),
-            "queueid3" to validLocalstackQueueConfig(3).copy(queueName = "1stQueueName")
+            "queueid3" to validLocalstackQueueConfig(3).copy(queueName = "1stQueueName"),
           ),
-          topics = mapOf()
+          topics = mapOf(),
         )
       }.isInstanceOf(InvalidHmppsSqsPropertiesException::class.java)
         .hasMessageContaining("Found duplicated queue name")
@@ -353,9 +353,9 @@ class HmppsSqsPropertiesTest {
           queues = mapOf(
             "queueid1" to validLocalstackQueueConfig(1).copy(dlqName = "1stDlqName"),
             "queueid2" to validLocalstackQueueConfig(2).copy(dlqName = "2ndDlqName"),
-            "queueid3" to validLocalstackQueueConfig(3).copy(dlqName = "2ndDlqName")
+            "queueid3" to validLocalstackQueueConfig(3).copy(dlqName = "2ndDlqName"),
           ),
-          topics = mapOf()
+          topics = mapOf(),
         )
       }.isInstanceOf(InvalidHmppsSqsPropertiesException::class.java)
         .hasMessageContaining("Found duplicated dlq name")
@@ -371,9 +371,9 @@ class HmppsSqsPropertiesTest {
           queues = mapOf(
             "queueid1" to validLocalstackQueueNoDlqConfig(1),
             "queueid2" to validLocalstackQueueNoDlqConfig(2),
-            "queueid3" to validLocalstackQueueNoDlqConfig(3)
+            "queueid3" to validLocalstackQueueNoDlqConfig(3),
           ),
-          topics = mapOf()
+          topics = mapOf(),
         )
       }
     }
@@ -387,8 +387,8 @@ class HmppsSqsPropertiesTest {
           topics = mapOf(
             "topic1" to validLocalstackTopicConfig(1).copy(arn = "${localstackArnPrefix}1stName"),
             "topic2" to validLocalstackTopicConfig(2).copy(arn = "${localstackArnPrefix}2ndName"),
-            "topic3" to validLocalstackTopicConfig(3).copy(arn = "${localstackArnPrefix}1stName")
-          )
+            "topic3" to validLocalstackTopicConfig(3).copy(arn = "${localstackArnPrefix}1stName"),
+          ),
         )
       }.isInstanceOf(InvalidHmppsSqsPropertiesException::class.java)
         .hasMessageContaining("Found duplicated topic names")

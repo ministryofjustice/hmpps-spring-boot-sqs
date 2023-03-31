@@ -62,8 +62,8 @@ class HmppsQueueFactoryTest {
         .thenReturn(
           CompletableFuture.completedFuture(
             GetQueueAttributesResponse.builder()
-              .attributes(mutableMapOf(QueueAttributeName.QUEUE_ARN to "queue:arn")).build()
-          )
+              .attributes(mutableMapOf(QueueAttributeName.QUEUE_ARN to "queue:arn")).build(),
+          ),
         )
 
       hmppsQueues = hmppsQueueFactory.createHmppsQueues(hmppsSqsProperties)
@@ -128,8 +128,8 @@ class HmppsQueueFactoryTest {
         .thenReturn(
           CompletableFuture.completedFuture(
             GetQueueAttributesResponse.builder()
-              .attributes(mutableMapOf(QueueAttributeName.QUEUE_ARN to "queue:arn")).build()
-          )
+              .attributes(mutableMapOf(QueueAttributeName.QUEUE_ARN to "queue:arn")).build(),
+          ),
         )
       whenever(sqsDlqClient.getQueueUrl(any<GetQueueUrlRequest>()))
         .thenReturn(CompletableFuture.completedFuture(GetQueueUrlResponse.builder().queueUrl("some dlq url").build()))
@@ -181,7 +181,7 @@ class HmppsQueueFactoryTest {
       verify(snsClient).subscribe(
         check<SubscribeRequest> {
           assertThat(it.topicArn()).isEqualTo("arn:aws:sns:1:2:3")
-        }
+        },
       )
     }
   }

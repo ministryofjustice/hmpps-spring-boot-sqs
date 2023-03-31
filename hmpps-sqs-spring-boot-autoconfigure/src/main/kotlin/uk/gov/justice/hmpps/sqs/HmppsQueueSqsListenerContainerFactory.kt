@@ -11,12 +11,12 @@ class SqsListenerContainerFactoryMissingException(message: String) : RuntimeExce
 
 data class HmppsQueueDestinationContainerFactory(
   val destination: String,
-  val factory: SqsMessageListenerContainerFactory<Any>
+  val factory: SqsMessageListenerContainerFactory<Any>,
 )
 
 class HmppsQueueSqsListenerContainerFactory(
   private val factories: List<HmppsQueueDestinationContainerFactory>,
-  private val hmppsSqsProperties: HmppsSqsProperties
+  private val hmppsSqsProperties: HmppsSqsProperties,
 ) : SqsMessageListenerContainerFactory<Any>() {
 
   override fun createContainerInstance(endpoint: Endpoint, containerOptions: SqsContainerOptions): SqsMessageListenerContainer<Any> = factories

@@ -75,8 +75,8 @@ class HmppsTopicHealthTest {
       CompletableFuture.completedFuture(
         GetTopicAttributesResponse.builder()
           .attributes(mapOf("SubscriptionsConfirmed" to "1", "SubscriptionsPending" to "2"))
-          .build()
-      )
+          .build(),
+      ),
     )
   }
 }

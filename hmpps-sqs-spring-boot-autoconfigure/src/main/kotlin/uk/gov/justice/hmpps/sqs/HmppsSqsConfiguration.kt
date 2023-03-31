@@ -27,7 +27,7 @@ interface HmppsHealthContributorRegistry {
 }
 
 class HmppsBlockingHealthContributorRegistry(
-  private val healthContributorRegistry: HealthContributorRegistry
+  private val healthContributorRegistry: HealthContributorRegistry,
 ) : HmppsHealthContributorRegistry {
   override fun registerContributor(name: String, contribute: () -> HealthContributor) {
     if (healthContributorRegistry.getContributor(name) == null) {
@@ -37,7 +37,7 @@ class HmppsBlockingHealthContributorRegistry(
 }
 
 class HmppsReactiveHealthContributorRepository(
-  private val reactiveHealthContributorRegistry: ReactiveHealthContributorRegistry
+  private val reactiveHealthContributorRegistry: ReactiveHealthContributorRegistry,
 ) : HmppsHealthContributorRegistry {
   override fun registerContributor(name: String, contribute: () -> HealthContributor) {
     if (reactiveHealthContributorRegistry.getContributor(name) == null) {
@@ -80,7 +80,7 @@ class HmppsSqsConfiguration {
     telemetryClient: TelemetryClient?,
     hmppsTopicFactory: HmppsTopicFactory,
     hmppsQueueFactory: HmppsQueueFactory,
-    hmppsSqsProperties: HmppsSqsProperties
+    hmppsSqsProperties: HmppsSqsProperties,
   ) = HmppsQueueService(telemetryClient, hmppsTopicFactory, hmppsQueueFactory, hmppsSqsProperties)
 
   @Bean
@@ -98,7 +98,7 @@ class HmppsSqsConfiguration {
   @DependsOn("hmppsQueueService")
   fun hmppsQueueContainerFactoryProxy(
     factories: List<HmppsQueueDestinationContainerFactory>,
-    hmppsSqsProperties: HmppsSqsProperties
+    hmppsSqsProperties: HmppsSqsProperties,
   ) = HmppsQueueSqsListenerContainerFactory(factories, hmppsSqsProperties)
 
   @Bean
