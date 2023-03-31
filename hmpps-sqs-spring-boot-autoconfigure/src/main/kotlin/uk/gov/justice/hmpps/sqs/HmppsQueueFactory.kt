@@ -75,15 +75,17 @@ class HmppsQueueFactory(
     SqsMessageListenerContainerFactory
       .builder<Any>()
       .sqsAsyncClient(awsSqsClient)
-      .errorHandler(object : ErrorHandler<Any> {
-        override fun handle(message: org.springframework.messaging.Message<Any>, t: Throwable) {
-          // SDI-477 remove this logging when we are comfortable that all is working as expected - instant retries
-          log.info("Setting visibility of messageId ${message.headers["id"]} to $errorVisibilityTimeout (to initiate faster retry) after receiving exception ${t.cause?.cause?.cause}")
-          val sqsVisibility = message.headers["Sqs_VisibilityTimeout"] as QueueMessageVisibility
-          sqsVisibility.changeTo(errorVisibilityTimeout)
-          throw t
-        }
-      },)
+      .errorHandler(
+        object : ErrorHandler<Any> {
+          override fun handle(message: org.springframework.messaging.Message<Any>, t: Throwable) {
+            // SDI-477 remove this logging when we are comfortable that all is working as expected - instant retries
+            log.info("Setting visibility of messageId ${message.headers["id"]} to $errorVisibilityTimeout (to initiate faster retry) after receiving exception ${t.cause?.cause?.cause}")
+            val sqsVisibility = message.headers["Sqs_VisibilityTimeout"] as QueueMessageVisibility
+            sqsVisibility.changeTo(errorVisibilityTimeout)
+            throw t
+          }
+        },
+      )
       .build()
 
   fun createSqsAsyncDlqClient(queueConfig: QueueConfig, hmppsSqsProperties: HmppsSqsProperties): SqsAsyncClient {
