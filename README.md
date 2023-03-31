@@ -400,7 +400,7 @@ The standalone LocalStack instance does not need stopping and starting between t
 
 ### Running the test-app
 
-Running the `test-app` locally can be useful for debugging features provided by this library.
+Running `test-app` or ``test-app-reactive` locally can be useful for debugging features provided by this library.
 
 Start localstack with command:
 
@@ -408,12 +408,7 @@ Start localstack with command:
 
 Then run the `test-app` in your IDE from main class `HmppsTemplateKotlin` using Spring profiles `localstack`.
 
-Some messages to process can be found in `test-app/src/test/resources/test-messages`. These can be sent to the inbound topic with the following commands:
-
-```bash
-bash $(find -name offender-movement-reception.sh)
-bash $(find -name offender-movement-discharge.sh)
-```
+Some messages to process can be found in `test-app[-reactive]/src/test/resources/test-messages`. These can be sent to the inbound topic by running the scripts.
 
 ## How To Contribute To This Library
 
