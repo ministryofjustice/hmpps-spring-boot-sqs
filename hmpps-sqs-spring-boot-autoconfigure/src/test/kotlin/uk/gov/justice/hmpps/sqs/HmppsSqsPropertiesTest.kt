@@ -141,21 +141,21 @@ class HmppsSqsPropertiesTest {
   @Nested
   inner class AwsMandatoryProperties_WebIdentityToken {
     @Test
-    fun `should require a queue access key ID`() {
+    fun `should NOT require a queue access key ID`() {
       assertDoesNotThrow {
         HmppsSqsProperties(useWebToken = true, queues = mapOf("queueid" to validAwsQueueConfig().copy(queueAccessKeyId = "")))
       }
     }
 
     @Test
-    fun `should require a queue secret access key`() {
+    fun `should NOT require a queue secret access key`() {
       assertDoesNotThrow {
         HmppsSqsProperties(useWebToken = true, queues = mapOf("queueid" to validAwsQueueConfig().copy(queueSecretAccessKey = "")))
       }
     }
 
     @Test
-    fun `should require a dlq access key ID`() {
+    fun `should NOT require a dlq access key ID`() {
       assertDoesNotThrow {
         HmppsSqsProperties(useWebToken = true, queues = mapOf("queueid" to validAwsQueueConfig().copy(dlqAccessKeyId = "")))
       }
@@ -169,7 +169,7 @@ class HmppsSqsPropertiesTest {
     }
 
     @Test
-    fun `should require a dlq secret access key`() {
+    fun `should NOT require a dlq secret access key`() {
       assertDoesNotThrow {
         HmppsSqsProperties(useWebToken = true, queues = mapOf("queueid" to validAwsQueueConfig().copy(dlqSecretAccessKey = "")))
       }
@@ -195,7 +195,7 @@ class HmppsSqsPropertiesTest {
     }
 
     @Test
-    fun `topics should have an access key id`() {
+    fun `topics should NOT have an access key id`() {
       assertDoesNotThrow {
         HmppsSqsProperties(
           useWebToken = true,
@@ -206,7 +206,7 @@ class HmppsSqsPropertiesTest {
     }
 
     @Test
-    fun `topics should have a secret access key`() {
+    fun `topics should NOT have a secret access key`() {
       assertDoesNotThrow {
         HmppsSqsProperties(
           useWebToken = true,
