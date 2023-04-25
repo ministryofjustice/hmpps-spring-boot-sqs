@@ -5,6 +5,7 @@ import org.assertj.core.api.Assertions.assertThatNoException
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertDoesNotThrow
 import uk.gov.justice.hmpps.sqs.HmppsSqsProperties.QueueConfig
 import uk.gov.justice.hmpps.sqs.HmppsSqsProperties.TopicConfig
 
@@ -134,6 +135,85 @@ class HmppsSqsPropertiesTest {
       }.isInstanceOf(InvalidHmppsSqsPropertiesException::class.java)
         .hasMessageContaining("topicid")
         .hasMessageContaining("secret access key")
+    }
+  }
+
+  @Nested
+  inner class AwsMandatoryProperties_WebIdentityToken {
+    @Test
+    fun `should require a queue access key ID`() {
+      assertDoesNotThrow {
+        HmppsSqsProperties(useWebToken = true, queues = mapOf("queueid" to validAwsQueueConfig().copy(queueAccessKeyId = "")))
+      }
+    }
+
+    @Test
+    fun `should require a queue secret access key`() {
+      assertDoesNotThrow {
+        HmppsSqsProperties(useWebToken = true, queues = mapOf("queueid" to validAwsQueueConfig().copy(queueSecretAccessKey = "")))
+      }
+    }
+
+    @Test
+    fun `should require a dlq access key ID`() {
+      assertDoesNotThrow {
+        HmppsSqsProperties(useWebToken = true, queues = mapOf("queueid" to validAwsQueueConfig().copy(dlqAccessKeyId = "")))
+      }
+    }
+
+    @Test
+    fun `should not require a dlq access key ID if no dlq exists`() {
+      assertDoesNotThrow {
+        HmppsSqsProperties(queues = mapOf("queueid" to validAwsQueueNoDlqConfig().copy(dlqAccessKeyId = "")))
+      }
+    }
+
+    @Test
+    fun `should require a dlq secret access key`() {
+      assertDoesNotThrow {
+        HmppsSqsProperties(useWebToken = true, queues = mapOf("queueid" to validAwsQueueConfig().copy(dlqSecretAccessKey = "")))
+      }
+    }
+
+    @Test
+    fun `should not require a dlq secret access key if no dlq exists`() {
+      assertDoesNotThrow {
+        HmppsSqsProperties(queues = mapOf("queueid" to validAwsQueueNoDlqConfig().copy(dlqSecretAccessKey = "")))
+      }
+    }
+
+    @Test
+    fun `topics should have an arn`() {
+      assertThatThrownBy {
+        HmppsSqsProperties(
+          queues = mapOf("queueid" to validAwsQueueConfig()),
+          topics = mapOf("topicid" to validAwsTopicConfig().copy(arn = ""))
+        )
+      }.isInstanceOf(InvalidHmppsSqsPropertiesException::class.java)
+        .hasMessageContaining("topicid")
+        .hasMessageContaining("arn")
+    }
+
+    @Test
+    fun `topics should have an access key id`() {
+      assertDoesNotThrow {
+        HmppsSqsProperties(
+          useWebToken = true,
+          queues = mapOf("queueid" to validAwsQueueConfig()),
+          topics = mapOf("topicid" to validAwsTopicConfig().copy(accessKeyId = ""))
+        )
+      }
+    }
+
+    @Test
+    fun `topics should have a secret access key`() {
+      assertDoesNotThrow {
+        HmppsSqsProperties(
+          useWebToken = true,
+          queues = mapOf("queueid" to validAwsQueueConfig()),
+          topics = mapOf("topicid" to validAwsTopicConfig().copy(secretAccessKey = ""))
+        )
+      }
     }
   }
 
