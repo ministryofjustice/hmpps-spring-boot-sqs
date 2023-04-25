@@ -187,7 +187,7 @@ class HmppsSqsPropertiesTest {
       assertThatThrownBy {
         HmppsSqsProperties(
           queues = mapOf("queueid" to validAwsQueueConfig()),
-          topics = mapOf("topicid" to validAwsTopicConfig().copy(arn = ""))
+          topics = mapOf("topicid" to validAwsTopicConfig().copy(arn = "")),
         )
       }.isInstanceOf(InvalidHmppsSqsPropertiesException::class.java)
         .hasMessageContaining("topicid")
@@ -200,7 +200,7 @@ class HmppsSqsPropertiesTest {
         HmppsSqsProperties(
           useWebToken = true,
           queues = mapOf("queueid" to validAwsQueueConfig()),
-          topics = mapOf("topicid" to validAwsTopicConfig().copy(accessKeyId = ""))
+          topics = mapOf("topicid" to validAwsTopicConfig().copy(accessKeyId = "")),
         )
       }
     }
@@ -211,7 +211,7 @@ class HmppsSqsPropertiesTest {
         HmppsSqsProperties(
           useWebToken = true,
           queues = mapOf("queueid" to validAwsQueueConfig()),
-          topics = mapOf("topicid" to validAwsTopicConfig().copy(secretAccessKey = ""))
+          topics = mapOf("topicid" to validAwsTopicConfig().copy(secretAccessKey = "")),
         )
       }
     }
