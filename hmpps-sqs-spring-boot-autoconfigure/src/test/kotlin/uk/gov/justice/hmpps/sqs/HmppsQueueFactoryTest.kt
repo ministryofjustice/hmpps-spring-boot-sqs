@@ -4,6 +4,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.mockito.ArgumentMatchers.anyBoolean
 import org.mockito.ArgumentMatchers.anyString
 import org.mockito.kotlin.any
 import org.mockito.kotlin.check
@@ -51,7 +52,7 @@ class HmppsQueueFactoryTest {
 
     @BeforeEach
     fun `configure mocks and register queues`() {
-      whenever(sqsFactory.awsSqsAsyncClient(anyString(), anyString(), anyString()))
+      whenever(sqsFactory.awsSqsAsyncClient(anyString(), anyString(), anyString(), anyBoolean()))
         .thenReturn(sqsDlqClient)
         .thenReturn(sqsClient)
       whenever(sqsClient.getQueueUrl(GetQueueUrlRequest.builder().queueName("some queue name").build()))
@@ -71,8 +72,75 @@ class HmppsQueueFactoryTest {
 
     @Test
     fun `should create async clients from sqs factory`() {
-      verify(sqsFactory).awsSqsAsyncClient("some access key id", "some secret access key", "eu-west-2")
-      verify(sqsFactory).awsSqsAsyncClient("dlq access key id", "dlq secret access key", "eu-west-2")
+      verify(sqsFactory).awsSqsAsyncClient("some access key id", "some secret access key", "eu-west-2", false)
+      verify(sqsFactory).awsSqsAsyncClient("dlq access key id", "dlq secret access key", "eu-west-2", false)
+    }
+
+    @Test
+    fun `should return async clients`() {
+      assertThat(hmppsQueues[0].sqsClient).isInstanceOf(SqsAsyncClient::class.java)
+      assertThat(hmppsQueues[0].sqsDlqClient).isInstanceOf(SqsAsyncClient::class.java)
+    }
+
+    @Test
+    fun `should return queue details`() {
+      assertThat(hmppsQueues[0].id).isEqualTo("somequeueid")
+      assertThat(hmppsQueues[0].queueName).isEqualTo("some queue name")
+      assertThat(hmppsQueues[0].dlqName).isEqualTo("some dlq name")
+    }
+
+    @Test
+    fun `should register a health indicator`() {
+      verify(healthContributorRegistry).registerContributor(eq("somequeueid-health"), any())
+      verify(beanFactory).registerSingleton(eq("somequeueid-sqs-client"), any<SqsAsyncClient>())
+      verify(beanFactory).registerSingleton(eq("somequeueid-sqs-dlq-client"), any<SqsAsyncClient>())
+      verify(beanFactory).registerSingleton(eq("somequeueid-sqs-listener-factory"), any<HmppsQueueDestinationContainerFactory>())
+    }
+
+    @Test
+    fun `should not subscribe to topics`() {
+      val someQueueConfig = QueueConfig(queueName = "any", queueAccessKeyId = "any", queueSecretAccessKey = "any", subscribeTopicId = "sometopicid")
+      val hmppsSqsProperties = HmppsSqsProperties(queues = mapOf("somequeueid" to someQueueConfig), topics = mapOf("sometopicid" to TopicConfig("arn:aws:sns:1:2:3", "any", "any")))
+      val snsClient = mock<SnsAsyncClient>()
+      val topics = listOf(HmppsTopic("sometopicid", "arn:aws:sns:1:2:3", snsClient))
+
+      hmppsQueues = hmppsQueueFactory.createHmppsQueues(hmppsSqsProperties, topics)
+
+      verify(snsClient, never()).subscribe(any<SubscribeRequest>())
+    }
+  }
+
+  @Nested
+  inner class `Create AWS HmppsQueue with Web Token Identity based SQS clients` {
+    private val someQueueConfig = QueueConfig(queueName = "some queue name", dlqName = "some dlq name")
+    private val hmppsSqsProperties = HmppsSqsProperties(useWebToken = true, queues = mapOf("somequeueid" to someQueueConfig))
+    private val sqsClient = mock<SqsAsyncClient>()
+    private val sqsDlqClient = mock<SqsAsyncClient>()
+    private lateinit var hmppsQueues: List<HmppsQueue>
+
+    @BeforeEach
+    fun `configure mocks and register queues`() {
+      whenever(sqsFactory.awsSqsAsyncClient(anyString(), anyString(), anyString(), anyBoolean()))
+        .thenReturn(sqsDlqClient)
+        .thenReturn(sqsClient)
+      whenever(sqsClient.getQueueUrl(GetQueueUrlRequest.builder().queueName("some queue name").build()))
+        .thenReturn(CompletableFuture.completedFuture(GetQueueUrlResponse.builder().queueUrl("some queue url").build()))
+      whenever(sqsDlqClient.getQueueUrl(GetQueueUrlRequest.builder().queueName("some dlq name").build()))
+        .thenReturn(CompletableFuture.completedFuture(GetQueueUrlResponse.builder().queueUrl("some dlq url").build()))
+      whenever(sqsClient.getQueueAttributes(any<GetQueueAttributesRequest>()))
+        .thenReturn(
+          CompletableFuture.completedFuture(
+            GetQueueAttributesResponse.builder()
+              .attributes(mutableMapOf(QueueAttributeName.QUEUE_ARN to "queue:arn")).build(),
+          ),
+        )
+
+      hmppsQueues = hmppsQueueFactory.createHmppsQueues(hmppsSqsProperties)
+    }
+
+    @Test
+    fun `should create async clients from sqs factory`() {
+      verify(sqsFactory, times(2)).awsSqsAsyncClient("", "", "eu-west-2", true)
     }
 
     @Test
