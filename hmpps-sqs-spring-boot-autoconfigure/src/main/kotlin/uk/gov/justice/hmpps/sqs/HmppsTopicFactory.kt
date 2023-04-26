@@ -43,7 +43,7 @@ class HmppsTopicFactory(
   fun createSnsAsyncClient(topicId: String, topicConfig: HmppsSqsProperties.TopicConfig, hmppsSqsProperties: HmppsSqsProperties): SnsAsyncClient =
     with(hmppsSqsProperties) {
       when (provider) {
-        "aws" -> snsClientFactory.awsSnsAsyncClient(topicConfig.accessKeyId, topicConfig.secretAccessKey, region)
+        "aws" -> snsClientFactory.awsSnsAsyncClient(topicConfig.accessKeyId, topicConfig.secretAccessKey, region, hmppsSqsProperties.useWebToken)
         "localstack" -> snsClientFactory.localstackSnsAsyncClient(localstackUrl, region)
           .also { runBlocking { it.createTopic(CreateTopicRequest.builder().name(topicConfig.name).build()).await() } }
           .also { log.info("Created a LocalStack SNS topic for topicId $topicId with ARN ${topicConfig.arn}") }

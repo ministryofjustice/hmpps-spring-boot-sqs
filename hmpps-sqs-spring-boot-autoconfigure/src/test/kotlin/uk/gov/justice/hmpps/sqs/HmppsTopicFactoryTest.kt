@@ -4,6 +4,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.mockito.ArgumentMatchers.anyBoolean
 import org.mockito.ArgumentMatchers.anyString
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
@@ -41,7 +42,7 @@ class HmppsTopicFactoryTest {
 
     @BeforeEach
     fun `configure mocks and register queues`() {
-      whenever(snsClientFactory.awsSnsAsyncClient(anyString(), anyString(), anyString()))
+      whenever(snsClientFactory.awsSnsAsyncClient(anyString(), anyString(), anyString(), anyBoolean()))
         .thenReturn(snsClient)
 
       hmppsTopics = hmppsTopicFactory.createHmppsTopics(hmppsSqsProperties)
@@ -49,7 +50,33 @@ class HmppsTopicFactoryTest {
 
     @Test
     fun `should create async aws sns clients`() {
-      verify(snsClientFactory).awsSnsAsyncClient("some access key id", "some secret access key", "eu-west-2")
+      verify(snsClientFactory).awsSnsAsyncClient("some access key id", "some secret access key", "eu-west-2", false)
+    }
+
+    @Test
+    fun `should return the topic details`() {
+      assertThat(hmppsTopics[0].id).isEqualTo("sometopicid")
+    }
+  }
+
+  @Nested
+  inner class `Create AWS HmppsTopics using Web Token Identity` {
+    private val someTopicConfig = TopicConfig(arn = "some arn")
+    private val hmppsSqsProperties = HmppsSqsProperties(useWebToken = true, queues = mock(), topics = mapOf("sometopicid" to someTopicConfig))
+    private val snsClient = mock<SnsAsyncClient>()
+    private lateinit var hmppsTopics: List<HmppsTopic>
+
+    @BeforeEach
+    fun `configure mocks and register queues`() {
+      whenever(snsClientFactory.awsSnsAsyncClient(anyString(), anyString(), anyString(), anyBoolean()))
+        .thenReturn(snsClient)
+
+      hmppsTopics = hmppsTopicFactory.createHmppsTopics(hmppsSqsProperties)
+    }
+
+    @Test
+    fun `should create async aws sns clients`() {
+      verify(snsClientFactory).awsSnsAsyncClient("", "", "eu-west-2", true)
     }
 
     @Test

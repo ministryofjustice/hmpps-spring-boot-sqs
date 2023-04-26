@@ -93,7 +93,7 @@ class HmppsQueueFactory(
     val provider = findProvider(hmppsSqsProperties.provider)
     if (queueConfig.dlqName.isEmpty()) throw MissingDlqNameException()
     return when (provider) {
-      Provider.AWS -> sqsClientFactory.awsSqsAsyncClient(queueConfig.dlqAccessKeyId, queueConfig.dlqSecretAccessKey, region)
+      Provider.AWS -> sqsClientFactory.awsSqsAsyncClient(queueConfig.dlqAccessKeyId, queueConfig.dlqSecretAccessKey, region, hmppsSqsProperties.useWebToken)
       Provider.LOCALSTACK -> {
         sqsClientFactory.localstackSqsAsyncClient(hmppsSqsProperties.localstackUrl, region)
           .also { sqsDlqClient -> runBlocking { sqsDlqClient.createQueue(CreateQueueRequest.builder().queueName(queueConfig.dlqName).build()).await() } }
@@ -104,7 +104,7 @@ class HmppsQueueFactory(
   fun createSqsAsyncClient(queueConfig: QueueConfig, hmppsSqsProperties: HmppsSqsProperties, sqsDlqClient: SqsAsyncClient?): SqsAsyncClient {
     val region = hmppsSqsProperties.region
     return when (findProvider(hmppsSqsProperties.provider)) {
-      Provider.AWS -> sqsClientFactory.awsSqsAsyncClient(queueConfig.queueAccessKeyId, queueConfig.queueSecretAccessKey, region)
+      Provider.AWS -> sqsClientFactory.awsSqsAsyncClient(queueConfig.queueAccessKeyId, queueConfig.queueSecretAccessKey, region, hmppsSqsProperties.useWebToken)
       Provider.LOCALSTACK -> {
         sqsClientFactory.localstackSqsAsyncClient(hmppsSqsProperties.localstackUrl, region)
           .also { sqsClient ->
