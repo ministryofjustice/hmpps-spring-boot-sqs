@@ -16,6 +16,7 @@ dependencies {
   api("io.awspring.cloud:spring-cloud-aws-starter") { exclude("io.awspring.cloud", "spring-cloud-aws-autoconfigure")}
   api("io.awspring.cloud:spring-cloud-aws-sns")
   api("io.awspring.cloud:spring-cloud-aws-sqs")
+  api("software.amazon.awssdk:sts")
   api(platform("org.springframework.boot:spring-boot-dependencies:3.0.5"))
   api("org.springframework.boot:spring-boot-starter-web")
   api("org.springframework.boot:spring-boot-starter-security")
