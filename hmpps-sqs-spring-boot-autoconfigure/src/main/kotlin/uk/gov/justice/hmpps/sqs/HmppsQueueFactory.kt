@@ -67,7 +67,7 @@ class HmppsQueueFactory(
     with(hmppsSqsProperties) {
       if (queueConfig.dlqName.isEmpty()) throw MissingDlqNameException()
       when (provider) {
-        "aws" -> amazonSqsFactory.awsSqsDlqClient(queueId, queueConfig.dlqName, queueConfig.dlqAccessKeyId, queueConfig.dlqSecretAccessKey, region, queueConfig.asyncDlqClient)
+        "aws" -> amazonSqsFactory.awsSqsDlqClient(queueId, queueConfig.dlqName, queueConfig.dlqAccessKeyId, queueConfig.dlqSecretAccessKey, region, queueConfig.asyncDlqClient, hmppsSqsProperties.useWebToken)
         "localstack" ->
           amazonSqsFactory.localStackSqsDlqClient(queueId, queueConfig.dlqName, localstackUrl, region, queueConfig.asyncDlqClient)
             .also { sqsDlqClient -> sqsDlqClient.createQueue(queueConfig.dlqName) }
@@ -78,7 +78,7 @@ class HmppsQueueFactory(
   fun createSqsClient(queueId: String, queueConfig: QueueConfig, hmppsSqsProperties: HmppsSqsProperties, sqsDlqClient: AmazonSQS?) =
     with(hmppsSqsProperties) {
       when (provider) {
-        "aws" -> amazonSqsFactory.awsSqsClient(queueId, queueConfig.queueName, queueConfig.queueAccessKeyId, queueConfig.queueSecretAccessKey, region, queueConfig.asyncQueueClient)
+        "aws" -> amazonSqsFactory.awsSqsClient(queueId, queueConfig.queueName, queueConfig.queueAccessKeyId, queueConfig.queueSecretAccessKey, region, queueConfig.asyncQueueClient, hmppsSqsProperties.useWebToken)
         "localstack" ->
           amazonSqsFactory.localStackSqsClient(queueId, queueConfig.queueName, localstackUrl, region, queueConfig.asyncQueueClient)
             .also { sqsClient -> createLocalStackQueue(sqsClient, sqsDlqClient, queueConfig.queueName, queueConfig.dlqName, queueConfig.dlqMaxReceiveCount) }

@@ -47,7 +47,7 @@ class HmppsNoDlqQueueFactoryTest {
 
     @BeforeEach
     fun `configure mocks and register queues`() {
-      whenever(sqsFactory.awsSqsClient(anyString(), anyString(), anyString(), anyString(), anyString(), anyBoolean()))
+      whenever(sqsFactory.awsSqsClient(anyString(), anyString(), anyString(), anyString(), anyString(), anyBoolean(), anyBoolean()))
         .thenReturn(sqsClient)
       whenever(sqsClient.getQueueUrl(anyString())).thenReturn(GetQueueUrlResult().withQueueUrl("some queue url"))
 
@@ -56,7 +56,7 @@ class HmppsNoDlqQueueFactoryTest {
 
     @Test
     fun `creates aws sqs client but does not create aws sqs dlq client from sqs factory`() {
-      verify(sqsFactory).awsSqsClient("somequeueid", "some queue name", "some access key id", "some secret access key", "eu-west-2", false)
+      verify(sqsFactory).awsSqsClient("somequeueid", "some queue name", "some access key id", "some secret access key", "eu-west-2", false, false)
       verifyNoMoreInteractions(sqsFactory)
     }
 
@@ -200,7 +200,7 @@ class HmppsNoDlqQueueFactoryTest {
 
     @BeforeEach
     fun `configure mocks and register queues`() {
-      whenever(sqsFactory.awsSqsClient(anyString(), anyString(), anyString(), anyString(), anyString(), anyBoolean()))
+      whenever(sqsFactory.awsSqsClient(anyString(), anyString(), anyString(), anyString(), anyString(), anyBoolean(), anyBoolean()))
         .thenReturn(sqsClient)
       whenever(sqsClient.getQueueUrl("some queue name")).thenReturn(GetQueueUrlResult().withQueueUrl("some queue url"))
       whenever(sqsClient.getQueueUrl("another queue name")).thenReturn(GetQueueUrlResult().withQueueUrl("another queue url"))
@@ -210,8 +210,8 @@ class HmppsNoDlqQueueFactoryTest {
 
     @Test
     fun `should create multiple sqs clients but no dlq clients from sqs factory`() {
-      verify(sqsFactory).awsSqsClient("somequeueid", "some queue name", "some access key id", "some secret access key", "eu-west-2", false)
-      verify(sqsFactory).awsSqsClient("anotherqueueid", "another queue name", "another access key id", "another secret access key", "eu-west-2", false)
+      verify(sqsFactory).awsSqsClient("somequeueid", "some queue name", "some access key id", "some secret access key", "eu-west-2", false, false)
+      verify(sqsFactory).awsSqsClient("anotherqueueid", "another queue name", "another access key id", "another secret access key", "eu-west-2", false, false)
       verifyNoMoreInteractions(sqsFactory)
     }
 
@@ -237,7 +237,7 @@ class HmppsNoDlqQueueFactoryTest {
 
     @BeforeEach
     fun `configure mocks and register queues`() {
-      whenever(sqsFactory.awsSqsClient(anyString(), anyString(), anyString(), anyString(), anyString(), anyBoolean()))
+      whenever(sqsFactory.awsSqsClient(anyString(), anyString(), anyString(), anyString(), anyString(), anyBoolean(), anyBoolean()))
         .thenReturn(sqsClient)
       whenever(sqsClient.getQueueUrl("some queue name")).thenReturn(GetQueueUrlResult().withQueueUrl("some queue url"))
 
@@ -246,7 +246,7 @@ class HmppsNoDlqQueueFactoryTest {
 
     @Test
     fun `should create async client but no dlq client from sqs factory`() {
-      verify(sqsFactory).awsSqsClient("somequeueid", "some queue name", "some access key id", "some secret access key", "eu-west-2", true)
+      verify(sqsFactory).awsSqsClient("somequeueid", "some queue name", "some access key id", "some secret access key", "eu-west-2", true, false)
       verifyNoMoreInteractions(sqsFactory)
     }
 
@@ -365,7 +365,7 @@ class HmppsNoDlqQueueFactoryTest {
 
     @BeforeEach
     fun `configure mocks and register queues`() {
-      whenever(sqsFactory.awsSqsClient(anyString(), anyString(), anyString(), anyString(), anyString(), anyBoolean()))
+      whenever(sqsFactory.awsSqsClient(anyString(), anyString(), anyString(), anyString(), anyString(), anyBoolean(), anyBoolean()))
         .thenReturn(sqsClient)
       whenever(sqsClient.getQueueUrl(anyString())).thenReturn(GetQueueUrlResult().withQueueUrl("some queue url"))
 

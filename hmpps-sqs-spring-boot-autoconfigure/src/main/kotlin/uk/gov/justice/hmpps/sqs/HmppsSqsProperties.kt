@@ -12,6 +12,7 @@ data class HmppsSqsProperties(
   val queues: Map<String, QueueConfig> = mapOf(),
   val topics: Map<String, TopicConfig> = mapOf(),
   val reactiveApi: Boolean = false,
+  val useWebToken: Boolean = false,
 ) {
   data class QueueConfig(
     val queueName: String,
@@ -64,6 +65,8 @@ data class HmppsSqsProperties(
   }
 
   private fun awsQueueSecretsMustExist(queueId: String, queueConfig: QueueConfig) {
+    if (useWebToken) return
+
     if (provider == "aws") {
       if (queueConfig.queueAccessKeyId.isEmpty()) throw InvalidHmppsSqsPropertiesException("queueId $queueId does not have a queue access key id")
       if (queueConfig.queueSecretAccessKey.isEmpty()) throw InvalidHmppsSqsPropertiesException("queueId $queueId does not have a queue secret access key")
@@ -97,8 +100,10 @@ data class HmppsSqsProperties(
   private fun awsTopicSecretsMustExist(topicId: String, topicConfig: TopicConfig) {
     if (provider == "aws") {
       if (topicConfig.arn.isEmpty()) throw InvalidHmppsSqsPropertiesException("topicId $topicId does not have an arn")
-      if (topicConfig.accessKeyId.isEmpty()) throw InvalidHmppsSqsPropertiesException("topicId $topicId does not have an access key id")
-      if (topicConfig.secretAccessKey.isEmpty()) throw InvalidHmppsSqsPropertiesException("topicId $topicId does not have a secret access key")
+      if (!useWebToken) {
+        if (topicConfig.accessKeyId.isEmpty()) throw InvalidHmppsSqsPropertiesException("topicId $topicId does not have an access key id")
+        if (topicConfig.secretAccessKey.isEmpty()) throw InvalidHmppsSqsPropertiesException("topicId $topicId does not have a secret access key")
+      }
     }
   }
 

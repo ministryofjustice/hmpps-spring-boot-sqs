@@ -13,6 +13,7 @@ dependencies {
   api(platform("com.amazonaws:aws-java-sdk-bom:1.12.337"))
   api("com.amazonaws:amazon-sqs-java-messaging-lib:1.1.0")
   api("com.amazonaws:aws-java-sdk-sns")
+  api("com.amazonaws:aws-java-sdk-sts")
   api(platform("org.springframework.boot:spring-boot-dependencies:2.7.6"))
   api("org.springframework.boot:spring-boot-starter-web")
   api("org.springframework.boot:spring-boot-starter-security")

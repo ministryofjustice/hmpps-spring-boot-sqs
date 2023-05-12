@@ -41,7 +41,7 @@ class HmppsTopicFactoryTest {
 
     @BeforeEach
     fun `configure mocks and register queues`() {
-      whenever(snsFactory.awsSnsClient(anyString(), anyString(), anyString(), anyString(), anyBoolean()))
+      whenever(snsFactory.awsSnsClient(anyString(), anyString(), anyString(), anyString(), anyBoolean(), anyBoolean()))
         .thenReturn(snsClient)
 
       hmppsTopics = hmppsTopicFactory.createHmppsTopics(hmppsSqsProperties)
@@ -49,7 +49,7 @@ class HmppsTopicFactoryTest {
 
     @Test
     fun `should create aws sns client`() {
-      verify(snsFactory).awsSnsClient("sometopicid", "some access key id", "some secret access key", "eu-west-2", false)
+      verify(snsFactory).awsSnsClient("sometopicid", "some access key id", "some secret access key", "eu-west-2", false, false)
     }
 
     @Test
@@ -69,6 +69,38 @@ class HmppsTopicFactoryTest {
 
     @Test
     fun `should register health indicators`() {
+      verify(beanFactory).registerSingleton(eq("sometopicid-health"), any<HealthIndicator>())
+    }
+  }
+
+  @Nested
+  inner class `Create AWS HmppsTopic with Web Token Credentials` {
+    private val someTopicConfig = TopicConfig(arn = "some arn", accessKeyId = "some access key id", secretAccessKey = "some secret access key")
+    private val hmppsSqsProperties = HmppsSqsProperties(useWebToken = true, queues = mock(), topics = mapOf("sometopicid" to someTopicConfig))
+    private val snsClient = mock<AmazonSNS>()
+    private lateinit var hmppsTopics: List<HmppsTopic>
+
+    @BeforeEach
+    fun `configure mocks and register queues`() {
+      whenever(snsFactory.awsSnsClient(anyString(), anyString(), anyString(), anyString(), anyBoolean(), anyBoolean()))
+        .thenReturn(snsClient)
+
+      hmppsTopics = hmppsTopicFactory.createHmppsTopics(hmppsSqsProperties)
+    }
+
+    @Test
+    fun `should create client`() {
+      verify(snsFactory).awsSnsClient("sometopicid", "some access key id", "some secret access key", "eu-west-2", false, true)
+      assertThat(hmppsTopics[0].snsClient).isEqualTo(snsClient)
+    }
+
+    @Test
+    fun `should register the AmazonSNS client`() {
+      verify(beanFactory).registerSingleton("sometopicid-sns-client", snsClient)
+    }
+
+    @Test
+    fun `should register health indicator`() {
       verify(beanFactory).registerSingleton(eq("sometopicid-health"), any<HealthIndicator>())
     }
   }
@@ -129,7 +161,7 @@ class HmppsTopicFactoryTest {
 
     @BeforeEach
     fun `configure mocks and register queues`() {
-      whenever(snsFactory.awsSnsClient(anyString(), anyString(), anyString(), anyString(), anyBoolean()))
+      whenever(snsFactory.awsSnsClient(anyString(), anyString(), anyString(), anyString(), anyBoolean(), anyBoolean()))
         .thenReturn(snsClient)
         .thenReturn(snsClient)
 
@@ -138,8 +170,8 @@ class HmppsTopicFactoryTest {
 
     @Test
     fun `should create 2 aws sns clients`() {
-      verify(snsFactory).awsSnsClient("sometopicid", "some access key id", "some secret access key", "eu-west-2", false)
-      verify(snsFactory).awsSnsClient("anothertopicid", "another access key id", "another secret access key", "eu-west-2", false)
+      verify(snsFactory).awsSnsClient("sometopicid", "some access key id", "some secret access key", "eu-west-2", false, false)
+      verify(snsFactory).awsSnsClient("anothertopicid", "another access key id", "another secret access key", "eu-west-2", false, false)
     }
 
     @Test
@@ -224,7 +256,7 @@ class HmppsTopicFactoryTest {
 
     @BeforeEach
     fun `configure mocks and register queues`() {
-      whenever(snsFactory.awsSnsClient(anyString(), anyString(), anyString(), anyString(), anyBoolean()))
+      whenever(snsFactory.awsSnsClient(anyString(), anyString(), anyString(), anyString(), anyBoolean(), anyBoolean()))
         .thenReturn(snsClient)
 
       hmppsTopics = hmppsTopicFactory.createHmppsTopics(hmppsSqsProperties)
@@ -232,7 +264,7 @@ class HmppsTopicFactoryTest {
 
     @Test
     fun `should create async aws sns clients`() {
-      verify(snsFactory).awsSnsClient("sometopicid", "some access key id", "some secret access key", "eu-west-2", true)
+      verify(snsFactory).awsSnsClient("sometopicid", "some access key id", "some secret access key", "eu-west-2", true, false)
     }
 
     @Test
