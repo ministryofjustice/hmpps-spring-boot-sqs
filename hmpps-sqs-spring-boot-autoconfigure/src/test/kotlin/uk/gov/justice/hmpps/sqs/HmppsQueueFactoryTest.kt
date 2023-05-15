@@ -48,9 +48,9 @@ class HmppsQueueFactoryTest {
 
     @BeforeEach
     fun `configure mocks and register queues`() {
-      whenever(sqsFactory.awsSqsDlqClient(anyString(), anyString(), anyString(), anyString(), anyString(), anyBoolean()))
+      whenever(sqsFactory.awsSqsDlqClient(anyString(), anyString(), anyString(), anyString(), anyString(), anyBoolean(), anyBoolean()))
         .thenReturn(sqsDlqClient)
-      whenever(sqsFactory.awsSqsClient(anyString(), anyString(), anyString(), anyString(), anyString(), anyBoolean()))
+      whenever(sqsFactory.awsSqsClient(anyString(), anyString(), anyString(), anyString(), anyString(), anyBoolean(), anyBoolean()))
         .thenReturn(sqsClient)
       whenever(sqsDlqClient.getQueueUrl(anyString())).thenReturn(GetQueueUrlResult().withQueueUrl("some dlq url"))
       whenever(sqsClient.getQueueUrl(anyString())).thenReturn(GetQueueUrlResult().withQueueUrl("some queue url"))
@@ -60,12 +60,12 @@ class HmppsQueueFactoryTest {
 
     @Test
     fun `creates aws sqs dlq client from sqs factory`() {
-      verify(sqsFactory).awsSqsDlqClient("somequeueid", "some dlq name", "dlq access key id", "dlq secret access key", "eu-west-2", false)
+      verify(sqsFactory).awsSqsDlqClient("somequeueid", "some dlq name", "dlq access key id", "dlq secret access key", "eu-west-2", false, false)
     }
 
     @Test
     fun `creates aws sqs client from sqs factory`() {
-      verify(sqsFactory).awsSqsClient("somequeueid", "some queue name", "some access key id", "some secret access key", "eu-west-2", false)
+      verify(sqsFactory).awsSqsClient("somequeueid", "some queue name", "some access key id", "some secret access key", "eu-west-2", false, false)
     }
 
     @Test
@@ -120,6 +120,53 @@ class HmppsQueueFactoryTest {
 
     @Test
     fun `should register the jms listener factory`() {
+      verify(beanFactory).registerSingleton(eq("somequeueid-jms-listener-factory"), any<HmppsQueueDestinationContainerFactory>())
+    }
+  }
+
+  @Nested
+  inner class `Create single AWS HmppsQueue using Web Token credentials` {
+    private val someQueueConfig = QueueConfig(queueName = "some queue name", queueAccessKeyId = "some access key id", queueSecretAccessKey = "some secret access key", dlqName = "some dlq name", dlqAccessKeyId = "dlq access key id", dlqSecretAccessKey = "dlq secret access key")
+    private val hmppsSqsProperties = HmppsSqsProperties(useWebToken = true, queues = mapOf("somequeueid" to someQueueConfig))
+    private val sqsClient = mock<AmazonSQS>()
+    private val sqsDlqClient = mock<AmazonSQS>()
+    private lateinit var hmppsQueues: List<HmppsQueue>
+
+    @BeforeEach
+    fun `configure mocks and register queues`() {
+      whenever(sqsFactory.awsSqsDlqClient(anyString(), anyString(), anyString(), anyString(), anyString(), anyBoolean(), anyBoolean()))
+        .thenReturn(sqsDlqClient)
+      whenever(sqsFactory.awsSqsClient(anyString(), anyString(), anyString(), anyString(), anyString(), anyBoolean(), anyBoolean()))
+        .thenReturn(sqsClient)
+      whenever(sqsDlqClient.getQueueUrl(anyString())).thenReturn(GetQueueUrlResult().withQueueUrl("some dlq url"))
+      whenever(sqsClient.getQueueUrl(anyString())).thenReturn(GetQueueUrlResult().withQueueUrl("some queue url"))
+
+      hmppsQueues = hmppsQueueFactory.createHmppsQueues(hmppsSqsProperties)
+    }
+
+    @Test
+    fun `creates clients`() {
+      verify(sqsFactory).awsSqsDlqClient("somequeueid", "some dlq name", "dlq access key id", "dlq secret access key", "eu-west-2", false, true)
+      verify(sqsFactory).awsSqsClient("somequeueid", "some queue name", "some access key id", "some secret access key", "eu-west-2", false, true)
+      assertThat(hmppsQueues[0].sqsDlqClient).isEqualTo(sqsDlqClient)
+      assertThat(hmppsQueues[0].sqsClient).isEqualTo(sqsClient)
+    }
+
+    @Test
+    fun `should return the queue details`() {
+      assertThat(hmppsQueues[0].id).isEqualTo("somequeueid")
+      assertThat(hmppsQueues[0].queueName).isEqualTo("some queue name")
+      assertThat(hmppsQueues[0].queueUrl).isEqualTo("some queue url")
+      assertThat(hmppsQueues[0].sqsDlqClient).isEqualTo(sqsDlqClient)
+      assertThat(hmppsQueues[0].dlqName).isEqualTo("some dlq name")
+      assertThat(hmppsQueues[0].dlqUrl).isEqualTo("some dlq url")
+    }
+
+    @Test
+    fun `should register beans`() {
+      verify(beanFactory).registerSingleton(eq("somequeueid-health"), any<HmppsQueueHealth>())
+      verify(beanFactory).registerSingleton("somequeueid-sqs-client", sqsClient)
+      verify(beanFactory).registerSingleton("somequeueid-sqs-dlq-client", sqsDlqClient)
       verify(beanFactory).registerSingleton(eq("somequeueid-jms-listener-factory"), any<HmppsQueueDestinationContainerFactory>())
     }
   }
@@ -215,7 +262,7 @@ class HmppsQueueFactoryTest {
       verify(sqsClient).createQueue(
         check<CreateQueueRequest> {
           assertThat(it.attributes).containsEntry("RedrivePolicy", """{"deadLetterTargetArn":"some dlq arn","maxReceiveCount":"5"}""")
-        }
+        },
       )
     }
 
@@ -228,7 +275,7 @@ class HmppsQueueFactoryTest {
       verify(sqsClient).createQueue(
         check<CreateQueueRequest> {
           assertThat(it.attributes).containsEntry("RedrivePolicy", """{"deadLetterTargetArn":"some dlq arn","maxReceiveCount":"2"}""")
-        }
+        },
       )
     }
   }
@@ -244,9 +291,9 @@ class HmppsQueueFactoryTest {
 
     @BeforeEach
     fun `configure mocks and register queues`() {
-      whenever(sqsFactory.awsSqsDlqClient(anyString(), anyString(), anyString(), anyString(), anyString(), anyBoolean()))
+      whenever(sqsFactory.awsSqsDlqClient(anyString(), anyString(), anyString(), anyString(), anyString(), anyBoolean(), anyBoolean()))
         .thenReturn(sqsDlqClient)
-      whenever(sqsFactory.awsSqsClient(anyString(), anyString(), anyString(), anyString(), anyString(), anyBoolean()))
+      whenever(sqsFactory.awsSqsClient(anyString(), anyString(), anyString(), anyString(), anyString(), anyBoolean(), anyBoolean()))
         .thenReturn(sqsClient)
       whenever(sqsClient.getQueueUrl("some queue name")).thenReturn(GetQueueUrlResult().withQueueUrl("some queue url"))
       whenever(sqsDlqClient.getQueueUrl("some dlq name")).thenReturn(GetQueueUrlResult().withQueueUrl("some dlq url"))
@@ -258,14 +305,14 @@ class HmppsQueueFactoryTest {
 
     @Test
     fun `should create multiple dlq clients from sqs factory`() {
-      verify(sqsFactory).awsSqsDlqClient("somequeueid", "some dlq name", "dlq access key id", "dlq secret access key", "eu-west-2", false)
-      verify(sqsFactory).awsSqsDlqClient("anotherqueueid", "another dlq name", "another dlq access key id", "another dlq secret access key", "eu-west-2", false)
+      verify(sqsFactory).awsSqsDlqClient("somequeueid", "some dlq name", "dlq access key id", "dlq secret access key", "eu-west-2", false, false)
+      verify(sqsFactory).awsSqsDlqClient("anotherqueueid", "another dlq name", "another dlq access key id", "another dlq secret access key", "eu-west-2", false, false)
     }
 
     @Test
     fun `should create multiple sqs clients from sqs factory`() {
-      verify(sqsFactory).awsSqsClient("somequeueid", "some queue name", "some access key id", "some secret access key", "eu-west-2", false)
-      verify(sqsFactory).awsSqsClient("anotherqueueid", "another queue name", "another access key id", "another secret access key", "eu-west-2", false)
+      verify(sqsFactory).awsSqsClient("somequeueid", "some queue name", "some access key id", "some secret access key", "eu-west-2", false, false)
+      verify(sqsFactory).awsSqsClient("anotherqueueid", "another queue name", "another access key id", "another secret access key", "eu-west-2", false, false)
     }
 
     @Test
@@ -291,9 +338,9 @@ class HmppsQueueFactoryTest {
 
     @BeforeEach
     fun `configure mocks and register queues`() {
-      whenever(sqsFactory.awsSqsDlqClient(anyString(), anyString(), anyString(), anyString(), anyString(), anyBoolean()))
+      whenever(sqsFactory.awsSqsDlqClient(anyString(), anyString(), anyString(), anyString(), anyString(), anyBoolean(), anyBoolean()))
         .thenReturn(sqsDlqClient)
-      whenever(sqsFactory.awsSqsClient(anyString(), anyString(), anyString(), anyString(), anyString(), anyBoolean()))
+      whenever(sqsFactory.awsSqsClient(anyString(), anyString(), anyString(), anyString(), anyString(), anyBoolean(), anyBoolean()))
         .thenReturn(sqsClient)
       whenever(sqsClient.getQueueUrl("some queue name")).thenReturn(GetQueueUrlResult().withQueueUrl("some queue url"))
       whenever(sqsDlqClient.getQueueUrl("some dlq name")).thenReturn(GetQueueUrlResult().withQueueUrl("some dlq url"))
@@ -303,8 +350,8 @@ class HmppsQueueFactoryTest {
 
     @Test
     fun `should create async clients from sqs factory`() {
-      verify(sqsFactory).awsSqsDlqClient("somequeueid", "some dlq name", "dlq access key id", "dlq secret access key", "eu-west-2", true)
-      verify(sqsFactory).awsSqsClient("somequeueid", "some queue name", "some access key id", "some secret access key", "eu-west-2", true)
+      verify(sqsFactory).awsSqsDlqClient("somequeueid", "some dlq name", "dlq access key id", "dlq secret access key", "eu-west-2", true, false)
+      verify(sqsFactory).awsSqsClient("somequeueid", "some queue name", "some access key id", "some secret access key", "eu-west-2", true, false)
     }
 
     @Test
@@ -413,9 +460,9 @@ class HmppsQueueFactoryTest {
         check { subscribeRequest ->
           assertThat(subscribeRequest.topicArn).isEqualTo("some topic arn")
           assertThat(subscribeRequest.protocol).isEqualTo("sqs")
-          assertThat(subscribeRequest.endpoint).isEqualTo("http://localhost:4566/queue/some-queue-name")
+          assertThat(subscribeRequest.endpoint).isEqualTo("some queue url")
           assertThat(subscribeRequest.attributes["FilterPolicy"]).isEqualTo("some topic filter")
-        }
+        },
       )
     }
   }
@@ -433,9 +480,9 @@ class HmppsQueueFactoryTest {
 
     @BeforeEach
     fun `configure mocks and register queues`() {
-      whenever(sqsFactory.awsSqsDlqClient(anyString(), anyString(), anyString(), anyString(), anyString(), anyBoolean()))
+      whenever(sqsFactory.awsSqsDlqClient(anyString(), anyString(), anyString(), anyString(), anyString(), anyBoolean(), anyBoolean()))
         .thenReturn(sqsDlqClient)
-      whenever(sqsFactory.awsSqsClient(anyString(), anyString(), anyString(), anyString(), anyString(), anyBoolean()))
+      whenever(sqsFactory.awsSqsClient(anyString(), anyString(), anyString(), anyString(), anyString(), anyBoolean(), anyBoolean()))
         .thenReturn(sqsClient)
       whenever(sqsDlqClient.getQueueUrl(anyString())).thenReturn(GetQueueUrlResult().withQueueUrl("some dlq url"))
       whenever(sqsClient.getQueueUrl(anyString())).thenReturn(GetQueueUrlResult().withQueueUrl("some queue url"))

@@ -28,9 +28,9 @@ class OutboundEventsEmitter(hmppsQueueService: HmppsQueueService, private val ob
     outboundTopic.snsClient.publish(
       PublishRequest(outboundTopic.arn, objectMapper.writeValueAsString(hmppsEvent))
         .withMessageAttributes(
-          mapOf("eventType" to MessageAttributeValue().withDataType("String").withStringValue(hmppsEvent.type))
+          mapOf("eventType" to MessageAttributeValue().withDataType("String").withStringValue(hmppsEvent.type)),
         )
-        .also { log.info("Published event $hmppsEvent to outbound topic") }
+        .also { log.info("Published event $hmppsEvent to outbound topic") },
     )
   }
 }

@@ -91,6 +91,7 @@ Examples of property usage can be found in the test project in the following pla
 | queues        |                         | A map of `queueId` to `QueueConfig`. One entry is required for each queue. In production these are derived from environment variables with the prefix `HMPPS_SQS_QUEUES_` that should be populated from Kubernetes secrets (see below). |
 | topics        |                         | A map of `topicId` to `TopicConfig`. One entry is required for each topic. In production these are derived from environment variables with the prefix `HMPPS_SQS_TOPICS_` that should be populated from Kubernetes secrets (see below). |
 | reactiveApi   | `false`                 | Publishes a reactive API for the Queue Admin Endpoints. See [Reactive Queue Admin Endpoints](#reactive-queue-admin-endpoints) for more details.                                                                                         |
+| useWebToken   | `false`                 | Assumes you will be using Web Identity Token credentials and thus won't need any queue / topic access keys or secrets                                                                                                                   |
 
 Each queue declared in the `queues` map is defined in the `QueueConfig` property class
 

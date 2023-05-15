@@ -91,7 +91,7 @@ class HmppsQueueResourceTest {
       verify(hmppsQueueService).purgeQueue(
         check {
           assertThat(it.queueName).isEqualTo("some queue")
-        }
+        },
       )
     }
 

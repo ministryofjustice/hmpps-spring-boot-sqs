@@ -23,8 +23,8 @@ class HmppsEventProcessingTest : IntegrationTestBase() {
     inboundSnsClient.publish(
       PublishRequest(inboundTopicArn, gsonString(event))
         .withMessageAttributes(
-          mapOf("eventType" to MessageAttributeValue().withDataType("String").withStringValue(event.type))
-        )
+          mapOf("eventType" to MessageAttributeValue().withDataType("String").withStringValue(event.type)),
+        ),
     )
 
     await untilCallTo { outboundTestSqsClient.countMessagesOnQueue(outboundTestQueueUrl) } matches { it == 1 }
@@ -42,8 +42,8 @@ class HmppsEventProcessingTest : IntegrationTestBase() {
     inboundSnsClient.publish(
       PublishRequest(inboundTopicArn, gsonString(event))
         .withMessageAttributes(
-          mapOf("eventType" to MessageAttributeValue().withDataType("String").withStringValue(event.type))
-        )
+          mapOf("eventType" to MessageAttributeValue().withDataType("String").withStringValue(event.type)),
+        ),
     )
 
     await untilCallTo { mockingDetails(outboundEventsEmitterSpy).invocations!! } matches { it?.isNotEmpty() ?: false } // Don't understand why it is nullable here
@@ -57,8 +57,8 @@ class HmppsEventProcessingTest : IntegrationTestBase() {
     inboundSnsClient.publish(
       PublishRequest(inboundTopicArn, gsonString(event))
         .withMessageAttributes(
-          mapOf("eventType" to MessageAttributeValue().withDataType("String").withStringValue(event.type))
-        )
+          mapOf("eventType" to MessageAttributeValue().withDataType("String").withStringValue(event.type)),
+        ),
     )
 
     await untilCallTo { outboundTestNoDlqSqsClient.countMessagesOnQueue(outboundTestNoDlqQueueUrl) } matches { it == 1 }
@@ -78,8 +78,8 @@ class HmppsEventProcessingTest : IntegrationTestBase() {
     inboundSnsClient.publish(
       PublishRequest(inboundTopicArn, gsonString(event))
         .withMessageAttributes(
-          mapOf("eventType" to MessageAttributeValue().withDataType("String").withStringValue(event.type))
-        )
+          mapOf("eventType" to MessageAttributeValue().withDataType("String").withStringValue(event.type)),
+        ),
     )
 
     await untilCallTo { inboundSqsDlqClient.countMessagesOnQueue(inboundDlqUrl) } matches { it == 1 }

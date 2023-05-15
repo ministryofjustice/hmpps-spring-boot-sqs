@@ -32,5 +32,5 @@ data class MessageAttributes(val eventType: EventType)
 data class Message(
   val Message: String,
   val MessageId: String,
-  val MessageAttributes: MessageAttributes
+  val MessageAttributes: MessageAttributes,
 )

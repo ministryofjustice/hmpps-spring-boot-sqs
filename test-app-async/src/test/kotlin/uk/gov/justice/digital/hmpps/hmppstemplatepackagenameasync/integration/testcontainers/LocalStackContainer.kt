@@ -13,25 +13,23 @@ object LocalStackContainer {
   val log = LoggerFactory.getLogger(this::class.java)
   val instance by lazy { startLocalstackIfNotRunning() }
 
-  fun setLocalStackProperties(localStackContainer: LocalStackContainer, registry: DynamicPropertyRegistry) =
-    localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.SNS)
-      .let { it.serviceEndpoint to it.signingRegion }
-      .also {
-        registry.add("hmpps.sqs.localstackUrl") { it.first }
-        registry.add("hmpps.sqs.region") { it.second }
-      }
+  fun setLocalStackProperties(localStackContainer: LocalStackContainer, registry: DynamicPropertyRegistry) {
+    registry.add("hmpps.sqs.localstackUrl") { localStackContainer.getEndpointOverride(LocalStackContainer.Service.SNS) }
+    registry.add("hmpps.sqs.region") { localStackContainer.region }
+  }
 
   private fun startLocalstackIfNotRunning(): LocalStackContainer? {
     if (localstackIsRunning()) return null
     val logConsumer = Slf4jLogConsumer(log).withPrefix("localstack")
     return LocalStackContainer(
-      DockerImageName.parse("localstack/localstack").withTag("0.14.0")
+      // Unable to upgrade beyond localstack 1.3 as it expects the AWS SDK V2
+      DockerImageName.parse("localstack/localstack").withTag("0.14.0"),
     ).apply {
       withServices(LocalStackContainer.Service.SNS, LocalStackContainer.Service.SQS)
       withEnv("HOSTNAME_EXTERNAL", "localhost")
       withEnv("DEFAULT_REGION", "eu-west-2")
       waitingFor(
-        Wait.forLogMessage(".*Ready.*", 1)
+        Wait.forLogMessage(".*Ready.*", 1),
       )
       start()
       followOutput(logConsumer)
