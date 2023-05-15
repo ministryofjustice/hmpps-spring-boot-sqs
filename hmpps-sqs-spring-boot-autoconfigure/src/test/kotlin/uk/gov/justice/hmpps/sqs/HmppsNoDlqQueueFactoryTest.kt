@@ -346,7 +346,7 @@ class HmppsNoDlqQueueFactoryTest {
         check { subscribeRequest ->
           assertThat(subscribeRequest.topicArn).isEqualTo("some topic arn")
           assertThat(subscribeRequest.protocol).isEqualTo("sqs")
-          assertThat(subscribeRequest.endpoint).isEqualTo("http://localhost:4566/queue/some-queue-name")
+          assertThat(subscribeRequest.endpoint).isEqualTo("some queue url")
           assertThat(subscribeRequest.attributes["FilterPolicy"]).isEqualTo("some topic filter")
         }
       )

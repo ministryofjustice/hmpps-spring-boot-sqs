@@ -28,10 +28,10 @@ class HmppsQueueFactory(
       .map { (queueId, queueConfig) ->
         val sqsDlqClient = getOrDefaultSqsDlqClient(queueId, queueConfig, hmppsSqsProperties)
         val sqsClient = getOrDefaultSqsClient(queueId, queueConfig, hmppsSqsProperties, sqsDlqClient)
-          .also { subscribeToLocalStackTopic(hmppsSqsProperties, queueConfig, hmppsTopics) }
         HmppsQueue(queueId, sqsClient, queueConfig.queueName, sqsDlqClient, queueConfig.dlqName.ifEmpty { null })
           .also { getOrDefaultHealthIndicator(it) }
           .also { createJmsListenerContainerFactory(it, hmppsSqsProperties) }
+          .also { subscribeToLocalStackTopic(hmppsSqsProperties, queueConfig, hmppsTopics, it.queueUrl) }
       }.toList()
 
   private fun getOrDefaultSqsDlqClient(queueId: String, queueConfig: QueueConfig, hmppsSqsProperties: HmppsSqsProperties): AmazonSQS? =
@@ -111,16 +111,16 @@ class HmppsQueueFactory(
     }
   }
 
-  private fun subscribeToLocalStackTopic(hmppsSqsProperties: HmppsSqsProperties, queueConfig: QueueConfig, hmppsTopics: List<HmppsTopic>) {
+  private fun subscribeToLocalStackTopic(hmppsSqsProperties: HmppsSqsProperties, queueConfig: QueueConfig, hmppsTopics: List<HmppsTopic>, queueUrl: String) {
     if (hmppsSqsProperties.provider == "localstack")
       hmppsTopics.firstOrNull { topic -> topic.id == queueConfig.subscribeTopicId }
         ?.also { topic ->
-          val subscribeAttribute = if (queueConfig.subscribeFilter.isNullOrEmpty()) mapOf() else mapOf("FilterPolicy" to queueConfig.subscribeFilter)
+          val subscribeAttribute = if (queueConfig.subscribeFilter.isEmpty()) mapOf() else mapOf("FilterPolicy" to queueConfig.subscribeFilter)
           topic.snsClient.subscribe(
             SubscribeRequest()
               .withTopicArn(topic.arn)
               .withProtocol("sqs")
-              .withEndpoint("${hmppsSqsProperties.localstackUrl}/queue/${queueConfig.queueName}")
+              .withEndpoint(queueUrl)
               .withAttributes(subscribeAttribute)
           )
             .also { log.info("Queue ${queueConfig.queueName} has subscribed to topic with arn ${topic.arn}") }
