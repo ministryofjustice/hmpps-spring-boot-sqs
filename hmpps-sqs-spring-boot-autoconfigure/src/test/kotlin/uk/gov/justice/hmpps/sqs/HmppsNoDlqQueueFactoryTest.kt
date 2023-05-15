@@ -185,7 +185,7 @@ class HmppsNoDlqQueueFactoryTest {
       verify(sqsClient).createQueue(
         check<CreateQueueRequest> {
           assertThat(it.attributes).doesNotContainEntry("RedrivePolicy", """{"deadLetterTargetArn":"some dlq arn","maxReceiveCount":"5"}""")
-        }
+        },
       )
     }
   }
@@ -348,7 +348,7 @@ class HmppsNoDlqQueueFactoryTest {
           assertThat(subscribeRequest.protocol).isEqualTo("sqs")
           assertThat(subscribeRequest.endpoint).isEqualTo("some queue url")
           assertThat(subscribeRequest.attributes["FilterPolicy"]).isEqualTo("some topic filter")
-        }
+        },
       )
     }
   }

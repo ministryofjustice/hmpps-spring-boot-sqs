@@ -17,7 +17,7 @@ import javax.jms.Session
 
 class HmppsQueueFactory(
   private val context: ConfigurableApplicationContext,
-  private val amazonSqsFactory: AmazonSqsFactory
+  private val amazonSqsFactory: AmazonSqsFactory,
 ) {
   companion object {
     val log: Logger = LoggerFactory.getLogger(this::class.java)
@@ -93,7 +93,7 @@ class HmppsQueueFactory(
     sqsDlqClient: AmazonSQS?,
     queueName: String,
     dlqName: String,
-    maxReceiveCount: Int
+    maxReceiveCount: Int,
   ) {
     if (dlqName.isEmpty() || sqsDlqClient == null) {
       sqsClient.createQueue(CreateQueueRequest(queueName))
@@ -105,9 +105,9 @@ class HmppsQueueFactory(
             CreateQueueRequest(queueName).withAttributes(
               mapOf(
                 QueueAttributeName.RedrivePolicy.toString() to
-                  """{"deadLetterTargetArn":"$queueArn","maxReceiveCount":"$maxReceiveCount"}"""
-              )
-            )
+                  """{"deadLetterTargetArn":"$queueArn","maxReceiveCount":"$maxReceiveCount"}""",
+              ),
+            ),
           )
         }
     }
@@ -123,7 +123,7 @@ class HmppsQueueFactory(
               .withTopicArn(topic.arn)
               .withProtocol("sqs")
               .withEndpoint(queueUrl)
-              .withAttributes(subscribeAttribute)
+              .withAttributes(subscribeAttribute),
           )
             .also { log.info("Queue ${queueConfig.queueName} has subscribed to topic with arn ${topic.arn}") }
         }

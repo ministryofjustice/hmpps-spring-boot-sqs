@@ -50,8 +50,8 @@ class HmppsQueueServiceTest {
         .thenReturn(
           listOf(
             HmppsQueue("some queue id", sqsClient, "some queue name", sqsDlqClient, "some dlq name"),
-            HmppsQueue("another queue id", mock(), "another queue name", mock(), "another dlq name")
-          )
+            HmppsQueue("another queue id", mock(), "another queue name", mock(), "another dlq name"),
+          ),
         )
 
       hmppsQueueService = HmppsQueueService(telemetryClient, hmppsTopicFactory, hmppsQueueFactory, hmppsSqsProperties)
@@ -107,7 +107,7 @@ class HmppsQueueServiceTest {
       @BeforeEach
       fun `finds zero messages on dlq`() {
         whenever(dlqSqs.getQueueAttributes(anyString(), eq(listOf("ApproximateNumberOfMessages")))).thenReturn(
-          GetQueueAttributesResult().withAttributes(mapOf("ApproximateNumberOfMessages" to "0"))
+          GetQueueAttributesResult().withAttributes(mapOf("ApproximateNumberOfMessages" to "0")),
         )
       }
 
@@ -141,7 +141,7 @@ class HmppsQueueServiceTest {
       @BeforeEach
       fun `finds a single message on the dlq`() {
         whenever(dlqSqs.getQueueAttributes(anyString(), eq(listOf("ApproximateNumberOfMessages")))).thenReturn(
-          GetQueueAttributesResult().withAttributes(mapOf("ApproximateNumberOfMessages" to "1"))
+          GetQueueAttributesResult().withAttributes(mapOf("ApproximateNumberOfMessages" to "1")),
         )
         whenever(dlqSqs.receiveMessage(any<ReceiveMessageRequest>()))
           .thenReturn(
@@ -149,8 +149,8 @@ class HmppsQueueServiceTest {
               Message()
                 .withBody("message-body")
                 .withReceiptHandle("message-receipt-handle")
-                .withMessageAttributes(mutableMapOf("some" to stringAttributeOf("attribute")))
-            )
+                .withMessageAttributes(mutableMapOf("some" to stringAttributeOf("attribute"))),
+            ),
           )
 
         hmppsQueueService = HmppsQueueService(telemetryClient, hmppsTopicFactory, hmppsQueueFactory, hmppsSqsProperties)
@@ -164,7 +164,7 @@ class HmppsQueueServiceTest {
           check<ReceiveMessageRequest> {
             assertThat(it.queueUrl).isEqualTo("dlqUrl")
             assertThat(it.maxNumberOfMessages).isEqualTo(1)
-          }
+          },
         )
       }
 
@@ -176,7 +176,7 @@ class HmppsQueueServiceTest {
           check {
             assertThat(it.queueUrl).isEqualTo("dlqUrl")
             assertThat(it.receiptHandle).isEqualTo("message-receipt-handle")
-          }
+          },
         )
       }
 
@@ -207,7 +207,7 @@ class HmppsQueueServiceTest {
             assertThat(it).containsEntry("messages-found", "1")
             assertThat(it).containsEntry("messages-retried", "1")
           },
-          isNull()
+          isNull(),
         )
       }
     }
@@ -217,7 +217,7 @@ class HmppsQueueServiceTest {
       @BeforeEach
       fun `finds two message on the dlq`() {
         whenever(dlqSqs.getQueueAttributes(anyString(), eq(listOf("ApproximateNumberOfMessages")))).thenReturn(
-          GetQueueAttributesResult().withAttributes(mapOf("ApproximateNumberOfMessages" to "2"))
+          GetQueueAttributesResult().withAttributes(mapOf("ApproximateNumberOfMessages" to "2")),
         )
         whenever(dlqSqs.receiveMessage(any<ReceiveMessageRequest>()))
           .thenReturn(
@@ -225,16 +225,16 @@ class HmppsQueueServiceTest {
               Message()
                 .withBody("message-1-body")
                 .withReceiptHandle("message-1-receipt-handle")
-                .withMessageAttributes((mutableMapOf("attribute-key-1" to stringAttributeOf("attribute-value-1"))))
-            )
+                .withMessageAttributes((mutableMapOf("attribute-key-1" to stringAttributeOf("attribute-value-1")))),
+            ),
           )
           .thenReturn(
             ReceiveMessageResult().withMessages(
               Message()
                 .withBody("message-2-body")
                 .withReceiptHandle("message-2-receipt-handle")
-                .withMessageAttributes((mutableMapOf("attribute-key-2" to stringAttributeOf("attribute-value-2"))))
-            )
+                .withMessageAttributes((mutableMapOf("attribute-key-2" to stringAttributeOf("attribute-value-2")))),
+            ),
           )
 
         hmppsQueueService = HmppsQueueService(telemetryClient, hmppsTopicFactory, hmppsQueueFactory, hmppsSqsProperties)
@@ -248,7 +248,7 @@ class HmppsQueueServiceTest {
           check<ReceiveMessageRequest> {
             assertThat(it.queueUrl).isEqualTo("dlqUrl")
             assertThat(it.maxNumberOfMessages).isEqualTo(1)
-          }
+          },
         )
       }
 
@@ -287,13 +287,13 @@ class HmppsQueueServiceTest {
       @BeforeEach
       fun `finds only one of two message on the dlq`() {
         whenever(dlqSqs.getQueueAttributes(anyString(), eq(listOf("ApproximateNumberOfMessages")))).thenReturn(
-          GetQueueAttributesResult().withAttributes(mapOf("ApproximateNumberOfMessages" to "2"))
+          GetQueueAttributesResult().withAttributes(mapOf("ApproximateNumberOfMessages" to "2")),
         )
         whenever(dlqSqs.receiveMessage(any<ReceiveMessageRequest>()))
           .thenReturn(
             ReceiveMessageResult().withMessages(
-              Message().withBody("message-1-body").withReceiptHandle("message-1-receipt-handle").withMessageAttributes(mutableMapOf("some" to stringAttributeOf("attribute")))
-            )
+              Message().withBody("message-1-body").withReceiptHandle("message-1-receipt-handle").withMessageAttributes(mutableMapOf("some" to stringAttributeOf("attribute"))),
+            ),
           )
           .thenReturn(ReceiveMessageResult())
 
@@ -308,7 +308,7 @@ class HmppsQueueServiceTest {
           check<ReceiveMessageRequest> {
             assertThat(it.queueUrl).isEqualTo("dlqUrl")
             assertThat(it.maxNumberOfMessages).isEqualTo(1)
-          }
+          },
         )
       }
 
@@ -320,7 +320,7 @@ class HmppsQueueServiceTest {
           check {
             assertThat(it.queueUrl).isEqualTo("dlqUrl")
             assertThat(it.receiptHandle).isEqualTo("message-1-receipt-handle")
-          }
+          },
         )
       }
 
@@ -352,7 +352,7 @@ class HmppsQueueServiceTest {
             assertThat(it).containsEntry("messages-found", "2")
             assertThat(it).containsEntry("messages-retried", "1")
           },
-          isNull()
+          isNull(),
         )
       }
     }
@@ -374,7 +374,7 @@ class HmppsQueueServiceTest {
     @BeforeEach
     fun `gets a message on the dlq`() {
       whenever(dlqSqs.getQueueAttributes(anyString(), eq(listOf("ApproximateNumberOfMessages")))).thenReturn(
-        GetQueueAttributesResult().withAttributes(mapOf("ApproximateNumberOfMessages" to "1"))
+        GetQueueAttributesResult().withAttributes(mapOf("ApproximateNumberOfMessages" to "1")),
       )
       whenever(dlqSqs.receiveMessage(any<ReceiveMessageRequest>()))
         .thenReturn(
@@ -387,10 +387,10 @@ class HmppsQueueServiceTest {
                                                 "longProperty":12345678
                                             },
                                             "MessageId":"message-id-1"
-                                          }"""
+                                          }""",
             )
-              .withReceiptHandle("message-1-receipt-handle").withMessageId("external-message-id-1")
-          )
+              .withReceiptHandle("message-1-receipt-handle").withMessageId("external-message-id-1"),
+          ),
         )
 
       hmppsQueueService = HmppsQueueService(telemetryClient, hmppsTopicFactory, hmppsQueueFactory, hmppsSqsProperties)
@@ -408,7 +408,7 @@ class HmppsQueueServiceTest {
       verify(dlqSqs).receiveMessage(
         check<ReceiveMessageRequest> {
           assertThat(it.queueUrl).isEqualTo("dlqUrl")
-        }
+        },
       )
     }
   }
@@ -427,8 +427,8 @@ class HmppsQueueServiceTest {
         .thenReturn(
           listOf(
             HmppsQueue("some queue id", sqsClient, "some queue name", sqsDlqClient, "some dlq name"),
-            HmppsQueue("another queue id", mock(), "another queue name", mock(), "another dlq name")
-          )
+            HmppsQueue("another queue id", mock(), "another queue name", mock(), "another dlq name"),
+          ),
         )
 
       hmppsQueueService = HmppsQueueService(telemetryClient, hmppsTopicFactory, hmppsQueueFactory, hmppsSqsProperties)
@@ -501,7 +501,7 @@ class HmppsQueueServiceTest {
           assertThat(it).containsEntry("queue-name", "some queue")
           assertThat(it).containsEntry("messages-found", "1")
         },
-        isNull()
+        isNull(),
       )
     }
 

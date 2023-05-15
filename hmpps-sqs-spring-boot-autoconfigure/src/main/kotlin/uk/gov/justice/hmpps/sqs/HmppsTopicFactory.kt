@@ -8,7 +8,7 @@ import uk.gov.justice.hmpps.sqs.HmppsSqsProperties.TopicConfig
 
 class HmppsTopicFactory(
   private val context: ConfigurableApplicationContext,
-  private val amazonSnsFactory: AmazonSnsFactory
+  private val amazonSnsFactory: AmazonSnsFactory,
 ) {
   companion object {
     val log: Logger = LoggerFactory.getLogger(this::class.java)

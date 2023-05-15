@@ -9,7 +9,7 @@ class JmsListenerContainerFactoryMissingException(message: String) : RuntimeExce
 
 data class HmppsQueueDestinationContainerFactory(
   val destination: String,
-  val factory: DefaultJmsListenerContainerFactory
+  val factory: DefaultJmsListenerContainerFactory,
 )
 
 class HmppsQueueJmsListenerContainerFactory(private val factories: List<HmppsQueueDestinationContainerFactory>) : DefaultJmsListenerContainerFactory() {
