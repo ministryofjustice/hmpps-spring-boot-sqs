@@ -11,7 +11,7 @@ plugins {
 dependencies {
   api(project(":hmpps-sqs-spring-boot-autoconfigure"))
   api(platform("com.amazonaws:aws-java-sdk-bom:1.12.468"))
-  implementation("com.amazonaws:amazon-sqs-java-messaging-lib:1.1.2") // We cannot move to 1.2.0 as it introduces the jakarta package name update which is incompatible with Spring Boot 2
+  api("com.amazonaws:amazon-sqs-java-messaging-lib:1.1.2") // We cannot move to 1.2.0 as it introduces the jakarta package name update which is incompatible with Spring Boot 2
   api("com.amazonaws:aws-java-sdk-sns")
   api("com.amazonaws:aws-java-sdk-sts")
   api(platform("org.springframework.boot:spring-boot-dependencies:2.7.11"))
