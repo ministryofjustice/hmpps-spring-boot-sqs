@@ -17,7 +17,7 @@ import javax.jms.Session
 
 class HmppsQueueFactory(
   private val context: ConfigurableApplicationContext,
-  private val amazonSqsFactory: AmazonSqsFactory,
+  private val amazonSqsFactory: AmazonSqsFactory
 ) {
   companion object {
     val log: Logger = LoggerFactory.getLogger(this::class.java)
@@ -39,7 +39,9 @@ class HmppsQueueFactory(
       getOrDefaultBean("$queueId-sqs-dlq-client") {
         createSqsDlqClient(queueId, queueConfig, hmppsSqsProperties)
       }
-    } else null
+    } else {
+      null
+    }
 
   private fun getOrDefaultSqsClient(queueId: String, queueConfig: QueueConfig, hmppsSqsProperties: HmppsSqsProperties, sqsDlqClient: AmazonSQS?): AmazonSQS =
     getOrDefaultBean("$queueId-sqs-client") {
@@ -91,7 +93,7 @@ class HmppsQueueFactory(
     sqsDlqClient: AmazonSQS?,
     queueName: String,
     dlqName: String,
-    maxReceiveCount: Int,
+    maxReceiveCount: Int
   ) {
     if (dlqName.isEmpty() || sqsDlqClient == null) {
       sqsClient.createQueue(CreateQueueRequest(queueName))
@@ -112,7 +114,7 @@ class HmppsQueueFactory(
   }
 
   private fun subscribeToLocalStackTopic(hmppsSqsProperties: HmppsSqsProperties, queueConfig: QueueConfig, hmppsTopics: List<HmppsTopic>, queueUrl: String) {
-    if (hmppsSqsProperties.provider == "localstack")
+    if (hmppsSqsProperties.provider == "localstack") {
       hmppsTopics.firstOrNull { topic -> topic.id == queueConfig.subscribeTopicId }
         ?.also { topic ->
           val subscribeAttribute = if (queueConfig.subscribeFilter.isEmpty()) mapOf() else mapOf("FilterPolicy" to queueConfig.subscribeFilter)
@@ -125,6 +127,7 @@ class HmppsQueueFactory(
           )
             .also { log.info("Queue ${queueConfig.queueName} has subscribed to topic with arn ${topic.arn}") }
         }
+    }
   }
 
   fun createJmsListenerContainerFactory(awsSqsClient: AmazonSQS, hmppsSqsProperties: HmppsSqsProperties): DefaultJmsListenerContainerFactory =

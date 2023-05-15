@@ -121,8 +121,8 @@ abstract class IntegrationTestBase {
       jwtAuthHelper.createJwt(
         subject = "SOME_USER",
         roles = roles,
-        clientId = "some-client"
-      )
+        clientId = "some-client",
+      ),
     )
   }
 
@@ -134,7 +134,7 @@ abstract class IntegrationTestBase {
     @Bean("outboundqueue-sqs-client")
     fun outboundQueueSqsClient(
       hmppsSqsProperties: HmppsSqsProperties,
-      @Qualifier("outboundqueue-sqs-dlq-client") outboundQueueSqsDlqClient: AmazonSQS
+      @Qualifier("outboundqueue-sqs-dlq-client") outboundQueueSqsDlqClient: AmazonSQS,
     ): AmazonSQS =
       with(hmppsSqsProperties) {
         val config = queues["outboundqueue"] ?: throw MissingQueueException("HmppsSqsProperties config for outboundqueue not found")

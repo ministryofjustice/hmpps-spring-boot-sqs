@@ -22,14 +22,14 @@ object LocalStackContainer {
     if (localstackIsRunning()) return null
     val logConsumer = Slf4jLogConsumer(log).withPrefix("localstack")
     return LocalStackContainer(
-      // Unable to upgrade beyond localstack 1.3 as it is expecting the AWS SDK V2
-      DockerImageName.parse("localstack/localstack").withTag("1.3")
+      // Unable to upgrade beyond localstack 1.3 as it expects the AWS SDK V2
+      DockerImageName.parse("localstack/localstack").withTag("1.3"),
     ).apply {
       withServices(LocalStackContainer.Service.SNS, LocalStackContainer.Service.SQS)
       withEnv("HOSTNAME_EXTERNAL", "localhost")
       withEnv("DEFAULT_REGION", "eu-west-2")
       waitingFor(
-        Wait.forLogMessage(".*Ready.*", 1)
+        Wait.forLogMessage(".*Ready.*", 1),
       )
       start()
       followOutput(logConsumer)

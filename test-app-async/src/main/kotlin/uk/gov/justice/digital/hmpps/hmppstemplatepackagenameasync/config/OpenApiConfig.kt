@@ -13,6 +13,6 @@ class OpenApiConfig {
     .servers(
       listOf(
         Server().url("http://localhost:8080").description("local"),
-      )
+      ),
     )
 }

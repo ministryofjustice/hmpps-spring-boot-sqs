@@ -1,6 +1,7 @@
 version: "3"
 services:
   localstack:
+    # Unable to upgrade beyond localstack 1.3 as it expects the AWS SDK V2
     image: localstack/localstack:1.3
     networks:
       - hmpps

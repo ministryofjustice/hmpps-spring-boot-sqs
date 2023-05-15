@@ -8,7 +8,7 @@ jobs:
     executor:
       name: hmpps/localstack
       jdk_tag: "11.0"
-      # Unable to upgrade beyond localstack 1.3 as it is expecting the AWS SDK V2
+      # Unable to upgrade beyond localstack 1.3 as it expects the AWS SDK V2
       localstack_tag: "1.3"
     steps:
       - checkout

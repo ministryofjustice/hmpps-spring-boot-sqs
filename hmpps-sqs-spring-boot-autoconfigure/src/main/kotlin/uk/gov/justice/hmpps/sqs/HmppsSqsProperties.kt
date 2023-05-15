@@ -12,7 +12,7 @@ data class HmppsSqsProperties(
   val queues: Map<String, QueueConfig> = mapOf(),
   val topics: Map<String, TopicConfig> = mapOf(),
   val reactiveApi: Boolean = false,
-  val useWebToken: Boolean = false,
+  val useWebToken: Boolean = false
 ) {
   data class QueueConfig(
     val queueName: String,
@@ -25,14 +25,14 @@ data class HmppsSqsProperties(
     val dlqAccessKeyId: String = "",
     val dlqSecretAccessKey: String = "",
     val asyncDlqClient: Boolean = false,
-    val dlqMaxReceiveCount: Int = 5,
+    val dlqMaxReceiveCount: Int = 5
   )
 
   data class TopicConfig(
     val arn: String = "",
     val accessKeyId: String = "",
     val secretAccessKey: String = "",
-    val asyncClient: Boolean = false,
+    val asyncClient: Boolean = false
   ) {
     private val arnRegex = Regex("arn:aws:sns:.*:.*:(.*)$")
 
@@ -82,8 +82,9 @@ data class HmppsSqsProperties(
     queueId: String
   ) {
     if (provider == "localstack") {
-      if (queueConfig.subscribeTopicId.isNotEmpty().and(topics.containsKey(queueConfig.subscribeTopicId).not()))
+      if (queueConfig.subscribeTopicId.isNotEmpty().and(topics.containsKey(queueConfig.subscribeTopicId).not())) {
         throw InvalidHmppsSqsPropertiesException("queueId $queueId wants to subscribe to ${queueConfig.subscribeTopicId} but it does not exist")
+      }
     }
   }
 

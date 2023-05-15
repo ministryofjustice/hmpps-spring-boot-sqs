@@ -326,7 +326,7 @@ class HmppsSqsPropertiesTest {
           queues = mapOf(
             "queueid1" to validAwsQueueConfig(1).copy(dlqAccessKeyId = "1stAccessKey"),
             "queueid2" to validAwsQueueConfig(2).copy(dlqAccessKeyId = "2ndAccessKey"),
-            "queueid3" to validAwsQueueConfig(3).copy(dlqAccessKeyId = "1stAccessKey"),
+            "queueid3" to validAwsQueueConfig(3).copy(dlqAccessKeyId = "1stAccessKey")
           ),
           topics = mapOf()
         )

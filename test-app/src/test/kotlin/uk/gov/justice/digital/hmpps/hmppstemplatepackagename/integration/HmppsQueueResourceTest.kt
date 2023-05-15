@@ -226,8 +226,8 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
           Matchers.contains(
             "message-id-1",
             "message-id-2",
-            "message-id-3"
-          )
+            "message-id-3",
+          ),
         )
     }
 

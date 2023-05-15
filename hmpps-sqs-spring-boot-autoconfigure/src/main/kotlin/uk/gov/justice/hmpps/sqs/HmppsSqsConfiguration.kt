@@ -32,7 +32,7 @@ class HmppsSqsConfiguration {
     telemetryClient: TelemetryClient?,
     hmppsTopicFactory: HmppsTopicFactory,
     hmppsQueueFactory: HmppsQueueFactory,
-    hmppsSqsProperties: HmppsSqsProperties,
+    hmppsSqsProperties: HmppsSqsProperties
   ) = HmppsQueueService(telemetryClient, hmppsTopicFactory, hmppsQueueFactory, hmppsSqsProperties)
 
   @Bean

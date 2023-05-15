@@ -33,7 +33,7 @@ class JwtAuthHelper {
     roles: List<String>? = listOf(),
     expiryTime: Duration = Duration.ofHours(1),
     clientId: String = "prison-register-client",
-    jwtId: String = UUID.randomUUID().toString()
+    jwtId: String = UUID.randomUUID().toString(),
   ): String =
     mutableMapOf<String, Any>()
       .apply { subject?.let { subject -> this["user_name"] = subject } }
