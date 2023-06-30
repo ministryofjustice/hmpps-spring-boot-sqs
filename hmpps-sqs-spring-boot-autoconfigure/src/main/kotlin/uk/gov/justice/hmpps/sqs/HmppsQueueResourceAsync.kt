@@ -42,7 +42,7 @@ class HmppsQueueResourceAsync(private val hmppsQueueService: HmppsQueueService) 
       ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "$queueName not found")
 
   /*
-    Note: Once the DLQ messages have been read, they are not visible again (for subsequent reads) for approximately 30 seconds. This is due to the visibility
+    Note: Once the DLQ messages have been read, they are not visible again (for subsequent reads) for approximately one second. This is due to the visibility
     timeout period which supports deleting of dlq messages when sent back to the processing queue
    */
   @GetMapping("/get-dlq-messages/{dlqName}")
