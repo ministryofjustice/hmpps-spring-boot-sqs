@@ -18,6 +18,7 @@ import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.service.HmppsEvent
 import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.service.Message
 import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.service.MessageAttributes
 import uk.gov.justice.hmpps.sqs.countMessagesOnQueue
+import java.time.Duration
 
 class HmppsQueueResourceTest : IntegrationTestBase() {
 
@@ -238,6 +239,8 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
             "message-id-3",
           ),
         )
+      // Ensure messages are quickly made visible again
+      await.atMost(Duration.ofSeconds(3)) untilCallTo { inboundSqsDlqClient.countMessagesOnQueue(inboundDlqUrl).get() } matches { it == 3 }
     }
 
     @Test

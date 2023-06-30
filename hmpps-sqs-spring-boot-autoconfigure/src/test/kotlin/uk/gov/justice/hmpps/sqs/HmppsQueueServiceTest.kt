@@ -564,6 +564,7 @@ class HmppsQueueServiceTest {
       verify(dlqSqs).receiveMessage(
         check<ReceiveMessageRequest> {
           assertThat(it.queueUrl()).isEqualTo("dlqUrl")
+          assertThat(it.visibilityTimeout()).isEqualTo(1)
         },
       )
     }
@@ -587,6 +588,7 @@ class HmppsQueueServiceTest {
       verify(dlqSqs, times(3)).receiveMessage(
         check<ReceiveMessageRequest> {
           assertThat(it.queueUrl()).isEqualTo("dlqUrl")
+          assertThat(it.visibilityTimeout()).isEqualTo(1)
         },
       )
     }

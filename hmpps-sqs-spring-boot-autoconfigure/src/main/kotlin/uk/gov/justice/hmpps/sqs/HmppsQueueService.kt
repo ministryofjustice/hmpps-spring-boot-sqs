@@ -87,7 +87,15 @@ open class HmppsQueueService(
 
     val messages = (1..messagesToReturnCount)
       .asFlow()
-      .map { sqsDlqClient.receiveMessage(ReceiveMessageRequest.builder().queueUrl(dlqUrl).maxNumberOfMessages(1).build()).await() }
+      .map {
+        sqsDlqClient.receiveMessage(
+          ReceiveMessageRequest.builder()
+            .queueUrl(dlqUrl)
+            .maxNumberOfMessages(1)
+            .visibilityTimeout(1)
+            .build(),
+        ).await()
+      }
       .mapNotNull { it.messages().firstOrNull() }
       .map { msg -> DlqMessage(messageId = msg.messageId(), body = gson.fromJson(msg.body(), map.javaClass)) }
       .toList()
