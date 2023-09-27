@@ -105,7 +105,7 @@ Each queue declared in the `queues` map is defined in the `QueueConfig` property
 
 | Property             | Default | Description                                                                                                                                                                                                                          |
 |----------------------|---------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| queueId              |         | The key to the `queues` map. A unique name for the queue configuration, used heavily when automatically creating Spring beans. Must be lower case.                                                                                   |
+| queueId              |         | The key to the `queues` map. A unique name for the queue configuration, used heavily when automatically creating Spring beans. Must be lower case letters only (no hyphens or underscores).                                                                                   |
 | queueName            |         | The name of the queue as recognised by AWS or LocalStack. The AWS queue name, should be derived from an environment variable of format `HMPPS_SQS_QUEUES_<queueId>_QUEUE_NAME`.                                                      |
 | queueAccessKeyId     |         | Only used for `provider=aws`. The AWS access key ID, should be derived from an environment variable of format `HMPPS_SQS_QUEUES_<queueId>_QUEUE_ACCESS_KEY_ID`.                                                                      |
 | queueSecretAccessKey |         | Only used for `provider=aws`. The AWS secret access key, should be derived from an environment variable of format `HMPPS_SQS_QUEUES_<queueId>_QUEUE_SECRET_ACCESS_KEY`.                                                              |
@@ -120,13 +120,13 @@ Each queue declared in the `queues` map is defined in the `QueueConfig` property
 
 Each topic declared in the `topics` map is defined in the `TopicConfig` property class
 
-| Property        | Default | Description                                                                                                                                                       |
-|-----------------|---------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| topicId         |         | The key to the `topics` map. A unique name for the topic configuration, used heavily when automatically creating Spring beans. Must be lower case.                |
-| arn             |         | The ARN of the topic as recognised by AWS and LocalStack.                                                                                                         |
-| accessKeyId     |         | Only used for `provider=aws`. The AWS access key ID, should be derived from an environment variable of format `HMPPS_SQS_TOPICS_<topicId>_ACCESS_KEY_ID`.         | 
-| secretAccessKey |         | Only used for `provider=aws`. The AWS secret access key, should be derived from an environment variable of format `HMPPS_SQS_TOPICS_<topicId>_SECRET_ACCESS_KEY`. |
-| asyncClient     | `false` | If true then the `AmazonSNS` bean created will be an `AmazonSNSAsync` instance.                                                                                   |
+| Property        | Default | Description                                                                                                                                                                                 |
+|-----------------|---------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| topicId         |         | The key to the `topics` map. A unique name for the topic configuration, used heavily when automatically creating Spring beans. Must be lower case letters only (no hyphens or underscores). |
+| arn             |         | The ARN of the topic as recognised by AWS and LocalStack.                                                                                                                                   |
+| accessKeyId     |         | Only used for `provider=aws`. The AWS access key ID, should be derived from an environment variable of format `HMPPS_SQS_TOPICS_<topicId>_ACCESS_KEY_ID`.                                   | 
+| secretAccessKey |         | Only used for `provider=aws`. The AWS secret access key, should be derived from an environment variable of format `HMPPS_SQS_TOPICS_<topicId>_SECRET_ACCESS_KEY`.                           |
+| asyncClient     | `false` | If true then the `AmazonSNS` bean created will be an `AmazonSNSAsync` instance.                                                                                                             |
 
 ### JmsListener
 
