@@ -85,6 +85,13 @@ Examples of property usage can be found in the test project in the following pla
 
 #### HmppsSqsProperties Definitions
 
+
+##### :warning: queueId and topicId Must Be All Lowercase And Alpha
+
+As we define the production queue and topic properties in environment variables that map to a complex object in `HmppsSqsProperties` Spring is unable to handle a mixed case `queueId` or `topicId` and struggles with hyphens and underscores. Therefore please make the <queueId> and <topicId> a single word that is all lower case (or upper case when defining env vars in the Helm values files).
+
+E.g. I know you'd like to use property `hmpps.sqs.queues.my-service-queue.queueName`, but your life will be much easier if you name the property `hmpps.sqs.queues.myservicequeue.queueName`.
+
 | Property      | Default                 | Description                                                                                                                                                                                                                             |
 |---------------|-------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | provider      | `aws`                   | `aws` for production or `localstack` for running locally / integration tests.                                                                                                                                                           |
@@ -121,12 +128,6 @@ Each topic declared in the `topics` map is defined in the `TopicConfig` property
 | accessKeyId     |         | Only used for `provider=aws`. The AWS access key ID, should be derived from an environment variable of format `HMPPS_SQS_TOPICS_<topicId>_ACCESS_KEY_ID`.         | 
 | secretAccessKey |         | Only used for `provider=aws`. The AWS secret access key, should be derived from an environment variable of format `HMPPS_SQS_TOPICS_<topicId>_SECRET_ACCESS_KEY`. |
 | asyncClient     | `false` | If true then the `AmazonSNS` bean created will be an `AmazonSNSAsync` instance.                                                                                   |
-
-#### :warning: queueId and topicId Must Be All Lowercase And Alpha
-
-As we define the production queue and topic properties in environment variables that map to a complex object in `HmppsSqsProperties` Spring is unable to handle a mixed case `queueId` or `topicId` and struggles with hyphens and underscores. Therefore please make the <queueId> and <topicId> a single word that is all lower case (or upper case when defining env vars in the Helm values files).
-
-E.g. I know you'd like to use property `hmpps.sqs.queues.my-service-queue.queueName`, but your life will be much easier if you name the property `hmpps.sqs.queues.myservicequeue.queueName`.
 
 ### JmsListener
 
