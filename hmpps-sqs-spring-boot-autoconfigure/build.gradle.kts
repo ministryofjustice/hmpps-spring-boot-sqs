@@ -17,8 +17,8 @@ plugins {
 
 dependencyManagement {
   imports {
-    mavenBom("software.amazon.awssdk:bom:2.20.157")
-    mavenBom("io.awspring.cloud:spring-cloud-aws-dependencies:3.0.2")
+    mavenBom("software.amazon.awssdk:bom:2.25.34")
+    mavenBom("io.awspring.cloud:spring-cloud-aws-dependencies:3.1.1")
   }
 }
 

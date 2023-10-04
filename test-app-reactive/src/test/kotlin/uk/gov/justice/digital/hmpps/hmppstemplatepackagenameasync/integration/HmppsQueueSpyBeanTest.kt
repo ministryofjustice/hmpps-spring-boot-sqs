@@ -11,11 +11,11 @@ import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.springframework.http.MediaType
-import software.amazon.awssdk.services.sqs.model.DeleteMessageRequest
 import software.amazon.awssdk.services.sqs.model.GetQueueAttributesRequest
+import software.amazon.awssdk.services.sqs.model.MessageAttributeValue
 import software.amazon.awssdk.services.sqs.model.PurgeQueueRequest
-import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest
+import software.amazon.awssdk.services.sqs.model.StartMessageMoveTaskRequest
 import uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.service.EventType
 import uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.service.HmppsEvent
 import uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.service.Message
@@ -41,7 +41,7 @@ class HmppsQueueSpyBeanTest : IntegrationTestBase() {
   fun `Can verify usage of spy bean for retry-dlq endpoint`() = runTest {
     val event = HmppsEvent("id", "test.type", "message1")
     val message = Message(gsonString(event), "message-id", MessageAttributes(EventType("test.type", "String")))
-    val messageAttributes = mutableMapOf("eventType" to software.amazon.awssdk.services.sqs.model.MessageAttributeValue.builder().dataType("String").stringValue("test value").build())
+    val messageAttributes = mutableMapOf("eventType" to MessageAttributeValue.builder().dataType("String").stringValue("test value").build())
     outboundSqsDlqClientSpy.sendMessage(SendMessageRequest.builder().queueUrl(outboundDlqUrl).messageBody(gsonString(message)).messageAttributes(messageAttributes).build())
     await untilCallTo { outboundSqsDlqClientSpy.countMessagesOnQueue(outboundDlqUrl).get() } matches { it == 1 }
 
@@ -55,17 +55,14 @@ class HmppsQueueSpyBeanTest : IntegrationTestBase() {
     await untilCallTo { outboundSqsDlqClientSpy.countMessagesOnQueue(outboundDlqUrl).get() } matches { it == 0 }
     await untilCallTo { outboundSqsClientSpy.countMessagesOnQueue(outboundQueueUrl).get() } matches { it == 0 }
 
-    val captor = argumentCaptor<SendMessageRequest>()
-
     verify(outboundMessageServiceSpy).handleMessage(event)
-    verify(outboundSqsDlqClientSpy).receiveMessage(ReceiveMessageRequest.builder().queueUrl(outboundDlqUrl).maxNumberOfMessages(1).messageAttributeNames("All").build())
-    verify(outboundSqsDlqClientSpy).deleteMessage(any<DeleteMessageRequest>())
 
-    verify(outboundSqsClientSpy).sendMessage(captor.capture())
+    val captor = argumentCaptor<StartMessageMoveTaskRequest>()
+    verify(outboundSqsDlqClientSpy).startMessageMoveTask(captor.capture())
 
-    assertThat(captor.firstValue.queueUrl()).isEqualTo(outboundQueueUrl)
-    assertThat(captor.firstValue.messageBody()).isEqualTo(gsonString(message))
-    assertThat(captor.firstValue.messageAttributes()).isEqualTo(messageAttributes)
+    assertThat(captor.firstValue.sourceArn()).contains("000000000000")
+    assertThat(captor.firstValue.destinationArn()).contains("000000000000")
+    assertThat(captor.firstValue.maxNumberOfMessagesPerSecond()).isEqualTo(10)
   }
 
   @Test

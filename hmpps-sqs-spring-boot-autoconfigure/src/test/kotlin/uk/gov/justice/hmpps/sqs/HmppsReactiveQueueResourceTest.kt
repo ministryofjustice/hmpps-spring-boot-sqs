@@ -42,7 +42,7 @@ class HmppsReactiveQueueResourceTest {
       whenever(hmppsQueueService.findByDlqName("some dlq name"))
         .thenReturn(hmppsAsyncQueue)
       whenever(hmppsQueueService.retryDlqMessages(any())).doSuspendableAnswer {
-        withContext(Dispatchers.Default) { RetryDlqResult(2, listOf(DlqMessage(mapOf("key" to "value"), "id"))) }
+        withContext(Dispatchers.Default) { RetryDlqResult(2) }
       }
 
       webTestClient.put()
@@ -51,9 +51,6 @@ class HmppsReactiveQueueResourceTest {
         .expectStatus().isOk
         .expectBody()
         .jsonPath("$.messagesFoundCount").isEqualTo(2)
-        .jsonPath("$.messages.length()").isEqualTo(1)
-        .jsonPath("$.messages[0].messageId").isEqualTo("id")
-        .jsonPath("$.messages[0].body.key").isEqualTo("value")
 
       verify(hmppsQueueService).retryDlqMessages(RetryDlqRequest(hmppsAsyncQueue))
     }
