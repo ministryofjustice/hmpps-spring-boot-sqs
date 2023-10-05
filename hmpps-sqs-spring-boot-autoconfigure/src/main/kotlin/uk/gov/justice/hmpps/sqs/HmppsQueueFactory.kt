@@ -151,7 +151,7 @@ class HmppsQueueFactory(
     if (findProvider(hmppsSqsProperties.provider) == Provider.LOCALSTACK) {
       val queueArn = sqsClient.getQueueAttributes(
         GetQueueAttributesRequest.builder()
-          .queueUrl("${hmppsSqsProperties.localstackUrl}/queue/${queueConfig.queueName}")
+          .queueUrl("${hmppsSqsProperties.localstackUrl}/000000000000/${queueConfig.queueName}")
           .attributeNames(QueueAttributeName.QUEUE_ARN).build(),
       ).await().attributes()[QueueAttributeName.QUEUE_ARN]
       val topic = hmppsTopics.firstOrNull { topic -> topic.id == queueConfig.subscribeTopicId }
