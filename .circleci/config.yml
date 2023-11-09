@@ -81,6 +81,7 @@ workflows:
             branches:
               only:
                 - main
+                - spring-boot-2
       - publish:
           requires:
             - publish-approval
@@ -88,6 +89,7 @@ workflows:
             branches:
               only:
                 - main
+                - spring-boot-2
 
   security:
     triggers:
@@ -97,6 +99,7 @@ workflows:
             branches:
               only:
                 - main
+                - spring-boot-2
     jobs:
       - hmpps/gradle_owasp_dependency_check:
           cache_key: "v2_0"
