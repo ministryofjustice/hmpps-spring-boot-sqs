@@ -8,7 +8,7 @@ jobs:
     executor:
       name: hmpps/localstack
       jdk_tag: "17.0"
-      localstack_tag: "1.4"
+      localstack_tag: "2.3"
     steps:
       - checkout
       - hmpps/wait_till_ready
@@ -80,7 +80,7 @@ workflows:
             branches:
               only:
                 - main
-                - spring-boot-3
+                - spring-boot-2
       - publish:
           requires:
             - publish-approval
@@ -88,7 +88,7 @@ workflows:
             branches:
               only:
                 - main
-                - spring-boot-3
+                - spring-boot-2
 
   security:
     triggers:
@@ -98,7 +98,7 @@ workflows:
             branches:
               only:
                 - main
-                - spring-boot-3
+                - spring-boot-2
     jobs:
       - hmpps/gradle_owasp_dependency_check:
           cache_key: "v2_0"
