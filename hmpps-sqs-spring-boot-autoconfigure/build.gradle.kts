@@ -11,7 +11,7 @@ plugins {
   id("se.patrikerdes.use-latest-versions") version "0.2.18"
   id("io.spring.dependency-management") version "1.1.4"
   id("org.jlleitschuh.gradle.ktlint") version "12.0.3"
-  id("org.owasp.dependencycheck") version "9.0.8"
+  id("org.owasp.dependencycheck") version "8.4.3"
   id("org.springframework.boot") version "3.2.1"
 }
 
