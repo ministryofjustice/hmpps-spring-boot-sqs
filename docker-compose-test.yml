@@ -1,7 +1,7 @@
 version: "3"
 services:
   localstack:
-    image: localstack/localstack:2.3
+    image: localstack/localstack:3
     networks:
       - hmpps
     container_name: localstack-sqs
@@ -9,7 +9,6 @@ services:
       - "4566:4566"
     environment:
       - SERVICES=sns,sqs
-      - DEFAULT_REGION=eu-west-2
     volumes:
       - "${LOCALSTACK_VOLUME_DIR:-./volume}:/var/lib/localstack"
 
