@@ -1,7 +1,8 @@
 package uk.gov.justice.hmpps.sqs
 
 enum class Provider(val code: String) {
-  AWS("aws"), LOCALSTACK("localstack");
+  AWS("aws"),
+  LOCALSTACK("localstack"),
 }
 fun findProvider(code: String) = enumValues<Provider>().firstOrNull { it.code == code } ?: throw InvalidProviderType(code)
 

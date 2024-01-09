@@ -139,7 +139,7 @@ class HmppsSqsPropertiesTest {
   }
 
   @Nested
-  inner class AwsMandatoryProperties_WebIdentityToken {
+  inner class AwsMandatoryPropertiesWebIdentityToken {
     @Test
     fun `should NOT require a queue access key ID`() {
       assertDoesNotThrow {
