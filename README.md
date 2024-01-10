@@ -14,35 +14,8 @@ The library relies on [Spring Boot Auto-configuration](https://docs.spring.io/sp
 
 ## Release Notes
 
-##### [2.2.1](release-notes/2.2.1.md)
-##### [2.2.0](release-notes/2.2.0.md)
-##### [2.1.1](release-notes/2.1.1.md)
-##### [2.1.0](release-notes/2.1.0.md)
-##### [2.0.1](release-notes/2.0.1.md)
-##### [2.0.0](release-notes/2.0.0.md)
-##### [1.3.1](release-notes/1.3.1.md)
-##### [1.3.0](release-notes/1.3.0.md)
-##### [1.2.0](release-notes/1.2.0.md)
-##### [1.1.13](release-notes/1.1.13.md)
-##### [1.1.12](release-notes/1.1.12.md)
-##### [1.1.11](release-notes/1.1.11.md)
-##### [1.1.10](release-notes/1.1.10.md)
-##### [1.1.9](release-notes/1.1.9.md)
-##### [1.1.8](release-notes/1.1.8.md)
-##### [1.1.7](release-notes/1.1.7.md)
-##### [1.1.6](release-notes/1.1.6.md)
-##### [1.1.5](release-notes/1.1.5.md)
-##### [1.1.4](release-notes/1.1.4.md)
-##### [1.1.3](release-notes/1.1.3.md)
-##### [1.1.2](release-notes/1.1.2.md)
-##### [1.1.1](release-notes/1.1.1.md)
-##### [1.1.0](release-notes/1.1.0.md)
-##### [1.0.5](release-notes/1.0.5.md)
-##### [1.0.4](release-notes/1.0.4.md)
-##### [1.0.3](release-notes/1.0.3.md)
-##### [1.0.2](release-notes/1.0.2.md)
-##### [1.0.1](release-notes/1.0.1.md)
-##### [1.0.0](release-notes/1.0.0.md)
+##### [2.x](release-notes/2.x.md)
+##### [1.x](release-notes/1.x.md)
 
 ## How To Use This Library
 
