@@ -51,7 +51,7 @@ class HmppsQueueFactoryTest_NoDlq {
   @Nested
   inner class `Create single AWS HmppsQueue with no dlq` {
     private val someQueueConfig = QueueConfig(queueName = "some queue name", queueAccessKeyId = "some access key id", queueSecretAccessKey = "some secret access key")
-    private val hmppsSqsProperties = HmppsSqsProperties(queues = mapOf("somequeueid" to someQueueConfig))
+    private val hmppsSqsProperties = HmppsSqsProperties(queues = mapOf("somequeueid" to someQueueConfig), useWebToken = false)
     private val sqsClient = mock<SqsAsyncClient>()
     private lateinit var hmppsQueues: List<HmppsQueue>
 
@@ -225,7 +225,7 @@ class HmppsQueueFactoryTest_NoDlq {
   inner class `Create multiple AWS HmppsQueues without dlqs` {
     private val someQueueConfig = QueueConfig(queueName = "some queue name", queueAccessKeyId = "some access key id", queueSecretAccessKey = "some secret access key")
     private val anotherQueueConfig = QueueConfig(queueName = "another queue name", queueAccessKeyId = "another access key id", queueSecretAccessKey = "another secret access key")
-    private val hmppsSqsProperties = HmppsSqsProperties(queues = mapOf("somequeueid" to someQueueConfig, "anotherqueueid" to anotherQueueConfig))
+    private val hmppsSqsProperties = HmppsSqsProperties(queues = mapOf("somequeueid" to someQueueConfig, "anotherqueueid" to anotherQueueConfig), useWebToken = false)
     private val sqsClient = mock<SqsAsyncClient>()
     private lateinit var hmppsQueues: List<HmppsQueue>
 
