@@ -77,6 +77,13 @@ publishing {
     }
   }
 }
+
+tasks.withType<PublishToMavenLocal> {
+  signing {
+    setRequired { false }
+  }
+}
+
 signing {
   val signingKey: String? by project
   val signingPassword: String? by project
