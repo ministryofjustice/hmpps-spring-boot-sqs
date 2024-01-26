@@ -9,7 +9,7 @@ data class HmppsSqsProperties(
   val localstackUrl: String = "http://localhost:4566",
   val queues: Map<String, QueueConfig> = mapOf(),
   val topics: Map<String, TopicConfig> = mapOf(),
-  val useWebToken: Boolean = false,
+  val useWebToken: Boolean = true,
 ) {
   data class QueueConfig(
     val queueName: String,

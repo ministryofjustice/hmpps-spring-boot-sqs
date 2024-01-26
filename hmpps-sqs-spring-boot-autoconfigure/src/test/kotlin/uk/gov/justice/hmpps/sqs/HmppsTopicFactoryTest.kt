@@ -1,3 +1,5 @@
+@file:Suppress("ClassName")
+
 package uk.gov.justice.hmpps.sqs
 
 import org.assertj.core.api.Assertions.assertThat
@@ -18,7 +20,6 @@ import software.amazon.awssdk.services.sns.model.CreateTopicResponse
 import uk.gov.justice.hmpps.sqs.HmppsSqsProperties.TopicConfig
 import java.util.concurrent.CompletableFuture
 
-@Suppress("ClassName")
 class HmppsTopicFactoryTest {
 
   private val localstackArnPrefix = "arn:aws:sns:eu-west-2:000000000000:"
@@ -36,7 +37,7 @@ class HmppsTopicFactoryTest {
   @Nested
   inner class `Create AWS HmppsTopics` {
     private val someTopicConfig = TopicConfig(arn = "some arn", accessKeyId = "some access key id", secretAccessKey = "some secret access key")
-    private val hmppsSqsProperties = HmppsSqsProperties(queues = mock(), topics = mapOf("sometopicid" to someTopicConfig))
+    private val hmppsSqsProperties = HmppsSqsProperties(queues = mock(), topics = mapOf("sometopicid" to someTopicConfig), useWebToken = false)
     private val snsClient = mock<SnsAsyncClient>()
     private lateinit var hmppsTopics: List<HmppsTopic>
 

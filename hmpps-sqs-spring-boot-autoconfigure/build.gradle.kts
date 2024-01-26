@@ -7,12 +7,12 @@ plugins {
   id("maven-publish")
   id("signing")
   id("com.adarshr.test-logger") version "4.0.0"
-  id("com.github.ben-manes.versions") version "0.50.0"
+  id("com.github.ben-manes.versions") version "0.51.0"
   id("se.patrikerdes.use-latest-versions") version "0.2.18"
   id("io.spring.dependency-management") version "1.1.4"
-  id("org.jlleitschuh.gradle.ktlint") version "12.0.3"
+  id("org.jlleitschuh.gradle.ktlint") version "12.1.0"
   id("org.owasp.dependencycheck") version "8.4.3"
-  id("org.springframework.boot") version "3.2.1"
+  id("org.springframework.boot") version "3.2.2"
 }
 
 dependencyManagement {
@@ -35,9 +35,9 @@ dependencies {
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8")
 
-  testImplementation("org.assertj:assertj-core:3.25.1")
+  testImplementation("org.assertj:assertj-core:3.25.2")
   testImplementation("org.junit.jupiter:junit-jupiter:5.10.1")
-  testImplementation("org.mockito:mockito-junit-jupiter:5.8.0")
+  testImplementation("org.mockito:mockito-junit-jupiter:5.10.0")
   testImplementation("org.springframework.boot:spring-boot-starter-test")
   testImplementation("org.mockito.kotlin:mockito-kotlin:5.2.1")
   testImplementation("org.mockito:mockito-inline:5.2.0")
@@ -83,7 +83,7 @@ signing {
   useInMemoryPgpKeys(signingKey, signingPassword)
   sign(publishing.publications["autoconfigure"])
 }
-java.sourceCompatibility = JavaVersion.VERSION_17
+java.sourceCompatibility = JavaVersion.VERSION_21
 
 tasks.bootJar {
   enabled = false
@@ -110,10 +110,14 @@ fun isNonStable(version: String): Boolean {
   return isStable.not()
 }
 
+kotlin {
+  jvmToolchain(21)
+}
+
 tasks {
   withType<KotlinCompile> {
     kotlinOptions {
-      jvmTarget = "17"
+      jvmTarget = "21"
     }
   }
 

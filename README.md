@@ -4,6 +4,8 @@ A Spring Boot starter library providing utilities for using Amazon Simple Queue 
 
 This plugin targets Spring Boot 3.  See the `spring-boot-2` branch for the Spring Boot 2 version.
 
+As of release 3.0 it also requires at least Java 21.
+
 ## Overview
 
 We have many services that use AWS SQS queues and topics with various patterns for managing queues that have evolved over time. These patterns have been duplicated widely and thus are subject to the usual problems associated with a lack of DRY such as code drift and the proliferation of boilerplate code.
@@ -14,6 +16,7 @@ The library relies on [Spring Boot Auto-configuration](https://docs.spring.io/sp
 
 ## Release Notes
 
+##### [3.x](release-notes/3.x.md)
 ##### [2.x](release-notes/2.x.md)
 ##### [1.x](release-notes/1.x.md)
 
@@ -73,13 +76,13 @@ As we define the production queue and topic properties in environment variables 
 E.g. I know you'd like to use property `hmpps.sqs.queues.my-service-queue.queueName`, but your life will be much easier if you name the property `hmpps.sqs.queues.myservicequeue.queueName`.
 
 | Property      | Default                 | Description                                                                                                                                                                                                                             |
-|---------------|-------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|---------------|-------------------------|----------- w------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | provider      | `aws`                   | `aws` for production or `localstack` for running locally / integration tests.                                                                                                                                                           |
 | region        | `eu-west-2`             | The AWS region where the queues live.                                                                                                                                                                                                   |
 | localstackUrl | `http://localhost:4566` | Only used for `provider=localstack`. The location of the running LocalStack instance.                                                                                                                                                   |
 | queues        |                         | A map of `queueId` to `QueueConfig`. One entry is required for each queue. In production these are derived from environment variables with the prefix `HMPPS_SQS_QUEUES_` that should be populated from Kubernetes secrets (see below). |
 | topics        |                         | A map of `topicId` to `TopicConfig`. One entry is required for each topic. In production these are derived from environment variables with the prefix `HMPPS_SQS_TOPICS_` that should be populated from Kubernetes secrets (see below). |
-| useWebToken   | `false`                 | Assumes you will be using Web Identity Token credentials and thus won't need any queue / topic access keys or secrets                                                                                                                   |
+| useWebToken   | `true`                  | Assumes you will be using Web Identity Token credentials and thus won't need any queue / topic access keys or secrets.  Default from 3.0 is to be `true`, only needs to be `false` if running outside of CloudPlatform AWS clusters.    |
 
 Each queue declared in the `queues` map is defined in the `QueueConfig` property class
 

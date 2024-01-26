@@ -54,7 +54,10 @@ class HmppsSqsPropertiesTest {
     @Test
     fun `should require a queue access key ID`() {
       assertThatThrownBy {
-        HmppsSqsProperties(queues = mapOf("queueid" to validAwsQueueConfig().copy(queueAccessKeyId = "")))
+        HmppsSqsProperties(
+          queues = mapOf("queueid" to validAwsQueueConfig().copy(queueAccessKeyId = "")),
+          useWebToken = false,
+        )
       }.isInstanceOf(InvalidHmppsSqsPropertiesException::class.java)
         .hasMessageContaining("queueid")
         .hasMessageContaining("queue access key id")
@@ -63,7 +66,10 @@ class HmppsSqsPropertiesTest {
     @Test
     fun `should require a queue secret access key`() {
       assertThatThrownBy {
-        HmppsSqsProperties(queues = mapOf("queueid" to validAwsQueueConfig().copy(queueSecretAccessKey = "")))
+        HmppsSqsProperties(
+          queues = mapOf("queueid" to validAwsQueueConfig().copy(queueSecretAccessKey = "")),
+          useWebToken = false,
+        )
       }.isInstanceOf(InvalidHmppsSqsPropertiesException::class.java)
         .hasMessageContaining("queueid")
         .hasMessageContaining("queue secret access key")
@@ -72,7 +78,10 @@ class HmppsSqsPropertiesTest {
     @Test
     fun `should require a dlq access key ID`() {
       assertThatThrownBy {
-        HmppsSqsProperties(queues = mapOf("queueid" to validAwsQueueConfig().copy(dlqAccessKeyId = "")))
+        HmppsSqsProperties(
+          queues = mapOf("queueid" to validAwsQueueConfig().copy(dlqAccessKeyId = "")),
+          useWebToken = false,
+        )
       }.isInstanceOf(InvalidHmppsSqsPropertiesException::class.java)
         .hasMessageContaining("queueid")
         .hasMessageContaining("DLQ access key id")
@@ -81,14 +90,20 @@ class HmppsSqsPropertiesTest {
     @Test
     fun `should not require a dlq access key ID if no dlq exists`() {
       assertThatNoException().isThrownBy {
-        HmppsSqsProperties(queues = mapOf("queueid" to validAwsQueueNoDlqConfig().copy(dlqAccessKeyId = "")))
+        HmppsSqsProperties(
+          queues = mapOf("queueid" to validAwsQueueNoDlqConfig().copy(dlqAccessKeyId = "")),
+          useWebToken = false,
+        )
       }
     }
 
     @Test
     fun `should require a dlq secret access key`() {
       assertThatThrownBy {
-        HmppsSqsProperties(queues = mapOf("queueid" to validAwsQueueConfig().copy(dlqSecretAccessKey = "")))
+        HmppsSqsProperties(
+          queues = mapOf("queueid" to validAwsQueueConfig().copy(dlqSecretAccessKey = "")),
+          useWebToken = false,
+        )
       }.isInstanceOf(InvalidHmppsSqsPropertiesException::class.java)
         .hasMessageContaining("queueid")
         .hasMessageContaining("DLQ secret access key")
@@ -97,7 +112,10 @@ class HmppsSqsPropertiesTest {
     @Test
     fun `should not require a dlq secret access key if no dlq exists`() {
       assertThatNoException().isThrownBy {
-        HmppsSqsProperties(queues = mapOf("queueid" to validAwsQueueNoDlqConfig().copy(dlqSecretAccessKey = "")))
+        HmppsSqsProperties(
+          queues = mapOf("queueid" to validAwsQueueNoDlqConfig().copy(dlqSecretAccessKey = "")),
+          useWebToken = false,
+        )
       }
     }
 
@@ -119,6 +137,7 @@ class HmppsSqsPropertiesTest {
         HmppsSqsProperties(
           queues = mapOf("queueid" to validAwsQueueConfig()),
           topics = mapOf("topicid" to validAwsTopicConfig().copy(accessKeyId = "")),
+          useWebToken = false,
         )
       }.isInstanceOf(InvalidHmppsSqsPropertiesException::class.java)
         .hasMessageContaining("topicid")
@@ -131,6 +150,7 @@ class HmppsSqsPropertiesTest {
         HmppsSqsProperties(
           queues = mapOf("queueid" to validAwsQueueConfig()),
           topics = mapOf("topicid" to validAwsTopicConfig().copy(secretAccessKey = "")),
+          useWebToken = false,
         )
       }.isInstanceOf(InvalidHmppsSqsPropertiesException::class.java)
         .hasMessageContaining("topicid")

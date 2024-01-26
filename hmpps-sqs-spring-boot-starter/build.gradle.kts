@@ -4,20 +4,20 @@ plugins {
   kotlin("jvm") version "1.9.22"
   id("maven-publish")
   id("signing")
-  id("com.github.ben-manes.versions") version "0.50.0"
+  id("com.github.ben-manes.versions") version "0.51.0"
   id("se.patrikerdes.use-latest-versions") version "0.2.18"
 }
 
 dependencies {
   api(platform("io.awspring.cloud:spring-cloud-aws-dependencies:3.1.0"))
   api(project(":hmpps-sqs-spring-boot-autoconfigure"))
-  api(platform("software.amazon.awssdk:bom:2.22.13"))
+  api(platform("software.amazon.awssdk:bom:2.23.11"))
   api("software.amazon.awssdk:sns")
   api("io.awspring.cloud:spring-cloud-aws-starter") { exclude("io.awspring.cloud", "spring-cloud-aws-autoconfigure")}
   api("io.awspring.cloud:spring-cloud-aws-sns")
   api("io.awspring.cloud:spring-cloud-aws-sqs")
   api("software.amazon.awssdk:sts")
-  api(platform("org.springframework.boot:spring-boot-dependencies:3.2.1"))
+  api(platform("org.springframework.boot:spring-boot-dependencies:3.2.2"))
   api("org.springframework.boot:spring-boot-starter-web")
   api("org.springframework.boot:spring-boot-starter-security")
   api("org.springframework.boot:spring-boot-starter-actuator")
@@ -62,7 +62,11 @@ signing {
   useInMemoryPgpKeys(signingKey, signingPassword)
   sign(publishing.publications["starter"])
 }
-java.sourceCompatibility = JavaVersion.VERSION_17
+java.sourceCompatibility = JavaVersion.VERSION_21
+
+kotlin {
+  jvmToolchain(21)
+}
 
 repositories {
   mavenLocal()

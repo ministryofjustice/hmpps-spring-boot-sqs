@@ -1,3 +1,5 @@
+@file:Suppress("ClassName")
+
 package uk.gov.justice.hmpps.sqs
 
 import org.assertj.core.api.Assertions.assertThat
@@ -45,7 +47,7 @@ class HmppsQueueFactoryTest {
   @Nested
   inner class `Create AWS HmppsQueue with asynchronous SQS clients` {
     private val someQueueConfig = QueueConfig(queueName = "some queue name", queueAccessKeyId = "some access key id", queueSecretAccessKey = "some secret access key", dlqName = "some dlq name", dlqAccessKeyId = "dlq access key id", dlqSecretAccessKey = "dlq secret access key")
-    private val hmppsSqsProperties = HmppsSqsProperties(queues = mapOf("somequeueid" to someQueueConfig))
+    private val hmppsSqsProperties = HmppsSqsProperties(queues = mapOf("somequeueid" to someQueueConfig), useWebToken = false)
     private val sqsClient = mock<SqsAsyncClient>()
     private val sqsDlqClient = mock<SqsAsyncClient>()
     private lateinit var hmppsQueues: List<HmppsQueue>
@@ -100,7 +102,7 @@ class HmppsQueueFactoryTest {
     @Test
     fun `should not subscribe to topics`() {
       val someQueueConfig = QueueConfig(queueName = "any", queueAccessKeyId = "any", queueSecretAccessKey = "any", subscribeTopicId = "sometopicid")
-      val hmppsSqsProperties = HmppsSqsProperties(queues = mapOf("somequeueid" to someQueueConfig), topics = mapOf("sometopicid" to TopicConfig("arn:aws:sns:1:2:3", "any", "any")))
+      val hmppsSqsProperties = HmppsSqsProperties(queues = mapOf("somequeueid" to someQueueConfig), topics = mapOf("sometopicid" to TopicConfig("arn:aws:sns:1:2:3", "any", "any")), useWebToken = false)
       val snsClient = mock<SnsAsyncClient>()
       val topics = listOf(HmppsTopic("sometopicid", "arn:aws:sns:1:2:3", snsClient))
 
