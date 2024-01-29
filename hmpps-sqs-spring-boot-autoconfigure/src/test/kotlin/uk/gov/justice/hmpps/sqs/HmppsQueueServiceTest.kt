@@ -611,6 +611,7 @@ class HmppsQueueServiceTest {
           listOf(
             HmppsQueue("some queue id", sqsClient, "some queue name", sqsDlqClient, "some dlq name"),
             HmppsQueue("another queue id", mock(), "another queue name", mock(), "another dlq name"),
+            HmppsQueue("audit", mock(), "audit queue name", mock(), "audit dlq name"),
           ),
         )
 
@@ -634,6 +635,13 @@ class HmppsQueueServiceTest {
     @Test
     fun `should return null if not queue or dlq`() {
       val request = hmppsQueueService.findQueueToPurge("unknown queue name")
+
+      assertThat(request).isNull()
+    }
+
+    @Test
+    fun `should return null if audit queue requested`() {
+      val request = hmppsQueueService.findQueueToPurge("audit queue name")
 
       assertThat(request).isNull()
     }

@@ -23,6 +23,8 @@ import software.amazon.awssdk.services.sqs.model.PurgeQueueRequest as AwsPurgeQu
 class MissingQueueException(message: String) : RuntimeException(message)
 class MissingTopicException(message: String) : RuntimeException(message)
 
+const val AUDIT_ID = "audit"
+
 open class HmppsQueueService(
   private val telemetryClient: TelemetryClient?,
   hmppsTopicFactory: HmppsTopicFactory,
@@ -38,10 +40,10 @@ open class HmppsQueueService(
   private val hmppsTopics: List<HmppsTopic> = hmppsTopicFactory.createHmppsTopics(hmppsSqsProperties)
   private val hmppsQueues: List<HmppsQueue> = hmppsQueueFactory.createHmppsQueues(hmppsSqsProperties, hmppsTopics)
 
-  open fun findByQueueId(queueId: String) = hmppsQueues.associateBy { it.id }.getOrDefault(queueId, null)
-  open fun findByQueueName(queueName: String) = hmppsQueues.associateBy { it.queueName }.getOrDefault(queueName, null)
-  open fun findByDlqName(dlqName: String) = hmppsQueues.associateBy { it.dlqName }.getOrDefault(dlqName, null)
-  open fun findByTopicId(topicId: String) = hmppsTopics.associateBy { it.id }.getOrDefault(topicId, null)
+  open fun findByQueueId(queueId: String): HmppsQueue? = hmppsQueues.find { it.id == queueId }
+  open fun findByQueueName(queueName: String): HmppsQueue? = hmppsQueues.find { it.queueName == queueName }
+  open fun findByDlqName(dlqName: String): HmppsQueue? = hmppsQueues.find { it.dlqName == dlqName }
+  open fun findByTopicId(topicId: String): HmppsTopic? = hmppsTopics.find { it.id == topicId }
 
   open suspend fun retryDlqMessages(request: RetryDlqRequest): RetryDlqResult =
     request.hmppsQueue.retryDlqMessages()
@@ -120,7 +122,7 @@ open class HmppsQueueService(
     }
 
   open fun findQueueToPurge(queueName: String): PurgeQueueRequest? =
-    findByQueueName(queueName)
+    hmppsQueues.find { it.id != AUDIT_ID && it.queueName == queueName }
       ?.let { hmppsQueue -> PurgeQueueRequest(hmppsQueue.queueName, hmppsQueue.sqsClient, hmppsQueue.queueUrl) }
       ?: findByDlqName(queueName)
         ?.let { hmppsQueue -> PurgeQueueRequest(hmppsQueue.dlqName!!, hmppsQueue.sqsDlqClient!!, hmppsQueue.dlqUrl!!) }

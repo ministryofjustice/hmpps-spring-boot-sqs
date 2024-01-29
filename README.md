@@ -57,7 +57,7 @@ This library is driven by some configuration properties prefixed `hmpps.sqs` tha
 * create `AmazonSQS` beans for each queue defined which are configured for AWS (or LocalStack for testing / running locally)
 * create `AmazonSNS` beans for each topic defined which are configured for AWS (or LocalStack for testing / running locally)
 * create a `HealthIndicator` for each queue and topic which is registered with Spring Boot Actuator and appears on your `/health` page
-* add `HmpspQueueResource` to the project which provides endpoints for retrying DLQ messages and purging queues
+* add `HmppsQueueResource` to the project if at least one non audit queue (see is defined, which provides endpoints for retrying DLQ messages and purging queues
 * create a SQS listener connection factory for each queue defined
 * create LocalStack queues and topics for testing against, and subscribe queues to topics where configured
 
@@ -66,6 +66,12 @@ Examples of property usage can be found in the test project in the following pla
 * Production: [test-app/.../values.yaml](https://github.com/ministryofjustice/hmpps-spring-boot-sqs/blob/main/test-app/helm_deploy/hmpps-template-kotlin/values.yaml#L33)
 * Running locally with LocalStack: [test-app/.../application-localstack.yml](https://github.com/ministryofjustice/hmpps-spring-boot-sqs/blob/main/test-app/src/main/resources/application-localstack.yml)
 * Integration Test: [test-app/.../application-test.yml#L8](https://github.com/ministryofjustice/hmpps-spring-boot-sqs/blob/main/test-app/src/test/resources/application-test.yml#L8)
+
+#### Audit queue
+
+A queue with an `id` of `audit` is considered to be the HMPPS Audit queue.  As such, a `HmppsQueueResource` will not be
+added to the project if that is the only queue defined.  If at least one non audit queue is defined then the
+`HmppsQueueResource` will be created.  However, any attempts to call the resource endpoint for the audit queue will fail.
 
 #### HmppsSqsProperties Definitions
 

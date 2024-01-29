@@ -31,6 +31,10 @@ class HmppsReactiveQueueResource(private val hmppsQueueService: HmppsQueueServic
   @PutMapping("/retry-all-dlqs")
   suspend fun retryAllDlqs() = hmppsQueueService.retryAllDlqs()
 
+  /*
+   * Note: Purge queue requests for the audit queue (id of audit) will be ignored.  This is because only the HMPPS Audit
+   * should have the ability to purge its own queue.
+   */
   @PutMapping("/purge-queue/{queueName}")
   @PreAuthorize("hasRole(@environment.getProperty('hmpps.sqs.queueAdminRole', 'ROLE_QUEUE_ADMIN'))")
   suspend fun purgeQueue(@PathVariable("queueName") queueName: String) =
