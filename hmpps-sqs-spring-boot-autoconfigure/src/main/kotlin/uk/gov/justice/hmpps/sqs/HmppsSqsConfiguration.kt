@@ -16,11 +16,16 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplicat
 import org.springframework.boot.autoconfigure.web.reactive.WebFluxAutoConfiguration
 import org.springframework.boot.autoconfigure.web.servlet.WebMvcAutoConfiguration
 import org.springframework.boot.context.properties.EnableConfigurationProperties
+import org.springframework.boot.context.properties.bind.Binder
 import org.springframework.context.ConfigurableApplicationContext
 import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Condition
+import org.springframework.context.annotation.ConditionContext
+import org.springframework.context.annotation.Conditional
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.DependsOn
 import org.springframework.context.annotation.Import
+import org.springframework.core.type.AnnotatedTypeMetadata
 
 interface HmppsHealthContributorRegistry {
   fun registerContributor(name: String, contribute: () -> HealthContributor)
@@ -86,11 +91,13 @@ class HmppsSqsConfiguration {
   @Bean
   @ConditionalOnMissingBean
   @ConditionalOnWebApplication(type = SERVLET)
+  @Conditional(ConditionalOnNonAuditQueueDefinition::class)
   fun hmppsQueueResource(hmppsQueueService: HmppsQueueService) = HmppsQueueResource(hmppsQueueService)
 
   @Bean
   @ConditionalOnMissingBean
   @ConditionalOnWebApplication(type = REACTIVE)
+  @Conditional(ConditionalOnNonAuditQueueDefinition::class)
   fun hmppsReactiveQueueResource(hmppsQueueService: HmppsQueueService) = HmppsReactiveQueueResource(hmppsQueueService)
 
   @Bean
@@ -103,4 +110,24 @@ class HmppsSqsConfiguration {
 
   @Bean
   fun configurer(objectMapper: ObjectMapper): SqsListenerConfigurer = SqsListenerConfigurer { it.objectMapper = objectMapper }
+}
+
+class ConditionalOnNonAuditQueueDefinition : Condition {
+  override fun matches(context: ConditionContext, metadata: AnnotatedTypeMetadata): Boolean {
+    val bean: HmppsSqsProperties? = Binder.get(context.environment)
+      .bind("hmpps.sqs", HmppsSqsProperties::class.java).orElse(null)
+
+    // true if we find a queue without an id of 'audit'
+    return bean?.queues?.filterKeys { it != AUDIT_ID }?.isNotEmpty() ?: false
+  }
+}
+
+class ConditionalOnAuditQueueDefinition : Condition {
+  override fun matches(context: ConditionContext, metadata: AnnotatedTypeMetadata): Boolean {
+    val bean: HmppsSqsProperties? = Binder.get(context.environment)
+      .bind("hmpps.sqs", HmppsSqsProperties::class.java).orElse(null)
+
+    // true if we find a queue with an id of audit
+    return bean?.queues?.filterKeys { it == AUDIT_ID }?.isNotEmpty() ?: false
+  }
 }
