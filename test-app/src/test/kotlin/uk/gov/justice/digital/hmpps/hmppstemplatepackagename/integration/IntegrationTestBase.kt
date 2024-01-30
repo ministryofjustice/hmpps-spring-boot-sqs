@@ -53,6 +53,9 @@ abstract class IntegrationTestBase {
   fun HmppsSqsProperties.outboundQueueConfig() =
     queues["outboundqueue"] ?: throw MissingQueueException("outboundqueue has not been loaded from configuration properties")
 
+  fun HmppsSqsProperties.auditQueueConfig() =
+    queues["audit"] ?: throw MissingQueueException("audit has not been loaded from configuration properties")
+
   fun HmppsSqsProperties.inboundTopicConfig() =
     topics["inboundtopic"] ?: throw MissingTopicException("inboundtopic has not been loaded from configuration properties")
 
@@ -64,12 +67,14 @@ abstract class IntegrationTestBase {
   private val outboundTestQueue by lazy { hmppsQueueService.findByQueueId("outboundtestqueue") ?: throw MissingQueueException("HmppsQueue outboundtestqueue not found") }
   private val inboundTopic by lazy { hmppsQueueService.findByTopicId("inboundtopic") ?: throw MissingQueueException("HmppsTopic inboundtopic not found") }
   private val outboundTestNoDlqQueue by lazy { hmppsQueueService.findByQueueId("outboundtestnodlqqueue") ?: throw MissingQueueException("HmppsQueue outboundtestnodlqqueue not found") }
+  private val auditQueue by lazy { hmppsQueueService.findByQueueId("audit") ?: throw MissingQueueException("HmppsQueue audit not found") }
 
   protected val inboundSqsClient by lazy { inboundQueue.sqsClient }
   protected val inboundSqsDlqClient by lazy { inboundQueue.sqsDlqClient as SqsAsyncClient }
   protected val inboundSnsClient by lazy { inboundTopic.snsClient }
   protected val outboundTestSqsClient by lazy { outboundTestQueue.sqsClient }
   protected val outboundTestNoDlqSqsClient by lazy { outboundTestNoDlqQueue.sqsClient }
+  protected val auditSqsClient by lazy { auditQueue.sqsClient }
 
   @SpyBean
   @Qualifier("outboundqueue-sqs-client")
@@ -85,6 +90,7 @@ abstract class IntegrationTestBase {
   protected val outboundDlqUrl by lazy { outboundQueue.dlqUrl as String }
   protected val outboundTestQueueUrl by lazy { outboundTestQueue.queueUrl }
   protected val outboundTestNoDlqQueueUrl by lazy { outboundTestNoDlqQueue.queueUrl }
+  protected val auditQueueUrl by lazy { auditQueue.queueUrl }
 
   protected val inboundTopicArn by lazy { inboundTopic.arn }
 

@@ -1,7 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.integration
 
 import io.jsonwebtoken.Jwts
-import io.jsonwebtoken.SignatureAlgorithm
 import org.springframework.context.annotation.Bean
 import org.springframework.security.oauth2.jwt.NimbusReactiveJwtDecoder
 import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder
@@ -15,18 +14,12 @@ import java.util.UUID
 
 @Component
 class JwtAuthHelper {
-  private val keyPair: KeyPair
-
-  init {
-    val gen = KeyPairGenerator.getInstance("RSA")
-    gen.initialize(2048)
-    keyPair = gen.generateKeyPair()
-  }
+  private val keyPair: KeyPair = KeyPairGenerator.getInstance("RSA").apply { initialize(2048) }.generateKeyPair()
 
   @Bean
   fun jwtDecoder(): ReactiveJwtDecoder = NimbusReactiveJwtDecoder.withPublicKey(keyPair.public as RSAPublicKey).build()
 
-  internal fun createJwt(
+  fun createJwt(
     subject: String? = null,
     userId: String? = "${subject}_ID",
     scope: List<String>? = listOf(),
@@ -35,19 +28,16 @@ class JwtAuthHelper {
     clientId: String = "prison-register-client",
     jwtId: String = UUID.randomUUID().toString(),
   ): String =
-    mutableMapOf<String, Any>()
-      .apply { subject?.let { subject -> this["user_name"] = subject } }
-      .apply { this["client_id"] = clientId }
-      .apply { userId?.let { userId -> this["user_id"] = userId } }
-      .apply { roles?.let { roles -> this["authorities"] = roles } }
-      .apply { scope?.let { scope -> this["scope"] = scope } }
+    mutableMapOf<String, Any?>("user_name" to subject, "client_id" to clientId, "user_id" to userId)
+      .also { roles?.let { roles -> it["authorities"] = roles } }
+      .also { scope?.let { scope -> it["scope"] = scope } }
       .let {
         Jwts.builder()
-          .setId(jwtId)
-          .setSubject(subject)
-          .addClaims(it.toMap())
-          .setExpiration(Date(System.currentTimeMillis() + expiryTime.toMillis()))
-          .signWith(keyPair.private, SignatureAlgorithm.RS256)
+          .id(jwtId)
+          .subject(subject)
+          .claims(it.toMap())
+          .expiration(Date(System.currentTimeMillis() + expiryTime.toMillis()))
+          .signWith(keyPair.private, Jwts.SIG.RS256)
           .compact()
       }
 }

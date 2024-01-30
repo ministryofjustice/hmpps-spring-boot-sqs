@@ -1,7 +1,7 @@
 version: 2.1
 
 orbs:
-  hmpps: ministryofjustice/hmpps@6
+  hmpps: ministryofjustice/hmpps@8
 
 jobs:
   validate:
@@ -102,5 +102,6 @@ workflows:
     jobs:
       - hmpps/gradle_owasp_dependency_check:
           cache_key: "v2_0"
+          jdk_tag: "21.0"
           context:
             - hmpps-common-vars

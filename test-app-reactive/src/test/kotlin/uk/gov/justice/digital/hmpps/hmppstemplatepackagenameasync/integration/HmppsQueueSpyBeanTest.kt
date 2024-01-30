@@ -1,6 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.integration
 
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.assertj.core.api.Assertions.assertThat
 import org.awaitility.kotlin.await
 import org.awaitility.kotlin.matches
@@ -38,7 +38,7 @@ class HmppsQueueSpyBeanTest : IntegrationTestBase() {
   }
 
   @Test
-  fun `Can verify usage of spy bean for retry-dlq endpoint`() = runBlocking<Unit> {
+  fun `Can verify usage of spy bean for retry-dlq endpoint`() = runTest {
     val event = HmppsEvent("id", "test.type", "message1")
     val message = Message(gsonString(event), "message-id", MessageAttributes(EventType("test.type", "String")))
     val messageAttributes = mutableMapOf("eventType" to software.amazon.awssdk.services.sqs.model.MessageAttributeValue.builder().dataType("String").stringValue("test value").build())
@@ -69,7 +69,7 @@ class HmppsQueueSpyBeanTest : IntegrationTestBase() {
   }
 
   @Test
-  fun `Can verify usage of spy bean for purge-queue endpoint`() = runBlocking<Unit> {
+  fun `Can verify usage of spy bean for purge-queue endpoint`() = runTest {
     outboundSqsDlqClientSpy.sendMessage(SendMessageRequest.builder().queueUrl(outboundDlqUrl).messageBody(gsonString(HmppsEvent("id", "test.type", "message1"))).build())
     await untilCallTo { outboundSqsDlqClientSpy.countMessagesOnQueue(outboundDlqUrl).get() } matches { it == 1 }
 
