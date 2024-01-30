@@ -19,8 +19,8 @@ class OutboundEventsEmitter(hmppsQueueService: HmppsQueueService, private val ob
 
   suspend fun sendEvent(hmppsEvent: HmppsEvent) {
     when (hmppsEvent.type) {
-      "offender.movement.reception", "test.type" -> publishToOutboundTopic(hmppsEvent)
-      else -> "Ignoring event of type ${hmppsEvent.type}"
+      "offender.movement.reception", "offender.movement.important", "test.type" -> publishToOutboundTopic(hmppsEvent)
+      else -> log.info("Ignoring event of type ${hmppsEvent.type}")
     }
   }
 

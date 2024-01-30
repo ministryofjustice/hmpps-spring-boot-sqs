@@ -26,7 +26,7 @@ hmpps.sqs:
       dlqName: ${random.uuid}
       queueName: ${random.uuid}
       subscribeTopicId: outboundtopic
-      subscribeFilter: '{"eventType":[ "offender.movement.reception", "test.type"] }'
+      subscribeFilter: '{"eventType":[ "offender.movement.reception", "offender.movement.important", "test.type"] }'
     missingfilterqueue:
       dlqName: ${random.uuid}
       queueName: ${random.uuid}
@@ -35,6 +35,8 @@ hmpps.sqs:
       queueName: ${random.uuid}
       subscribeTopicId: outboundtopic
       subscribeFilter: '{"eventType":[ "offender.movement.reception"] }'
+    audit:
+      queueName: ${random.uuid}
   topics:
     inboundtopic:
       arn: arn:aws:sns:eu-west-2:000000000000:${random.uuid}

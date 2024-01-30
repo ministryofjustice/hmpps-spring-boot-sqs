@@ -31,6 +31,7 @@ dependencies {
   testImplementation("org.testcontainers:localstack:1.19.4")
   testImplementation("com.amazonaws:aws-java-sdk-core:1.12.645") // Needed so Localstack has access to the AWS SDK V1 API
   testImplementation("com.google.code.gson:gson:2.10.1")
+  testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test")
 }
 
 kotlin {

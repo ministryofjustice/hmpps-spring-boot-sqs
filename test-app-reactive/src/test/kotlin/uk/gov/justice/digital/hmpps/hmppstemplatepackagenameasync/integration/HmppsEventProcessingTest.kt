@@ -1,6 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.integration
 
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.assertj.core.api.Assertions.assertThat
 import org.awaitility.kotlin.await
 import org.awaitility.kotlin.matches
@@ -21,7 +21,7 @@ import uk.gov.justice.hmpps.sqs.countMessagesOnQueue
 class HmppsEventProcessingTest : IntegrationTestBase() {
 
   @Test
-  fun `event is published to outbound topic`() = runBlocking<Unit> {
+  fun `event is published to outbound topic`() = runTest {
     val event = HmppsEvent("event-id", "OFFENDER_MOVEMENT-RECEPTION", "some event contents")
     inboundSnsClient.publish(
       PublishRequest.builder().topicArn(inboundTopicArn).message(gsonString(event)).messageAttributes(
@@ -54,7 +54,7 @@ class HmppsEventProcessingTest : IntegrationTestBase() {
   }
 
   @Test
-  fun `event is published to outbound topic received by queue with no dlq`() = runBlocking<Unit> {
+  fun `event is published to outbound topic received by queue with no dlq`() = runTest {
     val event = HmppsEvent("event-id", "OFFENDER_MOVEMENT-RECEPTION", "some event contents")
     inboundSnsClient.publish(
       PublishRequest.builder().topicArn(inboundTopicArn).message(gsonString(event)).messageAttributes(
@@ -75,7 +75,7 @@ class HmppsEventProcessingTest : IntegrationTestBase() {
   }
 
   @Test
-  fun `event is moved to the dead letter queue when an exception is thrown`() = runBlocking<Unit> {
+  fun `event is moved to the dead letter queue when an exception is thrown`() = runTest {
     doThrow(RuntimeException("some error")).whenever(inboundMessageServiceSpy).handleMessage(any())
 
     val event = HmppsEvent("event-id", "OFFENDER_MOVEMENT-RECEPTION", "some event contents")

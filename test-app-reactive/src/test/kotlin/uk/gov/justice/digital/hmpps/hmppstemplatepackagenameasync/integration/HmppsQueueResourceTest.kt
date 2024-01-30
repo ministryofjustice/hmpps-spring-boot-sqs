@@ -1,6 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.integration
 
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.awaitility.kotlin.await
 import org.awaitility.kotlin.matches
 import org.awaitility.kotlin.untilCallTo
@@ -84,7 +84,7 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
       await untilCallTo { inboundSqsDlqClient.countMessagesOnQueue(inboundDlqUrl).get() } matches { it == 0 }
       await untilCallTo { inboundSqsClient.countMessagesOnQueue(inboundQueueUrl).get() } matches { it == 0 }
 
-      runBlocking {
+      runTest {
         verify(inboundMessageServiceSpy).handleMessage(event1)
         verify(inboundMessageServiceSpy).handleMessage(event2)
       }
@@ -140,7 +140,7 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
       await untilCallTo { outboundSqsDlqClientSpy.countMessagesOnQueue(outboundDlqUrl).get() } matches { it == 0 }
       await untilCallTo { outboundSqsClientSpy.countMessagesOnQueue(outboundQueueUrl).get() } matches { it == 0 }
 
-      runBlocking {
+      runTest {
         verify(inboundMessageServiceSpy).handleMessage(event5)
       }
       verify(outboundMessageServiceSpy).handleMessage(event6)
@@ -179,6 +179,16 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
         .expectStatus().isOk
 
       await untilCallTo { outboundSqsDlqClientSpy.countMessagesOnQueue(outboundDlqUrl).get() } matches { it == 0 }
+    }
+
+    @Test
+    fun `should fail to purge the audit queue`() {
+      webTestClient.put()
+        .uri("/queue-admin/purge-queue/${hmppsSqsPropertiesSpy.auditQueueConfig().queueName}")
+        .headers { it.authToken() }
+        .accept(MediaType.APPLICATION_JSON)
+        .exchange()
+        .expectStatus().isNotFound
     }
   }
 

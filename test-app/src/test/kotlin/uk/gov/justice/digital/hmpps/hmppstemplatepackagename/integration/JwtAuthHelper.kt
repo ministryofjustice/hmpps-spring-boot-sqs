@@ -1,8 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppstemplatepackagename.integration
 
 import io.jsonwebtoken.Jwts
-import io.jsonwebtoken.SignatureAlgorithm
-import io.jsonwebtoken.SignatureAlgorithm.RS256
 import org.springframework.context.annotation.Bean
 import org.springframework.security.oauth2.jwt.JwtDecoder
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder
@@ -16,13 +14,7 @@ import java.util.UUID
 
 @Component
 class JwtAuthHelper {
-  private val keyPair: KeyPair
-
-  init {
-    val gen = KeyPairGenerator.getInstance("RSA")
-    gen.initialize(2048)
-    keyPair = gen.generateKeyPair()
-  }
+  private val keyPair: KeyPair = KeyPairGenerator.getInstance("RSA").apply { initialize(2048) }.generateKeyPair()
 
   @Bean
   fun jwtDecoder(): JwtDecoder = NimbusJwtDecoder.withPublicKey(keyPair.public as RSAPublicKey).build()
@@ -35,16 +27,17 @@ class JwtAuthHelper {
     expiryTime: Duration = Duration.ofHours(1),
     clientId: String = "prison-register-client",
     jwtId: String = UUID.randomUUID().toString(),
-  ): String {
-    val claims = mutableMapOf<String, Any?>("user_name" to subject, "client_id" to clientId, "user_id" to userId)
-    roles?.let { claims["authorities"] = roles }
-    scope?.let { claims["scope"] = scope }
-    return Jwts.builder()
-      .setId(jwtId)
-      .setSubject(subject)
-      .addClaims(claims)
-      .setExpiration(Date(System.currentTimeMillis() + expiryTime.toMillis()))
-      .signWith(keyPair.private, SignatureAlgorithm.RS256)
-      .compact()
-  }
+  ): String =
+    mutableMapOf<String, Any?>("user_name" to subject, "client_id" to clientId, "user_id" to userId)
+      .also { roles?.let { roles -> it["authorities"] = roles } }
+      .also { scope?.let { scope -> it["scope"] = scope } }
+      .let {
+        Jwts.builder()
+          .id(jwtId)
+          .subject(subject)
+          .claims(it.toMap())
+          .expiration(Date(System.currentTimeMillis() + expiryTime.toMillis()))
+          .signWith(keyPair.private, Jwts.SIG.RS256)
+          .compact()
+      }
 }
