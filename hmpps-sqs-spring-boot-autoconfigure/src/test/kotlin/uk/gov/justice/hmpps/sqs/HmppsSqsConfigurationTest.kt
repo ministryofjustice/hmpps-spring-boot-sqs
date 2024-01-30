@@ -18,6 +18,53 @@ import org.springframework.mock.env.MockEnvironment
 
 class HmppsSqsConfigurationTest {
   @Nested
+  inner class ServletHmppsSqsAuditQueueConfiguration {
+    private val runner = WebApplicationContextRunner()
+      .withConfiguration(
+        UserConfigurations.of(
+          JacksonAutoConfiguration::class.java,
+          HealthEndpointAutoConfiguration::class.java,
+          HmppsSqsConfiguration::class.java,
+        ),
+      )
+
+    @Test
+    internal fun `test no beans defined does not create audit service bean`() {
+      runner.run {
+        assertThat(it).doesNotHaveBean("hmppsAuditService")
+      }
+    }
+
+    @Test
+    internal fun `test audit queue defined creates audit service bean`() {
+      runner.withPropertyValues(
+        "hmpps.sqs.queues.audit.queueName=billyBob",
+      ).run {
+        assertThat(it).hasBean("hmppsAuditService")
+      }
+    }
+
+    @Test
+    internal fun `test non audit queue doesn't create audit service bean`() {
+      runner.withPropertyValues(
+        "hmpps.sqs.queues.queue.queueName=billyBob",
+      ).run {
+        assertThat(it).doesNotHaveBean("hmppsAuditService")
+      }
+    }
+
+    @Test
+    internal fun `test both queues defined creates audit service bean`() {
+      runner.withPropertyValues(
+        "hmpps.sqs.queues.audit.queueName=billyBob",
+        "hmpps.sqs.queues.queue2.queueName=johnSmith",
+      ).run {
+        assertThat(it).hasBean("hmppsAuditService")
+      }
+    }
+  }
+
+  @Nested
   inner class ServletHmppsSqsResourceConfiguration {
     private val runner = WebApplicationContextRunner()
       .withConfiguration(

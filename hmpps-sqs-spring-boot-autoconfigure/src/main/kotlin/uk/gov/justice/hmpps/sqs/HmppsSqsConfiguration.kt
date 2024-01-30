@@ -26,6 +26,7 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.DependsOn
 import org.springframework.context.annotation.Import
 import org.springframework.core.type.AnnotatedTypeMetadata
+import uk.gov.justice.hmpps.sqs.audit.HmppsAuditService
 
 interface HmppsHealthContributorRegistry {
   fun registerContributor(name: String, contribute: () -> HealthContributor)
@@ -107,6 +108,11 @@ class HmppsSqsConfiguration {
     factories: List<HmppsQueueDestinationContainerFactory>,
     hmppsSqsProperties: HmppsSqsProperties,
   ) = HmppsQueueSqsListenerContainerFactory(factories, hmppsSqsProperties)
+
+  @Bean
+  @ConditionalOnMissingBean
+  @Conditional(ConditionalOnAuditQueueDefinition::class)
+  fun hmppsAuditService(hmppsQueueService: HmppsQueueService, objectMapper: ObjectMapper) = HmppsAuditService(hmppsQueueService, objectMapper)
 
   @Bean
   fun configurer(objectMapper: ObjectMapper): SqsListenerConfigurer = SqsListenerConfigurer { it.objectMapper = objectMapper }
