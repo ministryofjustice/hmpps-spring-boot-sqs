@@ -33,7 +33,7 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
 
     @ParameterizedTest
     @MethodSource("secureEndpoints")
-    internal fun `requires a valid authentication token`(uri: String) {
+    fun `requires a valid authentication token`(uri: String) {
       webTestClient.put()
         .uri(uri)
         .accept(MediaType.APPLICATION_JSON)
@@ -43,7 +43,7 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
 
     @ParameterizedTest
     @MethodSource("secureEndpoints")
-    internal fun `requires the correct role`(uri: String) {
+    fun `requires the correct role`(uri: String) {
       webTestClient.put()
         .uri(uri)
         .headers { it.authToken(roles = listOf("WRONG_ROLE")) }
@@ -202,7 +202,7 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
     fun testMessage(id: String) = Message(gsonString(defaultEvent), "message-$id", defaultMessageAttributes)
 
     @Test
-    internal fun `requires a valid authentication token`() {
+    fun `requires a valid authentication token`() {
       webTestClient.get()
         .uri("/queue-admin/get-dlq-messages/any-queue")
         .exchange()
@@ -210,7 +210,7 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
     }
 
     @Test
-    internal fun `requires the correct role`() {
+    fun `requires the correct role`() {
       webTestClient.get()
         .uri("/queue-admin/get-dlq-messages/any-queue")
         .headers { it.authToken(roles = listOf("WRONG_ROLE")) }

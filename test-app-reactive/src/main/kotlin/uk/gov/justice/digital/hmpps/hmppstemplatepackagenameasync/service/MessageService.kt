@@ -20,17 +20,21 @@ class InboundMessageService(
     val outboundEventType = when (hmppsEvent.type) {
       "OFFENDER_MOVEMENT-RECEPTION" -> "offender.movement.reception"
       "OFFENDER_MOVEMENT-DISCHARGE" -> "offender.movement.discharge"
-      "OFFENDER_MOVEMENT-IMPORTANT" -> "offender.movement.important"
+      "OFFENDER_AUDIT-OBJECT" -> "offender.audit.object"
+      "OFFENDER_AUDIT-PARAMETER" -> "offender.audit.parameter"
       else -> hmppsEvent.type
     }
-    if (outboundEventType == "offender.movement.important") {
+    if (outboundEventType == "offender.audit.object") {
       hmppsAuditService.publishEvent(
         HmppsAuditEvent(
           what = "important event",
           who = "me",
-          service = "test-app",
+          service = "my-special-test-app",
         ),
       )
+    }
+    if (outboundEventType == "offender.audit.parameter") {
+      hmppsAuditService.publishEvent(what = "important event", who = "me")
     }
     outboundEventsEmitter.sendEvent(HmppsEvent(hmppsEvent.id, outboundEventType, hmppsEvent.contents))
   }

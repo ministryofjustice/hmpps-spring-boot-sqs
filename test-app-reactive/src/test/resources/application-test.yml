@@ -25,7 +25,7 @@ hmpps.sqs:
       dlqName: ${random.uuid}
       queueName: ${random.uuid}
       subscribeTopicId: outboundtopic
-      subscribeFilter: '{"eventType":[ "offender.movement.reception", "offender.movement.important", "test.type"] }'
+      subscribeFilter: '{"eventType":[ "offender.movement.reception", "offender.audit.object", "offender.audit.parameter", "test.type"] }'
     missingfilterqueue:
       dlqName: ${random.uuid}
       queueName: ${random.uuid}
