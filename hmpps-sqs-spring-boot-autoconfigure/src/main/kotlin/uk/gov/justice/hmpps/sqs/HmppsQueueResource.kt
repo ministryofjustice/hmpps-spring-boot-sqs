@@ -1,7 +1,6 @@
 package uk.gov.justice.hmpps.sqs
 
 import kotlinx.coroutines.runBlocking
-import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -12,7 +11,6 @@ import org.springframework.web.bind.annotation.RestController
 
 @RestController
 @RequestMapping("/queue-admin")
-@ConditionalOnExpression("'\${hmpps.sqs.reactiveApi:false}'.equals('false')")
 class HmppsQueueResource(hmppsQueueService: HmppsQueueService) {
   private val hmppsReactiveQueueResource = HmppsReactiveQueueResource(hmppsQueueService)
 

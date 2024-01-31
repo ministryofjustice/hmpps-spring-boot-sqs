@@ -1,6 +1,5 @@
 package uk.gov.justice.hmpps.sqs
 
-import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression
 import org.springframework.http.HttpStatus
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
@@ -13,7 +12,6 @@ import org.springframework.web.server.ResponseStatusException
 
 @RestController
 @RequestMapping("/queue-admin")
-@ConditionalOnExpression("\${hmpps.sqs.reactiveApi:false}")
 class HmppsReactiveQueueResource(private val hmppsQueueService: HmppsQueueService) {
 
   @PutMapping("/retry-dlq/{dlqName}")

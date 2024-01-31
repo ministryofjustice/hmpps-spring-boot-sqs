@@ -6,7 +6,6 @@ management.endpoint:
   info.cache.time-to-live: 0
 
 hmpps.sqs:
-  reactiveApi: true
   provider: localstack
   queues:
     inboundqueue:
