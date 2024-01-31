@@ -11,15 +11,29 @@ import uk.gov.justice.hmpps.sqs.HmppsQueue
 import uk.gov.justice.hmpps.sqs.HmppsQueueService
 import java.time.Instant
 
+/**
+ * Helper service to send a message to the audit queue.
+ *
+ * This service will be wired up by spring boot automatically if an audit queue with id `audit` is defined.
+ *
+ * The service will also default the service name to the `audit.service.name` if defined, or then fallback to the
+ * `spring.application.name`.  It can be, if required, passed into the audit method instead.
+ */
 open class HmppsAuditService(
   private val hmppsQueueService: HmppsQueueService,
   private val objectMapper: ObjectMapper,
+  applicationName: String?,
+  auditServiceName: String?,
 ) {
+  private val auditServiceName: String? = if (auditServiceName.isNullOrBlank()) applicationName else auditServiceName
 
   private val auditQueue by lazy { hmppsQueueService.findByQueueId(AUDIT_ID) as HmppsQueue }
   private val auditSqsClient by lazy { auditQueue.sqsClient }
   private val auditQueueUrl by lazy { auditQueue.queueUrl }
 
+  /**
+   * Publish an event to the HMPPS Audit queue.
+   */
   open suspend fun publishEvent(hmppsAuditEvent: HmppsAuditEvent): SendMessageResponse =
     auditSqsClient.sendMessage(
       SendMessageRequest.builder()
@@ -29,6 +43,36 @@ open class HmppsAuditService(
     ).await().also {
       log.debug("Published audit event with message id {}", it.messageId())
     }
+
+  /**
+   * Publish an event to the HMPPS Audit queue.
+   *
+   * This version defaults the service parameter to the `audit.service.name` ifdefined, or then falls back to the
+   * `spring.application.name`.
+   *
+   * Also, in the same way as for `HmppsAuditEvent`, the `when` variable is also defaulted to `now`.
+   */
+  open suspend fun publishEvent(
+    what: String,
+    subjectId: String? = null,
+    subjectType: String? = null,
+    correlationId: String? = null,
+    `when`: Instant = Instant.now(),
+    who: String,
+    service: String? = auditServiceName,
+    details: String? = null,
+  ): SendMessageResponse = publishEvent(
+    HmppsAuditEvent(
+      what = what,
+      subjectId = subjectId,
+      subjectType = subjectType,
+      correlationId = correlationId,
+      `when` = `when`,
+      who = who,
+      service = service!!,
+      details = details,
+    ),
+  )
 
   private companion object {
     private val log: Logger = LoggerFactory.getLogger(this::class.java)

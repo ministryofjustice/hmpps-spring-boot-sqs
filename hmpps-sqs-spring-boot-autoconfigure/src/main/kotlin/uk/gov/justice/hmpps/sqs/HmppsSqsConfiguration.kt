@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.microsoft.applicationinsights.TelemetryClient
 import io.awspring.cloud.sqs.config.SqsBootstrapConfiguration
 import io.awspring.cloud.sqs.config.SqsListenerConfigurer
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.actuate.health.HealthContributor
 import org.springframework.boot.actuate.health.HealthContributorRegistry
 import org.springframework.boot.actuate.health.ReactiveHealthContributor
@@ -112,7 +113,12 @@ class HmppsSqsConfiguration {
   @Bean
   @ConditionalOnMissingBean
   @Conditional(ConditionalOnAuditQueueDefinition::class)
-  fun hmppsAuditService(hmppsQueueService: HmppsQueueService, objectMapper: ObjectMapper) = HmppsAuditService(hmppsQueueService, objectMapper)
+  fun hmppsAuditService(
+    hmppsQueueService: HmppsQueueService,
+    objectMapper: ObjectMapper,
+    @Value("\${spring.application.name:}") applicationName: String?,
+    @Value("\${audit.service.name:}") auditServiceName: String?,
+  ) = HmppsAuditService(hmppsQueueService, objectMapper, applicationName, auditServiceName)
 
   @Bean
   fun configurer(objectMapper: ObjectMapper): SqsListenerConfigurer = SqsListenerConfigurer { it.objectMapper = objectMapper }
