@@ -117,8 +117,7 @@ class HmppsSqsConfiguration {
     hmppsQueueService: HmppsQueueService,
     objectMapper: ObjectMapper,
     @Value("\${spring.application.name:}") applicationName: String?,
-    @Value("\${audit.service.name:}") auditServiceName: String?,
-  ) = HmppsAuditService(hmppsQueueService, objectMapper, applicationName, auditServiceName)
+  ) = HmppsAuditService(hmppsQueueService, objectMapper, applicationName)
 
   @Bean
   fun configurer(objectMapper: ObjectMapper): SqsListenerConfigurer = SqsListenerConfigurer { it.objectMapper = objectMapper }

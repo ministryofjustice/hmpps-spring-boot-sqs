@@ -48,7 +48,6 @@ class HmppsAuditServiceTest(@Autowired private val objectMapper: ObjectMapper) {
         hmppsQueueService = hmppsQueueService,
         objectMapper = objectMapper,
         applicationName = null,
-        auditServiceName = null,
       )
         .publishEvent(HmppsAuditEvent(what = "bob", who = "me", service = "my-service"))
 
@@ -73,7 +72,6 @@ class HmppsAuditServiceTest(@Autowired private val objectMapper: ObjectMapper) {
         hmppsQueueService = hmppsQueueService,
         objectMapper = objectMapper,
         applicationName = "application-name",
-        auditServiceName = "service-name",
       )
         .publishEvent(what = "bob", who = "me", service = "my-service")
 
@@ -89,33 +87,11 @@ class HmppsAuditServiceTest(@Autowired private val objectMapper: ObjectMapper) {
     }
 
     @Test
-    fun `test publish event defaulting to audit service name`() = runTest {
-      HmppsAuditService(
-        hmppsQueueService = hmppsQueueService,
-        objectMapper = objectMapper,
-        applicationName = "application-name",
-        auditServiceName = "service-name",
-      )
-        .publishEvent(what = "bob", who = "me")
-
-      verify(sqsAsyncClient).sendMessage(
-        check<SendMessageRequest> {
-          assertThat(it.queueUrl()).isEqualTo("a queue url")
-          assertThat(it.messageBody())
-            .contains(""""what":"bob"""")
-            .contains(""""who":"me"""")
-            .contains(""""service":"service-name"""")
-        },
-      )
-    }
-
-    @Test
     fun `test publish event defaulting to application name`() = runTest {
       HmppsAuditService(
         hmppsQueueService = hmppsQueueService,
         objectMapper = objectMapper,
         applicationName = "application-name",
-        auditServiceName = null,
       )
         .publishEvent(what = "bob", who = "me")
 
@@ -137,7 +113,6 @@ class HmppsAuditServiceTest(@Autowired private val objectMapper: ObjectMapper) {
           hmppsQueueService = hmppsQueueService,
           objectMapper = objectMapper,
           applicationName = null,
-          auditServiceName = null,
         )
           .publishEvent(what = "bob", who = "me")
       }
@@ -151,7 +126,6 @@ class HmppsAuditServiceTest(@Autowired private val objectMapper: ObjectMapper) {
         hmppsQueueService = hmppsQueueService,
         objectMapper = objectMapper,
         applicationName = null,
-        auditServiceName = null,
       )
         .publishEvent(what = "bob", who = "me", service = "my-service")
 

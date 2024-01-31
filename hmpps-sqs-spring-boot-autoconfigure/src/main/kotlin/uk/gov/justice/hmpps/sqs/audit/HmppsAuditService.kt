@@ -22,11 +22,8 @@ import java.time.Instant
 open class HmppsAuditService(
   private val hmppsQueueService: HmppsQueueService,
   private val objectMapper: ObjectMapper,
-  applicationName: String?,
-  auditServiceName: String?,
+  private val applicationName: String?,
 ) {
-  private val auditServiceName: String? = if (auditServiceName.isNullOrBlank()) applicationName else auditServiceName
-
   private val auditQueue by lazy { hmppsQueueService.findByQueueId(AUDIT_ID) as HmppsQueue }
   private val auditSqsClient by lazy { auditQueue.sqsClient }
   private val auditQueueUrl by lazy { auditQueue.queueUrl }
@@ -47,8 +44,7 @@ open class HmppsAuditService(
   /**
    * Publish an event to the HMPPS Audit queue.
    *
-   * This version defaults the service parameter to the `audit.service.name` ifdefined, or then falls back to the
-   * `spring.application.name`.
+   * This version defaults the service parameter to the `spring.application.name`.
    *
    * Also, in the same way as for `HmppsAuditEvent`, the `when` variable is also defaulted to `now`.
    */
@@ -59,7 +55,7 @@ open class HmppsAuditService(
     correlationId: String? = null,
     `when`: Instant = Instant.now(),
     who: String,
-    service: String? = auditServiceName,
+    service: String? = applicationName,
     details: String? = null,
   ): SendMessageResponse = publishEvent(
     HmppsAuditEvent(

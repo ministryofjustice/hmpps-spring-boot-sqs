@@ -69,23 +69,12 @@ class HmppsSqsConfigurationTest {
     @Nested
     inner class HmppsAuditServiceServiceNameDefaultValue {
       @Test
-      fun `test bean created default value of audit service name`() {
-        runner.withPropertyValues(
-          "spring.application.name=application-name",
-          "audit.service.name=service-name",
-          "hmpps.sqs.queues.audit.queueName=billyBob",
-        ).run {
-          assertThat(it).getBean("hmppsAuditService").hasFieldOrPropertyWithValue("auditServiceName", "service-name")
-        }
-      }
-
-      @Test
       fun `test bean created default value of application name`() {
         runner.withPropertyValues(
           "spring.application.name=application-name",
           "hmpps.sqs.queues.audit.queueName=billyBob",
         ).run {
-          assertThat(it).getBean("hmppsAuditService").hasFieldOrPropertyWithValue("auditServiceName", "application-name")
+          assertThat(it).getBean("hmppsAuditService").hasFieldOrPropertyWithValue("applicationName", "application-name")
         }
       }
 
@@ -94,7 +83,7 @@ class HmppsSqsConfigurationTest {
         runner.withPropertyValues(
           "hmpps.sqs.queues.audit.queueName=billyBob",
         ).run {
-          assertThat(it).getBean("hmppsAuditService").hasFieldOrPropertyWithValue("auditServiceName", "")
+          assertThat(it).getBean("hmppsAuditService").hasFieldOrPropertyWithValue("applicationName", "")
         }
       }
     }
