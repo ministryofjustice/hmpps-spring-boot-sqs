@@ -31,14 +31,14 @@ class HmppsSqsConfigurationTest {
     @Nested
     inner class HmppsAuditServiceBean {
       @Test
-      internal fun `test no beans defined does not create audit service bean`() {
+      fun `test no beans defined does not create audit service bean`() {
         runner.run {
           assertThat(it).doesNotHaveBean("hmppsAuditService")
         }
       }
 
       @Test
-      internal fun `test audit queue defined creates audit service bean`() {
+      fun `test audit queue defined creates audit service bean`() {
         runner.withPropertyValues(
           "hmpps.sqs.queues.audit.queueName=billyBob",
         ).run {
@@ -47,7 +47,7 @@ class HmppsSqsConfigurationTest {
       }
 
       @Test
-      internal fun `test non audit queue doesn't create audit service bean`() {
+      fun `test non audit queue doesn't create audit service bean`() {
         runner.withPropertyValues(
           "hmpps.sqs.queues.queue.queueName=billyBob",
         ).run {
@@ -56,7 +56,7 @@ class HmppsSqsConfigurationTest {
       }
 
       @Test
-      internal fun `test both queues defined creates audit service bean`() {
+      fun `test both queues defined creates audit service bean`() {
         runner.withPropertyValues(
           "hmpps.sqs.queues.audit.queueName=billyBob",
           "hmpps.sqs.queues.queue2.queueName=johnSmith",
@@ -69,7 +69,7 @@ class HmppsSqsConfigurationTest {
     @Nested
     inner class HmppsAuditServiceServiceNameDefaultValue {
       @Test
-      internal fun `test bean created default value of audit service name`() {
+      fun `test bean created default value of audit service name`() {
         runner.withPropertyValues(
           "spring.application.name=application-name",
           "audit.service.name=service-name",
@@ -80,7 +80,7 @@ class HmppsSqsConfigurationTest {
       }
 
       @Test
-      internal fun `test bean created default value of application name`() {
+      fun `test bean created default value of application name`() {
         runner.withPropertyValues(
           "spring.application.name=application-name",
           "hmpps.sqs.queues.audit.queueName=billyBob",
@@ -90,7 +90,7 @@ class HmppsSqsConfigurationTest {
       }
 
       @Test
-      internal fun `test bean created with blank default value`() {
+      fun `test bean created with blank default value`() {
         runner.withPropertyValues(
           "hmpps.sqs.queues.audit.queueName=billyBob",
         ).run {
@@ -112,14 +112,14 @@ class HmppsSqsConfigurationTest {
       )
 
     @Test
-    internal fun `test no beans defined does not create resource bean`() {
+    fun `test no beans defined does not create resource bean`() {
       runner.run {
         assertThat(it).doesNotHaveBean("hmppsQueueResource")
       }
     }
 
     @Test
-    internal fun `test audit queue defined does not create resource bean`() {
+    fun `test audit queue defined does not create resource bean`() {
       runner.withPropertyValues(
         "hmpps.sqs.queues.audit.queueName=billyBob",
       ).run {
@@ -128,7 +128,7 @@ class HmppsSqsConfigurationTest {
     }
 
     @Test
-    internal fun `test non audit queue defined creates resource bean`() {
+    fun `test non audit queue defined creates resource bean`() {
       runner.withPropertyValues(
         "hmpps.sqs.queues.queue.queueName=billyBob",
       ).run {
@@ -137,7 +137,7 @@ class HmppsSqsConfigurationTest {
     }
 
     @Test
-    internal fun `test both queues defined creates resource bean`() {
+    fun `test both queues defined creates resource bean`() {
       runner.withPropertyValues(
         "hmpps.sqs.queues.audit.queueName=billyBob",
         "hmpps.sqs.queues.queue2.queueName=johnSmith",
@@ -161,14 +161,14 @@ class HmppsSqsConfigurationTest {
       )
 
     @Test
-    internal fun `test no beans defined does not create resource bean`() {
+    fun `test no beans defined does not create resource bean`() {
       runner.run {
         assertThat(it).doesNotHaveBean("hmppsReactiveQueueResource")
       }
     }
 
     @Test
-    internal fun `test audit queue defined does not create resource bean`() {
+    fun `test audit queue defined does not create resource bean`() {
       runner.withPropertyValues(
         "hmpps.sqs.queues.audit.queueName=billyBob",
       ).run {
@@ -177,7 +177,7 @@ class HmppsSqsConfigurationTest {
     }
 
     @Test
-    internal fun `test non audit queue defined creates resource bean`() {
+    fun `test non audit queue defined creates resource bean`() {
       runner.withPropertyValues(
         "hmpps.sqs.queues.queue.queueName=billyBob",
       ).run {
@@ -186,7 +186,7 @@ class HmppsSqsConfigurationTest {
     }
 
     @Test
-    internal fun `test both queues defined creates resource bean`() {
+    fun `test both queues defined creates resource bean`() {
       runner.withPropertyValues(
         "hmpps.sqs.queues.audit.queueName=billyBob",
         "hmpps.sqs.queues.queue2.queueName=johnSmith",
@@ -203,7 +203,7 @@ class HmppsSqsConfigurationTest {
     private val conditional = ConditionalOnNonAuditQueueDefinition()
 
     @Test
-    internal fun `test no queues defined`() {
+    fun `test no queues defined`() {
       MockEnvironment().also {
         whenever(context.environment).thenReturn(it)
       }
@@ -211,7 +211,7 @@ class HmppsSqsConfigurationTest {
     }
 
     @Test
-    internal fun `test audit queue defined`() {
+    fun `test audit queue defined`() {
       MockEnvironment().also {
         whenever(context.environment).thenReturn(it)
       }.apply {
@@ -221,7 +221,7 @@ class HmppsSqsConfigurationTest {
     }
 
     @Test
-    internal fun `test non audit queue defined`() {
+    fun `test non audit queue defined`() {
       MockEnvironment().also {
         whenever(context.environment).thenReturn(it)
       }.apply {
@@ -231,7 +231,7 @@ class HmppsSqsConfigurationTest {
     }
 
     @Test
-    internal fun `test both audit and non audit queue defined`() {
+    fun `test both audit and non audit queue defined`() {
       MockEnvironment().also {
         whenever(context.environment).thenReturn(it)
       }.apply {
@@ -249,7 +249,7 @@ class HmppsSqsConfigurationTest {
     private val conditional = ConditionalOnAuditQueueDefinition()
 
     @Test
-    internal fun `test no queues defined`() {
+    fun `test no queues defined`() {
       MockEnvironment().also {
         whenever(context.environment).thenReturn(it)
       }
@@ -257,7 +257,7 @@ class HmppsSqsConfigurationTest {
     }
 
     @Test
-    internal fun `test audit queue defined`() {
+    fun `test audit queue defined`() {
       MockEnvironment().also {
         whenever(context.environment).thenReturn(it)
       }.apply {
@@ -267,7 +267,7 @@ class HmppsSqsConfigurationTest {
     }
 
     @Test
-    internal fun `test non audit queue defined`() {
+    fun `test non audit queue defined`() {
       MockEnvironment().also {
         whenever(context.environment).thenReturn(it)
       }.apply {
@@ -277,7 +277,7 @@ class HmppsSqsConfigurationTest {
     }
 
     @Test
-    internal fun `test both audit and non audit queue defined`() {
+    fun `test both audit and non audit queue defined`() {
       MockEnvironment().also {
         whenever(context.environment).thenReturn(it)
       }.apply {

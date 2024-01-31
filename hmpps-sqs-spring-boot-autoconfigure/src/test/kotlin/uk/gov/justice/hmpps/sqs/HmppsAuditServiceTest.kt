@@ -23,14 +23,14 @@ import uk.gov.justice.hmpps.sqs.audit.HmppsAuditService
 import java.util.concurrent.CompletableFuture
 
 @JsonTest
-internal class HmppsAuditServiceTest(@Autowired private val objectMapper: ObjectMapper) {
+class HmppsAuditServiceTest(@Autowired private val objectMapper: ObjectMapper) {
   private val hmppsQueueService: HmppsQueueService = mock()
 
   private val hmppsQueue: HmppsQueue = mock()
   private val sqsAsyncClient: SqsAsyncClient = mock()
 
   @BeforeEach
-  internal fun setup() {
+  fun setup() {
     whenever(hmppsQueueService.findByQueueId(any())).thenReturn(hmppsQueue)
     whenever(hmppsQueue.sqsClient).thenReturn(sqsAsyncClient)
     whenever(hmppsQueue.queueUrl).thenReturn("a queue url")
@@ -43,7 +43,7 @@ internal class HmppsAuditServiceTest(@Autowired private val objectMapper: Object
   inner class PublishEventUsingDomainObject {
 
     @Test
-    internal fun `test publish event using domain object`() = runTest {
+    fun `test publish event using domain object`() = runTest {
       HmppsAuditService(
         hmppsQueueService = hmppsQueueService,
         objectMapper = objectMapper,
@@ -68,7 +68,7 @@ internal class HmppsAuditServiceTest(@Autowired private val objectMapper: Object
   inner class PublishEventUsingParameters {
 
     @Test
-    internal fun `test publish event providing service as parameter`() = runTest {
+    fun `test publish event providing service as parameter`() = runTest {
       HmppsAuditService(
         hmppsQueueService = hmppsQueueService,
         objectMapper = objectMapper,
@@ -89,7 +89,7 @@ internal class HmppsAuditServiceTest(@Autowired private val objectMapper: Object
     }
 
     @Test
-    internal fun `test publish event defaulting to audit service name`() = runTest {
+    fun `test publish event defaulting to audit service name`() = runTest {
       HmppsAuditService(
         hmppsQueueService = hmppsQueueService,
         objectMapper = objectMapper,
@@ -110,7 +110,7 @@ internal class HmppsAuditServiceTest(@Autowired private val objectMapper: Object
     }
 
     @Test
-    internal fun `test publish event defaulting to application name`() = runTest {
+    fun `test publish event defaulting to application name`() = runTest {
       HmppsAuditService(
         hmppsQueueService = hmppsQueueService,
         objectMapper = objectMapper,
@@ -131,7 +131,7 @@ internal class HmppsAuditServiceTest(@Autowired private val objectMapper: Object
     }
 
     @Test
-    internal fun `test publish event throws exception when service not defined`() = runTest {
+    fun `test publish event throws exception when service not defined`() = runTest {
       assertThrows<NullPointerException> {
         HmppsAuditService(
           hmppsQueueService = hmppsQueueService,
@@ -146,7 +146,7 @@ internal class HmppsAuditServiceTest(@Autowired private val objectMapper: Object
     }
 
     @Test
-    internal fun `test publish event uses service parameter`() = runTest {
+    fun `test publish event uses service parameter`() = runTest {
       HmppsAuditService(
         hmppsQueueService = hmppsQueueService,
         objectMapper = objectMapper,
@@ -162,26 +162,6 @@ internal class HmppsAuditServiceTest(@Autowired private val objectMapper: Object
             .contains(""""what":"bob"""")
             .contains(""""who":"me"""")
             .contains(""""service":"my-service"""")
-        },
-      )
-    }
-
-    private suspend fun testAudit(
-      expectedServiceValue: String,
-      function: () -> SendMessageResponse,
-    ) {
-      whenever(sqsAsyncClient.sendMessage(any<SendMessageRequest>()))
-        .thenReturn(CompletableFuture.completedFuture(SendMessageResponse.builder().build()))
-
-      function()
-
-      verify(sqsAsyncClient).sendMessage(
-        check<SendMessageRequest> {
-          assertThat(it.queueUrl()).isEqualTo("a queue url")
-          assertThat(it.messageBody())
-            .contains(""""what":"bob"""")
-            .contains(""""who":"me"""")
-            .contains(""""service":"$expectedServiceValue"""")
         },
       )
     }
