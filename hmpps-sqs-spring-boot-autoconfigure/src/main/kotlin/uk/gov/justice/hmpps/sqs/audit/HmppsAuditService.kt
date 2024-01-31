@@ -16,8 +16,7 @@ import java.time.Instant
  *
  * This service will be wired up by spring boot automatically if an audit queue with id `audit` is defined.
  *
- * The service will also default the service name to the `audit.service.name` if defined, or then fallback to the
- * `spring.application.name`.  It can be, if required, passed into the audit method instead.
+ * The service will also default the service name to the `spring.application.name`.  It can be, if required, passed into the audit method instead.
  */
 open class HmppsAuditService(
   private val hmppsQueueService: HmppsQueueService,
