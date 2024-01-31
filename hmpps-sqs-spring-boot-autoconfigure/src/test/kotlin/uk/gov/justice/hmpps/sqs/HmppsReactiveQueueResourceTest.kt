@@ -21,7 +21,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.test.web.reactive.server.WebTestClient
 
-@WebMvcTest(HmppsReactiveQueueResource::class, properties = ["hmpps.sqs.reactiveApi=true"])
+@WebMvcTest(HmppsReactiveQueueResource::class)
 @AutoConfigureMockMvc(addFilters = false)
 class HmppsReactiveQueueResourceTest {
 
