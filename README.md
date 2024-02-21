@@ -268,7 +268,7 @@ Class `HmppsQueueResource` provides endpoints to retry and purge messages on a D
 
 #### Usage
 
-For transient errors we would typically create a Kubernetes Cronjob to automatically retry all DLQ messages. The Cronjob should be configured to run before [an alert triggers for the age of the DLQ message](https://github.com/ministryofjustice/cloud-platform-environments/blob/main/namespaces/live-1.cloud-platform.service.justice.gov.uk/offender-events-prod/09-prometheus-sqs-sns.yaml#L13) - typically every 10 minutes. See the [example Cronjob](https://github.com/ministryofjustice/hmpps-spring-boot-sqs/blob/main/test-app/helm_deploy/hmpps-template-kotlin/example/housekeeping-cronjob.yaml) for more details.
+For transient errors you can use the Kubernetes Cronjob defined in the [generic service helm chart](https://github.com/ministryofjustice/hmpps-helm-charts/tree/main/charts/generic-service#retrying-messages-on-a-dead-letter-queue) to automatically retry all DLQ messages. The Cronjob is configured to run every 10 minutes before [an alert triggers for the age of the DLQ message](https://github.com/ministryofjustice/cloud-platform-environments/blob/main/namespaces/live-1.cloud-platform.service.justice.gov.uk/offender-events-prod/09-prometheus-sqs-sns.yaml#L13).
 
 Unrecoverable errors should be fixed such that they no longer fail and are not sent to the DLQ. In the meantime these can be removed by purging the DLQ to prevent the alert from firing.
 
@@ -282,7 +282,7 @@ The queue names should also appear on the `/health` page if using this library f
 
 Most endpoints in `HmppsQueueResource` will have a default role required to access them which is overridable by a configuration property found in `hmpps.sqs.queueAdminRole`.
 
-Note that any endpoints defined in `HmppsQueueResource` that are not secured by a role are only intended for use within the Kubernetes namespace and must not be left wide open - instead they should be secured in the Kubernetes ingress. See the [example ingress](https://github.com/ministryofjustice/hmpps-spring-boot-sqs/blob/main/test-app/helm_deploy/hmpps-template-kotlin/example/housekeeping-cronjob.yaml) for how to block the endpoints from outside the namespace.
+Note that any endpoints defined in `HmppsQueueResource` that are not secured by a role are only intended for use within the Kubernetes namespace and must not be left wide open - instead they should be secured in the Kubernetes ingress. See the [example ingress](https://github.com/ministryofjustice/hmpps-spring-boot-sqs/blob/main/test-app/helm_deploy/hmpps-template-kotlin/example/ingress.yaml) for how to block the endpoints from outside the namespace.
 
 #### Open API Docs
 
@@ -436,7 +436,7 @@ In the other project's Gradle build script change the version to match and it sh
 
 ## Publishing to Maven Central
 
-The Circle build pipeline for the `main` branch has a step to manually approve a publish to Maven Cental. If you do not have permission to approve this step please ask in Slack channel `#hmpps_dev` to find someone that does.
+The Circle build pipeline for the `main` branch has a step to manually approve a publish to Maven Central. If you do not have permission to approve this step please ask in Slack channel `#hmpps_dev` to find someone that does.
 
 ### Published Version Numbers
 
