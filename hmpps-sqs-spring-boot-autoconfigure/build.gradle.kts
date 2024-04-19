@@ -12,11 +12,8 @@ plugins {
   id("io.spring.dependency-management") version "1.1.4"
   id("org.jlleitschuh.gradle.ktlint") version "12.1.0"
   id("org.owasp.dependencycheck") version "8.4.2"
-  id("org.springframework.boot") version "3.2.4"
+  id("org.springframework.boot") version "3.2.5"
 }
-
-// Temporarily pin netty version until spring boot upgrades (from 3.2.5 onwards)
-ext["netty.version"] = "4.1.108.Final"
 
 dependencyManagement {
   imports {
@@ -42,7 +39,7 @@ dependencies {
   testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
   testImplementation("org.mockito:mockito-junit-jupiter:5.11.0")
   testImplementation("org.springframework.boot:spring-boot-starter-test")
-  testImplementation("org.mockito.kotlin:mockito-kotlin:5.2.1")
+  testImplementation("org.mockito.kotlin:mockito-kotlin:5.3.1")
   testImplementation("org.mockito:mockito-inline:5.2.0")
   testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.0")
   testImplementation("org.jetbrains.kotlin:kotlin-reflect")
