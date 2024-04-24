@@ -17,8 +17,6 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 import software.amazon.awssdk.services.sqs.SqsAsyncClient
-import software.amazon.awssdk.services.sqs.model.DeleteMessageRequest
-import software.amazon.awssdk.services.sqs.model.DeleteMessageResponse
 import software.amazon.awssdk.services.sqs.model.GetQueueAttributesRequest
 import software.amazon.awssdk.services.sqs.model.GetQueueAttributesResponse
 import software.amazon.awssdk.services.sqs.model.GetQueueUrlRequest
@@ -30,8 +28,6 @@ import software.amazon.awssdk.services.sqs.model.QueueAttributeName.APPROXIMATE_
 import software.amazon.awssdk.services.sqs.model.QueueAttributeName.QUEUE_ARN
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse
-import software.amazon.awssdk.services.sqs.model.SendMessageRequest
-import software.amazon.awssdk.services.sqs.model.SendMessageResponse
 import software.amazon.awssdk.services.sqs.model.StartMessageMoveTaskRequest
 import software.amazon.awssdk.services.sqs.model.StartMessageMoveTaskResponse
 import java.util.concurrent.CompletableFuture
@@ -110,10 +106,6 @@ class HmppsQueueServiceTest {
         .thenReturn(CompletableFuture.completedFuture(GetQueueUrlResponse.builder().queueUrl("queueUrl").build()))
       whenever(dlqSqs.getQueueUrl(any<GetQueueUrlRequest>()))
         .thenReturn(CompletableFuture.completedFuture(GetQueueUrlResponse.builder().queueUrl("dlqUrl").build()))
-      whenever(queueSqs.sendMessage(any<SendMessageRequest>()))
-        .thenReturn(CompletableFuture.completedFuture(SendMessageResponse.builder().build()))
-      whenever(dlqSqs.deleteMessage(any<DeleteMessageRequest>()))
-        .thenReturn(CompletableFuture.completedFuture(DeleteMessageResponse.builder().build()))
 
       whenever(
         queueSqs.getQueueAttributes(
@@ -220,7 +212,6 @@ class HmppsQueueServiceTest {
 
         assertThat(captor.firstValue.sourceArn()).isEqualTo("dlqArn")
         assertThat(captor.firstValue.destinationArn()).isEqualTo("queueArn")
-        assertThat(captor.firstValue.maxNumberOfMessagesPerSecond()).isEqualTo(10)
       }
 
       @Test
@@ -230,10 +221,6 @@ class HmppsQueueServiceTest {
         )
 
         assertThat(result.messagesFoundCount).isEqualTo(2)
-//        assertThat(result.messages[0].messageId).isEqualTo("external-message-id-1")
-//        assertThat(result.messages[0].body["Message"]).isNotNull
-//        assertThat(result.messages[1].messageId).isEqualTo("external-message-id-2")
-//        assertThat(result.messages[1].body["Message"]).isNotNull
       }
     }
   }

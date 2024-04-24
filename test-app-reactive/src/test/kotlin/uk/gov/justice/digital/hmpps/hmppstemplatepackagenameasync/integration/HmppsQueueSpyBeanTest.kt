@@ -62,7 +62,6 @@ class HmppsQueueSpyBeanTest : IntegrationTestBase() {
 
     assertThat(captor.firstValue.sourceArn()).contains("000000000000")
     assertThat(captor.firstValue.destinationArn()).contains("000000000000")
-    assertThat(captor.firstValue.maxNumberOfMessagesPerSecond()).isEqualTo(10)
   }
 
   @Test

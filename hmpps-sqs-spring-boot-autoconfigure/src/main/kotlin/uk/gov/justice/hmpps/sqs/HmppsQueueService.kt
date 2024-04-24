@@ -11,7 +11,6 @@ import kotlinx.coroutines.future.await
 import org.slf4j.LoggerFactory
 import software.amazon.awssdk.services.sqs.SqsAsyncClient
 import software.amazon.awssdk.services.sqs.model.GetQueueAttributesRequest
-import software.amazon.awssdk.services.sqs.model.QueueAttributeName
 import software.amazon.awssdk.services.sqs.model.QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES
 import software.amazon.awssdk.services.sqs.model.QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES_NOT_VISIBLE
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest
@@ -64,20 +63,11 @@ open class HmppsQueueService(
     val messageCount = sqsDlqClient.countMessagesOnQueue(dlqUrl!!).await()
 
     if (messageCount > 0) {
-      val dlqArn = sqsDlqClient.getQueueAttributes(
-        GetQueueAttributesRequest.builder().queueUrl(dlqUrl).attributeNames(QueueAttributeName.QUEUE_ARN).build(),
-      ).await().attributes()[QueueAttributeName.QUEUE_ARN]
-
-      val arn = sqsClient.getQueueAttributes(
-        GetQueueAttributesRequest.builder().queueUrl(queueUrl).attributeNames(QueueAttributeName.QUEUE_ARN).build(),
-      ).await().attributes()[QueueAttributeName.QUEUE_ARN]
-
       sqsDlqClient.startMessageMoveTask(
         StartMessageMoveTaskRequest
           .builder()
           .sourceArn(dlqArn)
-          .maxNumberOfMessagesPerSecond(10)
-          .destinationArn(arn)
+          .destinationArn(queueArn)
           .build(),
       ).await()
 
