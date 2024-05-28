@@ -2,17 +2,17 @@ import com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-  kotlin("jvm") version "1.9.23"
-  kotlin("plugin.spring") version "1.9.23"
+  kotlin("jvm") version "2.0.0"
+  kotlin("plugin.spring") version "2.0.0"
   id("maven-publish")
   id("signing")
   id("com.adarshr.test-logger") version "4.0.0"
   id("com.github.ben-manes.versions") version "0.51.0"
   id("se.patrikerdes.use-latest-versions") version "0.2.18"
-  id("io.spring.dependency-management") version "1.1.4"
-  id("org.jlleitschuh.gradle.ktlint") version "12.1.0"
+  id("io.spring.dependency-management") version "1.1.5"
+  id("org.jlleitschuh.gradle.ktlint") version "12.1.1"
   id("org.owasp.dependencycheck") version "8.4.2"
-  id("org.springframework.boot") version "3.2.5"
+  id("org.springframework.boot") version "3.3.0"
 }
 
 dependencyManagement {
@@ -30,18 +30,18 @@ dependencies {
   api("io.awspring.cloud:spring-cloud-aws-starter") { exclude("io.awspring.cloud", "spring-cloud-aws-autoconfigure") }
   implementation("io.awspring.cloud:spring-cloud-aws-sns")
   implementation("io.awspring.cloud:spring-cloud-aws-sqs")
-  implementation("com.google.code.gson:gson:2.10.1")
-  implementation("com.microsoft.azure:applicationinsights-core:3.5.1")
+  implementation("com.google.code.gson:gson:2.11.0")
+  implementation("com.microsoft.azure:applicationinsights-core:3.5.2")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8")
 
-  testImplementation("org.assertj:assertj-core:3.25.3")
+  testImplementation("org.assertj:assertj-core:3.26.0")
   testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
-  testImplementation("org.mockito:mockito-junit-jupiter:5.11.0")
+  testImplementation("org.mockito:mockito-junit-jupiter:5.12.0")
   testImplementation("org.springframework.boot:spring-boot-starter-test")
   testImplementation("org.mockito.kotlin:mockito-kotlin:5.3.1")
   testImplementation("org.mockito:mockito-inline:5.2.0")
-  testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.0")
+  testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")
   testImplementation("org.jetbrains.kotlin:kotlin-reflect")
 }
 
@@ -123,9 +123,7 @@ kotlin {
 
 tasks {
   withType<KotlinCompile> {
-    kotlinOptions {
-      jvmTarget = "21"
-    }
+    compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21
   }
 
   withType<Test> {
