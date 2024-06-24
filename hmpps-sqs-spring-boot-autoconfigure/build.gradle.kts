@@ -12,7 +12,7 @@ plugins {
   id("io.spring.dependency-management") version "1.1.5"
   id("org.jlleitschuh.gradle.ktlint") version "12.1.1"
   id("org.owasp.dependencycheck") version "8.4.2"
-  id("org.springframework.boot") version "3.3.0"
+  id("org.springframework.boot") version "3.3.1"
 }
 
 dependencyManagement {
@@ -31,7 +31,7 @@ dependencies {
   implementation("io.awspring.cloud:spring-cloud-aws-sns")
   implementation("io.awspring.cloud:spring-cloud-aws-sqs")
   implementation("com.google.code.gson:gson:2.11.0")
-  implementation("com.microsoft.azure:applicationinsights-core:3.5.2")
+  implementation("com.microsoft.azure:applicationinsights-core:3.5.3")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8")
 
