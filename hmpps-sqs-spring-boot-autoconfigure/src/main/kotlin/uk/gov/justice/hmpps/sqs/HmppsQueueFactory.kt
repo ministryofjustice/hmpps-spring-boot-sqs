@@ -1,5 +1,6 @@
 package uk.gov.justice.hmpps.sqs
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import io.awspring.cloud.sqs.config.SqsMessageListenerContainerFactory
 import io.awspring.cloud.sqs.listener.QueueMessageVisibility
 import io.awspring.cloud.sqs.listener.errorhandler.ErrorHandler
@@ -15,11 +16,13 @@ import software.amazon.awssdk.services.sqs.model.GetQueueAttributesRequest
 import software.amazon.awssdk.services.sqs.model.GetQueueUrlRequest
 import software.amazon.awssdk.services.sqs.model.QueueAttributeName
 import uk.gov.justice.hmpps.sqs.HmppsSqsProperties.QueueConfig
+import uk.gov.justice.hmpps.sqs.telemetry.TraceExtractingMessageInterceptor
 
 class HmppsQueueFactory(
   private val context: ConfigurableApplicationContext,
   private val healthContributorRegistry: HmppsHealthContributorRegistry,
   private val sqsClientFactory: SqsClientFactory,
+  private val objectMapper: ObjectMapper,
 ) {
   companion object {
     val log: Logger = LoggerFactory.getLogger(this::class.java)
@@ -75,6 +78,7 @@ class HmppsQueueFactory(
     SqsMessageListenerContainerFactory
       .builder<Any>()
       .sqsAsyncClient(awsSqsClient)
+      .messageInterceptor(TraceExtractingMessageInterceptor(objectMapper))
       .errorHandler(
         object : ErrorHandler<Any> {
           override fun handle(message: org.springframework.messaging.Message<Any>, t: Throwable) {

@@ -7,6 +7,7 @@ import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.sqs.SqsAsyncClient
+import uk.gov.justice.hmpps.sqs.telemetry.TraceInjectingExecutionInterceptor
 import java.net.URI
 
 class SqsClientFactory {
@@ -23,6 +24,7 @@ class SqsClientFactory {
     return SqsAsyncClient.builder()
       .credentialsProvider(credentialsProvider)
       .region(Region.of(region))
+      .overrideConfiguration { it.addExecutionInterceptor(TraceInjectingExecutionInterceptor()) }
       .build()
   }
 
@@ -31,5 +33,6 @@ class SqsClientFactory {
       .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create("any", "any")))
       .endpointOverride(URI.create(localstackUrl))
       .region(Region.of(region))
+      .overrideConfiguration { it.addExecutionInterceptor(TraceInjectingExecutionInterceptor()) }
       .build()
 }

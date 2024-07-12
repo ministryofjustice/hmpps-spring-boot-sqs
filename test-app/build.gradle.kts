@@ -14,6 +14,7 @@ dependencies {
   implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8")
+  implementation("io.opentelemetry:opentelemetry-extension-kotlin:1.40.0")
 
   implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.5.0")
 
@@ -32,6 +33,7 @@ dependencies {
   testImplementation("com.amazonaws:aws-java-sdk-core:1.12.748") // Needed so Localstack has access to the AWS SDK V1 API
   testImplementation("com.google.code.gson:gson:2.11.0")
   testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test")
+  testImplementation("io.opentelemetry:opentelemetry-extension-trace-propagators:1.40.0")
 }
 
 kotlin {

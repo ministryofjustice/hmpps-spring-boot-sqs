@@ -2,6 +2,7 @@
 
 package uk.gov.justice.hmpps.sqs
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
@@ -38,7 +39,8 @@ class HmppsQueueFactoryTest {
   private val healthContributorRegistry = mock<HmppsHealthContributorRegistry>()
   private val beanFactory = mock<ConfigurableListableBeanFactory>()
   private val sqsFactory = mock<SqsClientFactory>()
-  private val hmppsQueueFactory = HmppsQueueFactory(context, healthContributorRegistry, sqsFactory)
+  private val objectMapper = mock<ObjectMapper>()
+  private val hmppsQueueFactory = HmppsQueueFactory(context, healthContributorRegistry, sqsFactory, objectMapper)
 
   init {
     whenever(context.beanFactory).thenReturn(beanFactory)
