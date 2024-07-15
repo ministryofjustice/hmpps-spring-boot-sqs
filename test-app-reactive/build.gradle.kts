@@ -35,7 +35,8 @@ dependencies {
   testImplementation("com.amazonaws:aws-java-sdk-core:1.12.748") // needed so that Localstack has access to the AWS SDK V1 API
   testImplementation("com.google.code.gson:gson:2.11.0")
   testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test")
-  testImplementation("io.opentelemetry:opentelemetry-extension-trace-propagators:1.40.0")
+  testImplementation("io.opentelemetry:opentelemetry-extension-trace-propagators")
+  testImplementation("io.opentelemetry:opentelemetry-sdk-testing")
 }
 
 kotlin {
