@@ -32,7 +32,7 @@ dependencies {
   implementation("io.awspring.cloud:spring-cloud-aws-sqs")
   implementation("com.google.code.gson:gson:2.11.0")
   implementation("com.microsoft.azure:applicationinsights-core:3.5.3")
-  implementation("io.opentelemetry.instrumentation:opentelemetry-instrumentation-annotations:2.5.0")
+  implementation("io.opentelemetry:opentelemetry-api")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8")
 

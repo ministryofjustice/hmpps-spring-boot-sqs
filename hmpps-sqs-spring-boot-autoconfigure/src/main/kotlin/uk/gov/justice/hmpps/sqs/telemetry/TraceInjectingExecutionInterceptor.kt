@@ -3,7 +3,6 @@ package uk.gov.justice.hmpps.sqs.telemetry
 import io.opentelemetry.api.GlobalOpenTelemetry
 import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.SpanKind
-import io.opentelemetry.instrumentation.annotations.WithSpan
 import software.amazon.awssdk.core.interceptor.Context
 import software.amazon.awssdk.core.interceptor.ExecutionAttributes
 import software.amazon.awssdk.core.interceptor.ExecutionInterceptor
@@ -23,11 +22,11 @@ import software.amazon.awssdk.services.sqs.model.MessageAttributeValue as SqsMes
 class TraceInjectingExecutionInterceptor : ExecutionInterceptor {
   override fun modifyRequest(context: Context.ModifyRequest?, executionAttributes: ExecutionAttributes?) =
     when (val request = context?.request()) {
-      is PublishRequest -> publishSpan(request.messageAttributes()["eventType"]?.stringValue()) {
+      is PublishRequest -> withSpan(request.messageAttributes()["eventType"]?.stringValue()) {
         request.toBuilder().messageAttributes(request.messageAttributes().withSnsTelemetryContext()).build()
       }
 
-      is PublishBatchRequest -> publishSpan {
+      is PublishBatchRequest -> withSpan {
         request.toBuilder().publishBatchRequestEntries(
           request.publishBatchRequestEntries().map { entry ->
             entry.toBuilder().messageAttributes(entry.messageAttributes().withSnsTelemetryContext()).build()
@@ -35,11 +34,11 @@ class TraceInjectingExecutionInterceptor : ExecutionInterceptor {
         ).build()
       }
 
-      is SendMessageRequest -> publishSpan(request.messageAttributes()["eventType"]?.stringValue()) {
+      is SendMessageRequest -> withSpan(request.messageAttributes()["eventType"]?.stringValue()) {
         request.toBuilder().messageAttributes(request.messageAttributes().withSqsTelemetryContext()).build()
       }
 
-      is SendMessageBatchRequest -> publishSpan {
+      is SendMessageBatchRequest -> withSpan {
         request.toBuilder().entries(
           request.entries().map { entry ->
             entry.toBuilder().messageAttributes(entry.messageAttributes().withSqsTelemetryContext()).build()
@@ -50,14 +49,18 @@ class TraceInjectingExecutionInterceptor : ExecutionInterceptor {
       else -> request
     }
 
-  /**
-   * Creates a "PUBLISH" span and injects
-   */
-  @WithSpan(kind = SpanKind.PRODUCER)
-  private fun <T> publishSpan(eventType: String? = null, modifiedRequest: () -> T): T {
-    Span.current().updateName(eventType?.let { "PUBLISH $it" } ?: "PUBLISH")
-    return modifiedRequest()
-  }
+  private fun <T> withSpan(eventType: String? = null, block: () -> T): T = GlobalOpenTelemetry
+    .getTracer("hmpps-sqs")
+    .spanBuilder(eventType?.let { "PUBLISH $it" } ?: "PUBLISH")
+    .setSpanKind(SpanKind.PRODUCER)
+    .startSpan()
+    .let {
+      try {
+        it.makeCurrent().use { block() }
+      } finally {
+        it.end()
+      }
+    }
 
   private fun MutableMap<String, SnsMessageAttributeValue>.withSnsTelemetryContext() = toMutableMap().also {
     val context = SpanContext.current().with(Span.current())
