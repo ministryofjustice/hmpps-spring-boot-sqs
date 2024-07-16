@@ -78,8 +78,8 @@ class HmppsSqsConfiguration {
 
   @Bean
   @ConditionalOnMissingBean
-  fun hmppsQueueFactory(applicationContext: ConfigurableApplicationContext, healthContributorRegistry: HmppsHealthContributorRegistry) =
-    HmppsQueueFactory(applicationContext, healthContributorRegistry, SqsClientFactory())
+  fun hmppsQueueFactory(applicationContext: ConfigurableApplicationContext, healthContributorRegistry: HmppsHealthContributorRegistry, objectMapper: ObjectMapper) =
+    HmppsQueueFactory(applicationContext, healthContributorRegistry, SqsClientFactory(), objectMapper)
 
   @Bean
   @ConditionalOnMissingBean

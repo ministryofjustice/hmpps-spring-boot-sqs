@@ -2,8 +2,9 @@ package uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.service
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.awspring.cloud.sqs.annotation.SqsListener
+import io.opentelemetry.context.Context
+import io.opentelemetry.extension.kotlin.asContextElement
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.future.future
 import org.springframework.stereotype.Service
 import java.util.concurrent.CompletableFuture
@@ -14,7 +15,7 @@ class InboundMessageListener(private val inboundMessageService: InboundMessageSe
   @SqsListener("inboundqueue", factory = "hmppsQueueContainerFactoryProxy")
   fun processMessage(message: Message): CompletableFuture<Void> {
     val event = objectMapper.readValue(message.Message, HmppsEvent::class.java)
-    return CoroutineScope(Dispatchers.Default).future {
+    return CoroutineScope(Context.current().asContextElement()).future {
       inboundMessageService.handleMessage(event)
     }.thenAccept {}
   }
@@ -31,8 +32,13 @@ class OutboundMessageListener(private val outboundMessageService: OutboundMessag
 }
 
 data class HmppsEvent(val id: String, val type: String, val contents: String)
-data class EventType(val Value: String, val Type: String)
-data class MessageAttributes(val eventType: EventType)
+data class MessageAttribute(val Value: String, val Type: String)
+typealias EventType = MessageAttribute
+class MessageAttributes() : HashMap<String, MessageAttribute>() {
+  constructor(attribute: EventType) : this() {
+    put(attribute.Value, attribute)
+  }
+}
 data class Message(
   val Message: String,
   val MessageId: String,
