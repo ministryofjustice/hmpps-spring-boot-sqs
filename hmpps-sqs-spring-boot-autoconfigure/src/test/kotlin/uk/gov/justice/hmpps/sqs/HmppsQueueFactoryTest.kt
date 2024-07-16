@@ -56,7 +56,7 @@ class HmppsQueueFactoryTest {
 
     @BeforeEach
     fun `configure mocks and register queues`() {
-      whenever(sqsFactory.awsSqsAsyncClient(anyString(), anyString(), anyString(), anyBoolean()))
+      whenever(sqsFactory.awsSqsAsyncClient(anyString(), anyString(), anyString(), anyBoolean(), anyBoolean()))
         .thenReturn(sqsDlqClient)
         .thenReturn(sqsClient)
       whenever(sqsClient.getQueueUrl(GetQueueUrlRequest.builder().queueName("some queue name").build()))
@@ -76,8 +76,8 @@ class HmppsQueueFactoryTest {
 
     @Test
     fun `should create async clients from sqs factory`() {
-      verify(sqsFactory).awsSqsAsyncClient("some access key id", "some secret access key", "eu-west-2", false)
-      verify(sqsFactory).awsSqsAsyncClient("dlq access key id", "dlq secret access key", "eu-west-2", false)
+      verify(sqsFactory).awsSqsAsyncClient("some access key id", "some secret access key", "eu-west-2", false, false)
+      verify(sqsFactory).awsSqsAsyncClient("dlq access key id", "dlq secret access key", "eu-west-2", false, false)
     }
 
     @Test
@@ -124,7 +124,7 @@ class HmppsQueueFactoryTest {
 
     @BeforeEach
     fun `configure mocks and register queues`() {
-      whenever(sqsFactory.awsSqsAsyncClient(anyString(), anyString(), anyString(), anyBoolean()))
+      whenever(sqsFactory.awsSqsAsyncClient(anyString(), anyString(), anyString(), anyBoolean(), anyBoolean()))
         .thenReturn(sqsDlqClient)
         .thenReturn(sqsClient)
       whenever(sqsClient.getQueueUrl(GetQueueUrlRequest.builder().queueName("some queue name").build()))
@@ -144,7 +144,7 @@ class HmppsQueueFactoryTest {
 
     @Test
     fun `should create async clients from sqs factory`() {
-      verify(sqsFactory, times(2)).awsSqsAsyncClient("", "", "eu-west-2", true)
+      verify(sqsFactory, times(2)).awsSqsAsyncClient("", "", "eu-west-2", true, false)
     }
 
     @Test
@@ -191,7 +191,7 @@ class HmppsQueueFactoryTest {
 
     @BeforeEach
     fun `configure mocks and register queues`() {
-      whenever(sqsFactory.localstackSqsAsyncClient(anyString(), anyString()))
+      whenever(sqsFactory.localstackSqsAsyncClient(anyString(), anyString(), anyBoolean()))
         .thenReturn(sqsDlqClient)
         .thenReturn(sqsClient)
       whenever(sqsClient.getQueueUrl(any<GetQueueUrlRequest>()))
@@ -217,7 +217,7 @@ class HmppsQueueFactoryTest {
 
     @Test
     fun `should create async clients from sqs factory`() {
-      verify(sqsFactory, times(2)).localstackSqsAsyncClient("http://localhost:4566", "eu-west-2")
+      verify(sqsFactory, times(2)).localstackSqsAsyncClient("http://localhost:4566", "eu-west-2", false)
     }
 
     @Test
