@@ -107,15 +107,17 @@ Each queue declared in the `queues` map is defined in the `QueueConfig` property
 | dlqMaxReceiveCount     | 5       | Only used for `provider=localstack`. Change the number of retries automatically provided by Localstack on DLQs. e.g. It can be useful to change this to 1 when testing DLQ retry functionality.                                                                                                                                            |
 | visibilityTimeout      | 30      | Only used for `provider=localstack`. Sets the maximum amount of time (in seconds) that a message is considered to be in process before it is then acknowledged or made visible again to other listeners.  See https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-visibility-timeout.html for more information. |
 | errorVisibilityTimeout | 0       | Sets the amount of time (in seconds) before a message in error is retried.                                                                                                                                                                                                                                                                 |
+| propagateTracing       | `false` | Experimental! Reads distributed tracing headers and propagates them onwards, keeping a link to the original published message in your Application Monitor.                                                                                                                                                                                 |
 
 Each topic declared in the `topics` map is defined in the `TopicConfig` property class
 
-| Property        | Default | Description                                                                                                                                                                                 |
-|-----------------|---------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| topicId         |         | The key to the `topics` map. A unique name for the topic configuration, used heavily when automatically creating Spring beans. Must be lower case letters only (no hyphens or underscores). |
-| arn             |         | The ARN of the topic as recognised by AWS and LocalStack.                                                                                                                                   |
-| accessKeyId     |         | Only used for `provider=aws`. The AWS access key ID, should be derived from an environment variable of format `HMPPS_SQS_TOPICS_<topicId>_ACCESS_KEY_ID`.                                   | 
-| secretAccessKey |         | Only used for `provider=aws`. The AWS secret access key, should be derived from an environment variable of format `HMPPS_SQS_TOPICS_<topicId>_SECRET_ACCESS_KEY`.                           |
+| Property         | Default | Description                                                                                                                                                                                 |
+|------------------|---------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| topicId          |         | The key to the `topics` map. A unique name for the topic configuration, used heavily when automatically creating Spring beans. Must be lower case letters only (no hyphens or underscores). |
+| arn              |         | The ARN of the topic as recognised by AWS and LocalStack.                                                                                                                                   |
+| accessKeyId      |         | Only used for `provider=aws`. The AWS access key ID, should be derived from an environment variable of format `HMPPS_SQS_TOPICS_<topicId>_ACCESS_KEY_ID`.                                   | 
+| secretAccessKey  |         | Only used for `provider=aws`. The AWS secret access key, should be derived from an environment variable of format `HMPPS_SQS_TOPICS_<topicId>_SECRET_ACCESS_KEY`.                           |
+| propagateTracing | `false` | Experimental! Writes distributed tracing headers to messages and propagates them onwards, keeping a link to message consumers in your Application Monitor.                                 |
 
 ### SqsListener
 

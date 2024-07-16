@@ -14,7 +14,7 @@ class SnsClientFactory {
   companion object {
     val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
-  fun awsSnsAsyncClient(accessKeyId: String, secretAccessKey: String, region: String, useWebToken: Boolean): SnsAsyncClient {
+  fun awsSnsAsyncClient(accessKeyId: String, secretAccessKey: String, region: String, useWebToken: Boolean, propagateTracing: Boolean): SnsAsyncClient {
     val credentialsProvider =
       if (useWebToken) {
         DefaultCredentialsProvider.builder().build()
@@ -24,15 +24,23 @@ class SnsClientFactory {
     return SnsAsyncClient.builder()
       .credentialsProvider(credentialsProvider)
       .region(Region.of(region))
-      .overrideConfiguration { it.addExecutionInterceptor(TraceInjectingExecutionInterceptor()) }
+      .apply {
+        if (propagateTracing) {
+          overrideConfiguration { it.addExecutionInterceptor(TraceInjectingExecutionInterceptor()) }
+        }
+      }
       .build()
   }
 
-  fun localstackSnsAsyncClient(localstackUrl: String, region: String): SnsAsyncClient =
+  fun localstackSnsAsyncClient(localstackUrl: String, region: String, propagateTracing: Boolean): SnsAsyncClient =
     SnsAsyncClient.builder()
       .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create("any", "any")))
       .endpointOverride(URI.create(localstackUrl))
       .region(Region.of(region))
-      .overrideConfiguration { it.addExecutionInterceptor(TraceInjectingExecutionInterceptor()) }
+      .apply {
+        if (propagateTracing) {
+          overrideConfiguration { it.addExecutionInterceptor(TraceInjectingExecutionInterceptor()) }
+        }
+      }
       .build()
 }
