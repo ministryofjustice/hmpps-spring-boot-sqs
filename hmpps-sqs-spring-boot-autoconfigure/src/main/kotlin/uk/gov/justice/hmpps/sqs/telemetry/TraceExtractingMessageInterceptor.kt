@@ -10,6 +10,7 @@ import io.opentelemetry.api.trace.SpanKind
 import io.opentelemetry.context.Context
 import io.opentelemetry.context.Scope
 import io.opentelemetry.context.propagation.TextMapGetter
+import org.slf4j.LoggerFactory
 import org.springframework.messaging.Message
 
 /**
@@ -25,16 +26,22 @@ class TraceExtractingMessageInterceptor(private val objectMapper: ObjectMapper) 
     val payload = message.payload
     if (payload !is String) return message
 
-    val attributes = objectMapper.readValue(
-      objectMapper.readTree(payload).at("/MessageAttributes").traverse(),
-      object : TypeReference<MutableMap<String, MessageAttribute>>() {},
-    )
-    val spanName = attributes["eventType"]?.let { "RECEIVE ${it.Value}" } ?: "RECEIVE"
-    val span = attributes.extractTelemetryContext().startSpan(spanName)
+    try {
+      val attributes = objectMapper.readValue(
+        objectMapper.readTree(payload).at("/MessageAttributes").traverse(),
+        object : TypeReference<MutableMap<String, MessageAttribute>>() {},
+      )
 
-    return message
-      .withHeader("span", span)
-      .withHeader("scope", span.makeCurrent())
+      val spanName = attributes["eventType"]?.let { "RECEIVE ${it.Value}" } ?: "RECEIVE"
+      val span = attributes.extractTelemetryContext().startSpan(spanName)
+
+      return message
+        .withHeader("span", span)
+        .withHeader("scope", span.makeCurrent())
+    } catch (e: Exception) {
+      log.error("Not attempting to extract trace context from message: {} with headers: {} due to exception {}", message.payload, message.headers, e.message)
+      return message
+    }
   }
 
   override fun afterProcessing(message: Message<Any>, t: Throwable?) {
@@ -67,4 +74,8 @@ class TraceExtractingMessageInterceptor(private val objectMapper: ObjectMapper) 
     .startSpan()
 
   private class MessageAttribute(val Type: String, val Value: Any?)
+
+  companion object {
+    private val log = LoggerFactory.getLogger(TraceExtractingMessageInterceptor::class.java)
+  }
 }
