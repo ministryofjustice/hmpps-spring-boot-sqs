@@ -38,7 +38,7 @@ class HmppsQueueFactory(
           }
         HmppsQueue(queueId, sqsClient, queueConfig.queueName, sqsDlqClient, queueConfig.dlqName.ifEmpty { null })
           .also { registerHealthIndicator(it) }
-          .also { createSqsListenerContainerFactory(it, queueConfig.errorVisibilityTimeout) }
+          .also { createSqsListenerContainerFactory(it, queueConfig.errorVisibilityTimeout, queueConfig.propagateTracing) }
       }.toList()
 
   private fun getOrDefaultSqsDlqClient(queueId: String, queueConfig: QueueConfig, hmppsSqsProperties: HmppsSqsProperties): SqsAsyncClient? =
@@ -69,16 +69,20 @@ class HmppsQueueFactory(
         createDefaultBean().also { bean -> context.beanFactory.registerSingleton(beanName, bean) }
       }
 
-  private fun createSqsListenerContainerFactory(hmppsQueue: HmppsQueue, errorVisibilityTimeout: Int): HmppsQueueDestinationContainerFactory =
+  private fun createSqsListenerContainerFactory(hmppsQueue: HmppsQueue, errorVisibilityTimeout: Int, propagateTracing: Boolean): HmppsQueueDestinationContainerFactory =
     getOrDefaultBean("${hmppsQueue.id}-sqs-listener-factory") {
-      HmppsQueueDestinationContainerFactory(hmppsQueue.id, createSqsListenerContainerFactory(hmppsQueue.sqsClient, errorVisibilityTimeout))
+      HmppsQueueDestinationContainerFactory(hmppsQueue.id, createSqsListenerContainerFactory(hmppsQueue.sqsClient, errorVisibilityTimeout, propagateTracing))
     }
 
-  private fun createSqsListenerContainerFactory(awsSqsClient: SqsAsyncClient, errorVisibilityTimeout: Int): SqsMessageListenerContainerFactory<Any> =
+  private fun createSqsListenerContainerFactory(awsSqsClient: SqsAsyncClient, errorVisibilityTimeout: Int, propagateTracing: Boolean): SqsMessageListenerContainerFactory<Any> =
     SqsMessageListenerContainerFactory
       .builder<Any>()
       .sqsAsyncClient(awsSqsClient)
-      .messageInterceptor(TraceExtractingMessageInterceptor(objectMapper))
+      .apply {
+        if (propagateTracing) {
+          messageInterceptor(TraceExtractingMessageInterceptor(objectMapper))
+        }
+      }
       .errorHandler(
         object : ErrorHandler<Any> {
           override fun handle(message: org.springframework.messaging.Message<Any>, t: Throwable) {
@@ -97,9 +101,9 @@ class HmppsQueueFactory(
     val provider = findProvider(hmppsSqsProperties.provider)
     if (queueConfig.dlqName.isEmpty()) throw MissingDlqNameException()
     return when (provider) {
-      Provider.AWS -> sqsClientFactory.awsSqsAsyncClient(queueConfig.dlqAccessKeyId, queueConfig.dlqSecretAccessKey, region, hmppsSqsProperties.useWebToken)
+      Provider.AWS -> sqsClientFactory.awsSqsAsyncClient(queueConfig.dlqAccessKeyId, queueConfig.dlqSecretAccessKey, region, hmppsSqsProperties.useWebToken, queueConfig.propagateTracing)
       Provider.LOCALSTACK -> {
-        sqsClientFactory.localstackSqsAsyncClient(hmppsSqsProperties.localstackUrl, region)
+        sqsClientFactory.localstackSqsAsyncClient(hmppsSqsProperties.localstackUrl, region, queueConfig.propagateTracing)
           .also { sqsDlqClient -> runBlocking { sqsDlqClient.createQueue(CreateQueueRequest.builder().queueName(queueConfig.dlqName).build()).await() } }
       }
     }
@@ -108,9 +112,9 @@ class HmppsQueueFactory(
   fun createSqsAsyncClient(queueConfig: QueueConfig, hmppsSqsProperties: HmppsSqsProperties, sqsDlqClient: SqsAsyncClient?): SqsAsyncClient {
     val region = hmppsSqsProperties.region
     return when (findProvider(hmppsSqsProperties.provider)) {
-      Provider.AWS -> sqsClientFactory.awsSqsAsyncClient(queueConfig.queueAccessKeyId, queueConfig.queueSecretAccessKey, region, hmppsSqsProperties.useWebToken)
+      Provider.AWS -> sqsClientFactory.awsSqsAsyncClient(queueConfig.queueAccessKeyId, queueConfig.queueSecretAccessKey, region, hmppsSqsProperties.useWebToken, queueConfig.propagateTracing)
       Provider.LOCALSTACK -> {
-        sqsClientFactory.localstackSqsAsyncClient(hmppsSqsProperties.localstackUrl, region)
+        sqsClientFactory.localstackSqsAsyncClient(hmppsSqsProperties.localstackUrl, region, queueConfig.propagateTracing)
           .also { sqsClient ->
             runBlocking {
               createLocalStackQueue(
