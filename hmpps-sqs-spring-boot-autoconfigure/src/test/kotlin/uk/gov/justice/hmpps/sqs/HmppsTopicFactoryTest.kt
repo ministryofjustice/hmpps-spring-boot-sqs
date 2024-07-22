@@ -104,6 +104,16 @@ class HmppsTopicFactoryTest {
     }
 
     @Test
+    fun `should create a topic without FIFO attributes`() {
+      verify(snsClient).createTopic(
+        CreateTopicRequest.builder()
+          .name(someTopicConfig.name)
+          .attributes(mapOf("fifo_topic" to "false", "content_based_deduplication" to "false"))
+          .build(),
+      )
+    }
+
+    @Test
     fun `should create async aws sns clients`() {
       verify(snsClientFactory).localstackSnsAsyncClient("http://localhost:4566", "eu-west-2", false)
     }
@@ -141,7 +151,7 @@ class HmppsTopicFactoryTest {
       verify(snsClient).createTopic(
         CreateTopicRequest.builder()
           .name(someTopicConfig.name)
-          .attributes(mapOf("fifo_topic" to someTopicConfig.fifoTopic, "content_based_deduplication" to someTopicConfig.contentBasedDeduplication))
+          .attributes(mapOf("fifo_topic" to "true", "content_based_deduplication" to "true"))
           .build(),
       )
     }
