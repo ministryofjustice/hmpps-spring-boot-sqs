@@ -104,7 +104,7 @@ class HmppsTopicFactoryTest {
     }
 
     @Test
-    fun `should create a topic without FIFO attributes`() {
+    fun `should create a non-FIFO topic`() {
       verify(snsClient).createTopic(
         CreateTopicRequest.builder()
           .name(someTopicConfig.name)

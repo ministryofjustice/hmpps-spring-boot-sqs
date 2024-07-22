@@ -519,10 +519,10 @@ class HmppsSqsPropertiesTest {
     }
   }
 
-  private fun validAwsQueueConfig(index: Int = 1) = QueueConfig(queueName = "name$index", queueAccessKeyId = "key$index", queueSecretAccessKey = "secret$index", dlqName = "dlqName$index", dlqAccessKeyId = "dlqKey$index", dlqSecretAccessKey = "dlqSecret$index", fifoQueue = "true", fifoThroughputLimit = "perQueue")
-  private fun validAwsQueueNoDlqConfig(index: Int = 1) = QueueConfig(queueName = "name$index", queueAccessKeyId = "key$index", queueSecretAccessKey = "secret$index", fifoQueue = "true", fifoThroughputLimit = "perQueue")
+  private fun validAwsQueueConfig(index: Int = 1) = QueueConfig(queueName = "name$index", queueAccessKeyId = "key$index", queueSecretAccessKey = "secret$index", dlqName = "dlqName$index", dlqAccessKeyId = "dlqKey$index", dlqSecretAccessKey = "dlqSecret$index")
+  private fun validAwsQueueNoDlqConfig(index: Int = 1) = QueueConfig(queueName = "name$index", queueAccessKeyId = "key$index", queueSecretAccessKey = "secret$index")
   private fun validAwsTopicConfig(index: Int = 1) = TopicConfig(arn = "arn$index", accessKeyId = "key$index", secretAccessKey = "secret$index")
-  private fun validLocalstackQueueConfig(index: Int = 1) = QueueConfig(queueName = "name$index", dlqName = "dlqName$index", fifoQueue = "true", fifoThroughputLimit = "perQueue")
-  private fun validLocalstackQueueNoDlqConfig(index: Int = 1) = QueueConfig(queueName = "name$index", fifoQueue = "true", fifoThroughputLimit = "perQueue")
+  private fun validLocalstackQueueConfig(index: Int = 1) = QueueConfig(queueName = "name$index", dlqName = "dlqName$index")
+  private fun validLocalstackQueueNoDlqConfig(index: Int = 1) = QueueConfig(queueName = "name$index")
   private fun validLocalstackTopicConfig(index: Int = 1) = TopicConfig(arn = "${localstackArnPrefix}$index")
 }
