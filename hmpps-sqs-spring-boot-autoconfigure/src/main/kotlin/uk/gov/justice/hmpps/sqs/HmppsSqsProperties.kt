@@ -23,14 +23,14 @@ data class HmppsSqsProperties(
     val dlqMaxReceiveCount: Int = 5,
     val visibilityTimeout: Int = 30,
     val errorVisibilityTimeout: Int = 0,
-    val propagateTracing: Boolean = false,
+    val propagateTracing: Boolean = true,
   )
 
   data class TopicConfig(
     val arn: String = "",
     val accessKeyId: String = "",
     val secretAccessKey: String = "",
-    val propagateTracing: Boolean = false,
+    val propagateTracing: Boolean = true,
   ) {
     private val arnRegex = Regex("arn:aws:sns:.*:.*:(.*)$")
 
