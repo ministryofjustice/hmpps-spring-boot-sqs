@@ -124,6 +124,8 @@ class HmppsQueueFactory(
                 dlqName = queueConfig.dlqName,
                 maxReceiveCount = queueConfig.dlqMaxReceiveCount,
                 visibilityTimeout = queueConfig.visibilityTimeout,
+                fifoQueue = queueConfig.fifoQueue,
+                fifoThroughputLimit = queueConfig.fifoThroughputLimit,
               )
             }
           }
@@ -138,9 +140,11 @@ class HmppsQueueFactory(
     dlqName: String,
     maxReceiveCount: Int,
     visibilityTimeout: Int,
+    fifoQueue: String,
+    fifoThroughputLimit: String?,
   ) = runBlocking {
     if (dlqName.isEmpty() || sqsDlqClient == null) {
-      sqsClient.createQueue(CreateQueueRequest.builder().queueName(queueName).build()).await()
+      sqsClient.createQueue(CreateQueueRequest.builder().queueName(queueName).attributes(mapOf(QueueAttributeName.FIFO_QUEUE to fifoQueue, QueueAttributeName.FIFO_THROUGHPUT_LIMIT to fifoThroughputLimit)).build()).await()
     } else {
       val dlqUrl = sqsDlqClient.getQueueUrl(GetQueueUrlRequest.builder().queueName(dlqName).build())
       val dlqArn = sqsDlqClient.getQueueAttributes(GetQueueAttributesRequest.builder().queueUrl(dlqUrl.await().queueUrl()).attributeNames(QueueAttributeName.QUEUE_ARN).build()).await().attributes()[QueueAttributeName.QUEUE_ARN]

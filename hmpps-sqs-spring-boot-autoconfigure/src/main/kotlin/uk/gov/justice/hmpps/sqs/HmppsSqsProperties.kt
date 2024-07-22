@@ -24,6 +24,8 @@ data class HmppsSqsProperties(
     val visibilityTimeout: Int = 30,
     val errorVisibilityTimeout: Int = 0,
     val propagateTracing: Boolean = false,
+    val fifoQueue: String = "false",
+    val fifoThroughputLimit: String? = null,
   )
 
   data class TopicConfig(
