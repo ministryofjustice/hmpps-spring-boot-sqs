@@ -183,7 +183,7 @@ class HmppsQueueFactoryTest {
 
   @Nested
   inner class `Create LocalStack HmppsQueue with asynchronous SQS clients` {
-    private val someQueueConfig = QueueConfig(queueName = "some queue name", dlqName = "some dlq name")
+    private val someQueueConfig = QueueConfig(queueName = "some queue name", dlqName = "some-queue-name-dlq")
     private val hmppsSqsProperties = HmppsSqsProperties(provider = "localstack", queues = mapOf("somequeueid" to someQueueConfig))
     private val sqsClient = mock<SqsAsyncClient>()
     private val sqsDlqClient = mock<SqsAsyncClient>()
@@ -221,6 +221,16 @@ class HmppsQueueFactoryTest {
     }
 
     @Test
+    fun `should create a dead letter queue`() {
+      verify(sqsDlqClient).createQueue(
+        CreateQueueRequest.builder()
+          .queueName("some-queue-name-dlq")
+          .attributes(mapOf())
+          .build(),
+      )
+    }
+
+    @Test
     fun `should return async clients`() {
       assertThat(hmppsQueues[0].sqsClient).isInstanceOf(SqsAsyncClient::class.java)
       assertThat(hmppsQueues[0].sqsDlqClient).isInstanceOf(SqsAsyncClient::class.java)
@@ -230,7 +240,7 @@ class HmppsQueueFactoryTest {
     fun `should return queue details`() {
       assertThat(hmppsQueues[0].id).isEqualTo("somequeueid")
       assertThat(hmppsQueues[0].queueName).isEqualTo("some queue name")
-      assertThat(hmppsQueues[0].dlqName).isEqualTo("some dlq name")
+      assertThat(hmppsQueues[0].dlqName).isEqualTo("some-queue-name-dlq")
     }
 
     @Test

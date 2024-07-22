@@ -103,8 +103,20 @@ class HmppsQueueFactory(
     return when (provider) {
       Provider.AWS -> sqsClientFactory.awsSqsAsyncClient(queueConfig.dlqAccessKeyId, queueConfig.dlqSecretAccessKey, region, hmppsSqsProperties.useWebToken, queueConfig.propagateTracing)
       Provider.LOCALSTACK -> {
+        val attributes = when {
+          queueConfig.fifoQueue == "true" -> mapOf(QueueAttributeName.FIFO_QUEUE to queueConfig.fifoQueue, QueueAttributeName.FIFO_THROUGHPUT_LIMIT to queueConfig.fifoThroughputLimit) else -> mapOf()
+        }
         sqsClientFactory.localstackSqsAsyncClient(hmppsSqsProperties.localstackUrl, region, queueConfig.propagateTracing)
-          .also { sqsDlqClient -> runBlocking { sqsDlqClient.createQueue(CreateQueueRequest.builder().attributes(mapOf(QueueAttributeName.FIFO_QUEUE to queueConfig.fifoQueue, QueueAttributeName.FIFO_THROUGHPUT_LIMIT to queueConfig.fifoThroughputLimit)).queueName(queueConfig.dlqName).build()).await() } }
+          .also {
+              sqsDlqClient ->
+            runBlocking {
+              sqsDlqClient.createQueue(
+                CreateQueueRequest.builder()
+                  .attributes(attributes)
+                  .queueName(queueConfig.dlqName).build(),
+              ).await()
+            }
+          }
       }
     }
   }
@@ -140,22 +152,23 @@ class HmppsQueueFactory(
     dlqName: String,
     maxReceiveCount: Int,
     visibilityTimeout: Int,
-    fifoQueue: String,
+    fifoQueue: String?,
     fifoThroughputLimit: String?,
   ) = runBlocking {
+    val fifoAttributes = when {
+      fifoQueue == "true" -> mapOf(QueueAttributeName.FIFO_QUEUE to fifoQueue, QueueAttributeName.FIFO_THROUGHPUT_LIMIT to fifoThroughputLimit) else -> mapOf()
+    }
     if (dlqName.isEmpty() || sqsDlqClient == null) {
-      sqsClient.createQueue(CreateQueueRequest.builder().queueName(queueName).attributes(mapOf(QueueAttributeName.FIFO_QUEUE to fifoQueue, QueueAttributeName.FIFO_THROUGHPUT_LIMIT to fifoThroughputLimit)).build()).await()
+      sqsClient.createQueue(CreateQueueRequest.builder().queueName(queueName).attributes(fifoAttributes).build()).await()
     } else {
       val dlqUrl = sqsDlqClient.getQueueUrl(GetQueueUrlRequest.builder().queueName(dlqName).build())
       val dlqArn = sqsDlqClient.getQueueAttributes(GetQueueAttributesRequest.builder().queueUrl(dlqUrl.await().queueUrl()).attributeNames(QueueAttributeName.QUEUE_ARN).build()).await().attributes()[QueueAttributeName.QUEUE_ARN]
       sqsClient.createQueue(
         CreateQueueRequest.builder().queueName(queueName).attributes(
           mapOf(
-            QueueAttributeName.FIFO_QUEUE to fifoQueue,
-            QueueAttributeName.FIFO_THROUGHPUT_LIMIT to fifoThroughputLimit,
             QueueAttributeName.REDRIVE_POLICY to """{"deadLetterTargetArn":"$dlqArn","maxReceiveCount":"$maxReceiveCount"}""",
             QueueAttributeName.VISIBILITY_TIMEOUT to "$visibilityTimeout",
-          ),
+          ).plus(fifoAttributes),
         ).build(),
       ).await()
     }

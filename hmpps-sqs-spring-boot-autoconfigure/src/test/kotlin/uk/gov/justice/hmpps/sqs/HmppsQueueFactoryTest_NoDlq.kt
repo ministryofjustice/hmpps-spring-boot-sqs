@@ -303,7 +303,7 @@ class HmppsQueueFactoryTest_NoDlq {
 
     @Test
     fun `should create a queue`() {
-      verify(sqsClient).createQueue(CreateQueueRequest.builder().queueName("some-queue-name").attributes(mapOf(QueueAttributeName.FIFO_QUEUE to "false", QueueAttributeName.FIFO_THROUGHPUT_LIMIT to null)).build())
+      verify(sqsClient).createQueue(CreateQueueRequest.builder().queueName("some-queue-name").attributes(mapOf()).build())
     }
 
     @Test
