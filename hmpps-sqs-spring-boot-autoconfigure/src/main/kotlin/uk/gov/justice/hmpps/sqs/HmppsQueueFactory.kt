@@ -151,6 +151,8 @@ class HmppsQueueFactory(
       sqsClient.createQueue(
         CreateQueueRequest.builder().queueName(queueName).attributes(
           mapOf(
+            QueueAttributeName.FIFO_QUEUE to fifoQueue,
+            QueueAttributeName.FIFO_THROUGHPUT_LIMIT to fifoThroughputLimit,
             QueueAttributeName.REDRIVE_POLICY to """{"deadLetterTargetArn":"$dlqArn","maxReceiveCount":"$maxReceiveCount"}""",
             QueueAttributeName.VISIBILITY_TIMEOUT to "$visibilityTimeout",
           ),

@@ -183,7 +183,7 @@ class HmppsQueueFactoryTest {
 
   @Nested
   inner class `Create LocalStack HmppsQueue with asynchronous SQS clients` {
-    private val someQueueConfig = QueueConfig(queueName = "some queue name", dlqName = "some dlq name", fifoQueue = "true", fifoThroughputLimit = "perQueue")
+    private val someQueueConfig = QueueConfig(queueName = "some queue name", dlqName = "some dlq name", fifoQueue = "false")
     private val hmppsSqsProperties = HmppsSqsProperties(provider = "localstack", queues = mapOf("somequeueid" to someQueueConfig))
     private val sqsClient = mock<SqsAsyncClient>()
     private val sqsDlqClient = mock<SqsAsyncClient>()
@@ -254,6 +254,51 @@ class HmppsQueueFactoryTest {
         check<SubscribeRequest> {
           assertThat(it.topicArn()).isEqualTo("arn:aws:sns:1:2:3")
         },
+      )
+    }
+  }
+
+  @Nested
+  inner class `Create LocalStack FIFO HmppsQueue` {
+    private val someQueueConfig = QueueConfig(queueName = "some-queue-name.fifo", dlqName = "some dlq name", fifoQueue = "true", fifoThroughputLimit = "perQueue")
+    private val hmppsSqsProperties = HmppsSqsProperties(provider = "localstack", queues = mapOf("somequeueid" to someQueueConfig))
+    private val sqsClient = mock<SqsAsyncClient>()
+    private val sqsDlqClient = mock<SqsAsyncClient>()
+    private lateinit var hmppsQueues: List<HmppsQueue>
+
+    @BeforeEach
+    fun `configure mocks and register queues`() {
+      whenever(sqsFactory.localstackSqsAsyncClient(anyString(), anyString(), anyBoolean()))
+        .thenReturn(sqsDlqClient)
+        .thenReturn(sqsClient)
+      whenever(sqsClient.getQueueUrl(any<GetQueueUrlRequest>()))
+        .thenReturn(CompletableFuture.completedFuture(GetQueueUrlResponse.builder().queueUrl("some queue url").build()))
+      whenever(sqsClient.getQueueAttributes(any<GetQueueAttributesRequest>()))
+        .thenReturn(
+          CompletableFuture.completedFuture(
+            GetQueueAttributesResponse.builder()
+              .attributes(mutableMapOf(QueueAttributeName.QUEUE_ARN to "queue:arn")).build(),
+          ),
+        )
+      whenever(sqsDlqClient.getQueueUrl(any<GetQueueUrlRequest>()))
+        .thenReturn(CompletableFuture.completedFuture(GetQueueUrlResponse.builder().queueUrl("some dlq url").build()))
+      whenever(sqsDlqClient.getQueueAttributes(any<GetQueueAttributesRequest>()))
+        .thenReturn(CompletableFuture.completedFuture(GetQueueAttributesResponse.builder().attributes(mapOf(QueueAttributeName.QUEUE_ARN to "some dlq arn")).build()))
+      whenever(sqsDlqClient.createQueue(any<CreateQueueRequest>()))
+        .thenReturn(CompletableFuture.completedFuture(CreateQueueResponse.builder().build()))
+      whenever(sqsClient.createQueue(any<CreateQueueRequest>()))
+        .thenReturn(CompletableFuture.completedFuture(CreateQueueResponse.builder().build()))
+
+      hmppsQueues = hmppsQueueFactory.createHmppsQueues(hmppsSqsProperties)
+    }
+
+    @Test
+    fun `should create a FIFO queue`() {
+      verify(sqsClient).createQueue(
+        CreateQueueRequest.builder()
+          .queueName("some-queue-name.fifo")
+          .attributes(mapOf(QueueAttributeName.REDRIVE_POLICY to """{"deadLetterTargetArn":"some dlq arn","maxReceiveCount":"5"}""", QueueAttributeName.VISIBILITY_TIMEOUT to "30", QueueAttributeName.FIFO_QUEUE to "true", QueueAttributeName.FIFO_THROUGHPUT_LIMIT to "perQueue"))
+          .build(),
       )
     }
   }
