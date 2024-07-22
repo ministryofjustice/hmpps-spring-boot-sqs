@@ -31,6 +31,8 @@ data class HmppsSqsProperties(
     val accessKeyId: String = "",
     val secretAccessKey: String = "",
     val propagateTracing: Boolean = false,
+    val fifoTopic: String = "false",
+    val contentBasedDeduplication: String = "false",
   ) {
     private val arnRegex = Regex("arn:aws:sns:.*:.*:(.*)$")
 
