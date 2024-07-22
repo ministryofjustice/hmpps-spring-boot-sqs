@@ -52,7 +52,7 @@ class HmppsQueueFactoryTest_NoDlq {
 
   @Nested
   inner class `Create single AWS HmppsQueue with no dlq` {
-    private val someQueueConfig = QueueConfig(queueName = "some queue name", queueAccessKeyId = "some access key id", queueSecretAccessKey = "some secret access key", fifoQueue = "true", fifoThroughputLimit = "perQueue")
+    private val someQueueConfig = QueueConfig(queueName = "some queue name", queueAccessKeyId = "some access key id", queueSecretAccessKey = "some secret access key")
     private val hmppsSqsProperties = HmppsSqsProperties(queues = mapOf("somequeueid" to someQueueConfig), useWebToken = false)
     private val sqsClient = mock<SqsAsyncClient>()
     private lateinit var hmppsQueues: List<HmppsQueue>
@@ -135,7 +135,7 @@ class HmppsQueueFactoryTest_NoDlq {
 
   @Nested
   inner class `Create single LocalStack HmppsQueue with no dlq` {
-    private val someQueueConfig = QueueConfig(queueName = "some queue name", fifoQueue = "true", fifoThroughputLimit = "perQueue")
+    private val someQueueConfig = QueueConfig(queueName = "some queue name")
     private val hmppsSqsProperties = HmppsSqsProperties(provider = "localstack", queues = mapOf("somequeueid" to someQueueConfig))
     private val sqsClient = mock<SqsAsyncClient>()
     private lateinit var hmppsQueues: List<HmppsQueue>
@@ -225,7 +225,7 @@ class HmppsQueueFactoryTest_NoDlq {
 
   @Nested
   inner class `Create multiple AWS HmppsQueues without dlqs` {
-    private val someQueueConfig = QueueConfig(queueName = "some queue name", queueAccessKeyId = "some access key id", queueSecretAccessKey = "some secret access key", fifoQueue = "true", fifoThroughputLimit = "perQueue")
+    private val someQueueConfig = QueueConfig(queueName = "some queue name", queueAccessKeyId = "some access key id", queueSecretAccessKey = "some secret access key")
     private val anotherQueueConfig = QueueConfig(queueName = "another queue name", queueAccessKeyId = "another access key id", queueSecretAccessKey = "another secret access key", fifoQueue = "true", fifoThroughputLimit = "perQueue")
     private val hmppsSqsProperties = HmppsSqsProperties(queues = mapOf("somequeueid" to someQueueConfig, "anotherqueueid" to anotherQueueConfig), useWebToken = false)
     private val sqsClient = mock<SqsAsyncClient>()
@@ -272,7 +272,7 @@ class HmppsQueueFactoryTest_NoDlq {
 
   @Nested
   inner class `Create LocalStack HmppsQueue with topic subscription` {
-    private val someQueueConfig = QueueConfig(queueName = "some-queue-name", queueAccessKeyId = "some access key id", queueSecretAccessKey = "some secret access key", subscribeTopicId = "sometopicid", subscribeFilter = "some topic filter", fifoQueue = "true", fifoThroughputLimit = "perQueue")
+    private val someQueueConfig = QueueConfig(queueName = "some-queue-name", queueAccessKeyId = "some access key id", queueSecretAccessKey = "some secret access key", subscribeTopicId = "sometopicid", subscribeFilter = "some topic filter")
     private val someTopicConfig = TopicConfig(arn = "${localstackArnPrefix}some-topic-name", accessKeyId = "topic access key", secretAccessKey = "topic secret")
     private val hmppsSqsProperties = HmppsSqsProperties(provider = "localstack", queues = mapOf("somequeueid" to someQueueConfig), topics = mapOf("sometopicid" to someTopicConfig))
     private val sqsClient = mock<SqsAsyncClient>()
@@ -299,6 +299,11 @@ class HmppsQueueFactoryTest_NoDlq {
         )
 
       hmppsQueues = hmppsQueueFactory.createHmppsQueues(hmppsSqsProperties, topics)
+    }
+
+    @Test
+    fun `should create a queue`() {
+      verify(sqsClient).createQueue(CreateQueueRequest.builder().queueName("some-queue-name").attributes(mapOf(QueueAttributeName.FIFO_QUEUE to "false", QueueAttributeName.FIFO_THROUGHPUT_LIMIT to null)).build())
     }
 
     @Test
@@ -370,7 +375,7 @@ class HmppsQueueFactoryTest_NoDlq {
 
   @Nested
   inner class `Create AWS HmppsQueue with topic subscription` {
-    private val someQueueConfig = QueueConfig(queueName = "some queue name", queueAccessKeyId = "some access key id", queueSecretAccessKey = "some secret access key", subscribeTopicId = "sometopicid", subscribeFilter = "some topic filter", fifoQueue = "true", fifoThroughputLimit = "perQueue")
+    private val someQueueConfig = QueueConfig(queueName = "some queue name", queueAccessKeyId = "some access key id", queueSecretAccessKey = "some secret access key", subscribeTopicId = "sometopicid", subscribeFilter = "some topic filter")
     private val someTopicConfig = TopicConfig(arn = "some topic arn", accessKeyId = "topic access key", secretAccessKey = "topic secret")
     private val hmppsSqsProperties = HmppsSqsProperties(queues = mapOf("somequeueid" to someQueueConfig), topics = mapOf("sometopicid" to someTopicConfig))
     private val sqsClient = mock<SqsAsyncClient>()
