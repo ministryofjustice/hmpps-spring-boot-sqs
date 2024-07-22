@@ -183,7 +183,7 @@ class HmppsQueueFactoryTest {
 
   @Nested
   inner class `Create LocalStack HmppsQueue with asynchronous SQS clients` {
-    private val someQueueConfig = QueueConfig(queueName = "some queue name", dlqName = "some dlq name", fifoQueue = "false")
+    private val someQueueConfig = QueueConfig(queueName = "some queue name", dlqName = "some dlq name")
     private val hmppsSqsProperties = HmppsSqsProperties(provider = "localstack", queues = mapOf("somequeueid" to someQueueConfig))
     private val sqsClient = mock<SqsAsyncClient>()
     private val sqsDlqClient = mock<SqsAsyncClient>()
@@ -243,7 +243,7 @@ class HmppsQueueFactoryTest {
 
     @Test
     fun `should subscribe to topics`() {
-      val someQueueConfig = QueueConfig(queueName = "any", queueAccessKeyId = "any", queueSecretAccessKey = "any", subscribeTopicId = "sometopicid", fifoQueue = "true", fifoThroughputLimit = "perQueue")
+      val someQueueConfig = QueueConfig(queueName = "any", queueAccessKeyId = "any", queueSecretAccessKey = "any", subscribeTopicId = "sometopicid")
       val hmppsSqsProperties = HmppsSqsProperties(provider = "localstack", queues = mapOf("somequeueid" to someQueueConfig), topics = mapOf("sometopicid" to TopicConfig("arn:aws:sns:1:2:3", "any", "any")))
       val snsClient = mock<SnsAsyncClient>()
       val topics = listOf(HmppsTopic("sometopicid", "arn:aws:sns:1:2:3", snsClient))
