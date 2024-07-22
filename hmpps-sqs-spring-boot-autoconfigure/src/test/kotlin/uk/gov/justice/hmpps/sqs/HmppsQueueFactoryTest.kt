@@ -76,8 +76,8 @@ class HmppsQueueFactoryTest {
 
     @Test
     fun `should create async clients from sqs factory`() {
-      verify(sqsFactory).awsSqsAsyncClient("some access key id", "some secret access key", "eu-west-2", false, false)
-      verify(sqsFactory).awsSqsAsyncClient("dlq access key id", "dlq secret access key", "eu-west-2", false, false)
+      verify(sqsFactory).awsSqsAsyncClient("some access key id", "some secret access key", "eu-west-2", false, true)
+      verify(sqsFactory).awsSqsAsyncClient("dlq access key id", "dlq secret access key", "eu-west-2", false, true)
     }
 
     @Test
@@ -144,7 +144,7 @@ class HmppsQueueFactoryTest {
 
     @Test
     fun `should create async clients from sqs factory`() {
-      verify(sqsFactory, times(2)).awsSqsAsyncClient("", "", "eu-west-2", true, false)
+      verify(sqsFactory, times(2)).awsSqsAsyncClient("", "", "eu-west-2", true, true)
     }
 
     @Test
@@ -217,7 +217,7 @@ class HmppsQueueFactoryTest {
 
     @Test
     fun `should create async clients from sqs factory`() {
-      verify(sqsFactory, times(2)).localstackSqsAsyncClient("http://localhost:4566", "eu-west-2", false)
+      verify(sqsFactory, times(2)).localstackSqsAsyncClient("http://localhost:4566", "eu-west-2", true)
     }
 
     @Test

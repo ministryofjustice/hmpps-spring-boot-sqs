@@ -77,7 +77,7 @@ class HmppsQueueFactoryTest_NoDlq {
 
     @Test
     fun `creates aws sqs client but does not create aws sqs dlq client from sqs factory`() {
-      verify(sqsFactory).awsSqsAsyncClient("some access key id", "some secret access key", "eu-west-2", false, false)
+      verify(sqsFactory).awsSqsAsyncClient("some access key id", "some secret access key", "eu-west-2", false, true)
       verifyNoMoreInteractions(sqsFactory)
     }
 
@@ -163,7 +163,7 @@ class HmppsQueueFactoryTest_NoDlq {
 
     @Test
     fun `creates LocalStack sqs client from sqs factory but not dlq client`() {
-      verify(sqsFactory).localstackSqsAsyncClient(localstackUrl = "http://localhost:4566", region = "eu-west-2", false)
+      verify(sqsFactory).localstackSqsAsyncClient(localstackUrl = "http://localhost:4566", region = "eu-west-2", true)
       verifyNoMoreInteractions(sqsFactory)
     }
 
@@ -252,8 +252,8 @@ class HmppsQueueFactoryTest_NoDlq {
 
     @Test
     fun `should create multiple sqs clients but no dlq clients from sqs factory`() {
-      verify(sqsFactory).awsSqsAsyncClient("some access key id", "some secret access key", "eu-west-2", false, false)
-      verify(sqsFactory).awsSqsAsyncClient("another access key id", "another secret access key", "eu-west-2", false, false)
+      verify(sqsFactory).awsSqsAsyncClient("some access key id", "some secret access key", "eu-west-2", false, true)
+      verify(sqsFactory).awsSqsAsyncClient("another access key id", "another secret access key", "eu-west-2", false, true)
       verifyNoMoreInteractions(sqsFactory)
     }
 
