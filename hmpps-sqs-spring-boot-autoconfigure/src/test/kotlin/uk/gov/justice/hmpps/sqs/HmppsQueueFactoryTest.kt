@@ -260,7 +260,7 @@ class HmppsQueueFactoryTest {
 
   @Nested
   inner class `Create LocalStack FIFO HmppsQueue` {
-    private val someQueueConfig = QueueConfig(queueName = "some-queue-name.fifo", dlqName = "some dlq name", fifoQueue = "true", fifoThroughputLimit = "perQueue")
+    private val someQueueConfig = QueueConfig(queueName = "some-queue-name.fifo", dlqName = "some-queue-name-dlq.fifo", fifoQueue = "true", fifoThroughputLimit = "perQueue")
     private val hmppsSqsProperties = HmppsSqsProperties(provider = "localstack", queues = mapOf("somequeueid" to someQueueConfig))
     private val sqsClient = mock<SqsAsyncClient>()
     private val sqsDlqClient = mock<SqsAsyncClient>()
@@ -298,6 +298,16 @@ class HmppsQueueFactoryTest {
         CreateQueueRequest.builder()
           .queueName("some-queue-name.fifo")
           .attributes(mapOf(QueueAttributeName.REDRIVE_POLICY to """{"deadLetterTargetArn":"some dlq arn","maxReceiveCount":"5"}""", QueueAttributeName.VISIBILITY_TIMEOUT to "30", QueueAttributeName.FIFO_QUEUE to "true", QueueAttributeName.FIFO_THROUGHPUT_LIMIT to "perQueue"))
+          .build(),
+      )
+    }
+
+    @Test
+    fun `should create a FIFO dead letter queue`() {
+      verify(sqsDlqClient).createQueue(
+        CreateQueueRequest.builder()
+          .queueName("some-queue-name-dlq.fifo")
+          .attributes(mapOf(QueueAttributeName.FIFO_QUEUE to "true", QueueAttributeName.FIFO_THROUGHPUT_LIMIT to "perQueue"))
           .build(),
       )
     }

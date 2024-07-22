@@ -50,7 +50,7 @@ class HmppsTopicFactory(
               it.createTopic(
                 CreateTopicRequest.builder()
                   .name(topicConfig.name)
-                  .attributes(mapOf("fifo_topic" to topicConfig.fifoTopic, "content_based_deduplication" to topicConfig.contentBasedDeduplication))
+                  .attributes(mapOf("FifoTopic" to topicConfig.fifoTopic, "ContentBasedDeduplication" to topicConfig.contentBasedDeduplication))
                   .build(),
               ).await()
             }

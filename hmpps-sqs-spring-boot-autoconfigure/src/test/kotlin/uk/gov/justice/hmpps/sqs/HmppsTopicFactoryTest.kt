@@ -108,7 +108,7 @@ class HmppsTopicFactoryTest {
       verify(snsClient).createTopic(
         CreateTopicRequest.builder()
           .name(someTopicConfig.name)
-          .attributes(mapOf("fifo_topic" to "false", "content_based_deduplication" to "false"))
+          .attributes(mapOf("FifoTopic" to "false", "ContentBasedDeduplication" to "false"))
           .build(),
       )
     }
@@ -151,7 +151,7 @@ class HmppsTopicFactoryTest {
       verify(snsClient).createTopic(
         CreateTopicRequest.builder()
           .name(someTopicConfig.name)
-          .attributes(mapOf("fifo_topic" to "true", "content_based_deduplication" to "true"))
+          .attributes(mapOf("FifoTopic" to "true", "ContentBasedDeduplication" to "true"))
           .build(),
       )
     }

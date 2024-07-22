@@ -104,7 +104,7 @@ class HmppsQueueFactory(
       Provider.AWS -> sqsClientFactory.awsSqsAsyncClient(queueConfig.dlqAccessKeyId, queueConfig.dlqSecretAccessKey, region, hmppsSqsProperties.useWebToken, queueConfig.propagateTracing)
       Provider.LOCALSTACK -> {
         sqsClientFactory.localstackSqsAsyncClient(hmppsSqsProperties.localstackUrl, region, queueConfig.propagateTracing)
-          .also { sqsDlqClient -> runBlocking { sqsDlqClient.createQueue(CreateQueueRequest.builder().queueName(queueConfig.dlqName).build()).await() } }
+          .also { sqsDlqClient -> runBlocking { sqsDlqClient.createQueue(CreateQueueRequest.builder().attributes(mapOf(QueueAttributeName.FIFO_QUEUE to queueConfig.fifoQueue, QueueAttributeName.FIFO_THROUGHPUT_LIMIT to queueConfig.fifoThroughputLimit)).queueName(queueConfig.dlqName).build()).await() } }
       }
     }
   }
