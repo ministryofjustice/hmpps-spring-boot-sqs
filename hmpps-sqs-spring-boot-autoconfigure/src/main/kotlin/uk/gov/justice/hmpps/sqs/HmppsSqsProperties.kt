@@ -48,7 +48,7 @@ data class HmppsSqsProperties(
       queueNamesMustExist(queueId, queueConfig)
       awsQueueSecretsMustExist(queueId, queueConfig)
       localstackTopicSubscriptionsMustExist(queueConfig, queueId)
-      checkFifoTopics(queueConfig)
+      checkFifoQueues(queueConfig)
     }
     topics.forEach { (topicId, topicConfig) ->
       topicIdMustBeLowerCase(topicId)
@@ -110,11 +110,16 @@ data class HmppsSqsProperties(
       }
     }
   }
-  private fun checkFifoTopics(queueConfig: QueueConfig) {
+  private fun checkFifoQueues(queueConfig: QueueConfig) {
     if (provider == "localstack") {
       queueConfig.fifoThroughputLimit?.let {
-        if (queueConfig.fifoQueue == false) {
+        if (!queueConfig.fifoQueue) {
           throw InvalidHmppsSqsPropertiesException("fifoThroughputLimit cannot be set on non-FIFO queue: ${queueConfig.queueName}")
+        }
+      }
+      if (queueConfig.fifoQueue) {
+        if (!queueConfig.queueName.endsWith(".fifo")) {
+          throw InvalidHmppsSqsPropertiesException("fifoQueue name must end with .fifo: ${queueConfig.queueName}")
         }
       }
     }
