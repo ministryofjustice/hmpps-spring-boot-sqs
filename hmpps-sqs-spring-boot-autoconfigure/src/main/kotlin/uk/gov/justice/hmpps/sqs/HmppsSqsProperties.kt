@@ -135,6 +135,9 @@ data class HmppsSqsProperties(
         if (queueConfig.dlqName.isNotEmpty() && !queueConfig.dlqName.endsWith(".fifo")) {
           throw InvalidHmppsSqsPropertiesException("FIFO dead letter queue name must end with .fifo: ${queueConfig.dlqName}")
         }
+        if (queueConfig.subscribeTopicId.isNotEmpty() && topics.get(queueConfig.subscribeTopicId)?.fifoTopic == false) {
+          throw InvalidHmppsSqsPropertiesException("only FIFO queues can subscribe to FIFO topics: ${queueConfig.queueName} cannot subscribe to ${queueConfig.subscribeTopicId}")
+        }
       } else {
         queueConfig.fifoThroughputLimit?.let {
           throw InvalidHmppsSqsPropertiesException("fifoThroughputLimit cannot be set on non-FIFO queue: ${queueConfig.queueName}")
