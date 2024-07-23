@@ -54,6 +54,7 @@ data class HmppsSqsProperties(
       topicIdMustBeLowerCase(topicId)
       awsTopicSecretsMustExist(topicId, topicConfig)
       localstackTopicNameMustExist(topicId, topicConfig)
+      checkFifoTopics(topicConfig)
     }
     checkForAwsDuplicateValues()
     checkForLocalStackDuplicateValues()
@@ -110,6 +111,17 @@ data class HmppsSqsProperties(
       }
     }
   }
+
+  private fun checkFifoTopics(topicConfig: TopicConfig) {
+    if (provider == "localstack") {
+      if (topicConfig.fifoTopic == "true") {
+        if (!topicConfig.arn.endsWith(".fifo")) {
+          throw InvalidHmppsSqsPropertiesException("FIFO topic arn must end with .fifo: ${topicConfig.arn}")
+        }
+      }
+    }
+  }
+
   private fun checkFifoQueues(queueConfig: QueueConfig) {
     if (provider == "localstack") {
       if (queueConfig.fifoQueue) {

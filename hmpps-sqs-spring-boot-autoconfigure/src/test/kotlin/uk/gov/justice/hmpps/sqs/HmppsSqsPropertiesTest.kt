@@ -545,6 +545,14 @@ class HmppsSqsPropertiesTest {
       }.isInstanceOf(InvalidHmppsSqsPropertiesException::class.java)
         .hasMessageContaining("FIFO dead letter queue name must end with .fifo: someDlqName")
     }
+
+    @Test
+    fun `FIFO topic names must end with fifo`() {
+      assertThatThrownBy {
+        HmppsSqsProperties(provider = "localstack", topics = mapOf("topic-id" to TopicConfig(fifoTopic = "true", arn = "arn:aws:sns:eu-west-2:000000000000:sometopic")))
+      }.isInstanceOf(InvalidHmppsSqsPropertiesException::class.java)
+        .hasMessageContaining("FIFO topic arn must end with .fifo: arn:aws:sns:eu-west-2:000000000000:sometopic")
+    }
   }
 
   private fun validAwsQueueConfig(index: Int = 1) = QueueConfig(queueName = "name$index", queueAccessKeyId = "key$index", queueSecretAccessKey = "secret$index", dlqName = "dlqName$index", dlqAccessKeyId = "dlqKey$index", dlqSecretAccessKey = "dlqSecret$index")
