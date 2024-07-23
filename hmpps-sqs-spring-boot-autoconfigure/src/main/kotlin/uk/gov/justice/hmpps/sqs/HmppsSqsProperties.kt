@@ -112,14 +112,16 @@ data class HmppsSqsProperties(
   }
   private fun checkFifoQueues(queueConfig: QueueConfig) {
     if (provider == "localstack") {
-      queueConfig.fifoThroughputLimit?.let {
-        if (!queueConfig.fifoQueue) {
-          throw InvalidHmppsSqsPropertiesException("fifoThroughputLimit cannot be set on non-FIFO queue: ${queueConfig.queueName}")
-        }
-      }
       if (queueConfig.fifoQueue) {
         if (!queueConfig.queueName.endsWith(".fifo")) {
-          throw InvalidHmppsSqsPropertiesException("fifoQueue name must end with .fifo: ${queueConfig.queueName}")
+          throw InvalidHmppsSqsPropertiesException("FIFO queue name must end with .fifo: ${queueConfig.queueName}")
+        }
+        if (queueConfig.dlqName.isNotEmpty() && !queueConfig.dlqName.endsWith(".fifo")) {
+          throw InvalidHmppsSqsPropertiesException("FIFO dead letter queue name must end with .fifo: ${queueConfig.dlqName}")
+        }
+      } else {
+        queueConfig.fifoThroughputLimit?.let {
+          throw InvalidHmppsSqsPropertiesException("fifoThroughputLimit cannot be set on non-FIFO queue: ${queueConfig.queueName}")
         }
       }
     }

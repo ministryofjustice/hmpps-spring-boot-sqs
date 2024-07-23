@@ -531,11 +531,19 @@ class HmppsSqsPropertiesTest {
     }
 
     @Test
-    fun `if fifoQueue is true queueName must end with fifo`() {
+    fun `FIFO Queue names must end with fifo`() {
       assertThatThrownBy {
         HmppsSqsProperties(provider = "localstack", queues = mapOf("queue-id" to QueueConfig(queueName = "someName", fifoQueue = true, fifoThroughputLimit = "perQueue")))
       }.isInstanceOf(InvalidHmppsSqsPropertiesException::class.java)
-        .hasMessageContaining("fifoQueue name must end with .fifo: someName")
+        .hasMessageContaining("FIFO queue name must end with .fifo: someName")
+    }
+
+    @Test
+    fun `FIFO DLQ names must end with fifo`() {
+      assertThatThrownBy {
+        HmppsSqsProperties(provider = "localstack", queues = mapOf("queue-id" to QueueConfig(queueName = "someName.fifo", fifoQueue = true, fifoThroughputLimit = "perQueue", dlqName = "someDlqName")))
+      }.isInstanceOf(InvalidHmppsSqsPropertiesException::class.java)
+        .hasMessageContaining("FIFO dead letter queue name must end with .fifo: someDlqName")
     }
   }
 
