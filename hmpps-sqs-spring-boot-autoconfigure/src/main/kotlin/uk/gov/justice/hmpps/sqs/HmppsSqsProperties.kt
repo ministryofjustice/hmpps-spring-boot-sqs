@@ -118,6 +118,10 @@ data class HmppsSqsProperties(
         if (!topicConfig.arn.endsWith(".fifo")) {
           throw InvalidHmppsSqsPropertiesException("FIFO topic arn must end with .fifo: ${topicConfig.arn}")
         }
+      } else {
+        if (topicConfig.contentBasedDeduplication) {
+          throw InvalidHmppsSqsPropertiesException("contentBasedDeduplication can only be set on FIFO topics: ${topicConfig.arn}")
+        }
       }
     }
   }
