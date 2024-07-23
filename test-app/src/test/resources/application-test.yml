@@ -15,20 +15,17 @@ hmpps.sqs:
       subscribeFilter: '{"eventType":[ "OFFENDER_MOVEMENT-RECEPTION", "OFFENDER_MOVEMENT-DISCHARGE", "test.type"] }'
       dlqMaxReceiveCount: 1
       errorVisibilityTimeout: 0
-      propagateTracing: true
     outboundqueue:
       dlqName: ${random.uuid}
       queueName: ${random.uuid}
       subscribeTopicId: outboundtopic
       subscribeFilter: '{"eventType":[ "offender.movement.reception", "test.type"] }'
       dlqMaxReceiveCount: 1
-      propagateTracing: true
     outboundtestqueue:
       dlqName: ${random.uuid}
       queueName: ${random.uuid}
       subscribeTopicId: outboundtopic
       subscribeFilter: '{"eventType":[ "offender.movement.reception", "offender.audit.object", "offender.audit.parameter", "test.type"] }'
-      propagateTracing: true
     missingfilterqueue:
       dlqName: ${random.uuid}
       queueName: ${random.uuid}
@@ -42,7 +39,5 @@ hmpps.sqs:
   topics:
     inboundtopic:
       arn: arn:aws:sns:eu-west-2:000000000000:${random.uuid}
-      propagateTracing: true
     outboundtopic:
       arn: arn:aws:sns:eu-west-2:000000000000:${random.uuid}
-      propagateTracing: true

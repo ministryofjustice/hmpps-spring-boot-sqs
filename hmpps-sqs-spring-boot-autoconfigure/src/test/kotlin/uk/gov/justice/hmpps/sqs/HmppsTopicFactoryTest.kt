@@ -51,7 +51,7 @@ class HmppsTopicFactoryTest {
 
     @Test
     fun `should create async aws sns clients`() {
-      verify(snsClientFactory).awsSnsAsyncClient("some access key id", "some secret access key", "eu-west-2", false, false)
+      verify(snsClientFactory).awsSnsAsyncClient("some access key id", "some secret access key", "eu-west-2", false, true)
     }
 
     @Test
@@ -77,7 +77,7 @@ class HmppsTopicFactoryTest {
 
     @Test
     fun `should create async aws sns clients`() {
-      verify(snsClientFactory).awsSnsAsyncClient("", "", "eu-west-2", true, false)
+      verify(snsClientFactory).awsSnsAsyncClient("", "", "eu-west-2", true, true)
     }
 
     @Test
@@ -115,7 +115,7 @@ class HmppsTopicFactoryTest {
 
     @Test
     fun `should create async aws sns clients`() {
-      verify(snsClientFactory).localstackSnsAsyncClient("http://localhost:4566", "eu-west-2", false)
+      verify(snsClientFactory).localstackSnsAsyncClient("http://localhost:4566", "eu-west-2", true)
     }
 
     @Test
