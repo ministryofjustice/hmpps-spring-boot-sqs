@@ -24,7 +24,7 @@ data class HmppsSqsProperties(
     val visibilityTimeout: Int = 30,
     val errorVisibilityTimeout: Int = 0,
     val propagateTracing: Boolean = true,
-    val fifoQueue: String = "false",
+    val fifoQueue: Boolean = false,
     val fifoThroughputLimit: String? = null,
   )
 
@@ -48,6 +48,7 @@ data class HmppsSqsProperties(
       queueNamesMustExist(queueId, queueConfig)
       awsQueueSecretsMustExist(queueId, queueConfig)
       localstackTopicSubscriptionsMustExist(queueConfig, queueId)
+      checkFifoTopics(queueConfig)
     }
     topics.forEach { (topicId, topicConfig) ->
       topicIdMustBeLowerCase(topicId)
@@ -106,6 +107,15 @@ data class HmppsSqsProperties(
       if (!useWebToken) {
         if (topicConfig.accessKeyId.isEmpty()) throw InvalidHmppsSqsPropertiesException("topicId $topicId does not have an access key id")
         if (topicConfig.secretAccessKey.isEmpty()) throw InvalidHmppsSqsPropertiesException("topicId $topicId does not have a secret access key")
+      }
+    }
+  }
+  private fun checkFifoTopics(queueConfig: QueueConfig) {
+    if (provider == "localstack") {
+      queueConfig.fifoThroughputLimit?.let {
+        if (queueConfig.fifoQueue == false) {
+          throw InvalidHmppsSqsPropertiesException("fifoThroughputLimit cannot be set on non-FIFO queue: ${queueConfig.queueName}")
+        }
       }
     }
   }

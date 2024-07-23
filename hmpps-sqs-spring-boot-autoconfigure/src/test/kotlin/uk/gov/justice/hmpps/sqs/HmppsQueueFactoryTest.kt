@@ -270,7 +270,7 @@ class HmppsQueueFactoryTest {
 
   @Nested
   inner class `Create LocalStack FIFO HmppsQueue` {
-    private val someQueueConfig = QueueConfig(queueName = "some-queue-name.fifo", dlqName = "some-queue-name-dlq.fifo", fifoQueue = "true", fifoThroughputLimit = "perQueue")
+    private val someQueueConfig = QueueConfig(queueName = "some-queue-name.fifo", dlqName = "some-queue-name-dlq.fifo", fifoQueue = true, fifoThroughputLimit = "perQueue")
     private val hmppsSqsProperties = HmppsSqsProperties(provider = "localstack", queues = mapOf("somequeueid" to someQueueConfig))
     private val sqsClient = mock<SqsAsyncClient>()
     private val sqsDlqClient = mock<SqsAsyncClient>()

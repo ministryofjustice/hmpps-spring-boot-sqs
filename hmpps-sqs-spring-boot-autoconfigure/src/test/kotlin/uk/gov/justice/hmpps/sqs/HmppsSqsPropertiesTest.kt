@@ -519,6 +519,18 @@ class HmppsSqsPropertiesTest {
     }
   }
 
+  @Nested
+  inner class Fifo {
+
+    @Test
+    fun `if fifoQueue is false, fifoThroughputLimit should not be set`() {
+      assertThatThrownBy {
+        HmppsSqsProperties(provider = "localstack", queues = mapOf("queue-id" to QueueConfig(queueName = "someName", fifoQueue = false, fifoThroughputLimit = "perQueue")))
+      }.isInstanceOf(InvalidHmppsSqsPropertiesException::class.java)
+        .hasMessageContaining("fifoThroughputLimit cannot be set on non-FIFO queue: someName")
+    }
+  }
+
   private fun validAwsQueueConfig(index: Int = 1) = QueueConfig(queueName = "name$index", queueAccessKeyId = "key$index", queueSecretAccessKey = "secret$index", dlqName = "dlqName$index", dlqAccessKeyId = "dlqKey$index", dlqSecretAccessKey = "dlqSecret$index")
   private fun validAwsQueueNoDlqConfig(index: Int = 1) = QueueConfig(queueName = "name$index", queueAccessKeyId = "key$index", queueSecretAccessKey = "secret$index")
   private fun validAwsTopicConfig(index: Int = 1) = TopicConfig(arn = "arn$index", accessKeyId = "key$index", secretAccessKey = "secret$index")
