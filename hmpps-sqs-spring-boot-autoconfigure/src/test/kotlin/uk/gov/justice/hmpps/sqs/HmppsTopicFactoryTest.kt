@@ -143,7 +143,7 @@ class HmppsTopicFactoryTest {
 
     @Test
     fun `should create async aws sns clients`() {
-      verify(snsClientFactory).localstackSnsAsyncClient("http://localhost:4566", "eu-west-2", false)
+      verify(snsClientFactory).localstackSnsAsyncClient("http://localhost:4566", "eu-west-2", true)
     }
 
     @Test
