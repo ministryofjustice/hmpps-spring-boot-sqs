@@ -327,7 +327,7 @@ class HmppsQueueFactoryTest_NoDlq {
   @Nested
   inner class `Create LocalStack FIFO HmppsQueue with FIFO topic subscription` {
     private val someQueueConfig = QueueConfig(subscribeTopicId = "sometopicid", subscribeFilter = "some topic filter", queueName = "some-queue-name.fifo", queueAccessKeyId = "some access key id", queueSecretAccessKey = "some secret access key", fifoQueue = true, fifoThroughputLimit = "perQueue")
-    private val someTopicConfig = TopicConfig(arn = "${localstackArnPrefix}some-topic-name.fifo", accessKeyId = "topic access key", secretAccessKey = "topic secret", fifoTopic = "true", contentBasedDeduplication = "true")
+    private val someTopicConfig = TopicConfig(arn = "${localstackArnPrefix}some-topic-name.fifo", accessKeyId = "topic access key", secretAccessKey = "topic secret", fifoTopic = true, contentBasedDeduplication = "true")
     private val hmppsSqsProperties = HmppsSqsProperties(provider = "localstack", queues = mapOf("somequeueid" to someQueueConfig), topics = mapOf("sometopicid" to someTopicConfig))
     private val sqsClient = mock<SqsAsyncClient>()
     private val snsClient = mock<SnsAsyncClient>()

@@ -549,7 +549,7 @@ class HmppsSqsPropertiesTest {
     @Test
     fun `FIFO topic names must end with fifo`() {
       assertThatThrownBy {
-        HmppsSqsProperties(provider = "localstack", topics = mapOf("topic-id" to TopicConfig(fifoTopic = "true", arn = "arn:aws:sns:eu-west-2:000000000000:sometopic")))
+        HmppsSqsProperties(provider = "localstack", topics = mapOf("topic-id" to TopicConfig(fifoTopic = true, arn = "arn:aws:sns:eu-west-2:000000000000:sometopic")))
       }.isInstanceOf(InvalidHmppsSqsPropertiesException::class.java)
         .hasMessageContaining("FIFO topic arn must end with .fifo: arn:aws:sns:eu-west-2:000000000000:sometopic")
     }

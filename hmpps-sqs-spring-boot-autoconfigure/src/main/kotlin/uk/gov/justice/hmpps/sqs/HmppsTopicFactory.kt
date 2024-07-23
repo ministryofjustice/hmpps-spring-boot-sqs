@@ -47,10 +47,13 @@ class HmppsTopicFactory(
         "localstack" -> snsClientFactory.localstackSnsAsyncClient(localstackUrl, region, topicConfig.propagateTracing)
           .also {
             runBlocking {
+              val attributes = when {
+                topicConfig.fifoTopic -> mapOf("FifoTopic" to "true", "ContentBasedDeduplication" to topicConfig.contentBasedDeduplication) else -> mapOf()
+              }
               it.createTopic(
                 CreateTopicRequest.builder()
                   .name(topicConfig.name)
-                  .attributes(mapOf("FifoTopic" to topicConfig.fifoTopic, "ContentBasedDeduplication" to topicConfig.contentBasedDeduplication))
+                  .attributes(attributes)
                   .build(),
               ).await()
             }

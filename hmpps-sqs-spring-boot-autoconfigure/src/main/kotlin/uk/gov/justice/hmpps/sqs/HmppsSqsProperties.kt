@@ -33,7 +33,7 @@ data class HmppsSqsProperties(
     val accessKeyId: String = "",
     val secretAccessKey: String = "",
     val propagateTracing: Boolean = true,
-    val fifoTopic: String = "false",
+    val fifoTopic: Boolean = false,
     val contentBasedDeduplication: String = "false",
   ) {
     private val arnRegex = Regex("arn:aws:sns:.*:.*:(.*)$")
@@ -114,7 +114,7 @@ data class HmppsSqsProperties(
 
   private fun checkFifoTopics(topicConfig: TopicConfig) {
     if (provider == "localstack") {
-      if (topicConfig.fifoTopic == "true") {
+      if (topicConfig.fifoTopic) {
         if (!topicConfig.arn.endsWith(".fifo")) {
           throw InvalidHmppsSqsPropertiesException("FIFO topic arn must end with .fifo: ${topicConfig.arn}")
         }
