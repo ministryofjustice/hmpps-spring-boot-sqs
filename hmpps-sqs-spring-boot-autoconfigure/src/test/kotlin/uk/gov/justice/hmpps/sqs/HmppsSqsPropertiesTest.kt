@@ -525,23 +525,15 @@ class HmppsSqsPropertiesTest {
     @Test
     fun `if fifoQueue is false, fifoThroughputLimit should not be set`() {
       assertThatThrownBy {
-        HmppsSqsProperties(provider = "localstack", queues = mapOf("queue-id" to QueueConfig(queueName = "someName", fifoQueue = false, fifoThroughputLimit = "perQueue")))
+        HmppsSqsProperties(provider = "localstack", queues = mapOf("queue-id" to QueueConfig(queueName = "someName", fifoThroughputLimit = "perQueue")))
       }.isInstanceOf(InvalidHmppsSqsPropertiesException::class.java)
         .hasMessageContaining("fifoThroughputLimit cannot be set on non-FIFO queue: someName")
     }
 
     @Test
-    fun `FIFO Queue names must end with fifo`() {
-      assertThatThrownBy {
-        HmppsSqsProperties(provider = "localstack", queues = mapOf("queue-id" to QueueConfig(queueName = "someName", fifoQueue = true, fifoThroughputLimit = "perQueue")))
-      }.isInstanceOf(InvalidHmppsSqsPropertiesException::class.java)
-        .hasMessageContaining("FIFO queue name must end with .fifo: someName")
-    }
-
-    @Test
     fun `FIFO DLQ names must end with fifo`() {
       assertThatThrownBy {
-        HmppsSqsProperties(provider = "localstack", queues = mapOf("queue-id" to QueueConfig(queueName = "someName.fifo", fifoQueue = true, fifoThroughputLimit = "perQueue", dlqName = "someDlqName")))
+        HmppsSqsProperties(provider = "localstack", queues = mapOf("queue-id" to QueueConfig(queueName = "someName.fifo", fifoThroughputLimit = "perQueue", dlqName = "someDlqName")))
       }.isInstanceOf(InvalidHmppsSqsPropertiesException::class.java)
         .hasMessageContaining("FIFO dead letter queue name must end with .fifo: someDlqName")
     }
@@ -557,7 +549,7 @@ class HmppsSqsPropertiesTest {
     @Test
     fun `FIFO queue cannot be subscribed to non-FIFO topic`() {
       assertThatThrownBy {
-        HmppsSqsProperties(provider = "localstack", topics = mapOf("ordinary-topic-id" to TopicConfig(arn = "arn:aws:sns:eu-west-2:000000000000:sometopic")), queues = mapOf("queue-id" to QueueConfig("someQueue.fifo", fifoQueue = true, subscribeTopicId = "ordinary-topic-id")))
+        HmppsSqsProperties(provider = "localstack", topics = mapOf("ordinary-topic-id" to TopicConfig(arn = "arn:aws:sns:eu-west-2:000000000000:sometopic")), queues = mapOf("queue-id" to QueueConfig("someQueue.fifo", subscribeTopicId = "ordinary-topic-id")))
       }.isInstanceOf(InvalidHmppsSqsPropertiesException::class.java)
         .hasMessageContaining("only FIFO queues can subscribe to FIFO topics: someQueue.fifo cannot subscribe to ordinary-topic-id")
     }

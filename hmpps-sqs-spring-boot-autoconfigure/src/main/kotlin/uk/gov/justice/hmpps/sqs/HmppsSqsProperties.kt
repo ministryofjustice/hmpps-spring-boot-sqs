@@ -24,9 +24,10 @@ data class HmppsSqsProperties(
     val visibilityTimeout: Int = 30,
     val errorVisibilityTimeout: Int = 0,
     val propagateTracing: Boolean = true,
-    val fifoQueue: Boolean = false,
     val fifoThroughputLimit: String? = null,
-  )
+  ) {
+    fun isFifo(): Boolean = queueName.endsWith(".fifo")
+  }
 
   data class TopicConfig(
     val arn: String = "",
@@ -122,21 +123,16 @@ data class HmppsSqsProperties(
   }
 
   private fun checkFifoQueues(queueConfig: QueueConfig) {
-    if (provider == "localstack") {
-      if (queueConfig.fifoQueue) {
-        if (!queueConfig.queueName.endsWith(".fifo")) {
-          throw InvalidHmppsSqsPropertiesException("FIFO queue name must end with .fifo: ${queueConfig.queueName}")
-        }
-        if (queueConfig.dlqName.isNotEmpty() && !queueConfig.dlqName.endsWith(".fifo")) {
-          throw InvalidHmppsSqsPropertiesException("FIFO dead letter queue name must end with .fifo: ${queueConfig.dlqName}")
-        }
-        if (queueConfig.subscribeTopicId.isNotEmpty() && topics.get(queueConfig.subscribeTopicId)?.arn?.endsWith(".fifo") == false) {
-          throw InvalidHmppsSqsPropertiesException("only FIFO queues can subscribe to FIFO topics: ${queueConfig.queueName} cannot subscribe to ${queueConfig.subscribeTopicId}")
-        }
-      } else {
-        queueConfig.fifoThroughputLimit?.let {
-          throw InvalidHmppsSqsPropertiesException("fifoThroughputLimit cannot be set on non-FIFO queue: ${queueConfig.queueName}")
-        }
+    if (queueConfig.isFifo()) {
+      if (queueConfig.dlqName.isNotEmpty() && !queueConfig.dlqName.endsWith(".fifo")) {
+        throw InvalidHmppsSqsPropertiesException("FIFO dead letter queue name must end with .fifo: ${queueConfig.dlqName}")
+      }
+      if (queueConfig.subscribeTopicId.isNotEmpty() && topics.get(queueConfig.subscribeTopicId)?.arn?.endsWith(".fifo") == false) {
+        throw InvalidHmppsSqsPropertiesException("only FIFO queues can subscribe to FIFO topics: ${queueConfig.queueName} cannot subscribe to ${queueConfig.subscribeTopicId}")
+      }
+    } else {
+      queueConfig.fifoThroughputLimit?.let {
+        throw InvalidHmppsSqsPropertiesException("fifoThroughputLimit cannot be set on non-FIFO queue: ${queueConfig.queueName}")
       }
     }
   }

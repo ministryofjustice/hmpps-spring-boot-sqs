@@ -38,7 +38,6 @@ hmpps.sqs:
       queueName: ${random.uuid}
     fifoqueue:
       queueName: fifoqueuetestapp.fifo
-      fifoQueue: true
       subscribeTopicId: fifotopic
       fifoThroughputLimit: perQueue
       dlqName: fifoqueuetestapp_dlq.fifo
