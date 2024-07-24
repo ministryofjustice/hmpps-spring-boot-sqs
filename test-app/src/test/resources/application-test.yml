@@ -36,8 +36,18 @@ hmpps.sqs:
       subscribeFilter: '{"eventType":[ "offender.movement.reception"] }'
     audit:
       queueName: ${random.uuid}
+    fifoqueue:
+      queueName: fifoqueuetestapp.fifo
+      fifoQueue: true
+      subscribeTopicId: fifotopic
+      fifoThroughputLimit: perQueue
+      dlqName: fifoqueuetestapp_dlq.fifo
   topics:
     inboundtopic:
       arn: arn:aws:sns:eu-west-2:000000000000:${random.uuid}
     outboundtopic:
       arn: arn:aws:sns:eu-west-2:000000000000:${random.uuid}
+    fifotopic:
+      arn: arn:aws:sns:eu-west-2:000000000000:fifotopictestapp.fifo
+      fifoTopic: true
+      contentBasedDeduplication: true
