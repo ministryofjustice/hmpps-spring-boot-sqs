@@ -48,7 +48,7 @@ class HmppsTopicFactory(
           .also {
             runBlocking {
               val attributes = when {
-                topicConfig.arn.endsWith(".fifo") -> mapOf(
+                topicConfig.isFifo() -> mapOf(
                   "FifoTopic" to "true",
                   "ContentBasedDeduplication" to when {
                     topicConfig.contentBasedDeduplication -> "true" else -> "false"

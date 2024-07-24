@@ -39,6 +39,8 @@ data class HmppsSqsProperties(
 
     val name: String
       get() = if (arn.matches(arnRegex)) arnRegex.find(arn)!!.destructured.component1() else throw InvalidHmppsSqsPropertiesException("Topic ARN $arn has an invalid format")
+
+    fun isFifo() = arn.endsWith(".fifo")
   }
 
   init {
@@ -112,7 +114,7 @@ data class HmppsSqsProperties(
   }
 
   private fun checkFifoTopics(topicConfig: TopicConfig) {
-    if (!topicConfig.arn.endsWith(".fifo")) {
+    if (!topicConfig.isFifo()) {
       if (topicConfig.contentBasedDeduplication) {
         throw InvalidHmppsSqsPropertiesException("contentBasedDeduplication can only be set on FIFO topics: ${topicConfig.arn}")
       }
