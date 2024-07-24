@@ -33,7 +33,6 @@ data class HmppsSqsProperties(
     val accessKeyId: String = "",
     val secretAccessKey: String = "",
     val propagateTracing: Boolean = true,
-    val fifoTopic: Boolean = false,
     val contentBasedDeduplication: Boolean = false,
   ) {
     private val arnRegex = Regex("arn:aws:sns:.*:.*:(.*)$")
@@ -113,15 +112,9 @@ data class HmppsSqsProperties(
   }
 
   private fun checkFifoTopics(topicConfig: TopicConfig) {
-    if (provider == "localstack") {
-      if (topicConfig.fifoTopic) {
-        if (!topicConfig.arn.endsWith(".fifo")) {
-          throw InvalidHmppsSqsPropertiesException("FIFO topic arn must end with .fifo: ${topicConfig.arn}")
-        }
-      } else {
-        if (topicConfig.contentBasedDeduplication) {
-          throw InvalidHmppsSqsPropertiesException("contentBasedDeduplication can only be set on FIFO topics: ${topicConfig.arn}")
-        }
+    if (!topicConfig.arn.endsWith(".fifo")) {
+      if (topicConfig.contentBasedDeduplication) {
+        throw InvalidHmppsSqsPropertiesException("contentBasedDeduplication can only be set on FIFO topics: ${topicConfig.arn}")
       }
     }
   }
@@ -135,7 +128,7 @@ data class HmppsSqsProperties(
         if (queueConfig.dlqName.isNotEmpty() && !queueConfig.dlqName.endsWith(".fifo")) {
           throw InvalidHmppsSqsPropertiesException("FIFO dead letter queue name must end with .fifo: ${queueConfig.dlqName}")
         }
-        if (queueConfig.subscribeTopicId.isNotEmpty() && topics.get(queueConfig.subscribeTopicId)?.fifoTopic == false) {
+        if (queueConfig.subscribeTopicId.isNotEmpty() && topics.get(queueConfig.subscribeTopicId)?.arn?.endsWith(".fifo") == false) {
           throw InvalidHmppsSqsPropertiesException("only FIFO queues can subscribe to FIFO topics: ${queueConfig.queueName} cannot subscribe to ${queueConfig.subscribeTopicId}")
         }
       } else {

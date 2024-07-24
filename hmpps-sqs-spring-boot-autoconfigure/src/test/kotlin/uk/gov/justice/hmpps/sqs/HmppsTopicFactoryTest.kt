@@ -126,7 +126,7 @@ class HmppsTopicFactoryTest {
 
   @Nested
   inner class `Create FIFO LocalStack HmppsTopics` {
-    private val someTopicConfig = TopicConfig(arn = "${localstackArnPrefix}some arn.fifo", accessKeyId = "some access key id", secretAccessKey = "some secret access key", fifoTopic = true, contentBasedDeduplication = true)
+    private val someTopicConfig = TopicConfig(arn = "${localstackArnPrefix}some arn.fifo", accessKeyId = "some access key id", secretAccessKey = "some secret access key", contentBasedDeduplication = true)
     private val hmppsSqsProperties = HmppsSqsProperties(provider = "localstack", queues = mock(), topics = mapOf("sometopicid" to someTopicConfig))
     private val snsClient = mock<SnsAsyncClient>()
     private lateinit var hmppsTopics: List<HmppsTopic>

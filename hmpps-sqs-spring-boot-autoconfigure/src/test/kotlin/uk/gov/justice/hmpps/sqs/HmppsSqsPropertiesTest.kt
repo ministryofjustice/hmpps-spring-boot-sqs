@@ -547,17 +547,9 @@ class HmppsSqsPropertiesTest {
     }
 
     @Test
-    fun `FIFO topic names must end with fifo`() {
-      assertThatThrownBy {
-        HmppsSqsProperties(provider = "localstack", topics = mapOf("topic-id" to TopicConfig(fifoTopic = true, arn = "arn:aws:sns:eu-west-2:000000000000:sometopic")))
-      }.isInstanceOf(InvalidHmppsSqsPropertiesException::class.java)
-        .hasMessageContaining("FIFO topic arn must end with .fifo: arn:aws:sns:eu-west-2:000000000000:sometopic")
-    }
-
-    @Test
     fun `contentBasedDeduplication must not be set on non-FIFO topics`() {
       assertThatThrownBy {
-        HmppsSqsProperties(provider = "localstack", topics = mapOf("topic-id" to TopicConfig(fifoTopic = false, contentBasedDeduplication = true, arn = "arn:aws:sns:eu-west-2:000000000000:sometopic.fifo")))
+        HmppsSqsProperties(provider = "localstack", topics = mapOf("topic-id" to TopicConfig(contentBasedDeduplication = true, arn = "arn:aws:sns:eu-west-2:000000000000:sometopic")))
       }.isInstanceOf(InvalidHmppsSqsPropertiesException::class.java)
         .hasMessageContaining("contentBasedDeduplication can only be set on FIFO topics: arn:aws:sns:eu-west-2:000000000000:sometopic")
     }
@@ -565,7 +557,7 @@ class HmppsSqsPropertiesTest {
     @Test
     fun `FIFO queue cannot be subscribed to non-FIFO topic`() {
       assertThatThrownBy {
-        HmppsSqsProperties(provider = "localstack", topics = mapOf("ordinary-topic-id" to TopicConfig(fifoTopic = false, arn = "arn:aws:sns:eu-west-2:000000000000:sometopic")), queues = mapOf("queue-id" to QueueConfig("someQueue.fifo", fifoQueue = true, subscribeTopicId = "ordinary-topic-id")))
+        HmppsSqsProperties(provider = "localstack", topics = mapOf("ordinary-topic-id" to TopicConfig(arn = "arn:aws:sns:eu-west-2:000000000000:sometopic")), queues = mapOf("queue-id" to QueueConfig("someQueue.fifo", fifoQueue = true, subscribeTopicId = "ordinary-topic-id")))
       }.isInstanceOf(InvalidHmppsSqsPropertiesException::class.java)
         .hasMessageContaining("only FIFO queues can subscribe to FIFO topics: someQueue.fifo cannot subscribe to ordinary-topic-id")
     }
