@@ -24,7 +24,6 @@ data class HmppsSqsProperties(
     val visibilityTimeout: Int = 30,
     val errorVisibilityTimeout: Int = 0,
     val propagateTracing: Boolean = true,
-    val fifoThroughputLimit: String? = null,
   ) {
     fun isFifo(): Boolean = queueName.endsWith(".fifo")
   }
@@ -129,10 +128,6 @@ data class HmppsSqsProperties(
       }
       if (queueConfig.subscribeTopicId.isNotEmpty() && topics.get(queueConfig.subscribeTopicId)?.arn?.endsWith(".fifo") == false) {
         throw InvalidHmppsSqsPropertiesException("only FIFO queues can subscribe to FIFO topics: ${queueConfig.queueName} cannot subscribe to ${queueConfig.subscribeTopicId}")
-      }
-    } else {
-      queueConfig.fifoThroughputLimit?.let {
-        throw InvalidHmppsSqsPropertiesException("fifoThroughputLimit cannot be set on non-FIFO queue: ${queueConfig.queueName}")
       }
     }
   }

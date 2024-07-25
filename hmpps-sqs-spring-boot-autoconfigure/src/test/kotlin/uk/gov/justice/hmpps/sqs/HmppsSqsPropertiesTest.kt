@@ -523,17 +523,9 @@ class HmppsSqsPropertiesTest {
   inner class Fifo {
 
     @Test
-    fun `if fifoQueue is false, fifoThroughputLimit should not be set`() {
-      assertThatThrownBy {
-        HmppsSqsProperties(provider = "localstack", queues = mapOf("queue-id" to QueueConfig(queueName = "someName", fifoThroughputLimit = "perQueue")))
-      }.isInstanceOf(InvalidHmppsSqsPropertiesException::class.java)
-        .hasMessageContaining("fifoThroughputLimit cannot be set on non-FIFO queue: someName")
-    }
-
-    @Test
     fun `FIFO DLQ names must end with fifo`() {
       assertThatThrownBy {
-        HmppsSqsProperties(provider = "localstack", queues = mapOf("queue-id" to QueueConfig(queueName = "someName.fifo", fifoThroughputLimit = "perQueue", dlqName = "someDlqName")))
+        HmppsSqsProperties(provider = "localstack", queues = mapOf("queue-id" to QueueConfig(queueName = "someName.fifo", dlqName = "someDlqName")))
       }.isInstanceOf(InvalidHmppsSqsPropertiesException::class.java)
         .hasMessageContaining("FIFO dead letter queue name must end with .fifo: someDlqName")
     }

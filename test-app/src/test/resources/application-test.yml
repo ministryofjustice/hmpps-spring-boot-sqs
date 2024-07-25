@@ -39,7 +39,6 @@ hmpps.sqs:
     fifoqueue:
       queueName: fifoqueuetestapp.fifo
       subscribeTopicId: fifotopic
-      fifoThroughputLimit: perQueue
       dlqName: fifoqueuetestapp_dlq.fifo
   topics:
     inboundtopic:

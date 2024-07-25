@@ -104,7 +104,7 @@ class HmppsQueueFactory(
       Provider.AWS -> sqsClientFactory.awsSqsAsyncClient(queueConfig.dlqAccessKeyId, queueConfig.dlqSecretAccessKey, region, hmppsSqsProperties.useWebToken, queueConfig.propagateTracing)
       Provider.LOCALSTACK -> {
         val attributes = when {
-          queueConfig.isFifo() -> mapOf(QueueAttributeName.FIFO_QUEUE to "true", QueueAttributeName.FIFO_THROUGHPUT_LIMIT to queueConfig.fifoThroughputLimit) else -> mapOf()
+          queueConfig.isFifo() -> mapOf(QueueAttributeName.FIFO_QUEUE to "true") else -> mapOf()
         }
         sqsClientFactory.localstackSqsAsyncClient(hmppsSqsProperties.localstackUrl, region, queueConfig.propagateTracing)
           .also {
@@ -137,7 +137,6 @@ class HmppsQueueFactory(
                 maxReceiveCount = queueConfig.dlqMaxReceiveCount,
                 visibilityTimeout = queueConfig.visibilityTimeout,
                 fifoQueue = queueConfig.isFifo(),
-                fifoThroughputLimit = queueConfig.fifoThroughputLimit,
               )
             }
           }
@@ -153,10 +152,9 @@ class HmppsQueueFactory(
     maxReceiveCount: Int,
     visibilityTimeout: Int,
     fifoQueue: Boolean,
-    fifoThroughputLimit: String?,
   ) = runBlocking {
     val fifoAttributes = when {
-      fifoQueue -> mapOf(QueueAttributeName.FIFO_QUEUE to "true", QueueAttributeName.FIFO_THROUGHPUT_LIMIT to fifoThroughputLimit) else -> mapOf()
+      fifoQueue -> mapOf(QueueAttributeName.FIFO_QUEUE to "true") else -> mapOf()
     }
     if (dlqName.isEmpty() || sqsDlqClient == null) {
       sqsClient.createQueue(CreateQueueRequest.builder().queueName(queueName).attributes(fifoAttributes).build()).await()

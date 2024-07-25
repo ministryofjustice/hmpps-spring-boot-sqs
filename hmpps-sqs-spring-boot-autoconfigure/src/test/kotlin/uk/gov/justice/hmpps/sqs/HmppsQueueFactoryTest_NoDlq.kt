@@ -326,7 +326,7 @@ class HmppsQueueFactoryTest_NoDlq {
 
   @Nested
   inner class `Create LocalStack FIFO HmppsQueue with FIFO topic subscription` {
-    private val someQueueConfig = QueueConfig(subscribeTopicId = "sometopicid", subscribeFilter = "some topic filter", queueName = "some-queue-name.fifo", queueAccessKeyId = "some access key id", queueSecretAccessKey = "some secret access key", fifoThroughputLimit = "perQueue")
+    private val someQueueConfig = QueueConfig(subscribeTopicId = "sometopicid", subscribeFilter = "some topic filter", queueName = "some-queue-name.fifo", queueAccessKeyId = "some access key id", queueSecretAccessKey = "some secret access key")
     private val someTopicConfig = TopicConfig(arn = "${localstackArnPrefix}some-topic-name.fifo", accessKeyId = "topic access key", secretAccessKey = "topic secret", contentBasedDeduplication = true)
     private val hmppsSqsProperties = HmppsSqsProperties(provider = "localstack", queues = mapOf("somequeueid" to someQueueConfig), topics = mapOf("sometopicid" to someTopicConfig))
     private val sqsClient = mock<SqsAsyncClient>()
@@ -357,7 +357,10 @@ class HmppsQueueFactoryTest_NoDlq {
 
     @Test
     fun `should create a FIFO queue`() {
-      verify(sqsClient).createQueue(CreateQueueRequest.builder().queueName("some-queue-name.fifo").attributes(mapOf(QueueAttributeName.FIFO_QUEUE to "true", QueueAttributeName.FIFO_THROUGHPUT_LIMIT to "perQueue")).build())
+      verify(sqsClient).createQueue(
+        CreateQueueRequest.builder().queueName("some-queue-name.fifo")
+          .attributes(mapOf(QueueAttributeName.FIFO_QUEUE to "true")).build(),
+      )
     }
 
     @Test

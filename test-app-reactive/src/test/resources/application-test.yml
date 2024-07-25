@@ -39,7 +39,6 @@ hmpps.sqs:
     fifoqueue:
       queueName: fifoqueuetestappreactive.fifo
       subscribeTopicId: fifotopic
-      fifoThroughputLimit: perQueue
       dlqName: cpr_court_events_queue_dlq.fifo
   topics:
     inboundtopic:
