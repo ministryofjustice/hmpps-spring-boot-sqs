@@ -50,9 +50,7 @@ class HmppsTopicFactory(
               val attributes = when {
                 topicConfig.isFifo() -> mapOf(
                   "FifoTopic" to "true",
-                  "ContentBasedDeduplication" to when {
-                    topicConfig.contentBasedDeduplication -> "true" else -> "false"
-                  },
+                  "ContentBasedDeduplication" to "true",
                 ) else -> mapOf()
               }
               it.createTopic(

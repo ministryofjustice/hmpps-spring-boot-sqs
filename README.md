@@ -77,7 +77,7 @@ added to the project if that is the only queue defined.  If at least one non aud
 #### FIFO queues and topics
 
 Localstack FIFO (first in, first out) queues and topics can be created by adding the `.fifo` suffix to the queueName or arn. 
-You can enable Content Based Deduplication on Localstack FIFO topics by setting contentBasedDeduplication to true.
+[Content Based Deduplication](https://docs.aws.amazon.com/sns/latest/dg/fifo-message-dedup.html) is enabled on Localstack FIFO topics by default and cannot be disabled.
 
 FIFO allows you the option to configure message deduplication and guarantees ordering. There are performance tradeoffs.
 [More information on FIFO here](https://docs.aws.amazon.com/sns/latest/dg/sns-fifo-topics.html)
