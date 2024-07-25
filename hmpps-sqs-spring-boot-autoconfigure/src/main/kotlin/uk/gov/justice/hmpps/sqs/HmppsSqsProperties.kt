@@ -24,7 +24,9 @@ data class HmppsSqsProperties(
     val visibilityTimeout: Int = 30,
     val errorVisibilityTimeout: Int = 0,
     val propagateTracing: Boolean = true,
-  )
+  ) {
+    fun isFifo(): Boolean = queueName.endsWith(".fifo")
+  }
 
   data class TopicConfig(
     val arn: String = "",
@@ -36,6 +38,8 @@ data class HmppsSqsProperties(
 
     val name: String
       get() = if (arn.matches(arnRegex)) arnRegex.find(arn)!!.destructured.component1() else throw InvalidHmppsSqsPropertiesException("Topic ARN $arn has an invalid format")
+
+    fun isFifo() = arn.endsWith(".fifo")
   }
 
   init {
@@ -44,6 +48,7 @@ data class HmppsSqsProperties(
       queueNamesMustExist(queueId, queueConfig)
       awsQueueSecretsMustExist(queueId, queueConfig)
       localstackTopicSubscriptionsMustExist(queueConfig, queueId)
+      checkFifoQueues(queueConfig)
     }
     topics.forEach { (topicId, topicConfig) ->
       topicIdMustBeLowerCase(topicId)
@@ -102,6 +107,17 @@ data class HmppsSqsProperties(
       if (!useWebToken) {
         if (topicConfig.accessKeyId.isEmpty()) throw InvalidHmppsSqsPropertiesException("topicId $topicId does not have an access key id")
         if (topicConfig.secretAccessKey.isEmpty()) throw InvalidHmppsSqsPropertiesException("topicId $topicId does not have a secret access key")
+      }
+    }
+  }
+
+  private fun checkFifoQueues(queueConfig: QueueConfig) {
+    if (queueConfig.isFifo()) {
+      if (queueConfig.dlqName.isNotEmpty() && !queueConfig.dlqName.endsWith(".fifo")) {
+        throw InvalidHmppsSqsPropertiesException("FIFO dead letter queue name must end with .fifo: ${queueConfig.dlqName}")
+      }
+      if (queueConfig.subscribeTopicId.isNotEmpty() && topics.get(queueConfig.subscribeTopicId)?.arn?.endsWith(".fifo") == false) {
+        throw InvalidHmppsSqsPropertiesException("only FIFO queues can subscribe to FIFO topics: ${queueConfig.queueName} cannot subscribe to ${queueConfig.subscribeTopicId}")
       }
     }
   }

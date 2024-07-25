@@ -519,6 +519,26 @@ class HmppsSqsPropertiesTest {
     }
   }
 
+  @Nested
+  inner class Fifo {
+
+    @Test
+    fun `FIFO DLQ names must end with fifo`() {
+      assertThatThrownBy {
+        HmppsSqsProperties(provider = "localstack", queues = mapOf("queue-id" to QueueConfig(queueName = "someName.fifo", dlqName = "someDlqName")))
+      }.isInstanceOf(InvalidHmppsSqsPropertiesException::class.java)
+        .hasMessageContaining("FIFO dead letter queue name must end with .fifo: someDlqName")
+    }
+
+    @Test
+    fun `FIFO queue cannot be subscribed to non-FIFO topic`() {
+      assertThatThrownBy {
+        HmppsSqsProperties(provider = "localstack", topics = mapOf("ordinary-topic-id" to TopicConfig(arn = "arn:aws:sns:eu-west-2:000000000000:sometopic")), queues = mapOf("queue-id" to QueueConfig("someQueue.fifo", subscribeTopicId = "ordinary-topic-id")))
+      }.isInstanceOf(InvalidHmppsSqsPropertiesException::class.java)
+        .hasMessageContaining("only FIFO queues can subscribe to FIFO topics: someQueue.fifo cannot subscribe to ordinary-topic-id")
+    }
+  }
+
   private fun validAwsQueueConfig(index: Int = 1) = QueueConfig(queueName = "name$index", queueAccessKeyId = "key$index", queueSecretAccessKey = "secret$index", dlqName = "dlqName$index", dlqAccessKeyId = "dlqKey$index", dlqSecretAccessKey = "dlqSecret$index")
   private fun validAwsQueueNoDlqConfig(index: Int = 1) = QueueConfig(queueName = "name$index", queueAccessKeyId = "key$index", queueSecretAccessKey = "secret$index")
   private fun validAwsTopicConfig(index: Int = 1) = TopicConfig(arn = "arn$index", accessKeyId = "key$index", secretAccessKey = "secret$index")

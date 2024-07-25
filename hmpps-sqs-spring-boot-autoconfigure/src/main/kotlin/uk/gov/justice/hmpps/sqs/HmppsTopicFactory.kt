@@ -45,7 +45,22 @@ class HmppsTopicFactory(
       when (provider) {
         "aws" -> snsClientFactory.awsSnsAsyncClient(topicConfig.accessKeyId, topicConfig.secretAccessKey, region, hmppsSqsProperties.useWebToken, topicConfig.propagateTracing)
         "localstack" -> snsClientFactory.localstackSnsAsyncClient(localstackUrl, region, topicConfig.propagateTracing)
-          .also { runBlocking { it.createTopic(CreateTopicRequest.builder().name(topicConfig.name).build()).await() } }
+          .also {
+            runBlocking {
+              val attributes = when {
+                topicConfig.isFifo() -> mapOf(
+                  "FifoTopic" to "true",
+                  "ContentBasedDeduplication" to "true",
+                ) else -> mapOf()
+              }
+              it.createTopic(
+                CreateTopicRequest.builder()
+                  .name(topicConfig.name)
+                  .attributes(attributes)
+                  .build(),
+              ).await()
+            }
+          }
           .also { log.info("Created a LocalStack SNS topic for topicId $topicId with ARN ${topicConfig.arn}") }
         else -> throw IllegalStateException("Unrecognised HMPPS SQS provider $provider")
       }

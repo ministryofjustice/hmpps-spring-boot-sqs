@@ -104,8 +104,56 @@ class HmppsTopicFactoryTest {
     }
 
     @Test
+    fun `should create a non-FIFO topic`() {
+      verify(snsClient).createTopic(
+        CreateTopicRequest.builder()
+          .name(someTopicConfig.name)
+          .attributes(mapOf())
+          .build(),
+      )
+    }
+
+    @Test
     fun `should create async aws sns clients`() {
       verify(snsClientFactory).localstackSnsAsyncClient("http://localhost:4566", "eu-west-2", true)
+    }
+
+    @Test
+    fun `should return the topic details`() {
+      assertThat(hmppsTopics[0].id).isEqualTo("sometopicid")
+    }
+  }
+
+  @Nested
+  inner class `Create FIFO LocalStack HmppsTopics` {
+    private val someTopicConfig = TopicConfig(arn = "${localstackArnPrefix}some arn.fifo", accessKeyId = "some access key id", secretAccessKey = "some secret access key")
+    private val hmppsSqsProperties = HmppsSqsProperties(provider = "localstack", queues = mock(), topics = mapOf("sometopicid" to someTopicConfig))
+    private val snsClient = mock<SnsAsyncClient>()
+    private lateinit var hmppsTopics: List<HmppsTopic>
+
+    @BeforeEach
+    fun `configure mocks and register queues`() {
+      whenever(snsClientFactory.localstackSnsAsyncClient(anyString(), anyString(), anyBoolean()))
+        .thenReturn(snsClient)
+      whenever(snsClient.createTopic(any<CreateTopicRequest>()))
+        .thenReturn(CompletableFuture.completedFuture(CreateTopicResponse.builder().build()))
+
+      hmppsTopics = hmppsTopicFactory.createHmppsTopics(hmppsSqsProperties)
+    }
+
+    @Test
+    fun `should create async aws sns clients`() {
+      verify(snsClientFactory).localstackSnsAsyncClient("http://localhost:4566", "eu-west-2", true)
+    }
+
+    @Test
+    fun `should create a FIFO topic`() {
+      verify(snsClient).createTopic(
+        CreateTopicRequest.builder()
+          .name(someTopicConfig.name)
+          .attributes(mapOf("FifoTopic" to "true", "ContentBasedDeduplication" to "true"))
+          .build(),
+      )
     }
 
     @Test

@@ -183,7 +183,7 @@ class HmppsQueueFactoryTest {
 
   @Nested
   inner class `Create LocalStack HmppsQueue with asynchronous SQS clients` {
-    private val someQueueConfig = QueueConfig(queueName = "some queue name", dlqName = "some dlq name")
+    private val someQueueConfig = QueueConfig(queueName = "some queue name", dlqName = "some-queue-name-dlq")
     private val hmppsSqsProperties = HmppsSqsProperties(provider = "localstack", queues = mapOf("somequeueid" to someQueueConfig))
     private val sqsClient = mock<SqsAsyncClient>()
     private val sqsDlqClient = mock<SqsAsyncClient>()
@@ -221,6 +221,16 @@ class HmppsQueueFactoryTest {
     }
 
     @Test
+    fun `should create a dead letter queue`() {
+      verify(sqsDlqClient).createQueue(
+        CreateQueueRequest.builder()
+          .queueName("some-queue-name-dlq")
+          .attributes(mapOf())
+          .build(),
+      )
+    }
+
+    @Test
     fun `should return async clients`() {
       assertThat(hmppsQueues[0].sqsClient).isInstanceOf(SqsAsyncClient::class.java)
       assertThat(hmppsQueues[0].sqsDlqClient).isInstanceOf(SqsAsyncClient::class.java)
@@ -230,7 +240,7 @@ class HmppsQueueFactoryTest {
     fun `should return queue details`() {
       assertThat(hmppsQueues[0].id).isEqualTo("somequeueid")
       assertThat(hmppsQueues[0].queueName).isEqualTo("some queue name")
-      assertThat(hmppsQueues[0].dlqName).isEqualTo("some dlq name")
+      assertThat(hmppsQueues[0].dlqName).isEqualTo("some-queue-name-dlq")
     }
 
     @Test
@@ -254,6 +264,61 @@ class HmppsQueueFactoryTest {
         check<SubscribeRequest> {
           assertThat(it.topicArn()).isEqualTo("arn:aws:sns:1:2:3")
         },
+      )
+    }
+  }
+
+  @Nested
+  inner class `Create LocalStack FIFO HmppsQueue` {
+    private val someQueueConfig = QueueConfig(queueName = "some-queue-name.fifo", dlqName = "some-queue-name-dlq.fifo")
+    private val hmppsSqsProperties = HmppsSqsProperties(provider = "localstack", queues = mapOf("somequeueid" to someQueueConfig))
+    private val sqsClient = mock<SqsAsyncClient>()
+    private val sqsDlqClient = mock<SqsAsyncClient>()
+    private lateinit var hmppsQueues: List<HmppsQueue>
+
+    @BeforeEach
+    fun `configure mocks and register queues`() {
+      whenever(sqsFactory.localstackSqsAsyncClient(anyString(), anyString(), anyBoolean()))
+        .thenReturn(sqsDlqClient)
+        .thenReturn(sqsClient)
+      whenever(sqsClient.getQueueUrl(any<GetQueueUrlRequest>()))
+        .thenReturn(CompletableFuture.completedFuture(GetQueueUrlResponse.builder().queueUrl("some queue url").build()))
+      whenever(sqsClient.getQueueAttributes(any<GetQueueAttributesRequest>()))
+        .thenReturn(
+          CompletableFuture.completedFuture(
+            GetQueueAttributesResponse.builder()
+              .attributes(mutableMapOf(QueueAttributeName.QUEUE_ARN to "queue:arn")).build(),
+          ),
+        )
+      whenever(sqsDlqClient.getQueueUrl(any<GetQueueUrlRequest>()))
+        .thenReturn(CompletableFuture.completedFuture(GetQueueUrlResponse.builder().queueUrl("some dlq url").build()))
+      whenever(sqsDlqClient.getQueueAttributes(any<GetQueueAttributesRequest>()))
+        .thenReturn(CompletableFuture.completedFuture(GetQueueAttributesResponse.builder().attributes(mapOf(QueueAttributeName.QUEUE_ARN to "some dlq arn")).build()))
+      whenever(sqsDlqClient.createQueue(any<CreateQueueRequest>()))
+        .thenReturn(CompletableFuture.completedFuture(CreateQueueResponse.builder().build()))
+      whenever(sqsClient.createQueue(any<CreateQueueRequest>()))
+        .thenReturn(CompletableFuture.completedFuture(CreateQueueResponse.builder().build()))
+
+      hmppsQueues = hmppsQueueFactory.createHmppsQueues(hmppsSqsProperties)
+    }
+
+    @Test
+    fun `should create a FIFO queue`() {
+      verify(sqsClient).createQueue(
+        CreateQueueRequest.builder()
+          .queueName("some-queue-name.fifo")
+          .attributes(mapOf(QueueAttributeName.REDRIVE_POLICY to """{"deadLetterTargetArn":"some dlq arn","maxReceiveCount":"5"}""", QueueAttributeName.VISIBILITY_TIMEOUT to "30", QueueAttributeName.FIFO_QUEUE to "true"))
+          .build(),
+      )
+    }
+
+    @Test
+    fun `should create a FIFO dead letter queue`() {
+      verify(sqsDlqClient).createQueue(
+        CreateQueueRequest.builder()
+          .queueName("some-queue-name-dlq.fifo")
+          .attributes(mapOf(QueueAttributeName.FIFO_QUEUE to "true"))
+          .build(),
       )
     }
   }

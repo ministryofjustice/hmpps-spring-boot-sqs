@@ -36,8 +36,14 @@ hmpps.sqs:
       subscribeFilter: '{"eventType":[ "offender.movement.reception"] }'
     audit:
       queueName: ${random.uuid}
+    fifoqueue:
+      queueName: fifoqueuetestappreactive.fifo
+      subscribeTopicId: fifotopic
+      dlqName: cpr_court_events_queue_dlq.fifo
   topics:
     inboundtopic:
       arn: arn:aws:sns:eu-west-2:000000000000:${random.uuid}
     outboundtopic:
       arn: arn:aws:sns:eu-west-2:000000000000:${random.uuid}
+    fifotopic:
+      arn: arn:aws:sns:eu-west-2:000000000000:fifotopictestappreactive.fifo

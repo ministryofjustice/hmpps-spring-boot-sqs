@@ -103,8 +103,20 @@ class HmppsQueueFactory(
     return when (provider) {
       Provider.AWS -> sqsClientFactory.awsSqsAsyncClient(queueConfig.dlqAccessKeyId, queueConfig.dlqSecretAccessKey, region, hmppsSqsProperties.useWebToken, queueConfig.propagateTracing)
       Provider.LOCALSTACK -> {
+        val attributes = when {
+          queueConfig.isFifo() -> mapOf(QueueAttributeName.FIFO_QUEUE to "true") else -> mapOf()
+        }
         sqsClientFactory.localstackSqsAsyncClient(hmppsSqsProperties.localstackUrl, region, queueConfig.propagateTracing)
-          .also { sqsDlqClient -> runBlocking { sqsDlqClient.createQueue(CreateQueueRequest.builder().queueName(queueConfig.dlqName).build()).await() } }
+          .also {
+              sqsDlqClient ->
+            runBlocking {
+              sqsDlqClient.createQueue(
+                CreateQueueRequest.builder()
+                  .attributes(attributes)
+                  .queueName(queueConfig.dlqName).build(),
+              ).await()
+            }
+          }
       }
     }
   }
@@ -124,6 +136,7 @@ class HmppsQueueFactory(
                 dlqName = queueConfig.dlqName,
                 maxReceiveCount = queueConfig.dlqMaxReceiveCount,
                 visibilityTimeout = queueConfig.visibilityTimeout,
+                fifoQueue = queueConfig.isFifo(),
               )
             }
           }
@@ -138,9 +151,13 @@ class HmppsQueueFactory(
     dlqName: String,
     maxReceiveCount: Int,
     visibilityTimeout: Int,
+    fifoQueue: Boolean,
   ) = runBlocking {
+    val fifoAttributes = when {
+      fifoQueue -> mapOf(QueueAttributeName.FIFO_QUEUE to "true") else -> mapOf()
+    }
     if (dlqName.isEmpty() || sqsDlqClient == null) {
-      sqsClient.createQueue(CreateQueueRequest.builder().queueName(queueName).build()).await()
+      sqsClient.createQueue(CreateQueueRequest.builder().queueName(queueName).attributes(fifoAttributes).build()).await()
     } else {
       val dlqUrl = sqsDlqClient.getQueueUrl(GetQueueUrlRequest.builder().queueName(dlqName).build())
       val dlqArn = sqsDlqClient.getQueueAttributes(GetQueueAttributesRequest.builder().queueUrl(dlqUrl.await().queueUrl()).attributeNames(QueueAttributeName.QUEUE_ARN).build()).await().attributes()[QueueAttributeName.QUEUE_ARN]
@@ -149,7 +166,7 @@ class HmppsQueueFactory(
           mapOf(
             QueueAttributeName.REDRIVE_POLICY to """{"deadLetterTargetArn":"$dlqArn","maxReceiveCount":"$maxReceiveCount"}""",
             QueueAttributeName.VISIBILITY_TIMEOUT to "$visibilityTimeout",
-          ),
+          ).plus(fifoAttributes),
         ).build(),
       ).await()
     }

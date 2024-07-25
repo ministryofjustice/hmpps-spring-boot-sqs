@@ -74,6 +74,16 @@ A queue with an `id` of `audit` is considered to be the HMPPS Audit queue.  As s
 added to the project if that is the only queue defined.  If at least one non audit queue is defined then the
 `HmppsQueueResource` will be created.  However, any attempts to call the resource endpoint for the audit queue will fail.
 
+#### FIFO queues and topics
+
+Localstack FIFO (first in, first out) queues and topics can be created by adding the `.fifo` suffix to the queueName or arn. 
+[Content Based Deduplication](https://docs.aws.amazon.com/sns/latest/dg/fifo-message-dedup.html) is enabled on Localstack FIFO topics by default and cannot be disabled.
+
+FIFO Queues can only subscribe to FIFO Topics.
+
+FIFO allows you the option to configure message deduplication and guarantees ordering. There are performance tradeoffs.
+[More information on FIFO here](https://docs.aws.amazon.com/sns/latest/dg/sns-fifo-topics.html)
+
 #### HmppsSqsProperties Definitions
 
 ##### :warning: queueId and topicId Must Be All Lowercase And Alpha
@@ -409,7 +419,7 @@ Some messages to process can be found in `test-app[-reactive]/src/test/resources
 
 ## How To Contribute To This Library
 
-Raise a PR and ask for a review in the MOJDT Slack channel `#dps_dev`.
+Raise a PR and ask for a review in the MOJDT Slack channel `#hmpps_dev`.
 
 If accepted make sure that the version number in `build.gradle.kts` has been upgraded according to [Semver rules](https://semver.org/spec/v2.0.0.html) and ask in `#hmpps_dev` to publish the library.
 
@@ -428,7 +438,7 @@ As a rule of thumb new features must:
 ## Publishing Locally (to test against other projects)
 
 * Firstly bump the version of this project in `build.gradle.kts` e.g. increase the minor version by 1 and add `-beta` to the version number.
-* Then publish the plugin to local maven
+* Then publish the plugin to local maven:
 
 ```
 ./gradlew publishToMavenLocal -x :hmpps-sqs-spring-boot-autoconfigure:signAutoconfigurePublication -x :hmpps-sqs-spring-boot-starter:signStarterPublication 

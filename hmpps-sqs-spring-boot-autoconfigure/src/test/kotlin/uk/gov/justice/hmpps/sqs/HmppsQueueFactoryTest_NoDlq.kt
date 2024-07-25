@@ -272,7 +272,7 @@ class HmppsQueueFactoryTest_NoDlq {
 
   @Nested
   inner class `Create LocalStack HmppsQueue with topic subscription` {
-    private val someQueueConfig = QueueConfig(subscribeTopicId = "sometopicid", subscribeFilter = "some topic filter", queueName = "some-queue-name", queueAccessKeyId = "some access key id", queueSecretAccessKey = "some secret access key")
+    private val someQueueConfig = QueueConfig(queueName = "some-queue-name", queueAccessKeyId = "some access key id", queueSecretAccessKey = "some secret access key", subscribeTopicId = "sometopicid", subscribeFilter = "some topic filter")
     private val someTopicConfig = TopicConfig(arn = "${localstackArnPrefix}some-topic-name", accessKeyId = "topic access key", secretAccessKey = "topic secret")
     private val hmppsSqsProperties = HmppsSqsProperties(provider = "localstack", queues = mapOf("somequeueid" to someQueueConfig), topics = mapOf("sometopicid" to someTopicConfig))
     private val sqsClient = mock<SqsAsyncClient>()
@@ -302,6 +302,11 @@ class HmppsQueueFactoryTest_NoDlq {
     }
 
     @Test
+    fun `should create a queue`() {
+      verify(sqsClient).createQueue(CreateQueueRequest.builder().queueName("some-queue-name").attributes(mapOf()).build())
+    }
+
+    @Test
     fun `should return the queue SqsAsyncClient client`() {
       assertThat(hmppsQueues[0].sqsClient).isEqualTo(sqsClient)
     }
@@ -320,8 +325,60 @@ class HmppsQueueFactoryTest_NoDlq {
   }
 
   @Nested
+  inner class `Create LocalStack FIFO HmppsQueue with FIFO topic subscription` {
+    private val someQueueConfig = QueueConfig(subscribeTopicId = "sometopicid", subscribeFilter = "some topic filter", queueName = "some-queue-name.fifo", queueAccessKeyId = "some access key id", queueSecretAccessKey = "some secret access key")
+    private val someTopicConfig = TopicConfig(arn = "${localstackArnPrefix}some-topic-name.fifo", accessKeyId = "topic access key", secretAccessKey = "topic secret")
+    private val hmppsSqsProperties = HmppsSqsProperties(provider = "localstack", queues = mapOf("somequeueid" to someQueueConfig), topics = mapOf("sometopicid" to someTopicConfig))
+    private val sqsClient = mock<SqsAsyncClient>()
+    private val snsClient = mock<SnsAsyncClient>()
+    private val topics = listOf(HmppsTopic(id = "sometopicid", arn = "some topic arn", snsClient = snsClient))
+    private lateinit var hmppsQueues: List<HmppsQueue>
+
+    @BeforeEach
+    fun `configure mocks and register queues`() {
+      whenever(sqsClient.createQueue(any<CreateQueueRequest>())).thenReturn(
+        CompletableFuture.completedFuture(CreateQueueResponse.builder().build()),
+      )
+      whenever(sqsFactory.localstackSqsAsyncClient(anyString(), anyString(), anyBoolean()))
+        .thenReturn(sqsClient)
+      whenever(sqsClient.getQueueUrl(any<GetQueueUrlRequest>())).thenReturn(
+        CompletableFuture.completedFuture(GetQueueUrlResponse.builder().queueUrl("some queue url").build()),
+      )
+      whenever(sqsClient.getQueueAttributes(any<GetQueueAttributesRequest>()))
+        .thenReturn(
+          CompletableFuture.completedFuture(
+            GetQueueAttributesResponse.builder()
+              .attributes(mutableMapOf(QueueAttributeName.QUEUE_ARN to "queue:arn")).build(),
+          ),
+        )
+
+      hmppsQueues = hmppsQueueFactory.createHmppsQueues(hmppsSqsProperties, topics)
+    }
+
+    @Test
+    fun `should create a FIFO queue`() {
+      verify(sqsClient).createQueue(
+        CreateQueueRequest.builder().queueName("some-queue-name.fifo")
+          .attributes(mapOf(QueueAttributeName.FIFO_QUEUE to "true")).build(),
+      )
+    }
+
+    @Test
+    fun `should subscribe to the topic`() {
+      verify(snsClient).subscribe(
+        check<SubscribeRequest> { subscribeRequest ->
+          assertThat(subscribeRequest.topicArn()).isEqualTo("some topic arn")
+          assertThat(subscribeRequest.protocol()).isEqualTo("sqs")
+          assertThat(subscribeRequest.endpoint()).isEqualTo("queue:arn")
+          assertThat(subscribeRequest.attributes()["FilterPolicy"]).isEqualTo("some topic filter")
+        },
+      )
+    }
+  }
+
+  @Nested
   inner class `Create AWS HmppsQueue with topic subscription` {
-    private val someQueueConfig = QueueConfig(subscribeTopicId = "sometopicid", subscribeFilter = "some topic filter", queueName = "some queue name", queueAccessKeyId = "some access key id", queueSecretAccessKey = "some secret access key")
+    private val someQueueConfig = QueueConfig(queueName = "some queue name", queueAccessKeyId = "some access key id", queueSecretAccessKey = "some secret access key", subscribeTopicId = "sometopicid", subscribeFilter = "some topic filter")
     private val someTopicConfig = TopicConfig(arn = "some topic arn", accessKeyId = "topic access key", secretAccessKey = "topic secret")
     private val hmppsSqsProperties = HmppsSqsProperties(queues = mapOf("somequeueid" to someQueueConfig), topics = mapOf("sometopicid" to someTopicConfig))
     private val sqsClient = mock<SqsAsyncClient>()
