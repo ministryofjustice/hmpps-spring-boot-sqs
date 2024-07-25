@@ -33,7 +33,6 @@ data class HmppsSqsProperties(
     val accessKeyId: String = "",
     val secretAccessKey: String = "",
     val propagateTracing: Boolean = true,
-    val contentBasedDeduplication: Boolean = false,
   ) {
     private val arnRegex = Regex("arn:aws:sns:.*:.*:(.*)$")
 
@@ -55,7 +54,6 @@ data class HmppsSqsProperties(
       topicIdMustBeLowerCase(topicId)
       awsTopicSecretsMustExist(topicId, topicConfig)
       localstackTopicNameMustExist(topicId, topicConfig)
-      checkFifoTopics(topicConfig)
     }
     checkForAwsDuplicateValues()
     checkForLocalStackDuplicateValues()
@@ -109,14 +107,6 @@ data class HmppsSqsProperties(
       if (!useWebToken) {
         if (topicConfig.accessKeyId.isEmpty()) throw InvalidHmppsSqsPropertiesException("topicId $topicId does not have an access key id")
         if (topicConfig.secretAccessKey.isEmpty()) throw InvalidHmppsSqsPropertiesException("topicId $topicId does not have a secret access key")
-      }
-    }
-  }
-
-  private fun checkFifoTopics(topicConfig: TopicConfig) {
-    if (!topicConfig.isFifo()) {
-      if (topicConfig.contentBasedDeduplication) {
-        throw InvalidHmppsSqsPropertiesException("contentBasedDeduplication can only be set on FIFO topics: ${topicConfig.arn}")
       }
     }
   }

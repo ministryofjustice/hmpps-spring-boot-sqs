@@ -79,6 +79,8 @@ added to the project if that is the only queue defined.  If at least one non aud
 Localstack FIFO (first in, first out) queues and topics can be created by adding the `.fifo` suffix to the queueName or arn. 
 [Content Based Deduplication](https://docs.aws.amazon.com/sns/latest/dg/fifo-message-dedup.html) is enabled on Localstack FIFO topics by default and cannot be disabled.
 
+FIFO Queues can only subscribe to FIFO Topics.
+
 FIFO allows you the option to configure message deduplication and guarantees ordering. There are performance tradeoffs.
 [More information on FIFO here](https://docs.aws.amazon.com/sns/latest/dg/sns-fifo-topics.html)
 
@@ -126,7 +128,6 @@ Each topic declared in the `topics` map is defined in the `TopicConfig` property
 | accessKeyId      |         | Only used for `provider=aws`. The AWS access key ID, should be derived from an environment variable of format `HMPPS_SQS_TOPICS_<topicId>_ACCESS_KEY_ID`.                                   | 
 | secretAccessKey  |         | Only used for `provider=aws`. The AWS secret access key, should be derived from an environment variable of format `HMPPS_SQS_TOPICS_<topicId>_SECRET_ACCESS_KEY`.                           |
 | propagateTracing | `true`  | Experimental! Writes distributed tracing headers to messages and propagates them onwards, keeping a link to message consumers in your Application Monitor.                                 |
-| contentBasedDeduplication | `false` | For FIFO queues only. Removes duplicates based on message content |
 
 ### SqsListener
 

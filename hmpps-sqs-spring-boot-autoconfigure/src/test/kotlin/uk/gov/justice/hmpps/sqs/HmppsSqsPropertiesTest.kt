@@ -531,14 +531,6 @@ class HmppsSqsPropertiesTest {
     }
 
     @Test
-    fun `contentBasedDeduplication must not be set on non-FIFO topics`() {
-      assertThatThrownBy {
-        HmppsSqsProperties(provider = "localstack", topics = mapOf("topic-id" to TopicConfig(contentBasedDeduplication = true, arn = "arn:aws:sns:eu-west-2:000000000000:sometopic")))
-      }.isInstanceOf(InvalidHmppsSqsPropertiesException::class.java)
-        .hasMessageContaining("contentBasedDeduplication can only be set on FIFO topics: arn:aws:sns:eu-west-2:000000000000:sometopic")
-    }
-
-    @Test
     fun `FIFO queue cannot be subscribed to non-FIFO topic`() {
       assertThatThrownBy {
         HmppsSqsProperties(provider = "localstack", topics = mapOf("ordinary-topic-id" to TopicConfig(arn = "arn:aws:sns:eu-west-2:000000000000:sometopic")), queues = mapOf("queue-id" to QueueConfig("someQueue.fifo", subscribeTopicId = "ordinary-topic-id")))
