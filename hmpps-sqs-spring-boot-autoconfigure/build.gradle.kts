@@ -9,10 +9,10 @@ plugins {
   id("com.adarshr.test-logger") version "4.0.0"
   id("com.github.ben-manes.versions") version "0.51.0"
   id("se.patrikerdes.use-latest-versions") version "0.2.18"
-  id("io.spring.dependency-management") version "1.1.5"
+  id("io.spring.dependency-management") version "1.1.6"
   id("org.jlleitschuh.gradle.ktlint") version "12.1.1"
-  id("org.owasp.dependencycheck") version "8.4.2"
-  id("org.springframework.boot") version "3.3.1"
+  id("org.owasp.dependencycheck") version "8.4.3"
+  id("org.springframework.boot") version "3.3.2"
 }
 
 dependencyManagement {
@@ -31,16 +31,16 @@ dependencies {
   implementation("io.awspring.cloud:spring-cloud-aws-sns")
   implementation("io.awspring.cloud:spring-cloud-aws-sqs")
   implementation("com.google.code.gson:gson:2.11.0")
-  implementation("com.microsoft.azure:applicationinsights-core:3.5.3")
+  implementation("com.microsoft.azure:applicationinsights-core:3.5.4")
   implementation("io.opentelemetry:opentelemetry-api")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8")
 
-  testImplementation("org.assertj:assertj-core:3.26.0")
-  testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
+  testImplementation("org.assertj:assertj-core:3.26.3")
+  testImplementation("org.junit.jupiter:junit-jupiter:5.10.3")
   testImplementation("org.mockito:mockito-junit-jupiter:5.12.0")
   testImplementation("org.springframework.boot:spring-boot-starter-test")
-  testImplementation("org.mockito.kotlin:mockito-kotlin:5.3.1")
+  testImplementation("org.mockito.kotlin:mockito-kotlin:5.4.0")
   testImplementation("org.mockito:mockito-inline:5.2.0")
   testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")
   testImplementation("org.jetbrains.kotlin:kotlin-reflect")
