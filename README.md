@@ -117,7 +117,7 @@ Each queue declared in the `queues` map is defined in the `QueueConfig` property
 | dlqMaxReceiveCount     | 5       | Only used for `provider=localstack`. Change the number of retries automatically provided by Localstack on DLQs. e.g. It can be useful to change this to 1 when testing DLQ retry functionality.                                                                                                                                            |
 | visibilityTimeout      | 30      | Only used for `provider=localstack`. Sets the maximum amount of time (in seconds) that a message is considered to be in process before it is then acknowledged or made visible again to other listeners.  See https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-visibility-timeout.html for more information. |
 | errorVisibilityTimeout | 0       | Sets the amount of time (in seconds) before a message in error is retried.                                                                                                                                                                                                                                                                 |
-| propagateTracing       | `true`  | Experimental! Reads distributed tracing headers and propagates them onwards, keeping a link to the original published message in your Application Monitor.                                                                                                                                                                                 |
+| propagateTracing       | `true`  | Reads distributed tracing headers and propagates them onwards, keeping a link to the original published message in your Application Monitor e.g. Microsoft Log Analytics.                                                                                                                                                                  |
 
 Each topic declared in the `topics` map is defined in the `TopicConfig` property class
 
@@ -127,7 +127,7 @@ Each topic declared in the `topics` map is defined in the `TopicConfig` property
 | arn              |         | The ARN of the topic as recognised by AWS and LocalStack.                                                                                                                                   |
 | accessKeyId      |         | Only used for `provider=aws`. The AWS access key ID, should be derived from an environment variable of format `HMPPS_SQS_TOPICS_<topicId>_ACCESS_KEY_ID`.                                   | 
 | secretAccessKey  |         | Only used for `provider=aws`. The AWS secret access key, should be derived from an environment variable of format `HMPPS_SQS_TOPICS_<topicId>_SECRET_ACCESS_KEY`.                           |
-| propagateTracing | `true`  | Experimental! Writes distributed tracing headers to messages and propagates them onwards, keeping a link to message consumers in your Application Monitor.                                 |
+| propagateTracing | `true`  | Writes distributed tracing headers to messages and propagates them onwards, keeping a link to message consumers in your Application Monitor e.g. Microsoft Log Analytics.                   |
 
 ### SqsListener
 
@@ -152,6 +152,23 @@ An example is available in the `test-app`'s [listeners](https://github.com/minis
 #### Overriding the SqsMessageListenerContainerFactory
 
 If you don't wish to use the `HmppsQueueContainerFactoryProxy` because you want to configure your listener in a different way then simply create your own `SqsMessageListenerContainerFactory` and reference it on the `@SqsListener` annotation.
+
+### Distributed Tracing of Messages
+
+If `propagateTracing` is set to `true` (the default) then a new [Span](https://opentelemetry.io/docs/concepts/signals/traces/#spans) is created whenever:
+1. A message is published.  The span is named as `PUBLISH <event type>` where `<event type>` is obtained from the `eventType` field in the message attributes.
+If the event type can't be found then it will simply be named `PUBLISH`.  These spans can then be viewed in the `AppDependencies` in Log Analytics.
+2. A message is received.  The span is named as `RECEIVE <event type>` where `<event type>` is obtained from the `eventType` field in the message attributes.
+   If the event type can't be found then it will simply be named `RECEIVE`.  These spans can then be viewed in the `AppRequests` in Log Analytics.
+
+To investigate the results of a published message then obtain the `OperationId` for the message then:
+```
+AppRequests
+| union AppDependencies
+| where OperationId == "<operation id>"
+```
+will show all the messages that were then received and published from that original message.
+Alternatively going to Transaction Search in Log Analytics will then show a graph with that information.
 
 ### AmazonSQS Beans
 

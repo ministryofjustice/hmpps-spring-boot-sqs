@@ -3,6 +3,7 @@ package uk.gov.justice.hmpps.sqs.telemetry
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.awspring.cloud.sqs.MessageHeaderUtils
+import io.awspring.cloud.sqs.listener.SqsHeaders
 import io.awspring.cloud.sqs.listener.interceptor.MessageInterceptor
 import io.opentelemetry.api.GlobalOpenTelemetry
 import io.opentelemetry.api.trace.Span
@@ -12,6 +13,8 @@ import io.opentelemetry.context.Scope
 import io.opentelemetry.context.propagation.TextMapGetter
 import org.slf4j.LoggerFactory
 import org.springframework.messaging.Message
+import software.amazon.awssdk.services.sqs.model.MessageAttributeValue
+import software.amazon.awssdk.services.sqs.model.Message as SqsMessage
 
 /**
  * Intercepts messages before they are passed to the `@SqsListener`.
@@ -23,24 +26,35 @@ import org.springframework.messaging.Message
  */
 class TraceExtractingMessageInterceptor(private val objectMapper: ObjectMapper) : MessageInterceptor<Any> {
   override fun intercept(message: Message<Any>): Message<Any> {
-    val payload = message.payload
-    if (payload !is String) return message
-
-    try {
+    val payload = message.payload as? String
+    // seems to be only true for messages that originated on a topic
+    val span = if (payload?.contains("MessageAttributes") == true) {
       val attributes = objectMapper.readValue(
         objectMapper.readTree(payload).at("/MessageAttributes").traverse(),
         object : TypeReference<MutableMap<String, MessageAttribute>>() {},
       )
-
       val spanName = attributes["eventType"]?.let { "RECEIVE ${it.Value}" } ?: "RECEIVE"
-      val span = attributes.extractTelemetryContext().startSpan(spanName)
+      attributes.extractTelemetryContext().startSpan(spanName)
+    } else {
+      // otherwise we have to grab the attributes from the message
+      // unfortunately these appear to then be not populated for a topic, so have to do both
+      extractAttributes(message)?.let { attributes ->
+        val spanName = attributes["eventType"]?.let { "RECEIVE ${it.stringValue()}" } ?: "RECEIVE"
+        attributes.extractTelemetryContextFromValues().startSpan(spanName)
+      }
+    }
+    return if (span == null) {
+      message
+    } else {
+      message.withHeader("span", span).withHeader("scope", span.makeCurrent())
+    }
+  }
 
-      return message
-        .withHeader("span", span)
-        .withHeader("scope", span.makeCurrent())
-    } catch (e: Exception) {
-      log.error("Not attempting to extract trace context from message: {} with headers: {} due to exception {}", message.payload, message.headers, e.message)
-      return message
+  private fun extractAttributes(message: Message<Any>): MutableMap<String, MessageAttributeValue>? {
+    val headers = message.headers[SqsHeaders.SQS_SOURCE_DATA_HEADER] as? SqsMessage
+    return headers?.messageAttributes() ?: run {
+      log.info("Unable to find header {} message attributes from message: {} with headers: {}", SqsHeaders.SQS_SOURCE_DATA_HEADER, message.payload, message.headers)
+      null
     }
   }
 
@@ -56,6 +70,15 @@ class TraceExtractingMessageInterceptor(private val objectMapper: ObjectMapper) 
 
   private fun <T> Message<T>.withHeader(headerName: String, headerValue: Any) =
     MessageHeaderUtils.addHeaderIfAbsent(this, headerName, headerValue)
+
+  private fun MutableMap<String, MessageAttributeValue>.extractTelemetryContextFromValues(): Context {
+    val getter = object : TextMapGetter<MutableMap<String, MessageAttributeValue>> {
+      override fun keys(carrier: MutableMap<String, MessageAttributeValue>) = carrier.keys
+      override fun get(carrier: MutableMap<String, MessageAttributeValue>?, key: String) =
+        carrier?.get(key)?.stringValue()
+    }
+    return GlobalOpenTelemetry.getPropagators().textMapPropagator.extract(Context.current(), this, getter)
+  }
 
   private fun MutableMap<String, MessageAttribute>.extractTelemetryContext(): Context {
     val getter = object : TextMapGetter<MutableMap<String, MessageAttribute>> {
