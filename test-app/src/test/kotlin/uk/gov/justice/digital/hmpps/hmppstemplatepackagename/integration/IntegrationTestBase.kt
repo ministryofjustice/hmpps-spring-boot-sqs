@@ -46,6 +46,9 @@ abstract class IntegrationTestBase {
     outboundTestSqsClient.purgeQueue(PurgeQueueRequest.builder().queueUrl(outboundTestQueueUrl).build()).get()
     outboundTestNoDlqSqsClient.purgeQueue(PurgeQueueRequest.builder().queueUrl(outboundTestNoDlqQueueUrl).build()).get()
     fifoSqsClient.purgeQueue(PurgeQueueRequest.builder().queueUrl(fifoQueueUrl).build()).get()
+    inboundSqsOnlyClient.purgeQueue(PurgeQueueRequest.builder().queueUrl(inboundSqsOnlyQueueUrl).build()).get()
+    outboundSqsOnlyClient.purgeQueue(PurgeQueueRequest.builder().queueUrl(outboundSqsOnlyQueueUrl).build()).get()
+    outboundSqsOnlyTestSqsClient.purgeQueue(PurgeQueueRequest.builder().queueUrl(outboundSqsOnlyTestQueueUrl).build()).get()
   }
 
   fun HmppsSqsProperties.inboundQueueConfig() =
@@ -71,6 +74,9 @@ abstract class IntegrationTestBase {
   private val outboundTestNoDlqQueue by lazy { hmppsQueueService.findByQueueId("outboundtestnodlqqueue") ?: throw MissingQueueException("HmppsQueue outboundtestnodlqqueue not found") }
   private val auditQueue by lazy { hmppsQueueService.findByQueueId("audit") ?: throw MissingQueueException("HmppsQueue audit not found") }
   private val fifoQueue by lazy { hmppsQueueService.findByQueueId("fifoqueue") ?: throw MissingQueueException("HmppsQueue fifoqueue not found") }
+  private val inboundSqsOnlyQueue by lazy { hmppsQueueService.findByQueueId("inboundsqsonlyqueue") ?: throw MissingQueueException("HmppsQueue inboundsqsonlyqueue not found") }
+  private val outboundSqsOnlyQueue by lazy { hmppsQueueService.findByQueueId("outboundsqsonlyqueue") ?: throw MissingQueueException("HmppsQueue outboundsqsonlyqueue not found") }
+  private val outboundSqsOnlyTestQueue by lazy { hmppsQueueService.findByQueueId("outboundsqsonlytestqueue") ?: throw MissingQueueException("HmppsQueue outboundsqsonlytestqueue not found") }
 
   protected val inboundSqsClient by lazy { inboundQueue.sqsClient }
   protected val inboundSqsDlqClient by lazy { inboundQueue.sqsDlqClient as SqsAsyncClient }
@@ -80,6 +86,9 @@ abstract class IntegrationTestBase {
   protected val outboundTestNoDlqSqsClient by lazy { outboundTestNoDlqQueue.sqsClient }
   protected val auditSqsClient by lazy { auditQueue.sqsClient }
   protected val fifoSqsClient by lazy { fifoQueue.sqsClient }
+  protected val inboundSqsOnlyClient by lazy { inboundSqsOnlyQueue.sqsClient }
+  protected val outboundSqsOnlyClient by lazy { outboundSqsOnlyQueue.sqsClient }
+  protected val outboundSqsOnlyTestSqsClient by lazy { outboundSqsOnlyTestQueue.sqsClient }
 
   @SpyBean
   @Qualifier("outboundqueue-sqs-client")
@@ -97,6 +106,9 @@ abstract class IntegrationTestBase {
   protected val outboundTestNoDlqQueueUrl by lazy { outboundTestNoDlqQueue.queueUrl }
   protected val auditQueueUrl by lazy { auditQueue.queueUrl }
   protected val fifoQueueUrl by lazy { fifoQueue.queueUrl }
+  protected val inboundSqsOnlyQueueUrl by lazy { inboundSqsOnlyQueue.queueUrl }
+  protected val outboundSqsOnlyQueueUrl by lazy { outboundSqsOnlyQueue.queueUrl }
+  protected val outboundSqsOnlyTestQueueUrl by lazy { outboundSqsOnlyTestQueue.queueUrl }
 
   protected val inboundTopicArn by lazy { inboundTopic.arn }
   protected val fifoTopicArn by lazy { fifoTopic.arn }

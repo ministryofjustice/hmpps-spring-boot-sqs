@@ -40,6 +40,19 @@ hmpps.sqs:
       queueName: fifoqueuetestappreactive.fifo
       subscribeTopicId: fifotopic
       dlqName: cpr_court_events_queue_dlq.fifo
+    inboundsqsonlyqueue:
+      dlqName: ${random.uuid}
+      queueName: ${random.uuid}
+      dlqMaxReceiveCount: 1
+      errorVisibilityTimeout: 0
+    outboundsqsonlyqueue:
+      dlqName: ${random.uuid}
+      queueName: ${random.uuid}
+      dlqMaxReceiveCount: 1
+    outboundsqsonlytestqueue:
+      dlqName: ${random.uuid}
+      queueName: ${random.uuid}
+      dlqMaxReceiveCount: 1
   topics:
     inboundtopic:
       arn: arn:aws:sns:eu-west-2:000000000000:${random.uuid}

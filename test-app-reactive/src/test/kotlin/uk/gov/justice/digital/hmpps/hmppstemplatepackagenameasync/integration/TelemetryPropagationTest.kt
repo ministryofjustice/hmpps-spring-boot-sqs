@@ -1,5 +1,9 @@
 package uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.integration
 
+import ch.qos.logback.classic.Level
+import ch.qos.logback.classic.Logger
+import ch.qos.logback.classic.spi.ILoggingEvent
+import ch.qos.logback.core.read.ListAppender
 import io.opentelemetry.api.trace.Span
 import io.opentelemetry.context.Context
 import io.opentelemetry.sdk.testing.junit5.OpenTelemetryExtension
@@ -10,12 +14,16 @@ import org.awaitility.kotlin.matches
 import org.awaitility.kotlin.untilCallTo
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
-import software.amazon.awssdk.services.sns.model.MessageAttributeValue
+import org.slf4j.LoggerFactory
 import software.amazon.awssdk.services.sns.model.PublishRequest
+import software.amazon.awssdk.services.sqs.model.MessageAttributeValue
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest
+import software.amazon.awssdk.services.sqs.model.SendMessageRequest
 import uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.service.HmppsEvent
 import uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.service.Message
 import uk.gov.justice.hmpps.sqs.countMessagesOnQueue
+import uk.gov.justice.hmpps.sqs.telemetry.TraceExtractingMessageInterceptor
+import software.amazon.awssdk.services.sns.model.MessageAttributeValue as SnsMessageAttributeValue
 
 class TelemetryPropagationTest : IntegrationTestBase() {
   companion object {
@@ -24,7 +32,7 @@ class TelemetryPropagationTest : IntegrationTestBase() {
   }
 
   @Test
-  fun `telemetry information is propagated between publishers and listeners`() = runTest {
+  fun `telemetry information is propagated between publishers and listeners for topics`() = runTest {
     // Given a span
     val span = withSpan {
       // When I publish an OFFENDER_MOVEMENT-RECEPTION message
@@ -33,7 +41,7 @@ class TelemetryPropagationTest : IntegrationTestBase() {
         PublishRequest.builder()
           .topicArn(inboundTopicArn)
           .message(gsonString(event))
-          .messageAttributes(mapOf("eventType" to MessageAttributeValue.builder().dataType("String").stringValue(event.type).build()))
+          .messageAttributes(mapOf("eventType" to SnsMessageAttributeValue.builder().dataType("String").stringValue(event.type).build()))
           .build(),
       )
     }
@@ -56,9 +64,87 @@ class TelemetryPropagationTest : IntegrationTestBase() {
     )
   }
 
+  @Test
+  fun `event is processed normally (without telemetry) when an exception is thrown during the telemetry processing`() = runTest {
+    val logAppender = findLogAppender(TraceExtractingMessageInterceptor::class.java)
+
+    withSpan {
+      // having MessageAttributes in the payload will mean that the interceptor will try and parse the message
+      // thinking it originated from a topic rather than a queue and thus will throw an exception
+      val event = HmppsEvent("event-id", "OFFENDER_MOVEMENT-RECEPTION", "some MessageAttributes contents")
+      inboundSqsOnlyClient.sendMessage(
+        SendMessageRequest.builder()
+          .queueUrl(inboundSqsOnlyQueueUrl)
+          .messageBody(gsonString(event))
+          .messageAttributes(
+            mapOf(
+              "eventType" to MessageAttributeValue.builder().dataType("String").stringValue(event.type).build(),
+            ),
+          )
+          .build(),
+      )
+    }
+
+    // message is processed as normal though, resulting in an offender.movement.reception message being published
+    await untilCallTo { outboundSqsOnlyTestSqsClient.countMessagesOnQueue(outboundSqsOnlyTestQueueUrl).get() } matches { it == 1 }
+
+    // we can then check to ensure that the interceptor did indeed throw the exception but carried on regardless
+    assertThat(logAppender.list).anyMatch { it.message.contains("Not attempting to extract trace context") && it.level == Level.ERROR }
+  }
+
+  @Test
+  fun `telemetry information is propagated between publishers and listeners for queues`() = runTest {
+    // Given a span
+    val span = withSpan {
+      // When I publish an OFFENDER_MOVEMENT-RECEPTION message
+      val event = HmppsEvent("event-id", "OFFENDER_MOVEMENT-RECEPTION", "some event contents")
+      inboundSqsOnlyClient.sendMessage(
+        SendMessageRequest.builder()
+          .queueUrl(inboundSqsOnlyQueueUrl)
+          .messageBody(gsonString(event))
+          .messageAttributes(
+            mapOf(
+              "eventType" to MessageAttributeValue.builder().dataType("String").stringValue(event.type).build(),
+            ),
+          )
+          .build(),
+      )
+    }
+
+    // And the OFFENDER_MOVEMENT-RECEPTION message is consumed, resulting in an offender.movement.reception message being published
+    await untilCallTo {
+      outboundSqsOnlyTestSqsClient.countMessagesOnQueue(outboundSqsOnlyTestQueueUrl).get()
+    } matches { it == 1 }
+
+    // Then the trace headers have been passed all the way through
+    val messages = outboundSqsOnlyTestSqsClient.receiveMessage(
+      ReceiveMessageRequest.builder().queueUrl(outboundSqsOnlyTestQueueUrl).messageAttributeNames("All").build(),
+    ).get().messages()
+    val message = messages[0]
+    assertThat(message.messageAttributes()["traceparent"]?.stringValue()).matches("00-${span.spanContext.traceId}-[0-9a-f]{16}-01")
+
+    // And PUBLISH and RECEIVE spans are exported
+    assertThat(openTelemetryExtension.spans.map { it.name }).containsAll(
+      setOf(
+        "PUBLISH OFFENDER_MOVEMENT-RECEPTION",
+        "RECEIVE OFFENDER_MOVEMENT-RECEPTION",
+        "PUBLISH offender.movement.reception",
+        "RECEIVE offender.movement.reception",
+      ),
+    )
+  }
+
   private fun withSpan(block: () -> Unit): Span {
     val span = openTelemetryExtension.openTelemetry.getTracer("hmpps-sqs").spanBuilder("test-span").startSpan()
     Context.current().with(span).makeCurrent().use { block() }
     return span.also { it.end() }
+  }
+
+  fun <T> findLogAppender(javaClass: Class<in T>): ListAppender<ILoggingEvent> {
+    val logger = LoggerFactory.getLogger(javaClass) as Logger
+    val listAppender = ListAppender<ILoggingEvent>()
+    listAppender.start()
+    logger.addAppender(listAppender)
+    return listAppender
   }
 }
