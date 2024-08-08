@@ -1,5 +1,9 @@
 package uk.gov.justice.digital.hmpps.hmppstemplatepackagename.integration
 
+import ch.qos.logback.classic.Level
+import ch.qos.logback.classic.Logger
+import ch.qos.logback.classic.spi.ILoggingEvent
+import ch.qos.logback.core.read.ListAppender
 import io.opentelemetry.api.trace.Span
 import io.opentelemetry.context.Context
 import io.opentelemetry.sdk.testing.junit5.OpenTelemetryExtension
@@ -10,12 +14,14 @@ import org.awaitility.kotlin.matches
 import org.awaitility.kotlin.untilCallTo
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
+import org.slf4j.LoggerFactory
 import software.amazon.awssdk.services.sns.model.PublishRequest
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest
 import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.service.HmppsEvent
 import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.service.Message
 import uk.gov.justice.hmpps.sqs.countMessagesOnQueue
+import uk.gov.justice.hmpps.sqs.telemetry.TraceExtractingMessageInterceptor
 import software.amazon.awssdk.services.sns.model.MessageAttributeValue as SnsMessageAttributeValue
 import software.amazon.awssdk.services.sqs.model.MessageAttributeValue as SqsMessageAttributeValue
 
@@ -107,9 +113,45 @@ class TelemetryPropagationTest : IntegrationTestBase() {
     )
   }
 
+  @Test
+  fun `event is processed normally (without telemetry) when an exception is thrown during the telemetry processing`() = runTest {
+    val logAppender = findLogAppender(TraceExtractingMessageInterceptor::class.java)
+
+    withSpan {
+      // having MessageAttributes in the payload will mean that the interceptor will try and parse the message
+      // thinking it originated from a topic rather than a queue and thus will throw an exception
+      val event = HmppsEvent("event-id", "OFFENDER_MOVEMENT-RECEPTION", "some MessageAttributes contents")
+      inboundSqsOnlyClient.sendMessage(
+        SendMessageRequest.builder()
+          .queueUrl(inboundSqsOnlyQueueUrl)
+          .messageBody(gsonString(event))
+          .messageAttributes(
+            mapOf(
+              "eventType" to SqsMessageAttributeValue.builder().dataType("String").stringValue(event.type).build(),
+            ),
+          )
+          .build(),
+      )
+    }
+
+    // message is processed as normal though, resulting in an offender.movement.reception message being published
+    await untilCallTo { outboundSqsOnlyTestSqsClient.countMessagesOnQueue(outboundSqsOnlyTestQueueUrl).get() } matches { it == 1 }
+
+    // we can then check to ensure that the interceptor did indeed throw the exception but carried on regardless
+    assertThat(logAppender.list).anyMatch { it.message.contains("Not attempting to extract trace context") && it.level == Level.ERROR }
+  }
+
   private fun withSpan(block: () -> Unit): Span {
     val span = openTelemetryExtension.openTelemetry.getTracer("hmpps-sqs").spanBuilder("test-span").startSpan()
     Context.current().with(span).makeCurrent().use { block() }
     return span.also { it.end() }
+  }
+
+  fun <T> findLogAppender(javaClass: Class<in T>): ListAppender<ILoggingEvent> {
+    val logger = LoggerFactory.getLogger(javaClass) as Logger
+    val listAppender = ListAppender<ILoggingEvent>()
+    listAppender.start()
+    logger.addAppender(listAppender)
+    return listAppender
   }
 }

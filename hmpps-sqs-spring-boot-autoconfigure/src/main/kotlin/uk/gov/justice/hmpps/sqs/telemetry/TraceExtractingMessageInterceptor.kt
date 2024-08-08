@@ -23,31 +23,40 @@ import software.amazon.awssdk.services.sqs.model.Message as SqsMessage
  *  1. attempt to extract the trace context from the message attributes,
  *  2. start a new OpenTelemetry span with the name "RECEIVE $eventType",
  *  3. end the span once the message has finished processing.
+ *
+ * Note that we have to wrap the whole processing in a try catch block since exceptions thrown from a MessageInterceptor
+ * cause the message to be lost and not go on the dead letter queue.
  */
 class TraceExtractingMessageInterceptor(private val objectMapper: ObjectMapper) : MessageInterceptor<Any> {
-  override fun intercept(message: Message<Any>): Message<Any> {
-    val payload = message.payload as? String
+  override fun intercept(message: Message<Any>): Message<Any> = try {
     // seems to be only true for messages that originated on a topic
+    val payload = message.payload as? String
     val span = if (payload?.contains("MessageAttributes") == true) {
-      val attributes = objectMapper.readValue(
-        objectMapper.readTree(payload).at("/MessageAttributes").traverse(),
-        object : TypeReference<MutableMap<String, MessageAttribute>>() {},
-      )
-      val spanName = attributes["eventType"]?.let { "RECEIVE ${it.Value}" } ?: "RECEIVE"
-      attributes.extractTelemetryContext().startSpan(spanName)
+      startSpanFromAttributesInPayload(payload)
     } else {
       // otherwise we have to grab the attributes from the message
       // unfortunately these appear to then be not populated for a topic, so have to do both
-      extractAttributes(message)?.let { attributes ->
-        val spanName = attributes["eventType"]?.let { "RECEIVE ${it.stringValue()}" } ?: "RECEIVE"
-        attributes.extractTelemetryContextFromValues().startSpan(spanName)
-      }
+      startSpanFromAttributesInHeader(message)
     }
-    return if (span == null) {
-      message
-    } else {
-      message.withHeader("span", span).withHeader("scope", span.makeCurrent())
+    span?. let { message.withHeader("span", span).withHeader("scope", span.makeCurrent()) } ?: message
+  } catch (e: Exception) {
+    log.error("Not attempting to extract trace context from message: {} with headers: {} due to exception", message.payload, message.headers, e)
+    message
+  }
+
+  private fun startSpanFromAttributesInHeader(message: Message<Any>): Span? =
+    extractAttributes(message)?.let { attributes ->
+      val spanName = attributes["eventType"]?.let { "RECEIVE ${it.stringValue()}" } ?: "RECEIVE"
+      attributes.extractTelemetryContextFromValues().startSpan(spanName)
     }
+
+  private fun startSpanFromAttributesInPayload(payload: String?): Span {
+    val attributes = objectMapper.readValue(
+      objectMapper.readTree(payload).at("/MessageAttributes").traverse(),
+      object : TypeReference<MutableMap<String, MessageAttribute>>() {},
+    )
+    val spanName = attributes["eventType"]?.let { "RECEIVE ${it.Value}" } ?: "RECEIVE"
+    return attributes.extractTelemetryContext().startSpan(spanName)
   }
 
   private fun extractAttributes(message: Message<Any>): MutableMap<String, MessageAttributeValue>? {
