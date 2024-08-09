@@ -1,11 +1,15 @@
 package uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.integration
 
+import io.opentelemetry.sdk.testing.junit5.OpenTelemetryExtension
 import kotlinx.coroutines.test.runTest
 import org.assertj.core.api.Assertions.assertThat
 import org.awaitility.kotlin.await
 import org.awaitility.kotlin.matches
 import org.awaitility.kotlin.untilCallTo
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.RegisterExtension
+import software.amazon.awssdk.services.sns.model.MessageAttributeValue
+import software.amazon.awssdk.services.sns.model.PublishRequest
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest
 import uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.service.EventType
@@ -17,6 +21,10 @@ import uk.gov.justice.hmpps.sqs.countMessagesOnQueue
 import java.time.Instant
 
 class HmppsAuditTest : IntegrationTestBase() {
+  companion object {
+    @RegisterExtension
+    val openTelemetryExtension: OpenTelemetryExtension = OpenTelemetryExtension.create()
+  }
 
   @Test
   fun `event is audited and calls service with domain object`() = runTest {
@@ -52,5 +60,28 @@ class HmppsAuditTest : IntegrationTestBase() {
     assertThat(receivedEvent.what).isEqualTo("important event")
     assertThat(receivedEvent.service).isEqualTo("hmpps-template-kotlin")
     assertThat(receivedEvent.`when`).isBetween(startTime, Instant.now())
+  }
+
+  @Test
+  fun `event is audited and open telemetry spans set to include the what`() = runTest {
+    val event = HmppsEvent("audit-id", "OFFENDER_AUDIT-OBJECT", "some event contents")
+    inboundSnsClient.publish(
+      PublishRequest.builder().topicArn(inboundTopicArn).message(gsonString(event)).messageAttributes(
+        mapOf("eventType" to MessageAttributeValue.builder().dataType("String").stringValue("OFFENDER_AUDIT-OBJECT").build()),
+      ).build(),
+    )
+
+    await untilCallTo { outboundTestSqsClient.countMessagesOnQueue(outboundTestQueueUrl).get() } matches { it == 1 }
+    await untilCallTo { auditSqsClient.countMessagesOnQueue(auditQueueUrl).get() } matches { it == 1 }
+
+    // And PUBLISH and RECEIVE spans are exported
+    assertThat(openTelemetryExtension.spans.map { it.name }).containsAll(
+      setOf(
+        "PUBLISH OFFENDER_AUDIT-OBJECT",
+        "RECEIVE OFFENDER_AUDIT-OBJECT",
+        "PUBLISH offender.audit.object",
+        "PUBLISH hmpps-audit-event",
+      ),
+    )
   }
 }

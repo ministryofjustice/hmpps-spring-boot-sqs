@@ -49,6 +49,7 @@ abstract class IntegrationTestBase {
     inboundSqsOnlyClient.purgeQueue(PurgeQueueRequest.builder().queueUrl(inboundSqsOnlyQueueUrl).build()).get()
     outboundSqsOnlyClient.purgeQueue(PurgeQueueRequest.builder().queueUrl(outboundSqsOnlyQueueUrl).build()).get()
     outboundSqsOnlyTestSqsClient.purgeQueue(PurgeQueueRequest.builder().queueUrl(outboundSqsOnlyTestQueueUrl).build()).get()
+    auditSqsClient.purgeQueue(PurgeQueueRequest.builder().queueUrl(auditQueueUrl).build()).get()
   }
 
   fun HmppsSqsProperties.inboundQueueConfig() =

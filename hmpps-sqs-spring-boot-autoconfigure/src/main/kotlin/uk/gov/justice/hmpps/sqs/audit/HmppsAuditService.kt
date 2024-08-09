@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import kotlinx.coroutines.future.await
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import software.amazon.awssdk.services.sqs.model.MessageAttributeValue
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest
 import software.amazon.awssdk.services.sqs.model.SendMessageResponse
 import uk.gov.justice.hmpps.sqs.AUDIT_ID
@@ -35,6 +36,9 @@ open class HmppsAuditService(
       SendMessageRequest.builder()
         .queueUrl(auditQueueUrl)
         .messageBody(objectMapper.writeValueAsString(hmppsAuditEvent))
+        .messageAttributes(
+          mapOf("eventType" to MessageAttributeValue.builder().dataType("String").stringValue("hmpps-audit-event").build()),
+        )
         .build(),
     ).await().also {
       log.debug("Published audit event with message id {}", it.messageId())
