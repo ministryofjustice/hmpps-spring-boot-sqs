@@ -4,10 +4,10 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
-import software.amazon.awssdk.services.sns.model.MessageAttributeValue
 import software.amazon.awssdk.services.sns.model.PublishRequest
 import uk.gov.justice.hmpps.sqs.HmppsQueueService
 import uk.gov.justice.hmpps.sqs.MissingTopicException
+import uk.gov.justice.hmpps.sqs.eventTypeMessageAttributes
 
 @Service
 class OutboundEventsEmitter(hmppsQueueService: HmppsQueueService, private val objectMapper: ObjectMapper) {
@@ -30,9 +30,7 @@ class OutboundEventsEmitter(hmppsQueueService: HmppsQueueService, private val ob
       PublishRequest.builder()
         .topicArn(outboundTopic.arn)
         .message(objectMapper.writeValueAsString(hmppsEvent))
-        .messageAttributes(
-          mapOf("eventType" to MessageAttributeValue.builder().dataType("String").stringValue(hmppsEvent.type).build()),
-        )
+        .eventTypeMessageAttributes(hmppsEvent.type)
         .build()
         .also { log.info("Published event $hmppsEvent to outbound topic") },
     )
