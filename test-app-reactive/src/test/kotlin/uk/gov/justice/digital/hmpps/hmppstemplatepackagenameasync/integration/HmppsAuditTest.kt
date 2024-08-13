@@ -8,7 +8,6 @@ import org.awaitility.kotlin.matches
 import org.awaitility.kotlin.untilCallTo
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
-import software.amazon.awssdk.services.sns.model.MessageAttributeValue
 import software.amazon.awssdk.services.sns.model.PublishRequest
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest
@@ -18,6 +17,7 @@ import uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.service.Messag
 import uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.service.MessageAttributes
 import uk.gov.justice.hmpps.sqs.audit.HmppsAuditEvent
 import uk.gov.justice.hmpps.sqs.countMessagesOnQueue
+import uk.gov.justice.hmpps.sqs.eventTypeMessageAttributes
 import java.time.Instant
 
 class HmppsAuditTest : IntegrationTestBase() {
@@ -66,9 +66,7 @@ class HmppsAuditTest : IntegrationTestBase() {
   fun `event is audited and open telemetry spans set to include the what`() = runTest {
     val event = HmppsEvent("audit-id", "OFFENDER_AUDIT-OBJECT", "some event contents")
     inboundSnsClient.publish(
-      PublishRequest.builder().topicArn(inboundTopicArn).message(gsonString(event)).messageAttributes(
-        mapOf("eventType" to MessageAttributeValue.builder().dataType("String").stringValue("OFFENDER_AUDIT-OBJECT").build()),
-      ).build(),
+      PublishRequest.builder().topicArn(inboundTopicArn).message(gsonString(event)).eventTypeMessageAttributes("OFFENDER_AUDIT-OBJECT").build(),
     )
 
     await untilCallTo { outboundTestSqsClient.countMessagesOnQueue(outboundTestQueueUrl).get() } matches { it == 1 }

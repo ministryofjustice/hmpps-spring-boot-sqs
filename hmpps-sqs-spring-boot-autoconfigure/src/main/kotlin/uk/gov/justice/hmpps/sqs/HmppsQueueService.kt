@@ -9,14 +9,18 @@ import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.future.await
 import org.slf4j.LoggerFactory
+import software.amazon.awssdk.services.sns.model.PublishRequest
 import software.amazon.awssdk.services.sqs.SqsAsyncClient
 import software.amazon.awssdk.services.sqs.model.GetQueueAttributesRequest
 import software.amazon.awssdk.services.sqs.model.QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES
 import software.amazon.awssdk.services.sqs.model.QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES_NOT_VISIBLE
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest
+import software.amazon.awssdk.services.sqs.model.SendMessageRequest
 import software.amazon.awssdk.services.sqs.model.StartMessageMoveTaskRequest
 import java.util.concurrent.CompletableFuture
 import kotlin.math.min
+import software.amazon.awssdk.services.sns.model.MessageAttributeValue as SnsMessageAttributeValue
+import software.amazon.awssdk.services.sqs.model.MessageAttributeValue as SqsMessageAttributeValue
 import software.amazon.awssdk.services.sqs.model.PurgeQueueRequest as AwsPurgeQueueRequest
 
 class MissingQueueException(message: String) : RuntimeException(message)
@@ -170,3 +174,9 @@ fun SqsAsyncClient.countAllMessagesOnQueue(queueUrl: String): CompletableFuture<
       (it.attributes()[APPROXIMATE_NUMBER_OF_MESSAGES]?.toInt() ?: 0) +
         (it.attributes()[APPROXIMATE_NUMBER_OF_MESSAGES_NOT_VISIBLE]?.toInt() ?: 0)
     }
+
+fun PublishRequest.Builder.eventTypeMessageAttributes(eventType: String): PublishRequest.Builder =
+  messageAttributes(mapOf("eventType" to SnsMessageAttributeValue.builder().dataType("String").stringValue(eventType).build()))
+
+fun SendMessageRequest.Builder.eventTypeMessageAttributes(eventType: String): SendMessageRequest.Builder =
+  messageAttributes(mapOf("eventType" to SqsMessageAttributeValue.builder().dataType("String").stringValue(eventType).build()))

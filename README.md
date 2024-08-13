@@ -161,7 +161,10 @@ If the event type can't be found then it will simply be named `PUBLISH`.  These 
 2. A message is received.  The span is named as `RECEIVE <event type>` where `<event type>` is obtained from the `eventType` field in the message attributes.
    If the event type can't be found then it will simply be named `RECEIVE`.  These spans can then be viewed in the `AppRequests` in Log Analytics.
 
-To investigate the results of a published message then obtain the `OperationId` for the message then:
+There are `eventTypeMessageAttributes` builder extension functions in the library for publishing (sns) and sending (sqs) messages.
+These make it easier to add in an `eventType` message attribute to the map of message attributes.
+
+To investigate the results of a published message obtain the `OperationId` for the message, then:
 ```
 AppRequests
 | union AppDependencies
