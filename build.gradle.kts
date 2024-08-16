@@ -1,6 +1,6 @@
 plugins {
   id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
-  kotlin("jvm") version "2.0.0" apply false
+  kotlin("jvm") version "2.0.10" apply false
 }
 
 /*
@@ -11,7 +11,7 @@ plugins {
 
 allprojects {
   group = "uk.gov.justice.service.hmpps"
-  version = "4.3.0"
+  version = "4.3.1"
   repositories {
     mavenCentral()
   }
