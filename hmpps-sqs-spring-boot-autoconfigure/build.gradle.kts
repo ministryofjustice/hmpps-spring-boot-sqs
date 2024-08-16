@@ -2,8 +2,8 @@ import com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-  kotlin("jvm") version "2.0.0"
-  kotlin("plugin.spring") version "2.0.0"
+  kotlin("jvm") version "2.0.10"
+  kotlin("plugin.spring") version "2.0.10"
   id("maven-publish")
   id("signing")
   id("com.adarshr.test-logger") version "4.0.0"
@@ -37,7 +37,7 @@ dependencies {
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8")
 
   testImplementation("org.assertj:assertj-core:3.26.3")
-  testImplementation("org.junit.jupiter:junit-jupiter:5.10.3")
+  testImplementation("org.junit.jupiter:junit-jupiter:5.11.0")
   testImplementation("org.mockito:mockito-junit-jupiter:5.12.0")
   testImplementation("org.springframework.boot:spring-boot-starter-test")
   testImplementation("org.mockito.kotlin:mockito-kotlin:5.4.0")
