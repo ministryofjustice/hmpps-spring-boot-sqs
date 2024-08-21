@@ -2,6 +2,8 @@
 generic-service:
   nameOverride: hmpps-template-kotlin
 
+  serviceAccountName: hmpps-template-kotlin
+
   replicaCount: 4
 
   image:
@@ -32,28 +34,16 @@ generic-service:
     hmpps-template-kotlin:
       APPINSIGHTS_INSTRUMENTATIONKEY: "APPINSIGHTS_INSTRUMENTATIONKEY"
     inbound-queue-sqs-instance-output:
-      HMPPS_SQS_QUEUES_INBOUNDQUEUE_ACCESS_KEY_ID: "access_key_id"
-      HMPPS_SQS_QUEUES_INBOUNDQUEUE_SECRET_ACCESS_KEY: "secret_access_key"
       HMPPS_SQS_QUEUES_INBOUNDQUEUE_QUEUE_NAME: "inboundqueue"
     inbound-queue-sqs-dl-instance-output:
-      HMPPS_SQS_QUEUES_INBOUNDQUEUE_DLQ_ACCESS_KEY_ID: "dlq_access_key_id"
-      HMPPS_SQS_QUEUES_INBOUNDQUEUE_DLQ_SECRET_ACCESS_KEY: "dlq_secret_access_key"
       HMPPS_SQS_QUEUES_INBOUNDQUEUE_DLQ_NAME: "mainDlq"
     outbound-queue-sqs-instance-output:
-      HMPPS_SQS_QUEUES_OUTBOUNDQUEUE_ACCESS_KEY_ID: "another_access_key_id"
-      HMPPS_SQS_QUEUES_OUTBOUNDQUEUE_SECRET_ACCESS_KEY: "another_secret_access_key"
       HMPPS_SQS_QUEUES_OUTBOUNDQUEUE_QUEUE_NAME: "outboundqueue"
     outbound-queue-sqs-dl-instance-output:
-      HMPPS_SQS_QUEUES_OUTBOUNDQUEUE_DLQ_ACCESS_KEY_ID: "dlq_another_access_key_id"
-      HMPPS_SQS_QUEUES_OUTBOUNDQUEUE_DLQ_SECRET_ACCESS_KEY: "dlq_another_secret_access_key"
       HMPPS_SQS_QUEUES_OUTBOUNDQUEUE_DLQ_NAME: "anotherDlq"
     inbound-topic:
-      HMPPS_SQS_TOPICS_INBOUNDTOPIC_ACCESS_KEY_ID: "access_key_id"
-      HMPPS_SQS_TOPICS_INBOUNDTOPIC_SECRET_ACCESS_KEY: "secret_access_key"
       HMPPS_SQS_TOPICS_INBOUNDTOPIC_TOPIC_ARN: "topic_arn"
     outbound-topic:
-      HMPPS_SQS_TOPICS_OUTBOUNDTOPIC_ACCESS_KEY_ID: "hmpps_access_key_id"
-      HMPPS_SQS_TOPICS_OUTBOUNDTOPIC_SECRET_ACCESS_KEY: "hmpps_secret_access_key"
       HMPPS_SQS_TOPICS_OUTBOUNDTOPIC_TOPIC_ARN: "hmpps_topic_arn"
 
   allowlist:
