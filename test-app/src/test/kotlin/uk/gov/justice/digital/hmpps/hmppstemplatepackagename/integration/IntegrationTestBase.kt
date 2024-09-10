@@ -71,6 +71,7 @@ abstract class IntegrationTestBase {
   private val outboundQueue by lazy { hmppsQueueService.findByQueueId("outboundqueue") ?: throw MissingQueueException("HmppsQueue outboundqueue not found") }
   private val outboundTestQueue by lazy { hmppsQueueService.findByQueueId("outboundtestqueue") ?: throw MissingQueueException("HmppsQueue outboundtestqueue not found") }
   private val inboundTopic by lazy { hmppsQueueService.findByTopicId("inboundtopic") ?: throw MissingQueueException("HmppsTopic inboundtopic not found") }
+  protected val outboundTopic by lazy { hmppsQueueService.findByTopicId("outboundtopic") ?: throw MissingQueueException("HmppsTopic outboundtopic not found") }
   private val fifoTopic by lazy { hmppsQueueService.findByTopicId("fifotopic") ?: throw MissingQueueException("HmppsTopic fifotopic not found") }
   private val outboundTestNoDlqQueue by lazy { hmppsQueueService.findByQueueId("outboundtestnodlqqueue") ?: throw MissingQueueException("HmppsQueue outboundtestnodlqqueue not found") }
   private val auditQueue by lazy { hmppsQueueService.findByQueueId("audit") ?: throw MissingQueueException("HmppsQueue audit not found") }
