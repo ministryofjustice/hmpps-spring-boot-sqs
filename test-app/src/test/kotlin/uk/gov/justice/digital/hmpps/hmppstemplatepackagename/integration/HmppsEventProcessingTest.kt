@@ -21,6 +21,7 @@ import org.springframework.boot.test.mock.mockito.SpyBean
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Import
 import org.springframework.retry.backoff.NoBackOffPolicy
+import org.springframework.retry.policy.NeverRetryPolicy
 import org.springframework.retry.policy.SimpleRetryPolicy
 import software.amazon.awssdk.services.sns.SnsAsyncClient
 import software.amazon.awssdk.services.sns.model.MessageAttributeValue
@@ -181,6 +182,24 @@ class HmppsEventProcessingTest : IntegrationTestBase() {
       assertThat(duration).isLessThan(5.seconds)
 
       await untilCallTo { outboundTestSqsClient.countMessagesOnQueue(outboundTestQueueUrl).get() } matches { it == 1 }
+    }
+
+    @Test
+    fun `can choose a never retry policy`() {
+      doReturn(CompletableFuture.failedFuture<PublishResponse>(RuntimeException("some error")))
+        .doCallRealMethod()
+        .`when`(outboundSnsClientSpy).publish(any<PublishRequest>())
+
+      val exception = assertThrows<ExecutionException> {
+        outboundTopic.publish(
+          eventType = "offender.movement.reception",
+          event = gsonString(HmppsEvent("event-id", "offender.movement.reception", "some event contents")),
+          retryPolicy = NeverRetryPolicy(),
+        )
+      }
+
+      assertThat(exception.cause).isInstanceOf(RuntimeException::class.java)
+      verify(outboundSnsClientSpy, times(1)).publish(any<PublishRequest>())
     }
 
     @Test

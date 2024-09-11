@@ -17,7 +17,7 @@ class HmppsTopic(
   val snsClient: SnsAsyncClient,
 )
 
-val DEFAULT_RETRY_POLICY: RetryPolicy = SimpleRetryPolicy()
+val DEFAULT_RETRY_POLICY: RetryPolicy = SimpleRetryPolicy().apply { maxAttempts = 4 }
 val DEFAULT_BACKOFF_POLICY: BackOffPolicy = ExponentialBackOffPolicy().apply { initialInterval = 1000L }
 private val log = LoggerFactory.getLogger(HmppsTopic::class.java)
 
@@ -46,8 +46,6 @@ fun HmppsTopic.publish(
   }
   val publishRequest = PublishRequest.builder().topicArn(arn).message(event).messageAttributes(attributes).build()
   return runCatching {
-    snsClient.publish(publishRequest).get()
-  }.recoverCatching {
     retryTemplate.execute<PublishResponse, Exception> { snsClient.publish(publishRequest).get() }
   }.onFailure {
     log.error("""Unable to publish {} with body "{}"""", eventType, event)
