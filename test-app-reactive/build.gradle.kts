@@ -1,5 +1,5 @@
 plugins {
-  id("uk.gov.justice.hmpps.gradle-spring-boot") version "6.0.4"
+  id("uk.gov.justice.hmpps.gradle-spring-boot") version "6.0.5"
   kotlin("plugin.spring") version "2.0.20"
 }
 
@@ -24,7 +24,7 @@ dependencies {
 
   testImplementation("org.assertj:assertj-core:3.26.3")
   testImplementation("org.junit.jupiter:junit-jupiter:5.11.0")
-  testImplementation("org.mockito:mockito-junit-jupiter:5.12.0")
+  testImplementation("org.mockito:mockito-junit-jupiter:5.13.0")
   testImplementation("org.mockito.kotlin:mockito-kotlin:5.4.0")
   testImplementation("org.mockito:mockito-inline:5.2.0")
   testImplementation("org.awaitility:awaitility-kotlin:4.2.2")
@@ -32,7 +32,7 @@ dependencies {
   testImplementation("io.jsonwebtoken:jjwt-jackson:0.12.6")
   testImplementation("org.wiremock:wiremock-standalone:3.9.1")
   testImplementation("org.testcontainers:localstack:1.20.1")
-  testImplementation("com.amazonaws:aws-java-sdk-core:1.12.770") // needed so that Localstack has access to the AWS SDK V1 API
+  testImplementation("com.amazonaws:aws-java-sdk-core:1.12.772") // needed so that Localstack has access to the AWS SDK V1 API
   testImplementation("com.google.code.gson:gson:2.11.0")
   testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test")
   testImplementation("io.opentelemetry:opentelemetry-extension-trace-propagators")
