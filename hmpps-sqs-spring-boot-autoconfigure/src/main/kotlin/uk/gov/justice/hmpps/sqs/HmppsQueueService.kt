@@ -176,7 +176,27 @@ fun SqsAsyncClient.countAllMessagesOnQueue(queueUrl: String): CompletableFuture<
     }
 
 fun PublishRequest.Builder.eventTypeMessageAttributes(eventType: String): PublishRequest.Builder =
-  messageAttributes(mapOf("eventType" to SnsMessageAttributeValue.builder().dataType("String").stringValue(eventType).build()))
+  messageAttributes(mapOf(eventTypeSnsPair(eventType)))
+fun PublishRequest.Builder.eventTypeMessageAttributesNoTracing(eventType: String): PublishRequest.Builder =
+  messageAttributes(
+    mapOf(
+      eventTypeSnsPair(eventType),
+      "noTracing" to SnsMessageAttributeValue.builder().dataType("String").stringValue("true").build(),
+    ),
+  )
+
+private fun eventTypeSnsPair(eventType: String) =
+  "eventType" to SnsMessageAttributeValue.builder().dataType("String").stringValue(eventType).build()
 
 fun SendMessageRequest.Builder.eventTypeMessageAttributes(eventType: String): SendMessageRequest.Builder =
-  messageAttributes(mapOf("eventType" to SqsMessageAttributeValue.builder().dataType("String").stringValue(eventType).build()))
+  messageAttributes(mapOf(eventTypeSqsPair(eventType)))
+fun SendMessageRequest.Builder.eventTypeMessageAttributesNoTracing(eventType: String): SendMessageRequest.Builder =
+  messageAttributes(
+    mapOf(
+      eventTypeSqsPair(eventType),
+      "noTracing" to SqsMessageAttributeValue.builder().dataType("String").stringValue("true").build(),
+    ),
+  )
+
+private fun eventTypeSqsPair(eventType: String) =
+  "eventType" to SqsMessageAttributeValue.builder().dataType("String").stringValue(eventType).build()

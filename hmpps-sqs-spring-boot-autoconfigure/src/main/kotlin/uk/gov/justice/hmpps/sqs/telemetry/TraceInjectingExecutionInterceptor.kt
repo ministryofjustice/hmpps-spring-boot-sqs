@@ -63,6 +63,8 @@ class TraceInjectingExecutionInterceptor : ExecutionInterceptor {
     }
 
   private fun MutableMap<String, SnsMessageAttributeValue>.withSnsTelemetryContext() = toMutableMap().also {
+    if (it["noTracing"]?.stringValue()?.equals("true") == true) return it
+
     val context = SpanContext.current().with(Span.current())
     GlobalOpenTelemetry.getPropagators().textMapPropagator.inject(context, it) { carrier, key, value ->
       carrier!![key] = SnsMessageAttributeValue.builder().dataType("String").stringValue(value).build()
@@ -70,6 +72,8 @@ class TraceInjectingExecutionInterceptor : ExecutionInterceptor {
   }
 
   private fun MutableMap<String, SqsMessageAttributeValue>.withSqsTelemetryContext() = toMutableMap().also {
+    if (it["noTracing"]?.stringValue()?.equals("true") == true) return it
+
     val context = SpanContext.current().with(Span.current())
     GlobalOpenTelemetry.getPropagators().textMapPropagator.inject(context, it) { carrier, key, value ->
       carrier!![key] = SqsMessageAttributeValue.builder().dataType("String").stringValue(value).build()
