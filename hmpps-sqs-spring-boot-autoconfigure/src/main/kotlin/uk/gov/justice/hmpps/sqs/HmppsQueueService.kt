@@ -175,28 +175,16 @@ fun SqsAsyncClient.countAllMessagesOnQueue(queueUrl: String): CompletableFuture<
         (it.attributes()[APPROXIMATE_NUMBER_OF_MESSAGES_NOT_VISIBLE]?.toInt() ?: 0)
     }
 
-fun PublishRequest.Builder.eventTypeMessageAttributes(eventType: String): PublishRequest.Builder =
-  messageAttributes(mapOf(eventTypeSnsPair(eventType)))
-fun PublishRequest.Builder.eventTypeMessageAttributesNoTracing(eventType: String): PublishRequest.Builder =
-  messageAttributes(
-    mapOf(
-      eventTypeSnsPair(eventType),
-      "noTracing" to SnsMessageAttributeValue.builder().dataType("String").stringValue("true").build(),
-    ),
-  )
+fun PublishRequest.Builder.eventTypeMessageAttributes(eventType: String, noTracing: Boolean = false): PublishRequest.Builder =
+  messageAttributes(eventTypeSnsMap(eventType, noTracing))
 
-private fun eventTypeSnsPair(eventType: String) =
-  "eventType" to SnsMessageAttributeValue.builder().dataType("String").stringValue(eventType).build()
+fun eventTypeSnsMap(eventType: String, noTracing: Boolean = false) =
+  mapOf("eventType" to SnsMessageAttributeValue.builder().dataType("String").stringValue(eventType).build()) +
+    if (noTracing) mapOf("noTracing" to SnsMessageAttributeValue.builder().dataType("String").stringValue("true").build()) else emptyMap()
 
-fun SendMessageRequest.Builder.eventTypeMessageAttributes(eventType: String): SendMessageRequest.Builder =
-  messageAttributes(mapOf(eventTypeSqsPair(eventType)))
-fun SendMessageRequest.Builder.eventTypeMessageAttributesNoTracing(eventType: String): SendMessageRequest.Builder =
-  messageAttributes(
-    mapOf(
-      eventTypeSqsPair(eventType),
-      "noTracing" to SqsMessageAttributeValue.builder().dataType("String").stringValue("true").build(),
-    ),
-  )
+fun SendMessageRequest.Builder.eventTypeMessageAttributes(eventType: String, noTracing: Boolean = false): SendMessageRequest.Builder =
+  messageAttributes(eventTypeSqsMap(eventType, noTracing))
 
-private fun eventTypeSqsPair(eventType: String) =
-  "eventType" to SqsMessageAttributeValue.builder().dataType("String").stringValue(eventType).build()
+fun eventTypeSqsMap(eventType: String, noTracing: Boolean = false) =
+  mapOf("eventType" to SqsMessageAttributeValue.builder().dataType("String").stringValue(eventType).build()) +
+    if (noTracing) mapOf("noTracing" to SqsMessageAttributeValue.builder().dataType("String").stringValue("true").build()) else emptyMap()

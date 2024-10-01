@@ -21,7 +21,7 @@ import software.amazon.awssdk.services.sqs.model.SendMessageRequest
 import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.service.HmppsEvent
 import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.service.Message
 import uk.gov.justice.hmpps.sqs.countMessagesOnQueue
-import uk.gov.justice.hmpps.sqs.eventTypeMessageAttributesNoTracing
+import uk.gov.justice.hmpps.sqs.eventTypeMessageAttributes
 import uk.gov.justice.hmpps.sqs.telemetry.TraceExtractingMessageInterceptor
 import software.amazon.awssdk.services.sns.model.MessageAttributeValue as SnsMessageAttributeValue
 import software.amazon.awssdk.services.sqs.model.MessageAttributeValue as SqsMessageAttributeValue
@@ -83,7 +83,7 @@ class TelemetryPropagationTest : IntegrationTestBase() {
         PublishRequest.builder()
           .topicArn(inboundTopicArn)
           .message(gsonString(event))
-          .eventTypeMessageAttributesNoTracing(event.type)
+          .eventTypeMessageAttributes(event.type, noTracing = true)
           .build(),
       )
     }
@@ -162,7 +162,7 @@ class TelemetryPropagationTest : IntegrationTestBase() {
         SendMessageRequest.builder()
           .queueUrl(inboundSqsOnlyQueueUrl)
           .messageBody(gsonString(event))
-          .eventTypeMessageAttributesNoTracing(event.type)
+          .eventTypeMessageAttributes(event.type, noTracing = true)
           .build(),
       )
     }
