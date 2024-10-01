@@ -22,6 +22,7 @@ import software.amazon.awssdk.services.sqs.model.SendMessageRequest
 import uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.service.HmppsEvent
 import uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.service.Message
 import uk.gov.justice.hmpps.sqs.countMessagesOnQueue
+import uk.gov.justice.hmpps.sqs.eventTypeMessageAttributesNoTracing
 import uk.gov.justice.hmpps.sqs.telemetry.TraceExtractingMessageInterceptor
 import software.amazon.awssdk.services.sns.model.MessageAttributeValue as SnsMessageAttributeValue
 
@@ -51,7 +52,43 @@ class TelemetryPropagationTest : IntegrationTestBase() {
 
     // Then the trace headers have been passed all the way through
     val message = objectMapper.readValue(outboundTestSqsClient.receiveMessage(ReceiveMessageRequest.builder().queueUrl(outboundTestQueueUrl).build()).get().messages()[0].body(), Message::class.java)
+
+    assertThat(message.MessageAttributes["traceparent"]?.Value).contains(span.spanContext.traceId)
     assertThat(message.MessageAttributes["traceparent"]?.Value).matches("00-${span.spanContext.traceId}-[0-9a-f]{16}-01")
+
+    // And PUBLISH and RECEIVE spans are exported
+    assertThat(openTelemetryExtension.spans.map { it.name }).containsAll(
+      setOf(
+        "PUBLISH OFFENDER_MOVEMENT-RECEPTION",
+        "RECEIVE OFFENDER_MOVEMENT-RECEPTION",
+        "PUBLISH offender.movement.reception",
+        "RECEIVE offender.movement.reception",
+      ),
+    )
+  }
+
+  @Test
+  fun `telemetry information is not propagated between publishers and listeners for topics if noTracing set`() = runTest {
+    // Given a span
+    val span = withSpan {
+      // When I publish an OFFENDER_MOVEMENT-RECEPTION message
+      val event = HmppsEvent("event-id", "OFFENDER_MOVEMENT-RECEPTION", "some event contents")
+      inboundSnsClient.publish(
+        PublishRequest.builder()
+          .topicArn(inboundTopicArn)
+          .message(gsonString(event))
+          .eventTypeMessageAttributesNoTracing(event.type)
+          .build(),
+      )
+    }
+
+    // And the OFFENDER_MOVEMENT-RECEPTION message is consumed, resulting in an offender.movement.reception message being published
+    await untilCallTo { outboundTestSqsClient.countMessagesOnQueue(outboundTestQueueUrl).get() } matches { it == 1 }
+
+    // Then the trace headers have been passed all the way through
+    val message = objectMapper.readValue(outboundTestSqsClient.receiveMessage(ReceiveMessageRequest.builder().queueUrl(outboundTestQueueUrl).build()).get().messages()[0].body(), Message::class.java)
+
+    assertThat(message.MessageAttributes["traceparent"]?.Value).doesNotContain(span.spanContext.traceId)
 
     // And PUBLISH and RECEIVE spans are exported
     assertThat(openTelemetryExtension.spans.map { it.name }).containsAll(
@@ -121,7 +158,46 @@ class TelemetryPropagationTest : IntegrationTestBase() {
       ReceiveMessageRequest.builder().queueUrl(outboundSqsOnlyTestQueueUrl).messageAttributeNames("All").build(),
     ).get().messages()
     val message = messages[0]
+    assertThat(message.messageAttributes()["traceparent"]?.stringValue()).contains(span.spanContext.traceId)
     assertThat(message.messageAttributes()["traceparent"]?.stringValue()).matches("00-${span.spanContext.traceId}-[0-9a-f]{16}-01")
+
+    // And PUBLISH and RECEIVE spans are exported
+    assertThat(openTelemetryExtension.spans.map { it.name }).containsAll(
+      setOf(
+        "PUBLISH OFFENDER_MOVEMENT-RECEPTION",
+        "RECEIVE OFFENDER_MOVEMENT-RECEPTION",
+        "PUBLISH offender.movement.reception",
+        "RECEIVE offender.movement.reception",
+      ),
+    )
+  }
+
+  @Test
+  fun `telemetry information is not propagated between publishers and listeners for queues if noTracing set`() = runTest {
+    // Given a span
+    val span = withSpan {
+      // When I publish an OFFENDER_MOVEMENT-RECEPTION message
+      val event = HmppsEvent("event-id", "OFFENDER_MOVEMENT-RECEPTION", "some event contents")
+      inboundSqsOnlyClient.sendMessage(
+        SendMessageRequest.builder()
+          .queueUrl(inboundSqsOnlyQueueUrl)
+          .messageBody(gsonString(event))
+          .eventTypeMessageAttributesNoTracing(event.type)
+          .build(),
+      )
+    }
+
+    // And the OFFENDER_MOVEMENT-RECEPTION message is consumed, resulting in an offender.movement.reception message being published
+    await untilCallTo {
+      outboundSqsOnlyTestSqsClient.countMessagesOnQueue(outboundSqsOnlyTestQueueUrl).get()
+    } matches { it == 1 }
+
+    // Then the trace headers have been passed all the way through
+    val messages = outboundSqsOnlyTestSqsClient.receiveMessage(
+      ReceiveMessageRequest.builder().queueUrl(outboundSqsOnlyTestQueueUrl).messageAttributeNames("All").build(),
+    ).get().messages()
+    val message = messages[0]
+    assertThat(message.messageAttributes()["traceparent"]?.stringValue()).doesNotContain(span.spanContext.traceId)
 
     // And PUBLISH and RECEIVE spans are exported
     assertThat(openTelemetryExtension.spans.map { it.name }).containsAll(
