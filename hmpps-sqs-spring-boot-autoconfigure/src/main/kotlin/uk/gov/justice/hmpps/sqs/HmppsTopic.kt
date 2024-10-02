@@ -73,14 +73,14 @@ private val log = LoggerFactory.getLogger(HmppsTopic::class.java)
  *         event = event.body,
  *         attributes = mapOf(
  *           "fruit" to MessageAttributeValue.builder().dataType("String").stringValue("banana").build(),
- *           "eventType" to MessageAttributeValue.builder().dataType("String").stringValue(event.eventType).build(),
  *         ),
  *        )
  * ```
  *
  * @param eventType The type of the event, which clients listen to, e.g., prisoner.movement.added.
  * @param event The event data in JSON format as a string.
- * @param attributes A map of additional message attributes. By default, the eventType is added as an attribute, so only supply this if you need additional attributes, in which case you would also need to supply the eventType manually.
+ * @oaram noTracing Whether to prevent distributed tracing of this message.  This adds noTracing as a message attribute.
+ * @param attributes A map of additional message attributes. eventType is always added as a message attribute, so only supply this if you need additional attributes.
  * @param retryPolicy The policy for retrying the publish request in case of failure. By default, this will retry 3 times after an error.
  * @param backOffPolicy The policy for backing off between retries. By default, this will be an exponential policy starting at 1 second with a multiplier of 2
  * @return A response from the publish request containing details such as the message ID.
@@ -88,9 +88,8 @@ private val log = LoggerFactory.getLogger(HmppsTopic::class.java)
 fun HmppsTopic.publish(
   eventType: String,
   event: String,
-  attributes: Map<String, MessageAttributeValue> = mapOf(
-    "eventType" to MessageAttributeValue.builder().dataType("String").stringValue(eventType).build(),
-  ),
+  noTracing: Boolean = false,
+  attributes: Map<String, MessageAttributeValue> = emptyMap(),
   retryPolicy: RetryPolicy = DEFAULT_RETRY_POLICY,
   backOffPolicy: BackOffPolicy = DEFAULT_BACKOFF_POLICY,
 ): PublishResponse {
@@ -98,7 +97,9 @@ fun HmppsTopic.publish(
     setRetryPolicy(retryPolicy)
     setBackOffPolicy(backOffPolicy)
   }
-  val publishRequest = PublishRequest.builder().topicArn(arn).message(event).messageAttributes(attributes).build()
+  val publishRequest = PublishRequest.builder().topicArn(arn).message(event).messageAttributes(
+    eventTypeSnsMap(eventType, noTracing) + attributes,
+  ).build()
   return runCatching {
     retryTemplate.execute<PublishResponse, Exception> { snsClient.publish(publishRequest).get() }
   }.onFailure {
