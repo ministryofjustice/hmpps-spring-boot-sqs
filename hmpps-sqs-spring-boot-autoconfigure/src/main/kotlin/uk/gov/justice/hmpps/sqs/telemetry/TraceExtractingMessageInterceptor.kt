@@ -31,14 +31,11 @@ class TraceExtractingMessageInterceptor(private val objectMapper: ObjectMapper) 
   override fun intercept(message: Message<Any>): Message<Any> = try {
     // seems to be only true for messages that originated on a topic
     val payload = message.payload as? String
-    val span = if (payload?.contains("MessageAttributes") == true) {
-      startSpanFromAttributesInPayload(payload)
-    } else {
+    val span = (if (payload?.contains("MessageAttributes") == true) startSpanFromAttributesInPayload(payload) else null)
       // otherwise we have to grab the attributes from the message
       // unfortunately these appear to then be not populated for a topic, so have to do both
-      startSpanFromAttributesInHeader(message)
-    }
-    span?. let { message.withHeader("span", span).withHeader("scope", span.makeCurrent()) } ?: message
+      ?: startSpanFromAttributesInHeader(message)
+    span?.let { message.withHeader("span", span).withHeader("scope", span.makeCurrent()) } ?: message
   } catch (e: Exception) {
     log.error("Not attempting to extract trace context from message: {} with headers: {} due to exception", message.payload, message.headers, e)
     message
@@ -50,13 +47,13 @@ class TraceExtractingMessageInterceptor(private val objectMapper: ObjectMapper) 
       attributes.extractTelemetryContextFromValues().startSpan(spanName)
     }
 
-  private fun startSpanFromAttributesInPayload(payload: String?): Span {
+  private fun startSpanFromAttributesInPayload(payload: String?): Span? {
     val attributes = objectMapper.readValue(
       objectMapper.readTree(payload).at("/MessageAttributes").traverse(),
       object : TypeReference<MutableMap<String, MessageAttribute>>() {},
     )
-    val spanName = attributes["eventType"]?.let { "RECEIVE ${it.Value}" } ?: "RECEIVE"
-    return attributes.extractTelemetryContext().startSpan(spanName)
+    val spanName = attributes?.get("eventType")?.let { "RECEIVE ${it.Value}" } ?: "RECEIVE"
+    return attributes?.extractTelemetryContext()?.startSpan(spanName)
   }
 
   private fun extractAttributes(message: Message<Any>): MutableMap<String, MessageAttributeValue>? {
