@@ -17,7 +17,7 @@ class SqsOnlyOutboundEventsEmitter(hmppsQueueService: HmppsQueueService, private
 
   private val outboundQueue = hmppsQueueService.findByQueueId("outboundsqsonlyqueue") ?: throw MissingQueueException("Could not find queue outboundsqsonlyqueue")
 
-  suspend fun sendEvent(hmppsEvent: HmppsEvent) {
+  fun sendEvent(hmppsEvent: HmppsEvent) {
     when (hmppsEvent.type) {
       "offender.movement.reception", "offender.audit.object", "offender.audit.parameter", "test.type",
       -> publishToOutboundQueue(hmppsEvent)
@@ -25,7 +25,7 @@ class SqsOnlyOutboundEventsEmitter(hmppsQueueService: HmppsQueueService, private
     }
   }
 
-  private suspend fun publishToOutboundQueue(hmppsEvent: HmppsEvent) {
+  private fun publishToOutboundQueue(hmppsEvent: HmppsEvent) {
     outboundQueue.sqsClient.sendMessage(
       SendMessageRequest.builder()
         .queueUrl(outboundQueue.queueUrl)
@@ -33,6 +33,6 @@ class SqsOnlyOutboundEventsEmitter(hmppsQueueService: HmppsQueueService, private
         .eventTypeMessageAttributes(hmppsEvent.type)
         .build()
         .also { log.info("Published event $hmppsEvent to outbound queue") },
-    )
+    ).get()
   }
 }

@@ -48,7 +48,7 @@ class TelemetryPropagationTest : IntegrationTestBase() {
             ),
           )
           .build(),
-      )
+      ).get()
     }
 
     // And the OFFENDER_MOVEMENT-RECEPTION message is consumed, resulting in an offender.movement.reception message being published

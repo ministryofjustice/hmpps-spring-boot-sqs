@@ -17,7 +17,7 @@ class OutboundEventsEmitter(hmppsQueueService: HmppsQueueService, private val ob
 
   private val outboundTopic = hmppsQueueService.findByTopicId("outboundtopic") ?: throw MissingTopicException("Could not find topic outboundtopic")
 
-  suspend fun sendEvent(hmppsEvent: HmppsEvent) {
+  fun sendEvent(hmppsEvent: HmppsEvent) {
     when (hmppsEvent.type) {
       "offender.movement.reception", "offender.audit.object", "offender.audit.parameter", "test.type",
       -> publishToOutboundTopic(hmppsEvent)
@@ -25,7 +25,7 @@ class OutboundEventsEmitter(hmppsQueueService: HmppsQueueService, private val ob
     }
   }
 
-  private suspend fun publishToOutboundTopic(hmppsEvent: HmppsEvent) {
+  fun publishToOutboundTopic(hmppsEvent: HmppsEvent) {
     outboundTopic.snsClient.publish(
       PublishRequest.builder()
         .topicArn(outboundTopic.arn)
@@ -33,6 +33,6 @@ class OutboundEventsEmitter(hmppsQueueService: HmppsQueueService, private val ob
         .eventTypeMessageAttributes(hmppsEvent.type)
         .build()
         .also { log.info("Published event $hmppsEvent to outbound topic") },
-    )
+    ).get()
   }
 }

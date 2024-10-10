@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppstemplatepackagename.service
 
+import kotlinx.coroutines.runBlocking
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -15,7 +16,7 @@ class InboundMessageService(
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
-  suspend fun handleMessage(hmppsEvent: HmppsEvent) {
+  fun handleMessage(hmppsEvent: HmppsEvent) {
     log.info("received event: {}", hmppsEvent)
     val outboundEventType = when (hmppsEvent.type) {
       "OFFENDER_MOVEMENT-RECEPTION" -> "offender.movement.reception"
@@ -25,16 +26,20 @@ class InboundMessageService(
       else -> hmppsEvent.type
     }
     if (outboundEventType == "offender.audit.object") {
-      hmppsAuditService.publishEvent(
-        HmppsAuditEvent(
-          what = "important event",
-          who = "me",
-          service = "my-special-test-app",
-        ),
-      )
+      runBlocking {
+        hmppsAuditService.publishEvent(
+          HmppsAuditEvent(
+            what = "important event",
+            who = "me",
+            service = "my-special-test-app",
+          ),
+        )
+      }
     }
     if (outboundEventType == "offender.audit.parameter") {
-      hmppsAuditService.publishEvent(what = "important event", who = "me")
+      runBlocking {
+        hmppsAuditService.publishEvent(what = "important event", who = "me")
+      }
     }
     outboundEventsEmitter.sendEvent(HmppsEvent(hmppsEvent.id, outboundEventType, hmppsEvent.contents))
   }
