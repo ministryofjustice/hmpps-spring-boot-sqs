@@ -5,6 +5,7 @@ import ch.qos.logback.classic.Logger
 import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.core.read.ListAppender
 import io.opentelemetry.api.trace.Span
+import io.opentelemetry.api.trace.StatusCode
 import io.opentelemetry.context.Context
 import io.opentelemetry.sdk.testing.junit5.OpenTelemetryExtension
 import kotlinx.coroutines.test.runTest
@@ -14,6 +15,9 @@ import org.awaitility.kotlin.matches
 import org.awaitility.kotlin.untilCallTo
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
+import org.mockito.kotlin.any
+import org.mockito.kotlin.doThrow
+import org.mockito.kotlin.whenever
 import org.slf4j.LoggerFactory
 import software.amazon.awssdk.services.sns.model.PublishRequest
 import software.amazon.awssdk.services.sqs.model.MessageAttributeValue
@@ -208,6 +212,43 @@ class TelemetryPropagationTest : IntegrationTestBase() {
         "RECEIVE offender.movement.reception",
       ),
     )
+  }
+
+  @Test
+  fun `span is recorded as failed if exception occurs during processing`() = runTest {
+    doThrow(RuntimeException("failed to process")).whenever(outboundEventsEmitterSpy).sendEvent(any())
+
+    // Given a span
+    withSpan {
+      // When I publish an OFFENDER_MOVEMENT-RECEPTION message
+      val event = HmppsEvent("event-id", "OFFENDER_MOVEMENT-RECEPTION", "some event contents")
+      inboundSnsClient.publish(
+        PublishRequest.builder()
+          .topicArn(inboundTopicArn)
+          .message(gsonString(event))
+          .messageAttributes(
+            mapOf(
+              "eventType" to SnsMessageAttributeValue.builder().dataType("String").stringValue(event.type).build(),
+            ),
+          )
+          .build(),
+      ).get()
+    }
+
+    // And the OFFENDER_MOVEMENT-RECEPTION message is consumed, resulting in an offender.movement.reception message being published
+    await untilCallTo { inboundSqsDlqClient.countMessagesOnQueue(inboundDlqUrl).get() } matches { it == 1 }
+
+    // And PUBLISH and RECEIVE spans are exported
+    assertThat(openTelemetryExtension.spans.map { it.name }).containsExactlyInAnyOrder(
+      "PUBLISH OFFENDER_MOVEMENT-RECEPTION",
+      "test-span",
+      "RECEIVE OFFENDER_MOVEMENT-RECEPTION",
+    )
+    val spanner = openTelemetryExtension.spans.find { it.name == "RECEIVE OFFENDER_MOVEMENT-RECEPTION" }
+    // span is recorded as a failure
+    assertThat(spanner?.status?.statusCode).isEqualTo(StatusCode.ERROR)
+    // and exception stored as well
+    assertThat(spanner?.events?.map { it.name }).containsExactly("exception")
   }
 
   private fun withSpan(block: () -> Unit): Span {

@@ -5,14 +5,44 @@ hmpps.sqs:
       queueName: inbound-queue
       dlqName: inbound-dlq
       subscribeTopicId: inboundtopic
-      subscribeFilter: '{"eventType":[ "OFFENDER_MOVEMENT-RECEPTION", "OFFENDER_MOVEMENT-DISCHARGE"] }'
+      subscribeFilter: '{"eventType":[ "OFFENDER_MOVEMENT-RECEPTION", "OFFENDER_MOVEMENT-DISCHARGE", "OFFENDER_AUDIT-OBJECT", "test.type"] }'
     outboundqueue:
       queueName: outbound-queue
       dlqName: outbound-dlq
       subscribeTopicId: outboundtopic
+      subscribeFilter: '{"eventType":[ "offender.movement.reception", "test.type"] }'
+    outboundtestqueue:
+      dlqName: outbound-test-dlq
+      queueName: outbound-test-queue
+      subscribeTopicId: outboundtopic
+      subscribeFilter: '{"eventType":[ "offender.movement.reception", "offender.audit.object", "offender.audit.parameter", "test.type"] }'
+    missingfilterqueue:
+      dlqName: missing-filter-dlq
+      queueName: missing-filter-queue
+      subscribeTopicId: outboundtopic
+    outboundtestnodlqqueue:
+      queueName: outbound-test-no-queue
+      subscribeTopicId: outboundtopic
       subscribeFilter: '{"eventType":[ "offender.movement.reception"] }'
+    audit:
+      queueName: audit-queue
+    fifoqueue:
+      queueName: fifoqueuetestapp.fifo
+      subscribeTopicId: fifotopic
+      dlqName: fifoqueuetestapp_dlq.fifo
+    inboundsqsonlyqueue:
+      dlqName: inbound-sqs-only-dlq
+      queueName: inbound-sqs-only-queue
+    outboundsqsonlyqueue:
+      dlqName:  outbound-sqs-only-dlq
+      queueName:  outbound-sqs-only-queue
+    outboundsqsonlytestqueue:
+      dlqName: outbound-sqs-only-test-dlq
+      queueName: outbound-sqs-only-test-queue
   topics:
     inboundtopic:
       arn: arn:aws:sns:eu-west-2:000000000000:inbound-topic
     outboundtopic:
-      arn: arn:aws:sns:eu-west-2:000000000000:outbond-topic
+      arn: arn:aws:sns:eu-west-2:000000000000:outbound-topic
+    fifotopic:
+      arn: arn:aws:sns:eu-west-2:000000000000:fifotopictestapp.fifo

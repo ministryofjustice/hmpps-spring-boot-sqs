@@ -8,12 +8,14 @@ import io.awspring.cloud.sqs.listener.interceptor.MessageInterceptor
 import io.opentelemetry.api.GlobalOpenTelemetry
 import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.SpanKind
+import io.opentelemetry.api.trace.StatusCode
 import io.opentelemetry.context.Context
 import io.opentelemetry.context.Scope
 import io.opentelemetry.context.propagation.TextMapGetter
 import org.slf4j.LoggerFactory
 import org.springframework.messaging.Message
 import software.amazon.awssdk.services.sqs.model.MessageAttributeValue
+import java.util.concurrent.CompletionException
 import software.amazon.awssdk.services.sqs.model.Message as SqsMessage
 
 /**
@@ -65,7 +67,16 @@ class TraceExtractingMessageInterceptor(private val objectMapper: ObjectMapper) 
   }
 
   override fun afterProcessing(message: Message<Any>, t: Throwable?) {
-    (message.headers["span"] as Span?)?.end()
+    (message.headers["span"] as Span?)?.run {
+      if (t != null) {
+        // by grabbing the cause and recording the exception here we can then use app insights to filter out
+        // java.util.concurrent.CompletionException exception messages separately.  This stops the exception being
+        // logged twice.  It is more important to record this one as it will contain the OperationId and OperationName.
+        this.recordException(if (t is CompletionException) t.cause else t)
+        this.setStatus(StatusCode.ERROR)
+      }
+      this.end()
+    }
     (message.headers["scope"] as Scope?)?.close()
   }
 

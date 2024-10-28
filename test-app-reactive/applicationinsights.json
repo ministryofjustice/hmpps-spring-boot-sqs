@@ -13,20 +13,41 @@
   "selfDiagnostics": {
     "destination": "console"
   },
-  "preview": {
-    "sampling": {
-      "overrides": [
-        {
-          "attributes": [
-            {
-              "key": "http.url",
-              "value": "https?://[^/]+/health.*",
-              "matchType": "regexp"
-            }
-          ],
-          "percentage": 10
-        }
-      ]
-    }
+  "sampling": {
+    "overrides": [
+      {
+        "telemetryType": "exception",
+        "attributes": [
+          {
+            "key": "exception.type",
+            "value": "java.util.concurrent.CompletionException",
+            "matchType": "strict"
+          }
+        ],
+        "percentage": 10
+      },
+      {
+        "telemetryType": "request",
+        "attributes": [
+          {
+            "key": "url.path",
+            "value": "/health.*",
+            "matchType": "regexp"
+          }
+        ],
+        "percentage": 10
+      },
+      {
+        "telemetryType": "request",
+        "attributes": [
+          {
+            "key": "url.path",
+            "value": "/info",
+            "matchType": "strict"
+          }
+        ],
+        "percentage": 10
+      }
+    ]
   }
 }
