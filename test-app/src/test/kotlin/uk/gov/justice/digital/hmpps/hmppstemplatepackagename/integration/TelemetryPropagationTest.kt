@@ -259,6 +259,46 @@ class TelemetryPropagationTest : IntegrationTestBase() {
     assertThat(spanner?.events?.map { it.name }).containsExactly("exception")
   }
 
+  @Test
+  fun `span is recorded as succeeded with no exception present if processing terminates normally`() = runTest {
+    // Given a span
+    val span = withSpan {
+      // When I publish an OFFENDER_MOVEMENT-RECEPTION message
+      val event = HmppsEvent("event-id", "OFFENDER_MOVEMENT-RECEPTION", "some event contents")
+      inboundSqsOnlyClient.sendMessage(
+        SendMessageRequest.builder()
+          .queueUrl(inboundSqsOnlyQueueUrl)
+          .messageBody(gsonString(event))
+          .messageAttributes(
+            mapOf(
+              "eventType" to software.amazon.awssdk.services.sqs.model.MessageAttributeValue.builder().dataType("String").stringValue(event.type).build(),
+            ),
+          )
+          .build(),
+      )
+    }
+
+    // And the OFFENDER_MOVEMENT-RECEPTION message is consumed, resulting in an offender.movement.reception message being published
+    await untilCallTo {
+      outboundSqsOnlyTestSqsClient.countMessagesOnQueue(outboundSqsOnlyTestQueueUrl).get()
+    } matches { it == 1 }
+
+    // And PUBLISH and RECEIVE spans are exported
+    assertThat(TelemetryPropagationTest.openTelemetryExtension.spans.map { it.name }).containsAll(
+      setOf(
+        "PUBLISH OFFENDER_MOVEMENT-RECEPTION",
+        "RECEIVE OFFENDER_MOVEMENT-RECEPTION",
+        "PUBLISH offender.movement.reception",
+        "RECEIVE offender.movement.reception",
+      ),
+    )
+    val receive = TelemetryPropagationTest.openTelemetryExtension.spans.filter { it.name.startsWith("RECEIVE") }
+    // span status is always unset
+    assertThat(receive.map { it.status.statusCode }).containsOnly(StatusCode.UNSET)
+    // and exceptions are not stored
+    assertThat(receive.flatMap { it.events }).isEmpty()
+  }
+
   private fun withSpan(block: () -> Unit): Span {
     val span = openTelemetryExtension.openTelemetry.getTracer("hmpps-sqs").spanBuilder("test-span").startSpan()
     Context.current().with(span).makeCurrent().use { block() }
