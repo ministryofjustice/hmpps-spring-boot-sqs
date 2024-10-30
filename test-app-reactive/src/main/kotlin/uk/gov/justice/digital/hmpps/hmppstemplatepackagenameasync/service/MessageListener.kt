@@ -13,11 +13,12 @@ import java.util.concurrent.CompletableFuture
 class InboundMessageListener(private val inboundMessageService: InboundMessageService, private val objectMapper: ObjectMapper) {
 
   @SqsListener("inboundqueue", factory = "hmppsQueueContainerFactoryProxy")
-  fun processMessage(message: Message): CompletableFuture<Void> {
+  fun processMessage(message: Message): CompletableFuture<Void?> {
     val event = objectMapper.readValue(message.Message, HmppsEvent::class.java)
     return CoroutineScope(Context.current().asContextElement()).future {
       inboundMessageService.handleMessage(event)
-    }.thenAccept {}
+      null
+    }
   }
 }
 

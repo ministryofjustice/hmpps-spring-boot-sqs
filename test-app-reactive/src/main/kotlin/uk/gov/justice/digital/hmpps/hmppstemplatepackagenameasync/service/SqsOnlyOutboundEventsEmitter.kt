@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.service
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import kotlinx.coroutines.future.await
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -33,8 +34,7 @@ class SqsOnlyOutboundEventsEmitter(hmppsQueueService: HmppsQueueService, private
         .messageAttributes(
           mapOf("eventType" to MessageAttributeValue.builder().dataType("String").stringValue(hmppsEvent.type).build()),
         )
-        .build()
-        .also { log.info("Published event $hmppsEvent to outbound queue") },
-    )
+        .build(),
+    ).await().also { log.info("Published event $hmppsEvent to outbound queue") }
   }
 }
