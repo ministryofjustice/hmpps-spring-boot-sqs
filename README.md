@@ -2,10 +2,6 @@
 
 A Spring Boot starter library providing utilities for using Amazon Simple Queue Service (SQS) and Simple Notification Service (SNS). The library is very opinionated towards usage within HMPPS, e.g. we assume that each queue has its own secrets rather than sharing access between queues.
 
-This plugin targets Spring Boot 3.  See the `spring-boot-2` branch for the Spring Boot 2 version.
-
-As of release 3.0 it also requires at least Java 21.
-
 ## Overview
 
 We have many services that use AWS SQS queues and topics with various patterns for managing queues that have evolved over time. These patterns have been duplicated widely and thus are subject to the usual problems associated with a lack of DRY such as code drift and the proliferation of boilerplate code.
@@ -28,16 +24,8 @@ Find the latest published version of the library by searching on Maven Central f
 
 Add the following dependency to your Gradle build script:
 
-*Kotlin*
-
 ``` kotlin
 implementation("uk.gov.justice.service.hmpps:hmpps-sqs-spring-boot-starter:<library-version>")
-```
-
-*Groovy*
-
-``` groovy
-implementation 'uk.gov.justice.service.hmpps:hmpps-sqs-spring-boot-starter:<library-version>'
 ```
 
 Then create some properties defining the queue(s) in the application. See [HMPPS Queue Properties](#hmpps-queue-properties) for information on the properties, and check the [test-app](https://github.com/ministryofjustice/hmpps-spring-boot-sqs/tree/main/test-app) for an example.

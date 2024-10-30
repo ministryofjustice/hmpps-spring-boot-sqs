@@ -13,11 +13,12 @@ import java.util.concurrent.CompletableFuture
 class SqsOnlyInboundMessageListener(private val inboundMessageService: SqsOnlyInboundMessageService, private val objectMapper: ObjectMapper) {
 
   @SqsListener("inboundsqsonlyqueue", factory = "hmppsQueueContainerFactoryProxy")
-  fun processMessage(message: String): CompletableFuture<Void> {
+  fun processMessage(message: String): CompletableFuture<Void?> {
     val event = objectMapper.readValue(message, HmppsEvent::class.java)
     return CoroutineScope(Context.current().asContextElement()).future {
       inboundMessageService.handleMessage(event)
-    }.thenAccept {}
+      null
+    }
   }
 }
 
@@ -25,11 +26,12 @@ class SqsOnlyInboundMessageListener(private val inboundMessageService: SqsOnlyIn
 class SqsOnlyOutboundMessageListener(private val outboundMessageService: SqsOnlyOutboundMessageService, private val objectMapper: ObjectMapper) {
 
   @SqsListener("outboundsqsonlyqueue", factory = "hmppsQueueContainerFactoryProxy")
-  fun processMessage(message: String): CompletableFuture<Void> {
+  fun processMessage(message: String): CompletableFuture<Void?> {
     val event = objectMapper.readValue(message, HmppsEvent::class.java)
     return CoroutineScope(Context.current().asContextElement()).future {
       outboundMessageService.handleMessage(event)
-    }.thenAccept {}
+      null
+    }
   }
 }
 
