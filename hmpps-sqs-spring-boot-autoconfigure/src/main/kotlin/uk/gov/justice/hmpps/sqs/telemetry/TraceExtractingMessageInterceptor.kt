@@ -1,5 +1,6 @@
 package uk.gov.justice.hmpps.sqs.telemetry
 
+import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.awspring.cloud.sqs.MessageHeaderUtils
@@ -113,8 +114,10 @@ class TraceExtractingMessageInterceptor(private val objectMapper: ObjectMapper) 
     .setSpanKind(SpanKind.CONSUMER)
     .startSpan()
 
-  private class MessageAttribute(val Type: String, val Value: Any?)
-
+  private class MessageAttribute(
+    @JsonProperty("Type") val Type: String,
+    @JsonProperty("Value") val Value: Any?,
+  )
   companion object {
     private val log = LoggerFactory.getLogger(TraceExtractingMessageInterceptor::class.java)
   }

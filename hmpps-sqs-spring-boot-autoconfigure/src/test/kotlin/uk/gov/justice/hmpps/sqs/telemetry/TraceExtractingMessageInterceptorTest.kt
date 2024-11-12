@@ -39,7 +39,7 @@ class TraceExtractingMessageInterceptorTest(@Autowired private val objectMapper:
   }
 
   @Test
-  fun `should start a new spa if MessageAttributes payload contains MessageAttributes`() {
+  fun `should start a new span if MessageAttributes payload contains MessageAttributes`() {
     val message = GenericMessage<Any>("""{"MessageId":null,"MessageAttributes":{"my-event":{"Type": "String", "Value": "my-event"}}}""", mapOf("eventType" to "myevent"))
 
     val responseMessage = TraceExtractingMessageInterceptor(objectMapper).intercept(message)
