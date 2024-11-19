@@ -106,7 +106,7 @@ Each queue declared in the `queues` map is defined in the `QueueConfig` property
 | dlqMaxReceiveCount     | 5       | Only used for `provider=localstack`. Change the number of retries automatically provided by Localstack on DLQs. e.g. It can be useful to change this to 1 when testing DLQ retry functionality.                                                                                                                                            |
 | visibilityTimeout      | 30      | Only used for `provider=localstack`. Sets the maximum amount of time (in seconds) that a message is considered to be in process before it is then acknowledged or made visible again to other listeners.  See https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-visibility-timeout.html for more information. |
 | errorVisibilityTimeout | 0       | Sets the amount of time (in seconds) before a message in error is retried.                                                                                                                                                                                                                                                                 |
-| propagateTracing       | `true`  | Reads distributed tracing headers and propagates them onwards, keeping a link to the original published message in your Application Monitor e.g. Microsoft Log Analytics.                                                                                                                                                                  |
+| propagateTracing       | `true`  | Reads distributed tracing headers and propagates them onwards, keeping a link to the original published message in your Application Monitor e.g. Microsoft Log Analytics.  See [Disabling Tracing of Messages](#disabling-tracing-of-messages) below.                                                                                      |
 
 Each topic declared in the `topics` map is defined in the `TopicConfig` property class
 
@@ -161,6 +161,15 @@ AppRequests
 ```
 will show all the messages that were then received and published from that original message.
 Alternatively going to Transaction Search in Log Analytics will then show a graph with that information.
+
+### Disabling Tracing of Messages
+
+if `propagateTracing` is set to `false` then no spans are automatically created when a message is received.  This means
+that the spans will need to be automatically created i.e.
+```kotlin
+  @WithSpan(value = "dps-syscon-migration_allocations_queue", kind = SpanKind.SERVER)
+```
+otherwise there will be no `AppRequests` entry when a message is processed.
 
 ### AmazonSQS Beans
 
