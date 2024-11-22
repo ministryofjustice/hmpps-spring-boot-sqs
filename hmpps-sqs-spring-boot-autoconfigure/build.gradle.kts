@@ -12,7 +12,7 @@ plugins {
   id("io.spring.dependency-management") version "1.1.6"
   id("org.jlleitschuh.gradle.ktlint") version "12.1.1"
   id("org.owasp.dependencycheck") version "8.4.3"
-  id("org.springframework.boot") version "3.3.5"
+  id("org.springframework.boot") version "3.4.0"
 }
 
 dependencyManagement {
@@ -31,7 +31,7 @@ dependencies {
   implementation("io.awspring.cloud:spring-cloud-aws-sns")
   implementation("io.awspring.cloud:spring-cloud-aws-sqs")
   implementation("com.google.code.gson:gson:2.11.0")
-  implementation("com.microsoft.azure:applicationinsights-core:3.6.1")
+  implementation("com.microsoft.azure:applicationinsights-core:3.6.2")
   implementation("io.opentelemetry:opentelemetry-api")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8")
