@@ -311,21 +311,18 @@ class HmppsEventProcessingTest : IntegrationTestBase() {
   fun `two different events published to fifo topic are received by fifo queue`() = runTest {
     val event1 = HmppsEvent("fifo-event-id", "FIFO-EVENT", "some FIFO contents 1")
     val event2 = HmppsEvent("fifo-event-id", "FIFO-EVENT", "some FIFO contents 2")
-    fifoSnsClient.publish(
-      PublishRequest.builder().topicArn(fifoTopicArn).message(gsonString(event1))
-        .messageGroupId(UUID.randomUUID().toString())
-        .messageAttributes(
-          mapOf("eventType" to MessageAttributeValue.builder().dataType("String").stringValue(event1.type).build()),
-        ).build(),
+
+    fifoTopic.publish(
+      eventType = event1.type,
+      event = gsonString(event1),
+      messageGroupId = UUID.randomUUID().toString(),
     )
     await untilCallTo { fifoSqsClient.countMessagesOnQueue(fifoQueueUrl).get() } matches { it == 1 }
 
-    fifoSnsClient.publish(
-      PublishRequest.builder().topicArn(fifoTopicArn).message(gsonString(event2))
-        .messageGroupId(UUID.randomUUID().toString())
-        .messageAttributes(
-          mapOf("eventType" to MessageAttributeValue.builder().dataType("String").stringValue(event2.type).build()),
-        ).build(),
+    fifoTopic.publish(
+      eventType = event2.type,
+      event = gsonString(event2),
+      messageGroupId = UUID.randomUUID().toString(),
     )
 
     await untilCallTo { fifoSqsClient.countMessagesOnQueue(fifoQueueUrl).get() } matches { it == 2 }
@@ -352,19 +349,16 @@ class HmppsEventProcessingTest : IntegrationTestBase() {
   @Test
   fun `duplicate events published to fifo topic and one event is received by fifo queue`() = runTest {
     val event = HmppsEvent("fifo-event-id", "FIFO-EVENT", "some FIFO contents")
-    fifoSnsClient.publish(
-      PublishRequest.builder().topicArn(fifoTopicArn).message(gsonString(event))
-        .messageGroupId(UUID.randomUUID().toString())
-        .messageAttributes(
-          mapOf("eventType" to MessageAttributeValue.builder().dataType("String").stringValue(event.type).build()),
-        ).build(),
+
+    fifoTopic.publish(
+      eventType = event.type,
+      event = gsonString(event),
+      messageGroupId = UUID.randomUUID().toString(),
     )
-    fifoSnsClient.publish(
-      PublishRequest.builder().topicArn(fifoTopicArn).message(gsonString(event))
-        .messageGroupId(UUID.randomUUID().toString())
-        .messageAttributes(
-          mapOf("eventType" to MessageAttributeValue.builder().dataType("String").stringValue(event.type).build()),
-        ).build(),
+    fifoTopic.publish(
+      eventType = event.type,
+      event = gsonString(event),
+      messageGroupId = UUID.randomUUID().toString(),
     )
 
     await untilCallTo { fifoSqsClient.countMessagesOnQueue(fifoQueueUrl).get() } matches { it == 1 }

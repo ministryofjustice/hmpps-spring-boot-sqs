@@ -92,14 +92,18 @@ fun HmppsTopic.publish(
   attributes: Map<String, MessageAttributeValue> = emptyMap(),
   retryPolicy: RetryPolicy = DEFAULT_RETRY_POLICY,
   backOffPolicy: BackOffPolicy = DEFAULT_BACKOFF_POLICY,
+  messageGroupId: String? = null,
 ): PublishResponse {
   val retryTemplate = RetryTemplate().apply {
     setRetryPolicy(retryPolicy)
     setBackOffPolicy(backOffPolicy)
   }
-  val publishRequest = PublishRequest.builder().topicArn(arn).message(event).messageAttributes(
+  val publishRequestBuilder = PublishRequest.builder().topicArn(arn).message(event).messageAttributes(
     eventTypeSnsMap(eventType, noTracing) + attributes,
-  ).build()
+  )
+  messageGroupId?.let { publishRequestBuilder.messageGroupId(it) }
+  val publishRequest = publishRequestBuilder.build()
+
   return runCatching {
     retryTemplate.execute<PublishResponse, Exception> { snsClient.publish(publishRequest).get() }
   }.onFailure {
