@@ -73,6 +73,8 @@ FIFO Queues can only subscribe to FIFO Topics.
 FIFO allows you the option to configure message deduplication and guarantees ordering. There are performance tradeoffs.
 [More information on FIFO here](https://docs.aws.amazon.com/sns/latest/dg/sns-fifo-topics.html)
 
+To publish a message to a FIFO topic you must include a `MessageGroupId`.
+
 #### HmppsSqsProperties Definitions
 
 ##### :warning: queueId and topicId Must Be All Lowercase And Alpha

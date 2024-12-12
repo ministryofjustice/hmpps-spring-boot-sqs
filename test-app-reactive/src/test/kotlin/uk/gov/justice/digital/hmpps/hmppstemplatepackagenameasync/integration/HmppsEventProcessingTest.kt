@@ -17,6 +17,7 @@ import uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.service.HmppsE
 import uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.service.Message
 import uk.gov.justice.hmpps.sqs.countAllMessagesOnQueue
 import uk.gov.justice.hmpps.sqs.countMessagesOnQueue
+import uk.gov.justice.hmpps.sqs.publish
 import java.util.UUID
 
 class HmppsEventProcessingTest : IntegrationTestBase() {
@@ -97,12 +98,10 @@ class HmppsEventProcessingTest : IntegrationTestBase() {
   @Test
   fun `event published to fifo topic is received by fifo queue`() = runTest {
     val event = HmppsEvent("fifo-event-id", "FIFO-EVENT", "some FIFO contents")
-    fifoSnsClient.publish(
-      PublishRequest.builder().topicArn(fifoTopicArn).message(gsonString(event))
-        .messageGroupId(UUID.randomUUID().toString())
-        .messageAttributes(
-          mapOf("eventType" to MessageAttributeValue.builder().dataType("String").stringValue(event.type).build()),
-        ).build(),
+    fifoTopic.publish(
+      eventType = event.type,
+      event = gsonString(event),
+      messageGroupId = UUID.randomUUID().toString(),
     )
 
     await untilCallTo { fifoSqsClient.countMessagesOnQueue(fifoQueueUrl).get() } matches { it == 1 }
