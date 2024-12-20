@@ -9,10 +9,10 @@ plugins {
   id("com.adarshr.test-logger") version "4.0.0"
   id("com.github.ben-manes.versions") version "0.51.0"
   id("se.patrikerdes.use-latest-versions") version "0.2.18"
-  id("io.spring.dependency-management") version "1.1.6"
-  id("org.jlleitschuh.gradle.ktlint") version "12.1.1"
+  id("io.spring.dependency-management") version "1.1.7"
+  id("org.jlleitschuh.gradle.ktlint") version "12.1.2"
   id("org.owasp.dependencycheck") version "8.4.3"
-  id("org.springframework.boot") version "3.4.0"
+  id("org.springframework.boot") version "3.4.1"
 }
 
 dependencyManagement {
@@ -36,13 +36,13 @@ dependencies {
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8")
 
-  testImplementation("org.assertj:assertj-core:3.26.3")
-  testImplementation("org.junit.jupiter:junit-jupiter:5.11.3")
+  testImplementation("org.assertj:assertj-core:3.27.0")
+  testImplementation("org.junit.jupiter:junit-jupiter:5.11.4")
   testImplementation("org.mockito:mockito-junit-jupiter:5.14.2")
   testImplementation("org.springframework.boot:spring-boot-starter-test")
   testImplementation("org.mockito.kotlin:mockito-kotlin:5.4.0")
   testImplementation("org.mockito:mockito-inline:5.2.0")
-  testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
+  testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.0")
   testImplementation("org.jetbrains.kotlin:kotlin-reflect")
 }
 
