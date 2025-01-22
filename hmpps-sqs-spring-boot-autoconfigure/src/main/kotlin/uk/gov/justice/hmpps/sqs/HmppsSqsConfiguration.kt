@@ -86,7 +86,6 @@ class HmppsSqsConfiguration {
   fun hmppsS3Factory(applicationContext: ConfigurableApplicationContext) =
     HmppsS3Factory(applicationContext, S3ClientFactory())
 
-
   @Bean
   @ConditionalOnMissingBean
   fun hmppsQueueService(

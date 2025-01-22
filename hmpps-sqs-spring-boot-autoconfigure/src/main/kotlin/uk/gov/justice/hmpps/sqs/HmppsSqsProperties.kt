@@ -46,8 +46,8 @@ data class HmppsSqsProperties(
   data class BucketConfig(
     val accessKeyId: String = "",
     val secretAccessKey: String = "",
-    val propagateTracing: Boolean = true){
-  }
+    val propagateTracing: Boolean = true,
+  )
 
   init {
     queues.forEach { (queueId, queueConfig) ->

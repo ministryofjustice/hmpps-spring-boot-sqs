@@ -30,7 +30,12 @@ import software.amazon.awssdk.services.sns.model.PublishResponse
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest
 import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.service.HmppsEvent
 import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.service.Message
-import uk.gov.justice.hmpps.sqs.*
+import uk.gov.justice.hmpps.sqs.HmppsSqsProperties
+import uk.gov.justice.hmpps.sqs.HmppsTopicFactory
+import uk.gov.justice.hmpps.sqs.countAllMessagesOnQueue
+import uk.gov.justice.hmpps.sqs.countMessagesOnQueue
+import uk.gov.justice.hmpps.sqs.publish
+import uk.gov.justice.hmpps.sqs.publishLargeMessage
 import java.io.File
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
@@ -371,7 +376,6 @@ class HmppsEventProcessingTest : IntegrationTestBase() {
 
     await untilCallTo { fifoSqsClient.countMessagesOnQueue(fifoQueueUrl).get() } matches { it == 0 }
   }
-
 
   @Test
   fun `large message body published to fifo topic is received by fifo queue`() = runTest {

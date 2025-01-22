@@ -29,10 +29,10 @@ class HmppsTopicFactoryTest {
   private val beanFactory = mock<ConfigurableListableBeanFactory>()
   private val snsClientFactory = mock<SnsClientFactory>()
   private val hmppsTopicFactory = HmppsTopicFactory(
-      context,
-      healthContributorRegistry,
-      snsClientFactory,
-      S3ClientFactory()
+    context,
+    healthContributorRegistry,
+    snsClientFactory,
+    S3ClientFactory(),
   )
 
   init {

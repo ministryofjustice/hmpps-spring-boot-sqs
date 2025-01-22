@@ -158,15 +158,15 @@ class HmppsSqsPropertiesTest {
     }
 
     @Test
-    fun `buckets should have names`(){
+    fun `buckets should have names`() {
       assertThatThrownBy {
         HmppsSqsProperties(
           buckets = mapOf(
             "bucket1" to HmppsSqsProperties.BucketConfig(),
             "bucket2" to HmppsSqsProperties.BucketConfig(),
-          )
+          ),
         )
-        }.isInstanceOf(InvalidHmppsSqsPropertiesException::class.java)
+      }.isInstanceOf(InvalidHmppsSqsPropertiesException::class.java)
         .hasMessageContaining("bucket1")
         .hasMessageContaining("bucket2")
     }

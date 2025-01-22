@@ -140,7 +140,7 @@ fun HmppsTopic.publishLargeMessage(
   )
 
   return runCatching {
-    retryTemplate.execute<PublishResponse, Exception> { sns.publish(publishRequest, ).get() }
+    retryTemplate.execute<PublishResponse, Exception> { sns.publish(publishRequest).get() }
   }.onFailure {
     log.error("""Unable to publish large message {} with body "{}"""", eventType, event)
   }.getOrThrow()
