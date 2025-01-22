@@ -44,7 +44,6 @@ data class HmppsSqsProperties(
   }
 
   data class BucketConfig(
-    val bucketName: String,
     val accessKeyId: String = "",
     val secretAccessKey: String = "",
     val propagateTracing: Boolean = true){
@@ -62,9 +61,6 @@ data class HmppsSqsProperties(
       topicIdMustBeLowerCase(topicId)
       awsTopicSecretsMustExist(topicId, topicConfig)
       localstackTopicNameMustExist(topicId, topicConfig)
-    }
-    buckets.forEach {
-
     }
     checkForAwsDuplicateValues()
     checkForLocalStackDuplicateValues()

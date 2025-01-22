@@ -162,8 +162,8 @@ class HmppsSqsPropertiesTest {
       assertThatThrownBy {
         HmppsSqsProperties(
           buckets = mapOf(
-            "bucket1" to HmppsSqsProperties.BucketConfig("bucket1"),
-            "bucket2" to HmppsSqsProperties.BucketConfig("bucket2"),
+            "bucket1" to HmppsSqsProperties.BucketConfig(),
+            "bucket2" to HmppsSqsProperties.BucketConfig(),
           )
         )
         }.isInstanceOf(InvalidHmppsSqsPropertiesException::class.java)

@@ -74,7 +74,7 @@ class HmppsSqsConfiguration {
   @Bean
   @ConditionalOnMissingBean
   fun hmppsTopicFactory(applicationContext: ConfigurableApplicationContext, healthContributorRegistry: HmppsHealthContributorRegistry) =
-    HmppsTopicFactory(applicationContext, healthContributorRegistry, SnsClientFactory(), S3ClientFactory())
+    HmppsTopicFactory(applicationContext, healthContributorRegistry, SnsClientFactory())
 
   @Bean
   @ConditionalOnMissingBean
