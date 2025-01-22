@@ -30,6 +30,8 @@ dependencies {
   api("io.awspring.cloud:spring-cloud-aws-starter") { exclude("io.awspring.cloud", "spring-cloud-aws-autoconfigure") }
   implementation("io.awspring.cloud:spring-cloud-aws-sns")
   implementation("io.awspring.cloud:spring-cloud-aws-sqs")
+  implementation("software.amazon.sns:sns-extended-client:2.1.0")
+  testImplementation("software.amazon.awssdk:s3:2.30.0")
   implementation("com.google.code.gson:gson:2.11.0")
   implementation("com.microsoft.azure:applicationinsights-core:3.6.2")
   implementation("io.opentelemetry:opentelemetry-api")

@@ -33,6 +33,7 @@ dependencies {
   testImplementation("org.wiremock:wiremock-standalone:3.10.0")
   testImplementation("org.testcontainers:localstack:1.20.4")
   testImplementation("com.amazonaws:aws-java-sdk-core:1.12.780") // needed so that Localstack has access to the AWS SDK V1 API
+  testImplementation("software.amazon.awssdk:s3:2.30.0")
   testImplementation("com.google.code.gson:gson:2.11.0")
   testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test")
   testImplementation("io.opentelemetry:opentelemetry-extension-trace-propagators")
