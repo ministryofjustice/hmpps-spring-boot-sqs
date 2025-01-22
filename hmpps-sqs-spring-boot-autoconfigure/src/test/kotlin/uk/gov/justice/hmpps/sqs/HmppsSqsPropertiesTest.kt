@@ -158,17 +158,31 @@ class HmppsSqsPropertiesTest {
     }
 
     @Test
-    fun `buckets should have names`() {
+    fun `buckets should have an access key`() {
       assertThatThrownBy {
         HmppsSqsProperties(
           buckets = mapOf(
-            "bucket1" to HmppsSqsProperties.BucketConfig(),
-            "bucket2" to HmppsSqsProperties.BucketConfig(),
+            "bucket1" to validAwsBucketConfig(),
+            "bucket2" to validAwsBucketConfig().copy(accessKeyId = ""),
           ),
+          useWebToken = false,
+        )
+      }.isInstanceOf(InvalidHmppsSqsPropertiesException::class.java)
+        .hasMessageContaining("bucket2")
+    }
+
+    @Test
+    fun `buckets should have a secret access key`() {
+      assertThatThrownBy {
+        HmppsSqsProperties(
+          buckets = mapOf(
+            "bucket1" to validAwsBucketConfig().copy(secretAccessKey = ""),
+            "bucket2" to validAwsBucketConfig(),
+          ),
+          useWebToken = false,
         )
       }.isInstanceOf(InvalidHmppsSqsPropertiesException::class.java)
         .hasMessageContaining("bucket1")
-        .hasMessageContaining("bucket2")
     }
   }
 
@@ -556,6 +570,7 @@ class HmppsSqsPropertiesTest {
   private fun validAwsQueueConfig(index: Int = 1) = QueueConfig(queueName = "name$index", queueAccessKeyId = "key$index", queueSecretAccessKey = "secret$index", dlqName = "dlqName$index", dlqAccessKeyId = "dlqKey$index", dlqSecretAccessKey = "dlqSecret$index")
   private fun validAwsQueueNoDlqConfig(index: Int = 1) = QueueConfig(queueName = "name$index", queueAccessKeyId = "key$index", queueSecretAccessKey = "secret$index")
   private fun validAwsTopicConfig(index: Int = 1) = TopicConfig(arn = "arn$index", accessKeyId = "key$index", secretAccessKey = "secret$index")
+  private fun validAwsBucketConfig(index: Int = 1) = HmppsSqsProperties.BucketConfig(accessKeyId = "key$index", secretAccessKey = "secret$index")
   private fun validLocalstackQueueConfig(index: Int = 1) = QueueConfig(queueName = "name$index", dlqName = "dlqName$index")
   private fun validLocalstackQueueNoDlqConfig(index: Int = 1) = QueueConfig(queueName = "name$index")
   private fun validLocalstackTopicConfig(index: Int = 1) = TopicConfig(arn = "${localstackArnPrefix}$index")

@@ -62,6 +62,9 @@ data class HmppsSqsProperties(
       awsTopicSecretsMustExist(topicId, topicConfig)
       localstackTopicNameMustExist(topicId, topicConfig)
     }
+    buckets.forEach { (name, bucketConfig) ->
+      awsBucketSecretsMustExist(name, bucketConfig)
+    }
     checkForAwsDuplicateValues()
     checkForLocalStackDuplicateValues()
   }
@@ -84,6 +87,15 @@ data class HmppsSqsProperties(
         if (queueConfig.dlqAccessKeyId.isEmpty()) throw InvalidHmppsSqsPropertiesException("queueId $queueId does not have a DLQ access key id")
         if (queueConfig.dlqSecretAccessKey.isEmpty()) throw InvalidHmppsSqsPropertiesException("queueId $queueId does not have a DLQ secret access key")
       }
+    }
+  }
+
+  private fun awsBucketSecretsMustExist(name: String, bucketConfig: HmppsSqsProperties.BucketConfig) {
+    if (useWebToken) return
+
+    if (provider == "aws") {
+      if (bucketConfig.accessKeyId.isEmpty()) throw InvalidHmppsSqsPropertiesException("s3 bucket $name does not have a queue access key id")
+      if (bucketConfig.secretAccessKey.isEmpty()) throw InvalidHmppsSqsPropertiesException("s3 bucket $name does not have a queue secret access key")
     }
   }
 
