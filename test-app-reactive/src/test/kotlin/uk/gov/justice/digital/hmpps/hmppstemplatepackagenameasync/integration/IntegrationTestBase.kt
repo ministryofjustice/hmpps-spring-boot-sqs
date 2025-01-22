@@ -75,6 +75,7 @@ abstract class IntegrationTestBase {
   private val outboundTestNoDlqQueue by lazy { hmppsQueueService.findByQueueId("outboundtestnodlqqueue") ?: throw MissingQueueException("HmppsQueue outboundtestnodlqqueue not found") }
   private val auditQueue by lazy { hmppsQueueService.findByQueueId("audit") ?: throw MissingQueueException("HmppsQueue audit not found") }
   private val fifoQueue by lazy { hmppsQueueService.findByQueueId("fifoqueue") ?: throw MissingQueueException("HmppsQueue fifoqueue not found") }
+  private val bucket by lazy { hmppsQueueService.findByBucketName("bucket") ?: throw MissingQueueException("HmppsQueue bucket not found") }
   private val inboundSqsOnlyQueue by lazy { hmppsQueueService.findByQueueId("inboundsqsonlyqueue") ?: throw MissingQueueException("HmppsQueue inboundsqsonlyqueue not found") }
   private val outboundSqsOnlyQueue by lazy { hmppsQueueService.findByQueueId("outboundsqsonlyqueue") ?: throw MissingQueueException("HmppsQueue outboundsqsonlyqueue not found") }
   private val outboundSqsOnlyTestQueue by lazy { hmppsQueueService.findByQueueId("outboundsqsonlytestqueue") ?: throw MissingQueueException("HmppsQueue outboundsqsonlytestqueue not found") }
@@ -86,6 +87,7 @@ abstract class IntegrationTestBase {
   protected val outboundTestNoDlqSqsClient by lazy { outboundTestNoDlqQueue.sqsClient }
   protected val auditSqsClient by lazy { auditQueue.sqsClient }
   protected val fifoSqsClient by lazy { fifoQueue.sqsClient }
+  protected val s3Client by lazy { bucket.client }
   protected val auditQueueUrl by lazy { auditQueue.queueUrl }
   protected val inboundSqsOnlyClient by lazy { inboundSqsOnlyQueue.sqsClient }
   protected val outboundSqsOnlyClient by lazy { outboundSqsOnlyQueue.sqsClient }
@@ -106,6 +108,7 @@ abstract class IntegrationTestBase {
   protected val outboundTestQueueUrl by lazy { outboundTestQueue.queueUrl }
   protected val outboundTestNoDlqQueueUrl by lazy { outboundTestNoDlqQueue.queueUrl }
   protected val fifoQueueUrl by lazy { fifoQueue.queueUrl }
+  protected val bucketName by lazy { bucket.name }
   protected val inboundSqsOnlyQueueUrl by lazy { inboundSqsOnlyQueue.queueUrl }
   protected val outboundSqsOnlyQueueUrl by lazy { outboundSqsOnlyQueue.queueUrl }
   protected val outboundSqsOnlyTestQueueUrl by lazy { outboundSqsOnlyTestQueue.queueUrl }

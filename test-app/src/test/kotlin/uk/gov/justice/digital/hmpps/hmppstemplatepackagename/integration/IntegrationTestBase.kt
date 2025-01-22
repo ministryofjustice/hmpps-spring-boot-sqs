@@ -76,6 +76,7 @@ abstract class IntegrationTestBase {
   private val outboundTestNoDlqQueue by lazy { hmppsQueueService.findByQueueId("outboundtestnodlqqueue") ?: throw MissingQueueException("HmppsQueue outboundtestnodlqqueue not found") }
   private val auditQueue by lazy { hmppsQueueService.findByQueueId("audit") ?: throw MissingQueueException("HmppsQueue audit not found") }
   private val fifoQueue by lazy { hmppsQueueService.findByQueueId("fifoqueue") ?: throw MissingQueueException("HmppsQueue fifoqueue not found") }
+  private val bucket by lazy { hmppsQueueService.findByBucketName("bucket") ?: throw MissingQueueException("HmppsQueue bucket not found") }
   private val inboundSqsOnlyQueue by lazy { hmppsQueueService.findByQueueId("inboundsqsonlyqueue") ?: throw MissingQueueException("HmppsQueue inboundsqsonlyqueue not found") }
   private val outboundSqsOnlyQueue by lazy { hmppsQueueService.findByQueueId("outboundsqsonlyqueue") ?: throw MissingQueueException("HmppsQueue outboundsqsonlyqueue not found") }
   private val outboundSqsOnlyTestQueue by lazy { hmppsQueueService.findByQueueId("outboundsqsonlytestqueue") ?: throw MissingQueueException("HmppsQueue outboundsqsonlytestqueue not found") }
@@ -90,6 +91,8 @@ abstract class IntegrationTestBase {
   protected val inboundSqsOnlyClient by lazy { inboundSqsOnlyQueue.sqsClient }
   protected val outboundSqsOnlyClient by lazy { outboundSqsOnlyQueue.sqsClient }
   protected val outboundSqsOnlyTestSqsClient by lazy { outboundSqsOnlyTestQueue.sqsClient }
+  protected val s3AsyncClient by lazy { bucket.client }
+  protected val bucketName by lazy { bucket.name }
 
   @SpyBean
   @Qualifier("outboundqueue-sqs-client")

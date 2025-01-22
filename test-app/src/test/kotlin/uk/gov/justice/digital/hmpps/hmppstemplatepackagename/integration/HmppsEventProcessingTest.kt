@@ -30,11 +30,8 @@ import software.amazon.awssdk.services.sns.model.PublishResponse
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest
 import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.service.HmppsEvent
 import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.service.Message
-import uk.gov.justice.hmpps.sqs.HmppsSqsProperties
-import uk.gov.justice.hmpps.sqs.HmppsTopicFactory
-import uk.gov.justice.hmpps.sqs.countAllMessagesOnQueue
-import uk.gov.justice.hmpps.sqs.countMessagesOnQueue
-import uk.gov.justice.hmpps.sqs.publish
+import uk.gov.justice.hmpps.sqs.*
+import java.io.File
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ExecutionException
@@ -373,5 +370,39 @@ class HmppsEventProcessingTest : IntegrationTestBase() {
     assertThat(receivedEvent.contents).isEqualTo("some FIFO contents")
 
     await untilCallTo { fifoSqsClient.countMessagesOnQueue(fifoQueueUrl).get() } matches { it == 0 }
+  }
+
+
+  @Test
+  fun `large message body published to fifo topic is received by fifo queue`() = runTest {
+    val file = File("src/test/resources/events/large-sns-message.json")
+    val event = HmppsEvent("fifo-event-id", "FIFO-EVENT", file.toString())
+
+    val amazonS3AsyncClient = s3AsyncClient
+
+    fifoTopic.publishLargeMessage(
+      eventType = event.type,
+      event = gsonString(event),
+      messageGroupId = UUID.randomUUID().toString(),
+      amazonS3AsyncClient = amazonS3AsyncClient,
+      s3BucketName = bucketName,
+    )
+
+    assertThat(amazonS3AsyncClient.listBuckets().get().buckets().size).isEqualTo(1)
+
+    await untilCallTo { fifoSqsClient.countMessagesOnQueue(fifoQueueUrl).get() } matches { it == 1 }
+
+    val snsMessage = ReceiveMessageRequest.builder().queueUrl(fifoQueueUrl).build()
+      .let { fifoSqsClient.receiveMessage(it).get().messages()[0].body() }
+
+    val mappedMessage = objectMapper.readValue(snsMessage, Message::class.java)
+
+    assertThat(mappedMessage.MessageAttributes.get("eventType")?.Value).isEqualTo("FIFO-EVENT")
+
+    val s3Message = snsMessage.let { objectMapper.readValue(it, LinkedHashMap::class.java).get("Message") }
+      .let { objectMapper.readValue(it.toString(), ArrayList::class.java) }
+      .let { it[1] as LinkedHashMap<*, *> }
+
+    assertThat(s3Message.keys).contains("s3Key", "s3BucketName")
   }
 }

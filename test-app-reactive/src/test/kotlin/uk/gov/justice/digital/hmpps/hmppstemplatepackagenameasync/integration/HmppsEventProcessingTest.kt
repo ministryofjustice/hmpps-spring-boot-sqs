@@ -18,6 +18,8 @@ import uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.service.Messag
 import uk.gov.justice.hmpps.sqs.countAllMessagesOnQueue
 import uk.gov.justice.hmpps.sqs.countMessagesOnQueue
 import uk.gov.justice.hmpps.sqs.publish
+import uk.gov.justice.hmpps.sqs.publishLargeMessage
+import java.io.File
 import java.util.UUID
 
 class HmppsEventProcessingTest : IntegrationTestBase() {
@@ -114,5 +116,37 @@ class HmppsEventProcessingTest : IntegrationTestBase() {
     assertThat(receivedEvent.id).isEqualTo("fifo-event-id")
     assertThat(receivedEvent.type).isEqualTo("FIFO-EVENT")
     assertThat(receivedEvent.contents).isEqualTo("some FIFO contents")
+  }
+
+  @Test
+  fun `large message published to fifo topic is received by fifo queue`() = runTest {
+    val file = File("src/test/resources/events/large-sns-message.json")
+    val event = HmppsEvent("fifo-event-id", "FIFO-EVENT", file.toString())
+
+    val amazonS3AsyncClient = s3Client
+    fifoTopic.publishLargeMessage(
+      eventType = event.type,
+      event = gsonString(event),
+      messageGroupId = UUID.randomUUID().toString(),
+      amazonS3AsyncClient = s3Client,
+      s3BucketName = bucketName,
+    )
+
+    assertThat(amazonS3AsyncClient.listBuckets().get().buckets().size).isEqualTo(1)
+
+    await untilCallTo { fifoSqsClient.countMessagesOnQueue(fifoQueueUrl).get() } matches { it == 1 }
+
+    val snsMessage = ReceiveMessageRequest.builder().queueUrl(fifoQueueUrl).build()
+      .let { fifoSqsClient.receiveMessage(it).get().messages()[0].body() }
+
+    val mappedMessage = objectMapper.readValue(snsMessage, Message::class.java)
+
+    assertThat(mappedMessage.MessageAttributes.get("eventType")?.Value).isEqualTo("FIFO-EVENT")
+
+    val s3Message = snsMessage.let { objectMapper.readValue(it, LinkedHashMap::class.java).get("Message") }
+      .let { objectMapper.readValue(it.toString(), ArrayList::class.java) }
+      .let { it[1] as LinkedHashMap<*, *> }
+
+    assertThat(s3Message.keys).contains("s3Key", "s3BucketName")
   }
 }

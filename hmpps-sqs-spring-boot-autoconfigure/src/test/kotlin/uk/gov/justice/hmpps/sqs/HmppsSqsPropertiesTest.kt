@@ -156,6 +156,20 @@ class HmppsSqsPropertiesTest {
         .hasMessageContaining("topicid")
         .hasMessageContaining("secret access key")
     }
+
+    @Test
+    fun `buckets should have names`(){
+      assertThatThrownBy {
+        HmppsSqsProperties(
+          buckets = mapOf(
+            "bucket1" to HmppsSqsProperties.BucketConfig("bucket1"),
+            "bucket2" to HmppsSqsProperties.BucketConfig("bucket2"),
+          )
+        )
+        }.isInstanceOf(InvalidHmppsSqsPropertiesException::class.java)
+        .hasMessageContaining("bucket1")
+        .hasMessageContaining("bucket2")
+    }
   }
 
   @Nested

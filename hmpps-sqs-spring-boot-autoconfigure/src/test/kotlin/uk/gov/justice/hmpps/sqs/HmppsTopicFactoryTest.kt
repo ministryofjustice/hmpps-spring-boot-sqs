@@ -28,7 +28,12 @@ class HmppsTopicFactoryTest {
   private val healthContributorRegistry = mock<HmppsHealthContributorRegistry>()
   private val beanFactory = mock<ConfigurableListableBeanFactory>()
   private val snsClientFactory = mock<SnsClientFactory>()
-  private val hmppsTopicFactory = HmppsTopicFactory(context, healthContributorRegistry, snsClientFactory)
+  private val hmppsTopicFactory = HmppsTopicFactory(
+      context,
+      healthContributorRegistry,
+      snsClientFactory,
+      S3ClientFactory()
+  )
 
   init {
     whenever(context.beanFactory).thenReturn(beanFactory)
