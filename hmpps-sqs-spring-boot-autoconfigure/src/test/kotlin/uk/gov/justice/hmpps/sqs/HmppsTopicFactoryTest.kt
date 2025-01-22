@@ -32,7 +32,6 @@ class HmppsTopicFactoryTest {
     context,
     healthContributorRegistry,
     snsClientFactory,
-    S3ClientFactory(),
   )
 
   init {
