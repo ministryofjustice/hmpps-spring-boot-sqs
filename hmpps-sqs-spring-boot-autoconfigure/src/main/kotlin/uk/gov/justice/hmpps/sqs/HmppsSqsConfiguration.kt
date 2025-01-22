@@ -74,7 +74,7 @@ class HmppsSqsConfiguration {
   @Bean
   @ConditionalOnMissingBean
   fun hmppsTopicFactory(applicationContext: ConfigurableApplicationContext, healthContributorRegistry: HmppsHealthContributorRegistry) =
-    HmppsTopicFactory(applicationContext, healthContributorRegistry, SnsClientFactory())
+    HmppsTopicFactory(applicationContext, healthContributorRegistry, SnsClientFactory(), S3ClientFactory())
 
   @Bean
   @ConditionalOnMissingBean
@@ -83,12 +83,19 @@ class HmppsSqsConfiguration {
 
   @Bean
   @ConditionalOnMissingBean
+  fun hmppsS3Factory(applicationContext: ConfigurableApplicationContext) =
+    HmppsS3Factory(applicationContext, S3ClientFactory())
+
+
+  @Bean
+  @ConditionalOnMissingBean
   fun hmppsQueueService(
     telemetryClient: TelemetryClient?,
     hmppsTopicFactory: HmppsTopicFactory,
     hmppsQueueFactory: HmppsQueueFactory,
+    hmppsS3Factory: HmppsS3Factory,
     hmppsSqsProperties: HmppsSqsProperties,
-  ) = HmppsQueueService(telemetryClient, hmppsTopicFactory, hmppsQueueFactory, hmppsSqsProperties)
+  ) = HmppsQueueService(telemetryClient, hmppsTopicFactory, hmppsQueueFactory, hmppsS3Factory, hmppsSqsProperties)
 
   @Bean
   @ConditionalOnMissingBean

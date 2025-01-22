@@ -9,6 +9,7 @@ data class HmppsSqsProperties(
   val localstackUrl: String = "http://localhost:4566",
   val queues: Map<String, QueueConfig> = mapOf(),
   val topics: Map<String, TopicConfig> = mapOf(),
+  val buckets: Map<String, BucketConfig> = mapOf(),
   val useWebToken: Boolean = true,
 ) {
   data class QueueConfig(
@@ -42,6 +43,13 @@ data class HmppsSqsProperties(
     fun isFifo() = arn.endsWith(".fifo")
   }
 
+  data class BucketConfig(
+    val bucketName: String,
+    val accessKeyId: String = "",
+    val secretAccessKey: String = "",
+    val propagateTracing: Boolean = true){
+  }
+
   init {
     queues.forEach { (queueId, queueConfig) ->
       queueIdMustBeLowerCase(queueId)
@@ -54,6 +62,9 @@ data class HmppsSqsProperties(
       topicIdMustBeLowerCase(topicId)
       awsTopicSecretsMustExist(topicId, topicConfig)
       localstackTopicNameMustExist(topicId, topicConfig)
+    }
+    buckets.forEach {
+
     }
     checkForAwsDuplicateValues()
     checkForLocalStackDuplicateValues()

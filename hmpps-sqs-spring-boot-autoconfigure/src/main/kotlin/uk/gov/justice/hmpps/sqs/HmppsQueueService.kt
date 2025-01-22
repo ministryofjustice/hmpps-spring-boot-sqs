@@ -32,6 +32,7 @@ open class HmppsQueueService(
   private val telemetryClient: TelemetryClient?,
   hmppsTopicFactory: HmppsTopicFactory,
   hmppsQueueFactory: HmppsQueueFactory,
+  hmppsS3Factory: HmppsS3Factory,
   hmppsSqsProperties: HmppsSqsProperties,
 ) {
 
@@ -41,12 +42,14 @@ open class HmppsQueueService(
   }
 
   private val hmppsTopics: List<HmppsTopic> = hmppsTopicFactory.createHmppsTopics(hmppsSqsProperties)
+  private val hmppsBuckets: List<HmppsS3Bucket> = hmppsS3Factory.createS3Bucket(hmppsSqsProperties)
   private val hmppsQueues: List<HmppsQueue> = hmppsQueueFactory.createHmppsQueues(hmppsSqsProperties, hmppsTopics)
 
   open fun findByQueueId(queueId: String): HmppsQueue? = hmppsQueues.find { it.id == queueId }
   open fun findByQueueName(queueName: String): HmppsQueue? = hmppsQueues.find { it.queueName == queueName }
   open fun findByDlqName(dlqName: String): HmppsQueue? = hmppsQueues.find { it.dlqName == dlqName }
   open fun findByTopicId(topicId: String): HmppsTopic? = hmppsTopics.find { it.id == topicId }
+  open fun findByBucketName(bucketName: String): HmppsS3Bucket? = hmppsBuckets.find { it.name == bucketName }
 
   open suspend fun retryDlqMessages(request: RetryDlqRequest): RetryDlqResult =
     request.hmppsQueue.retryDlqMessages()

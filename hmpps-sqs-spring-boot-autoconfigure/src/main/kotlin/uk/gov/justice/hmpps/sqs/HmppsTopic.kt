@@ -6,10 +6,13 @@ import org.springframework.retry.backoff.BackOffPolicy
 import org.springframework.retry.backoff.ExponentialBackOffPolicy
 import org.springframework.retry.policy.SimpleRetryPolicy
 import org.springframework.retry.support.RetryTemplate
+import software.amazon.awssdk.services.s3.S3AsyncClient
 import software.amazon.awssdk.services.sns.SnsAsyncClient
 import software.amazon.awssdk.services.sns.model.MessageAttributeValue
 import software.amazon.awssdk.services.sns.model.PublishRequest
 import software.amazon.awssdk.services.sns.model.PublishResponse
+import software.amazon.sns.AmazonSNSExtendedAsyncClient
+import software.amazon.sns.SNSExtendedAsyncClientConfiguration
 
 class HmppsTopic(
   val id: String,
@@ -94,10 +97,7 @@ fun HmppsTopic.publish(
   backOffPolicy: BackOffPolicy = DEFAULT_BACKOFF_POLICY,
   messageGroupId: String? = null,
 ): PublishResponse {
-  val retryTemplate = RetryTemplate().apply {
-    setRetryPolicy(retryPolicy)
-    setBackOffPolicy(backOffPolicy)
-  }
+  val retryTemplate = retryTemplate(retryPolicy, backOffPolicy)
   val publishRequestBuilder = PublishRequest.builder().topicArn(arn).message(event).messageAttributes(
     eventTypeSnsMap(eventType, noTracing) + attributes,
   )
@@ -109,4 +109,50 @@ fun HmppsTopic.publish(
   }.onFailure {
     log.error("""Unable to publish {} with body "{}"""", eventType, event)
   }.getOrThrow()
+}
+
+fun HmppsTopic.publishLargeMessage(
+  eventType: String,
+  event: String,
+  noTracing: Boolean = false,
+  attributes: Map<String, MessageAttributeValue> = emptyMap(),
+  retryPolicy: RetryPolicy = DEFAULT_RETRY_POLICY,
+  backOffPolicy: BackOffPolicy = DEFAULT_BACKOFF_POLICY,
+  messageGroupId: String? = null,
+  amazonS3AsyncClient: S3AsyncClient,
+  s3BucketName: String,
+): PublishResponse {
+  val retryTemplate = retryTemplate(retryPolicy, backOffPolicy)
+  val publishRequestBuilder = PublishRequest.builder().topicArn(arn).messageAttributes(
+    eventTypeSnsMap(eventType, noTracing) + attributes,
+  ).message(event)
+  messageGroupId?.let { publishRequestBuilder.messageGroupId(it) }
+
+  val publishRequest = publishRequestBuilder.build()
+
+  val snsExtendedAsyncClientConfiguration: SNSExtendedAsyncClientConfiguration = SNSExtendedAsyncClientConfiguration()
+    .withAlwaysThroughS3(true)
+    .withPayloadSupportEnabled(amazonS3AsyncClient, s3BucketName)
+
+  val sns = AmazonSNSExtendedAsyncClient(
+    snsClient,
+    snsExtendedAsyncClientConfiguration,
+  )
+
+  return runCatching {
+    retryTemplate.execute<PublishResponse, Exception> { sns.publish(publishRequest, ).get() }
+  }.onFailure {
+    log.error("""Unable to publish large message {} with body "{}"""", eventType, event)
+  }.getOrThrow()
+}
+
+private fun retryTemplate(
+  retryPolicy: RetryPolicy,
+  backOffPolicy: BackOffPolicy,
+): RetryTemplate {
+  val retryTemplate = RetryTemplate().apply {
+    setRetryPolicy(retryPolicy)
+    setBackOffPolicy(backOffPolicy)
+  }
+  return retryTemplate
 }
