@@ -24,11 +24,10 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
   @Nested
   @TestInstance(TestInstance.Lifecycle.PER_CLASS)
   inner class SecureEndpoints {
-    private fun secureEndpoints() =
-      listOf(
-        "/queue-admin/retry-dlq/any-queue",
-        "/queue-admin/purge-queue/any-queue",
-      )
+    private fun secureEndpoints() = listOf(
+      "/queue-admin/retry-dlq/any-queue",
+      "/queue-admin/purge-queue/any-queue",
+    )
 
     @ParameterizedTest
     @MethodSource("secureEndpoints")

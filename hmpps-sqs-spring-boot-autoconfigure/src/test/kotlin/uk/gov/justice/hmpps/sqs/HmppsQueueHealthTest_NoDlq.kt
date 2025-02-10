@@ -149,8 +149,7 @@ class HmppsQueueHealthTest_NoDlq {
     )
   }
 
-  private fun someGetQueueAttributesRequest() =
-    GetQueueAttributesRequest.builder().queueUrl(queueUrl).attributeNames(listOf(QueueAttributeName.ALL)).build()
+  private fun someGetQueueAttributesRequest() = GetQueueAttributesRequest.builder().queueUrl(queueUrl).attributeNames(listOf(QueueAttributeName.ALL)).build()
 
   private fun someGetQueueUrlResponse(): GetQueueUrlResponse = GetQueueUrlResponse.builder().queueUrl(queueUrl).build()
   private fun someGetQueueAttributesResponseWithoutDLQ() = GetQueueAttributesResponse.builder().attributes(

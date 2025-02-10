@@ -17,13 +17,12 @@ class HmppsTopicFactory(
     val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
-  fun createHmppsTopics(hmppsSqsProperties: HmppsSqsProperties) =
-    hmppsSqsProperties.topics
-      .map { (topicId, topicConfig) ->
-        val snsClient = getOrDefaultSnsAsyncClient(topicId, topicConfig, hmppsSqsProperties)
-        HmppsTopic(topicId, topicConfig.arn, snsClient)
-          .also { registerHealthIndicator(it) }
-      }.toList()
+  fun createHmppsTopics(hmppsSqsProperties: HmppsSqsProperties) = hmppsSqsProperties.topics
+    .map { (topicId, topicConfig) ->
+      val snsClient = getOrDefaultSnsAsyncClient(topicId, topicConfig, hmppsSqsProperties)
+      HmppsTopic(topicId, topicConfig.arn, snsClient)
+        .also { registerHealthIndicator(it) }
+    }.toList()
 
   private fun registerHealthIndicator(topic: HmppsTopic) {
     healthContributorRegistry.registerContributor("${topic.id}-health") {
@@ -31,38 +30,36 @@ class HmppsTopicFactory(
     }
   }
 
-  private fun getOrDefaultSnsAsyncClient(topicId: String, topicConfig: HmppsSqsProperties.TopicConfig, hmppsSqsProperties: HmppsSqsProperties): SnsAsyncClient =
-    "$topicId-sns-client".let { beanName ->
-      runCatching { context.beanFactory.getBean(beanName) as SnsAsyncClient }
-        .getOrElse {
-          createSnsAsyncClient(topicId, topicConfig, hmppsSqsProperties)
-            .also { context.beanFactory.registerSingleton(beanName, it) }
-        }
-    }
-
-  fun createSnsAsyncClient(topicId: String, topicConfig: HmppsSqsProperties.TopicConfig, hmppsSqsProperties: HmppsSqsProperties): SnsAsyncClient =
-    with(hmppsSqsProperties) {
-      when (provider) {
-        "aws" -> snsClientFactory.awsSnsAsyncClient(topicConfig.accessKeyId, topicConfig.secretAccessKey, region, hmppsSqsProperties.useWebToken, topicConfig.propagateTracing)
-        "localstack" -> snsClientFactory.localstackSnsAsyncClient(localstackUrl, region, topicConfig.propagateTracing)
-          .also {
-            runBlocking {
-              val attributes = when {
-                topicConfig.isFifo() -> mapOf(
-                  "FifoTopic" to "true",
-                  "ContentBasedDeduplication" to "true",
-                ) else -> mapOf()
-              }
-              it.createTopic(
-                CreateTopicRequest.builder()
-                  .name(topicConfig.name)
-                  .attributes(attributes)
-                  .build(),
-              ).await()
-            }
-          }
-          .also { log.info("Created a LocalStack SNS topic for topicId $topicId with ARN ${topicConfig.arn}") }
-        else -> throw IllegalStateException("Unrecognised HMPPS SQS provider $provider")
+  private fun getOrDefaultSnsAsyncClient(topicId: String, topicConfig: HmppsSqsProperties.TopicConfig, hmppsSqsProperties: HmppsSqsProperties): SnsAsyncClient = "$topicId-sns-client".let { beanName ->
+    runCatching { context.beanFactory.getBean(beanName) as SnsAsyncClient }
+      .getOrElse {
+        createSnsAsyncClient(topicId, topicConfig, hmppsSqsProperties)
+          .also { context.beanFactory.registerSingleton(beanName, it) }
       }
+  }
+
+  fun createSnsAsyncClient(topicId: String, topicConfig: HmppsSqsProperties.TopicConfig, hmppsSqsProperties: HmppsSqsProperties): SnsAsyncClient = with(hmppsSqsProperties) {
+    when (provider) {
+      "aws" -> snsClientFactory.awsSnsAsyncClient(topicConfig.accessKeyId, topicConfig.secretAccessKey, region, hmppsSqsProperties.useWebToken, topicConfig.propagateTracing)
+      "localstack" -> snsClientFactory.localstackSnsAsyncClient(localstackUrl, region, topicConfig.propagateTracing)
+        .also {
+          runBlocking {
+            val attributes = when {
+              topicConfig.isFifo() -> mapOf(
+                "FifoTopic" to "true",
+                "ContentBasedDeduplication" to "true",
+              ) else -> mapOf()
+            }
+            it.createTopic(
+              CreateTopicRequest.builder()
+                .name(topicConfig.name)
+                .attributes(attributes)
+                .build(),
+            ).await()
+          }
+        }
+        .also { log.info("Created a LocalStack SNS topic for topicId $topicId with ARN ${topicConfig.arn}") }
+      else -> throw IllegalStateException("Unrecognised HMPPS SQS provider $provider")
     }
+  }
 }

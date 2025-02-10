@@ -44,11 +44,10 @@ class TraceExtractingMessageInterceptor(private val objectMapper: ObjectMapper) 
     message
   }
 
-  private fun startSpanFromAttributesInHeader(message: Message<Any>): Span? =
-    extractAttributes(message)?.let { attributes ->
-      val spanName = attributes["eventType"]?.let { "RECEIVE ${it.stringValue()}" } ?: "RECEIVE"
-      attributes.extractTelemetryContextFromValues().startSpan(spanName)
-    }
+  private fun startSpanFromAttributesInHeader(message: Message<Any>): Span? = extractAttributes(message)?.let { attributes ->
+    val spanName = attributes["eventType"]?.let { "RECEIVE ${it.stringValue()}" } ?: "RECEIVE"
+    attributes.extractTelemetryContextFromValues().startSpan(spanName)
+  }
 
   private fun startSpanFromAttributesInPayload(payload: String?): Span? {
     val attributes = objectMapper.readValue(
@@ -83,17 +82,14 @@ class TraceExtractingMessageInterceptor(private val objectMapper: ObjectMapper) 
 
   override fun intercept(messages: Collection<Message<Any>>) = messages.map { intercept(it) }
 
-  override fun afterProcessing(messages: Collection<Message<Any>>, t: Throwable?) =
-    messages.forEach { afterProcessing(it, t) }
+  override fun afterProcessing(messages: Collection<Message<Any>>, t: Throwable?) = messages.forEach { afterProcessing(it, t) }
 
-  private fun <T> Message<T>.withHeader(headerName: String, headerValue: Any) =
-    MessageHeaderUtils.addHeaderIfAbsent(this, headerName, headerValue)
+  private fun <T> Message<T>.withHeader(headerName: String, headerValue: Any) = MessageHeaderUtils.addHeaderIfAbsent(this, headerName, headerValue)
 
   private fun MutableMap<String, MessageAttributeValue>.extractTelemetryContextFromValues(): Context {
     val getter = object : TextMapGetter<MutableMap<String, MessageAttributeValue>> {
       override fun keys(carrier: MutableMap<String, MessageAttributeValue>) = carrier.keys
-      override fun get(carrier: MutableMap<String, MessageAttributeValue>?, key: String) =
-        carrier?.get(key)?.stringValue()
+      override fun get(carrier: MutableMap<String, MessageAttributeValue>?, key: String) = carrier?.get(key)?.stringValue()
     }
     return GlobalOpenTelemetry.getPropagators().textMapPropagator.extract(Context.current(), this, getter)
   }
@@ -101,8 +97,7 @@ class TraceExtractingMessageInterceptor(private val objectMapper: ObjectMapper) 
   private fun MutableMap<String, MessageAttribute>.extractTelemetryContext(): Context {
     val getter = object : TextMapGetter<MutableMap<String, MessageAttribute>> {
       override fun keys(carrier: MutableMap<String, MessageAttribute>) = carrier.keys
-      override fun get(carrier: MutableMap<String, MessageAttribute>?, key: String) =
-        carrier?.get(key)?.Value.toString()
+      override fun get(carrier: MutableMap<String, MessageAttribute>?, key: String) = carrier?.get(key)?.Value.toString()
     }
     return GlobalOpenTelemetry.getPropagators().textMapPropagator.extract(Context.current(), this, getter)
   }

@@ -52,20 +52,15 @@ abstract class IntegrationTestBase {
     auditSqsClient.purgeQueue(PurgeQueueRequest.builder().queueUrl(auditQueueUrl).build()).get()
   }
 
-  fun HmppsSqsProperties.inboundQueueConfig() =
-    queues["inboundqueue"] ?: throw MissingQueueException("inboundqueue has not been loaded from configuration properties")
+  fun HmppsSqsProperties.inboundQueueConfig() = queues["inboundqueue"] ?: throw MissingQueueException("inboundqueue has not been loaded from configuration properties")
 
-  fun HmppsSqsProperties.outboundQueueConfig() =
-    queues["outboundqueue"] ?: throw MissingQueueException("outboundqueue has not been loaded from configuration properties")
+  fun HmppsSqsProperties.outboundQueueConfig() = queues["outboundqueue"] ?: throw MissingQueueException("outboundqueue has not been loaded from configuration properties")
 
-  fun HmppsSqsProperties.auditQueueConfig() =
-    queues["audit"] ?: throw MissingQueueException("audit has not been loaded from configuration properties")
+  fun HmppsSqsProperties.auditQueueConfig() = queues["audit"] ?: throw MissingQueueException("audit has not been loaded from configuration properties")
 
-  fun HmppsSqsProperties.inboundTopicConfig() =
-    topics["inboundtopic"] ?: throw MissingTopicException("inboundtopic has not been loaded from configuration properties")
+  fun HmppsSqsProperties.inboundTopicConfig() = topics["inboundtopic"] ?: throw MissingTopicException("inboundtopic has not been loaded from configuration properties")
 
-  fun HmppsSqsProperties.outboundTopicConfig() =
-    topics["outboundtopic"] ?: throw MissingTopicException("outboundtopic has not been loaded from configuration properties")
+  fun HmppsSqsProperties.outboundTopicConfig() = topics["outboundtopic"] ?: throw MissingTopicException("outboundtopic has not been loaded from configuration properties")
 
   private val inboundQueue by lazy { hmppsQueueService.findByQueueId("inboundqueue") ?: throw MissingQueueException("HmppsQueue inboundqueue not found") }
   private val outboundQueue by lazy { hmppsQueueService.findByQueueId("outboundqueue") ?: throw MissingQueueException("HmppsQueue outboundqueue not found") }
@@ -157,18 +152,16 @@ abstract class IntegrationTestBase {
     fun outboundQueueSqsClient(
       hmppsSqsProperties: HmppsSqsProperties,
       @Qualifier("outboundqueue-sqs-dlq-client") outboundQueueSqsDlqClient: SqsAsyncClient,
-    ): SqsAsyncClient =
-      with(hmppsSqsProperties) {
-        val config = queues["outboundqueue"] ?: throw MissingQueueException("HmppsSqsProperties config for outboundqueue not found")
-        hmppsQueueFactory.createSqsAsyncClient(config, hmppsSqsProperties, outboundQueueSqsDlqClient)
-      }
+    ): SqsAsyncClient = with(hmppsSqsProperties) {
+      val config = queues["outboundqueue"] ?: throw MissingQueueException("HmppsSqsProperties config for outboundqueue not found")
+      hmppsQueueFactory.createSqsAsyncClient(config, hmppsSqsProperties, outboundQueueSqsDlqClient)
+    }
 
     @Bean("outboundqueue-sqs-dlq-client")
-    fun outboundQueueSqsDlqClient(hmppsSqsProperties: HmppsSqsProperties): SqsAsyncClient =
-      with(hmppsSqsProperties) {
-        val config = queues["outboundqueue"] ?: throw MissingQueueException("HmppsSqsProperties config for outboundqueue not found")
-        hmppsQueueFactory.createSqsAsyncDlqClient(config, hmppsSqsProperties)
-      }
+    fun outboundQueueSqsDlqClient(hmppsSqsProperties: HmppsSqsProperties): SqsAsyncClient = with(hmppsSqsProperties) {
+      val config = queues["outboundqueue"] ?: throw MissingQueueException("HmppsSqsProperties config for outboundqueue not found")
+      hmppsQueueFactory.createSqsAsyncDlqClient(config, hmppsSqsProperties)
+    }
   }
 
   companion object {

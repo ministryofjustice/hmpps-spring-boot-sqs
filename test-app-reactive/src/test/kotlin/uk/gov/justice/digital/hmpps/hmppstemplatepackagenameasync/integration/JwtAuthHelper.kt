@@ -27,17 +27,16 @@ class JwtAuthHelper {
     expiryTime: Duration = Duration.ofHours(1),
     clientId: String = "prison-register-client",
     jwtId: String = UUID.randomUUID().toString(),
-  ): String =
-    mutableMapOf<String, Any?>("user_name" to subject, "client_id" to clientId, "user_id" to userId)
-      .also { roles?.let { roles -> it["authorities"] = roles } }
-      .also { scope?.let { scope -> it["scope"] = scope } }
-      .let {
-        Jwts.builder()
-          .id(jwtId)
-          .subject(subject)
-          .claims(it.toMap())
-          .expiration(Date(System.currentTimeMillis() + expiryTime.toMillis()))
-          .signWith(keyPair.private, Jwts.SIG.RS256)
-          .compact()
-      }
+  ): String = mutableMapOf<String, Any?>("user_name" to subject, "client_id" to clientId, "user_id" to userId)
+    .also { roles?.let { roles -> it["authorities"] = roles } }
+    .also { scope?.let { scope -> it["scope"] = scope } }
+    .let {
+      Jwts.builder()
+        .id(jwtId)
+        .subject(subject)
+        .claims(it.toMap())
+        .expiration(Date(System.currentTimeMillis() + expiryTime.toMillis()))
+        .signWith(keyPair.private, Jwts.SIG.RS256)
+        .compact()
+    }
 }

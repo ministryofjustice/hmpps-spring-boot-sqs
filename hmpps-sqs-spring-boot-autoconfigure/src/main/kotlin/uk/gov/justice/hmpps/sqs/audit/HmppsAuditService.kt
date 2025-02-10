@@ -31,16 +31,15 @@ open class HmppsAuditService(
   /**
    * Publish an event to the HMPPS Audit queue.
    */
-  open suspend fun publishEvent(hmppsAuditEvent: HmppsAuditEvent): SendMessageResponse =
-    auditSqsClient.sendMessage(
-      SendMessageRequest.builder()
-        .queueUrl(auditQueueUrl)
-        .messageBody(objectMapper.writeValueAsString(hmppsAuditEvent))
-        .eventTypeMessageAttributes("hmpps-audit-event")
-        .build(),
-    ).await().also {
-      log.debug("Published audit event with message id {}", it.messageId())
-    }
+  open suspend fun publishEvent(hmppsAuditEvent: HmppsAuditEvent): SendMessageResponse = auditSqsClient.sendMessage(
+    SendMessageRequest.builder()
+      .queueUrl(auditQueueUrl)
+      .messageBody(objectMapper.writeValueAsString(hmppsAuditEvent))
+      .eventTypeMessageAttributes("hmpps-audit-event")
+      .build(),
+  ).await().also {
+    log.debug("Published audit event with message id {}", it.messageId())
+  }
 
   /**
    * Publish an event to the HMPPS Audit queue.

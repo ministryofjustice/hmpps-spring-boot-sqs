@@ -28,73 +28,66 @@ class HmppsQueueFactory(
     val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
-  fun createHmppsQueues(hmppsSqsProperties: HmppsSqsProperties, hmppsTopics: List<HmppsTopic> = listOf()) =
-    hmppsSqsProperties.queues
-      .map { (queueId, queueConfig) ->
-        val sqsDlqClient = getOrDefaultSqsDlqClient(queueId, queueConfig, hmppsSqsProperties)
-        val sqsClient = getOrDefaultSqsClient(queueId, queueConfig, hmppsSqsProperties, sqsDlqClient)
-          .also {
-            subscribeToLocalStackTopic(it, hmppsSqsProperties, queueConfig, hmppsTopics)
-          }
-        HmppsQueue(queueId, sqsClient, queueConfig.queueName, sqsDlqClient, queueConfig.dlqName.ifEmpty { null })
-          .also { registerHealthIndicator(it) }
-          .also { createSqsListenerContainerFactory(it, queueConfig.errorVisibilityTimeout, queueConfig.propagateTracing) }
-      }.toList()
+  fun createHmppsQueues(hmppsSqsProperties: HmppsSqsProperties, hmppsTopics: List<HmppsTopic> = listOf()) = hmppsSqsProperties.queues
+    .map { (queueId, queueConfig) ->
+      val sqsDlqClient = getOrDefaultSqsDlqClient(queueId, queueConfig, hmppsSqsProperties)
+      val sqsClient = getOrDefaultSqsClient(queueId, queueConfig, hmppsSqsProperties, sqsDlqClient)
+        .also {
+          subscribeToLocalStackTopic(it, hmppsSqsProperties, queueConfig, hmppsTopics)
+        }
+      HmppsQueue(queueId, sqsClient, queueConfig.queueName, sqsDlqClient, queueConfig.dlqName.ifEmpty { null })
+        .also { registerHealthIndicator(it) }
+        .also { createSqsListenerContainerFactory(it, queueConfig.errorVisibilityTimeout, queueConfig.propagateTracing) }
+    }.toList()
 
-  private fun getOrDefaultSqsDlqClient(queueId: String, queueConfig: QueueConfig, hmppsSqsProperties: HmppsSqsProperties): SqsAsyncClient? =
-    if (queueConfig.dlqName.isNotEmpty()) {
-      getOrDefaultBean("$queueId-sqs-dlq-client") {
-        createSqsAsyncDlqClient(queueConfig, hmppsSqsProperties)
-          .also { log.info("Created ${hmppsSqsProperties.provider} SqsAsyncClient for DLQ queueId $queueId with name ${queueConfig.dlqName}") }
-      }
-    } else {
-      null
+  private fun getOrDefaultSqsDlqClient(queueId: String, queueConfig: QueueConfig, hmppsSqsProperties: HmppsSqsProperties): SqsAsyncClient? = if (queueConfig.dlqName.isNotEmpty()) {
+    getOrDefaultBean("$queueId-sqs-dlq-client") {
+      createSqsAsyncDlqClient(queueConfig, hmppsSqsProperties)
+        .also { log.info("Created ${hmppsSqsProperties.provider} SqsAsyncClient for DLQ queueId $queueId with name ${queueConfig.dlqName}") }
     }
+  } else {
+    null
+  }
 
-  private fun getOrDefaultSqsClient(queueId: String, queueConfig: QueueConfig, hmppsSqsProperties: HmppsSqsProperties, sqsDlqClient: SqsAsyncClient?): SqsAsyncClient =
-    getOrDefaultBean("$queueId-sqs-client") {
-      createSqsAsyncClient(queueConfig, hmppsSqsProperties, sqsDlqClient)
-        .also { log.info("Created ${hmppsSqsProperties.provider} SqsAsyncClient for queue queueId $queueId with name ${queueConfig.queueName}") }
-    }
+  private fun getOrDefaultSqsClient(queueId: String, queueConfig: QueueConfig, hmppsSqsProperties: HmppsSqsProperties, sqsDlqClient: SqsAsyncClient?): SqsAsyncClient = getOrDefaultBean("$queueId-sqs-client") {
+    createSqsAsyncClient(queueConfig, hmppsSqsProperties, sqsDlqClient)
+      .also { log.info("Created ${hmppsSqsProperties.provider} SqsAsyncClient for queue queueId $queueId with name ${queueConfig.queueName}") }
+  }
 
-  private fun registerHealthIndicator(hmppsQueue: HmppsQueue) =
-    healthContributorRegistry.registerContributor("${hmppsQueue.id}-health") {
-      HmppsQueueHealth(hmppsQueue)
-    }
+  private fun registerHealthIndicator(hmppsQueue: HmppsQueue) = healthContributorRegistry.registerContributor("${hmppsQueue.id}-health") {
+    HmppsQueueHealth(hmppsQueue)
+  }
 
   @Suppress("NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
-  private inline fun <reified T> getOrDefaultBean(beanName: String, createDefaultBean: () -> T) =
-    runCatching { context.beanFactory.getBean(beanName) as T }
-      .getOrElse {
-        createDefaultBean().also { bean -> context.beanFactory.registerSingleton(beanName, bean) }
-      }
-
-  private fun createSqsListenerContainerFactory(hmppsQueue: HmppsQueue, errorVisibilityTimeout: Int, propagateTracing: Boolean): HmppsQueueDestinationContainerFactory =
-    getOrDefaultBean("${hmppsQueue.id}-sqs-listener-factory") {
-      HmppsQueueDestinationContainerFactory(hmppsQueue.id, createSqsListenerContainerFactory(hmppsQueue.sqsClient, errorVisibilityTimeout, propagateTracing))
+  private inline fun <reified T> getOrDefaultBean(beanName: String, createDefaultBean: () -> T) = runCatching { context.beanFactory.getBean(beanName) as T }
+    .getOrElse {
+      createDefaultBean().also { bean -> context.beanFactory.registerSingleton(beanName, bean) }
     }
 
-  private fun createSqsListenerContainerFactory(awsSqsClient: SqsAsyncClient, errorVisibilityTimeout: Int, propagateTracing: Boolean): SqsMessageListenerContainerFactory<Any> =
-    SqsMessageListenerContainerFactory
-      .builder<Any>()
-      .sqsAsyncClient(awsSqsClient)
-      .apply {
-        if (propagateTracing) {
-          messageInterceptor(TraceExtractingMessageInterceptor(objectMapper))
-        }
+  private fun createSqsListenerContainerFactory(hmppsQueue: HmppsQueue, errorVisibilityTimeout: Int, propagateTracing: Boolean): HmppsQueueDestinationContainerFactory = getOrDefaultBean("${hmppsQueue.id}-sqs-listener-factory") {
+    HmppsQueueDestinationContainerFactory(hmppsQueue.id, createSqsListenerContainerFactory(hmppsQueue.sqsClient, errorVisibilityTimeout, propagateTracing))
+  }
+
+  private fun createSqsListenerContainerFactory(awsSqsClient: SqsAsyncClient, errorVisibilityTimeout: Int, propagateTracing: Boolean): SqsMessageListenerContainerFactory<Any> = SqsMessageListenerContainerFactory
+    .builder<Any>()
+    .sqsAsyncClient(awsSqsClient)
+    .apply {
+      if (propagateTracing) {
+        messageInterceptor(TraceExtractingMessageInterceptor(objectMapper))
       }
-      .errorHandler(
-        object : ErrorHandler<Any> {
-          override fun handle(message: org.springframework.messaging.Message<Any>, t: Throwable) {
-            // SDI-477 remove this logging when we are comfortable that all is working as expected - instant retries
-            log.info("Setting visibility of messageId ${message.headers["id"]} to $errorVisibilityTimeout (to initiate faster retry) after receiving exception ${t.cause?.cause?.cause}")
-            val sqsVisibility = message.headers["Sqs_VisibilityTimeout"] as QueueMessageVisibility
-            sqsVisibility.changeTo(errorVisibilityTimeout)
-            throw t
-          }
-        },
-      )
-      .build()
+    }
+    .errorHandler(
+      object : ErrorHandler<Any> {
+        override fun handle(message: org.springframework.messaging.Message<Any>, t: Throwable) {
+          // SDI-477 remove this logging when we are comfortable that all is working as expected - instant retries
+          log.info("Setting visibility of messageId ${message.headers["id"]} to $errorVisibilityTimeout (to initiate faster retry) after receiving exception ${t.cause?.cause?.cause}")
+          val sqsVisibility = message.headers["Sqs_VisibilityTimeout"] as QueueMessageVisibility
+          sqsVisibility.changeTo(errorVisibilityTimeout)
+          throw t
+        }
+      },
+    )
+    .build()
 
   fun createSqsAsyncDlqClient(queueConfig: QueueConfig, hmppsSqsProperties: HmppsSqsProperties): SqsAsyncClient {
     val region = hmppsSqsProperties.region
@@ -107,8 +100,7 @@ class HmppsQueueFactory(
           queueConfig.isFifo() -> mapOf(QueueAttributeName.FIFO_QUEUE to "true") else -> mapOf()
         }
         sqsClientFactory.localstackSqsAsyncClient(hmppsSqsProperties.localstackUrl, region, queueConfig.propagateTracing)
-          .also {
-              sqsDlqClient ->
+          .also { sqsDlqClient ->
             runBlocking {
               sqsDlqClient.createQueue(
                 CreateQueueRequest.builder()

@@ -32,15 +32,14 @@ class SqsClientFactory {
       .build()
   }
 
-  fun localstackSqsAsyncClient(localstackUrl: String, region: String, propagateTracing: Boolean): SqsAsyncClient =
-    SqsAsyncClient.builder()
-      .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create("any", "any")))
-      .endpointOverride(URI.create(localstackUrl))
-      .region(Region.of(region))
-      .apply {
-        if (propagateTracing) {
-          overrideConfiguration { it.addExecutionInterceptor(TraceInjectingExecutionInterceptor()) }
-        }
+  fun localstackSqsAsyncClient(localstackUrl: String, region: String, propagateTracing: Boolean): SqsAsyncClient = SqsAsyncClient.builder()
+    .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create("any", "any")))
+    .endpointOverride(URI.create(localstackUrl))
+    .region(Region.of(region))
+    .apply {
+      if (propagateTracing) {
+        overrideConfiguration { it.addExecutionInterceptor(TraceInjectingExecutionInterceptor()) }
       }
-      .build()
+    }
+    .build()
 }

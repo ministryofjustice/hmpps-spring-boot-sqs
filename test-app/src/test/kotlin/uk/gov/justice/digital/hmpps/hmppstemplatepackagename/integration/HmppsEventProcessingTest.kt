@@ -46,8 +46,7 @@ class SnsConfig(private val hmppsTopicFactory: HmppsTopicFactory) {
   @Bean("outboundtopic-sns-client")
   fun topicSnsClient(
     hmppsSqsProperties: HmppsSqsProperties,
-  ): SnsAsyncClient =
-    hmppsTopicFactory.createSnsAsyncClient(topicId = "outboundtopic", topicConfig = HmppsSqsProperties.TopicConfig(arn = hmppsSqsProperties.topics["outboundtopic"]!!.arn), hmppsSqsProperties = hmppsSqsProperties)
+  ): SnsAsyncClient = hmppsTopicFactory.createSnsAsyncClient(topicId = "outboundtopic", topicConfig = HmppsSqsProperties.TopicConfig(arn = hmppsSqsProperties.topics["outboundtopic"]!!.arn), hmppsSqsProperties = hmppsSqsProperties)
 }
 
 @Import(SnsConfig::class)

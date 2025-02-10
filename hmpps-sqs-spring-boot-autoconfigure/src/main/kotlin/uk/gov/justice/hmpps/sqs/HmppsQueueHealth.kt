@@ -71,31 +71,25 @@ class HmppsQueueHealth(private val hmppsQueue: HmppsQueue) : HealthIndicator {
     return healthBuilder.build()
   }
 
-  private fun queueStatus(dlqResults: List<Result<HealthDetail>>, queueResults: List<Result<HealthDetail>>): String =
-    if ((queueResults + dlqResults).any { it.isFailure }) "DOWN" else "UP"
+  private fun queueStatus(dlqResults: List<Result<HealthDetail>>, queueResults: List<Result<HealthDetail>>): String = if ((queueResults + dlqResults).any { it.isFailure }) "DOWN" else "UP"
 
-  private fun dlqStatus(dlqResults: List<Result<HealthDetail>>, queueResults: List<Result<HealthDetail>>): String =
-    if (queueResults.any(::isMissingRedrivePolicy).or(dlqResults.any { it.isFailure })) "DOWN" else "UP"
+  private fun dlqStatus(dlqResults: List<Result<HealthDetail>>, queueResults: List<Result<HealthDetail>>): String = if (queueResults.any(::isMissingRedrivePolicy).or(dlqResults.any { it.isFailure })) "DOWN" else "UP"
 
   private fun isMissingRedrivePolicy(result: Result<HealthDetail>) = result.exceptionOrNull() is MissingRedrivePolicyException
 
-  private fun Builder.addHealthResult(result: Result<HealthDetail>) =
-    result
-      .onSuccess { healthDetail -> withDetail(healthDetail.key(), healthDetail.value()) }
-      .onFailure { throwable ->
-        withException(throwable)
-          .also { log.error("Queue health for queueId ${hmppsQueue.id} failed due to exception", throwable) }
-      }
-
-  private fun getQueueAttributes(): Result<GetQueueAttributesResponse> {
-    return runCatching {
-      hmppsQueue.sqsClient.getQueueAttributes(GetQueueAttributesRequest.builder().queueUrl(hmppsQueue.queueUrl).attributeNames(QueueAttributeName.ALL).build()).get()
+  private fun Builder.addHealthResult(result: Result<HealthDetail>) = result
+    .onSuccess { healthDetail -> withDetail(healthDetail.key(), healthDetail.value()) }
+    .onFailure { throwable ->
+      withException(throwable)
+        .also { log.error("Queue health for queueId ${hmppsQueue.id} failed due to exception", throwable) }
     }
+
+  private fun getQueueAttributes(): Result<GetQueueAttributesResponse> = runCatching {
+    hmppsQueue.sqsClient.getQueueAttributes(GetQueueAttributesRequest.builder().queueUrl(hmppsQueue.queueUrl).attributeNames(QueueAttributeName.ALL).build()).get()
   }
 
-  private fun getDlqAttributes(): Result<GetQueueAttributesResponse> =
-    runCatching {
-      hmppsQueue.sqsDlqClient?.getQueueAttributes(GetQueueAttributesRequest.builder().queueUrl(hmppsQueue.dlqUrl).attributeNames(QueueAttributeName.ALL).build())?.get()
-        ?: throw MissingDlqClientException(hmppsQueue.dlqName)
-    }
+  private fun getDlqAttributes(): Result<GetQueueAttributesResponse> = runCatching {
+    hmppsQueue.sqsDlqClient?.getQueueAttributes(GetQueueAttributesRequest.builder().queueUrl(hmppsQueue.dlqUrl).attributeNames(QueueAttributeName.ALL).build())?.get()
+      ?: throw MissingDlqClientException(hmppsQueue.dlqName)
+  }
 }
