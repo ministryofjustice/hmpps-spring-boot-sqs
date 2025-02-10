@@ -12,7 +12,7 @@ import org.springframework.security.web.SecurityFilterChain
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity(prePostEnabled = true, proxyTargetClass = true)
-class ResourceServerConfiguration() {
+class ResourceServerConfiguration {
   @Bean
   fun filterChain(http: HttpSecurity): SecurityFilterChain = http {
     headers { frameOptions { sameOrigin = true } }

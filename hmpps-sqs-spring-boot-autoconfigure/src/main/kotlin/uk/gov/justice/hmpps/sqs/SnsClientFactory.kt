@@ -32,15 +32,14 @@ class SnsClientFactory {
       .build()
   }
 
-  fun localstackSnsAsyncClient(localstackUrl: String, region: String, propagateTracing: Boolean): SnsAsyncClient =
-    SnsAsyncClient.builder()
-      .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create("any", "any")))
-      .endpointOverride(URI.create(localstackUrl))
-      .region(Region.of(region))
-      .apply {
-        if (propagateTracing) {
-          overrideConfiguration { it.addExecutionInterceptor(TraceInjectingExecutionInterceptor()) }
-        }
+  fun localstackSnsAsyncClient(localstackUrl: String, region: String, propagateTracing: Boolean): SnsAsyncClient = SnsAsyncClient.builder()
+    .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create("any", "any")))
+    .endpointOverride(URI.create(localstackUrl))
+    .region(Region.of(region))
+    .apply {
+      if (propagateTracing) {
+        overrideConfiguration { it.addExecutionInterceptor(TraceInjectingExecutionInterceptor()) }
       }
-      .build()
+    }
+    .build()
 }

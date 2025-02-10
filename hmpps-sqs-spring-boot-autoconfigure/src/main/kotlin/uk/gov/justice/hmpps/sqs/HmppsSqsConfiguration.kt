@@ -62,24 +62,20 @@ class HmppsSqsConfiguration {
   @Bean
   @ConditionalOnMissingBean
   @ConditionalOnWebApplication(type = SERVLET)
-  fun hmppsBlockingHealthContributorRegistry(healthContributorRegistry: HealthContributorRegistry) =
-    HmppsBlockingHealthContributorRegistry(healthContributorRegistry)
+  fun hmppsBlockingHealthContributorRegistry(healthContributorRegistry: HealthContributorRegistry) = HmppsBlockingHealthContributorRegistry(healthContributorRegistry)
 
   @Bean
   @ConditionalOnMissingBean
   @ConditionalOnWebApplication(type = REACTIVE)
-  fun hmppsReactiveHealthContributorRepository(reactiveHealthContributorRegistry: ReactiveHealthContributorRegistry) =
-    HmppsReactiveHealthContributorRepository(reactiveHealthContributorRegistry)
+  fun hmppsReactiveHealthContributorRepository(reactiveHealthContributorRegistry: ReactiveHealthContributorRegistry) = HmppsReactiveHealthContributorRepository(reactiveHealthContributorRegistry)
 
   @Bean
   @ConditionalOnMissingBean
-  fun hmppsTopicFactory(applicationContext: ConfigurableApplicationContext, healthContributorRegistry: HmppsHealthContributorRegistry) =
-    HmppsTopicFactory(applicationContext, healthContributorRegistry, SnsClientFactory())
+  fun hmppsTopicFactory(applicationContext: ConfigurableApplicationContext, healthContributorRegistry: HmppsHealthContributorRegistry) = HmppsTopicFactory(applicationContext, healthContributorRegistry, SnsClientFactory())
 
   @Bean
   @ConditionalOnMissingBean
-  fun hmppsQueueFactory(applicationContext: ConfigurableApplicationContext, healthContributorRegistry: HmppsHealthContributorRegistry, objectMapper: ObjectMapper) =
-    HmppsQueueFactory(applicationContext, healthContributorRegistry, SqsClientFactory(), objectMapper)
+  fun hmppsQueueFactory(applicationContext: ConfigurableApplicationContext, healthContributorRegistry: HmppsHealthContributorRegistry, objectMapper: ObjectMapper) = HmppsQueueFactory(applicationContext, healthContributorRegistry, SqsClientFactory(), objectMapper)
 
   @Bean
   @ConditionalOnMissingBean

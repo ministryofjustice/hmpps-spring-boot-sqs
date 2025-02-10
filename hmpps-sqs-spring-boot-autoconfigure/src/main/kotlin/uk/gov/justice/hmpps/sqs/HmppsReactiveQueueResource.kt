@@ -16,10 +16,9 @@ class HmppsReactiveQueueResource(private val hmppsQueueService: HmppsQueueServic
 
   @PutMapping("/retry-dlq/{dlqName}")
   @PreAuthorize("hasRole(@environment.getProperty('hmpps.sqs.queueAdminRole', 'ROLE_QUEUE_ADMIN'))")
-  suspend fun retryDlq(@PathVariable("dlqName") dlqName: String) =
-    hmppsQueueService.findByDlqName(dlqName)
-      ?.let { hmppsQueue -> hmppsQueueService.retryDlqMessages(RetryDlqRequest(hmppsQueue)) }
-      ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "$dlqName not found")
+  suspend fun retryDlq(@PathVariable("dlqName") dlqName: String) = hmppsQueueService.findByDlqName(dlqName)
+    ?.let { hmppsQueue -> hmppsQueueService.retryDlqMessages(RetryDlqRequest(hmppsQueue)) }
+    ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "$dlqName not found")
 
   /*
    * This endpoint is not secured because it should only be called from inside the Kubernetes service.
@@ -35,10 +34,9 @@ class HmppsReactiveQueueResource(private val hmppsQueueService: HmppsQueueServic
    */
   @PutMapping("/purge-queue/{queueName}")
   @PreAuthorize("hasRole(@environment.getProperty('hmpps.sqs.queueAdminRole', 'ROLE_QUEUE_ADMIN'))")
-  suspend fun purgeQueue(@PathVariable("queueName") queueName: String) =
-    hmppsQueueService.findQueueToPurge(queueName)
-      ?.let { request -> hmppsQueueService.purgeQueue(request) }
-      ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "$queueName not found")
+  suspend fun purgeQueue(@PathVariable("queueName") queueName: String) = hmppsQueueService.findQueueToPurge(queueName)
+    ?.let { request -> hmppsQueueService.purgeQueue(request) }
+    ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "$queueName not found")
 
   /*
     Note: Once the DLQ messages have been read, they are not visible again (for subsequent reads) for approximately 30 seconds. This is due to the visibility
@@ -46,8 +44,7 @@ class HmppsReactiveQueueResource(private val hmppsQueueService: HmppsQueueServic
    */
   @GetMapping("/get-dlq-messages/{dlqName}")
   @PreAuthorize("hasRole(@environment.getProperty('hmpps.sqs.queueAdminRole', 'ROLE_QUEUE_ADMIN'))")
-  suspend fun getDlqMessages(@PathVariable("dlqName") dlqName: String, @RequestParam("maxMessages", required = false, defaultValue = "100") maxMessages: Int) =
-    hmppsQueueService.findByDlqName(dlqName)
-      ?.let { hmppsQueue -> hmppsQueueService.getDlqMessages(GetDlqRequest(hmppsQueue, maxMessages)) }
-      ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "$dlqName not found")
+  suspend fun getDlqMessages(@PathVariable("dlqName") dlqName: String, @RequestParam("maxMessages", required = false, defaultValue = "100") maxMessages: Int) = hmppsQueueService.findByDlqName(dlqName)
+    ?.let { hmppsQueue -> hmppsQueueService.getDlqMessages(GetDlqRequest(hmppsQueue, maxMessages)) }
+    ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "$dlqName not found")
 }

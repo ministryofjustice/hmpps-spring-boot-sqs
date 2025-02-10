@@ -31,8 +31,6 @@ class HmppsQueue(
   }
 }
 
-private fun getArn(client: SqsAsyncClient, url: String) =
-  client.getQueueAttributes(getArnAttribute(url)).get().attributes()[QueueAttributeName.QUEUE_ARN]
+private fun getArn(client: SqsAsyncClient, url: String) = client.getQueueAttributes(getArnAttribute(url)).get().attributes()[QueueAttributeName.QUEUE_ARN]
 
-private fun getArnAttribute(url: String) =
-  GetQueueAttributesRequest.builder().queueUrl(url).attributeNames(QueueAttributeName.QUEUE_ARN).build()
+private fun getArnAttribute(url: String) = GetQueueAttributesRequest.builder().queueUrl(url).attributeNames(QueueAttributeName.QUEUE_ARN).build()

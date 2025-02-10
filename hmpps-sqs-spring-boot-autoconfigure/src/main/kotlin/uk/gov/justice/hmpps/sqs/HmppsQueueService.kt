@@ -48,16 +48,13 @@ open class HmppsQueueService(
   open fun findByDlqName(dlqName: String): HmppsQueue? = hmppsQueues.find { it.dlqName == dlqName }
   open fun findByTopicId(topicId: String): HmppsTopic? = hmppsTopics.find { it.id == topicId }
 
-  open suspend fun retryDlqMessages(request: RetryDlqRequest): RetryDlqResult =
-    request.hmppsQueue.retryDlqMessages()
+  open suspend fun retryDlqMessages(request: RetryDlqRequest): RetryDlqResult = request.hmppsQueue.retryDlqMessages()
 
-  open suspend fun getDlqMessages(request: GetDlqRequest): GetDlqResult =
-    request.hmppsQueue.getDlqMessages(request.maxMessages)
+  open suspend fun getDlqMessages(request: GetDlqRequest): GetDlqResult = request.hmppsQueue.getDlqMessages(request.maxMessages)
 
-  open suspend fun retryAllDlqs() =
-    hmppsQueues
-      .map { hmppsQueue -> RetryDlqRequest(hmppsQueue) }
-      .map { retryDlqRequest -> retryDlqMessages(retryDlqRequest) }
+  open suspend fun retryAllDlqs() = hmppsQueues
+    .map { hmppsQueue -> RetryDlqRequest(hmppsQueue) }
+    .map { retryDlqRequest -> retryDlqMessages(retryDlqRequest) }
 
   private suspend fun HmppsQueue.retryDlqMessages(): RetryDlqResult {
     if (sqsDlqClient == null || dlqUrl == null) {
@@ -107,27 +104,25 @@ open class HmppsQueueService(
     return GetDlqResult(messageCount, messagesToReturnCount, messages)
   }
 
-  open suspend fun purgeQueue(request: PurgeQueueRequest): PurgeQueueResult =
-    with(request) {
-      val messageCount = sqsClient.countMessagesOnQueue(queueUrl).await()
-      return if (messageCount > 0) {
-        sqsClient.purgeQueue(AwsPurgeQueueRequest.builder().queueUrl(queueUrl).build())
-          .await()
-          .let { PurgeQueueResult(messageCount) }
-          .also {
-            log.info("For queue $queueName attempted to purge $messageCount messages from queue")
-            telemetryClient?.trackEvent("PurgeQueue", mapOf("queue-name" to queueName, "messages-found" to "$messageCount"), null)
-          }
-      } else {
-        PurgeQueueResult(0)
-      }
+  open suspend fun purgeQueue(request: PurgeQueueRequest): PurgeQueueResult = with(request) {
+    val messageCount = sqsClient.countMessagesOnQueue(queueUrl).await()
+    return if (messageCount > 0) {
+      sqsClient.purgeQueue(AwsPurgeQueueRequest.builder().queueUrl(queueUrl).build())
+        .await()
+        .let { PurgeQueueResult(messageCount) }
+        .also {
+          log.info("For queue $queueName attempted to purge $messageCount messages from queue")
+          telemetryClient?.trackEvent("PurgeQueue", mapOf("queue-name" to queueName, "messages-found" to "$messageCount"), null)
+        }
+    } else {
+      PurgeQueueResult(0)
     }
+  }
 
-  open fun findQueueToPurge(queueName: String): PurgeQueueRequest? =
-    hmppsQueues.find { it.id != AUDIT_ID && it.queueName == queueName }
-      ?.let { hmppsQueue -> PurgeQueueRequest(hmppsQueue.queueName, hmppsQueue.sqsClient, hmppsQueue.queueUrl) }
-      ?: findByDlqName(queueName)
-        ?.let { hmppsQueue -> PurgeQueueRequest(hmppsQueue.dlqName!!, hmppsQueue.sqsDlqClient!!, hmppsQueue.dlqUrl!!) }
+  open fun findQueueToPurge(queueName: String): PurgeQueueRequest? = hmppsQueues.find { it.id != AUDIT_ID && it.queueName == queueName }
+    ?.let { hmppsQueue -> PurgeQueueRequest(hmppsQueue.queueName, hmppsQueue.sqsClient, hmppsQueue.queueUrl) }
+    ?: findByDlqName(queueName)
+      ?.let { hmppsQueue -> PurgeQueueRequest(hmppsQueue.dlqName!!, hmppsQueue.sqsDlqClient!!, hmppsQueue.dlqUrl!!) }
 }
 data class RetryDlqRequest(val hmppsQueue: HmppsQueue)
 data class RetryDlqResult(val messagesFoundCount: Int)
@@ -149,11 +144,10 @@ data class PurgeQueueResult(val messagesFoundCount: Int)
  * @param queueUrl String
  * @return CompletableFuture<Int>
  */
-fun SqsAsyncClient.countMessagesOnQueue(queueUrl: String): CompletableFuture<Int> =
-  this.getQueueAttributes(GetQueueAttributesRequest.builder().queueUrl(queueUrl).attributeNames(APPROXIMATE_NUMBER_OF_MESSAGES).build())
-    .thenApply {
-      it.attributes()[APPROXIMATE_NUMBER_OF_MESSAGES]?.toInt() ?: 0
-    }
+fun SqsAsyncClient.countMessagesOnQueue(queueUrl: String): CompletableFuture<Int> = this.getQueueAttributes(GetQueueAttributesRequest.builder().queueUrl(queueUrl).attributeNames(APPROXIMATE_NUMBER_OF_MESSAGES).build())
+  .thenApply {
+    it.attributes()[APPROXIMATE_NUMBER_OF_MESSAGES]?.toInt() ?: 0
+  }
 
 /**
  * Count the approximate number of both visible and invisible messages currently on the queue.  This takes into account
@@ -163,28 +157,23 @@ fun SqsAsyncClient.countMessagesOnQueue(queueUrl: String): CompletableFuture<Int
  * @param queueUrl String
  * @return CompletableFuture<Int>
  */
-fun SqsAsyncClient.countAllMessagesOnQueue(queueUrl: String): CompletableFuture<Int> =
-  this.getQueueAttributes(
-    GetQueueAttributesRequest.builder()
-      .queueUrl(queueUrl)
-      .attributeNames(APPROXIMATE_NUMBER_OF_MESSAGES, APPROXIMATE_NUMBER_OF_MESSAGES_NOT_VISIBLE)
-      .build(),
-  )
-    .thenApply {
-      (it.attributes()[APPROXIMATE_NUMBER_OF_MESSAGES]?.toInt() ?: 0) +
-        (it.attributes()[APPROXIMATE_NUMBER_OF_MESSAGES_NOT_VISIBLE]?.toInt() ?: 0)
-    }
+fun SqsAsyncClient.countAllMessagesOnQueue(queueUrl: String): CompletableFuture<Int> = this.getQueueAttributes(
+  GetQueueAttributesRequest.builder()
+    .queueUrl(queueUrl)
+    .attributeNames(APPROXIMATE_NUMBER_OF_MESSAGES, APPROXIMATE_NUMBER_OF_MESSAGES_NOT_VISIBLE)
+    .build(),
+)
+  .thenApply {
+    (it.attributes()[APPROXIMATE_NUMBER_OF_MESSAGES]?.toInt() ?: 0) +
+      (it.attributes()[APPROXIMATE_NUMBER_OF_MESSAGES_NOT_VISIBLE]?.toInt() ?: 0)
+  }
 
-fun PublishRequest.Builder.eventTypeMessageAttributes(eventType: String, noTracing: Boolean = false): PublishRequest.Builder =
-  messageAttributes(eventTypeSnsMap(eventType, noTracing))
+fun PublishRequest.Builder.eventTypeMessageAttributes(eventType: String, noTracing: Boolean = false): PublishRequest.Builder = messageAttributes(eventTypeSnsMap(eventType, noTracing))
 
-fun eventTypeSnsMap(eventType: String, noTracing: Boolean = false) =
-  mapOf("eventType" to SnsMessageAttributeValue.builder().dataType("String").stringValue(eventType).build()) +
-    if (noTracing) mapOf("noTracing" to SnsMessageAttributeValue.builder().dataType("String").stringValue("true").build()) else emptyMap()
+fun eventTypeSnsMap(eventType: String, noTracing: Boolean = false) = mapOf("eventType" to SnsMessageAttributeValue.builder().dataType("String").stringValue(eventType).build()) +
+  if (noTracing) mapOf("noTracing" to SnsMessageAttributeValue.builder().dataType("String").stringValue("true").build()) else emptyMap()
 
-fun SendMessageRequest.Builder.eventTypeMessageAttributes(eventType: String, noTracing: Boolean = false): SendMessageRequest.Builder =
-  messageAttributes(eventTypeSqsMap(eventType, noTracing))
+fun SendMessageRequest.Builder.eventTypeMessageAttributes(eventType: String, noTracing: Boolean = false): SendMessageRequest.Builder = messageAttributes(eventTypeSqsMap(eventType, noTracing))
 
-fun eventTypeSqsMap(eventType: String, noTracing: Boolean = false) =
-  mapOf("eventType" to SqsMessageAttributeValue.builder().dataType("String").stringValue(eventType).build()) +
-    if (noTracing) mapOf("noTracing" to SqsMessageAttributeValue.builder().dataType("String").stringValue("true").build()) else emptyMap()
+fun eventTypeSqsMap(eventType: String, noTracing: Boolean = false) = mapOf("eventType" to SqsMessageAttributeValue.builder().dataType("String").stringValue(eventType).build()) +
+  if (noTracing) mapOf("noTracing" to SqsMessageAttributeValue.builder().dataType("String").stringValue("true").build()) else emptyMap()

@@ -153,3 +153,7 @@ dependencyCheck {
   format = "ALL"
   analyzers.assemblyEnabled = false
 }
+
+ktlint {
+  version.set("1.5.0")
+}
