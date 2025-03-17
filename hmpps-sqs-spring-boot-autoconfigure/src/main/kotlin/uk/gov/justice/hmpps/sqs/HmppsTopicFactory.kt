@@ -38,32 +38,32 @@ class HmppsTopicFactory(
       }
   }
 
-  fun createSnsAsyncClient(topicId: String, topicConfig: HmppsSqsProperties.TopicConfig, hmppsSqsProperties: HmppsSqsProperties): SnsAsyncClient = with(hmppsSqsProperties) {
-    when (provider) {
-      "aws" -> snsClientFactory.awsSnsAsyncClient(topicConfig.accessKeyId, topicConfig.secretAccessKey, region, useWebToken, topicConfig.propagateTracing, topicConfig.bucketName)
+  fun createSnsAsyncClient(topicId: String, topicConfig: HmppsSqsProperties.TopicConfig, hmppsSqsProperties: HmppsSqsProperties): SnsAsyncClient = with(topicConfig) {
+    when (hmppsSqsProperties.provider) {
+      "aws" -> snsClientFactory.awsSnsAsyncClient(accessKeyId, secretAccessKey, hmppsSqsProperties.region, hmppsSqsProperties.useWebToken, propagateTracing, bucketName)
       "localstack" -> snsClientFactory.localstackSnsAsyncClient(
-        localstackUrl,
-        region,
+        hmppsSqsProperties.localstackUrl,
+        hmppsSqsProperties.region,
         topicConfig,
       )
         .also {
           runBlocking {
             val attributes = when {
-              topicConfig.isFifo() -> mapOf(
+              isFifo() -> mapOf(
                 "FifoTopic" to "true",
                 "ContentBasedDeduplication" to "true",
               ) else -> mapOf()
             }
             it.createTopic(
               CreateTopicRequest.builder()
-                .name(topicConfig.name)
+                .name(name)
                 .attributes(attributes)
                 .build(),
             ).await()
           }
         }
-        .also { log.info("Created a LocalStack SNS topic for topicId $topicId with ARN ${topicConfig.arn}") }
-      else -> throw IllegalStateException("Unrecognised HMPPS SQS provider $provider")
+        .also { log.info("Created a LocalStack SNS topic for topicId $topicId with ARN $arn") }
+      else -> throw IllegalStateException("Unrecognised HMPPS SQS provider $hmppsSqsProperties.provider")
     }
   }
 }
