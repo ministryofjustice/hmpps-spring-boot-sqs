@@ -29,7 +29,7 @@ class SnsClientFactory(val context: ConfigurableApplicationContext) {
   }
 
   private fun awsSnsExtendedAsyncClient(accessKeyId: String, secretAccessKey: String, region: String, useWebToken: Boolean, propagateTracing: Boolean, bucketName: String): SnsAsyncClient {
-    val amazonS3AsyncClient = awsS3AsyncClient(accessKeyId, secretAccessKey, region, useWebToken, propagateTracing)
+    val amazonS3AsyncClient = awsS3AsyncClient(region, propagateTracing)
     val snsExtendedAsyncClientConfiguration: SNSExtendedAsyncClientConfiguration = SNSExtendedAsyncClientConfiguration()
       .withPayloadSupportEnabled(amazonS3AsyncClient, bucketName)
     val snsClient = awsSnsAsyncClient(accessKeyId, secretAccessKey, region, useWebToken, propagateTracing)
@@ -41,15 +41,9 @@ class SnsClientFactory(val context: ConfigurableApplicationContext) {
     return sns
   }
 
-  fun awsS3AsyncClient(accessKeyId: String, secretAccessKey: String, region: String, useWebToken: Boolean, propagateTracing: Boolean): S3AsyncClient {
-    val credentialsProvider =
-      if (useWebToken) {
-        DefaultCredentialsProvider.builder().build()
-      } else {
-        StaticCredentialsProvider.create(AwsBasicCredentials.create(accessKeyId, secretAccessKey))
-      }
-    return S3AsyncClient.builder()
-      .credentialsProvider(credentialsProvider)
+  private fun awsS3AsyncClient(region: String, propagateTracing: Boolean): S3AsyncClient
+    = S3AsyncClient.builder()
+      .credentialsProvider(DefaultCredentialsProvider.builder().build())
       .region(Region.of(region))
       .apply {
         if (propagateTracing) {
@@ -57,7 +51,6 @@ class SnsClientFactory(val context: ConfigurableApplicationContext) {
         }
       }
       .build()
-  }
 
   private fun awsSnsAsyncClient(accessKeyId: String, secretAccessKey: String, region: String, useWebToken: Boolean, propagateTracing: Boolean): SnsAsyncClient {
     val credentialsProvider =
