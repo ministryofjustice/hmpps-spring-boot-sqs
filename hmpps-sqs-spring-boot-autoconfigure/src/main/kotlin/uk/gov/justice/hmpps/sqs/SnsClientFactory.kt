@@ -46,11 +46,11 @@ class SnsClientFactory(val context: ConfigurableApplicationContext) {
     propagateTracing: Boolean,
     bucketName: String,
   ): SnsAsyncClient = when {
-    bucketName.isBlank() -> snsAsyncClient(localstackUrl, region, propagateTracing)
+    bucketName.isBlank() -> localstackSnsAsyncClient(localstackUrl, region, propagateTracing)
     else -> localstackSnsExtendedAsyncClient(localstackUrl, region, propagateTracing, bucketName)
   }
 
-  private fun snsAsyncClient(
+  private fun localstackSnsAsyncClient(
     localstackUrl: String,
     region: String,
     propagateTracing: Boolean,
@@ -69,7 +69,7 @@ class SnsClientFactory(val context: ConfigurableApplicationContext) {
     val amazonS3AsyncClient = getOrDefaultS3AsyncClient(localstackUrl, region, propagateTracing, bucketName)
     val snsExtendedAsyncClientConfiguration: SNSExtendedAsyncClientConfiguration = SNSExtendedAsyncClientConfiguration()
       .withPayloadSupportEnabled(amazonS3AsyncClient, bucketName)
-    val snsClient = snsAsyncClient(localstackUrl, region, propagateTracing)
+    val snsClient = localstackSnsAsyncClient(localstackUrl, region, propagateTracing)
 
     val sns = AmazonSNSExtendedAsyncClient(
       snsClient,
@@ -96,7 +96,17 @@ class SnsClientFactory(val context: ConfigurableApplicationContext) {
     region: String,
     propagateTracing: Boolean,
     bucketName: String,
-  ): S3AsyncClient = localstackS3AsyncClient(localstackUrl, region, propagateTracing)
+  ): S3AsyncClient = S3AsyncClient.builder()
+    .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create("any", "any")))
+    .endpointOverride(URI.create(localstackUrl))
+    .forcePathStyle(true)
+    .region(Region.of(region))
+    .apply {
+      if (propagateTracing) {
+        overrideConfiguration { it.addExecutionInterceptor(TraceInjectingExecutionInterceptor()) }
+      }
+    }
+    .build()
     .also {
       runBlocking {
         if (it.listBuckets(ListBucketsRequest.builder().build()).await().buckets().none { it.name() == bucketName }) {
@@ -110,15 +120,4 @@ class SnsClientFactory(val context: ConfigurableApplicationContext) {
     }
     .also { log.info("Created a LocalStack S3 Bucket named $bucketName") }
 
-  private fun localstackS3AsyncClient(localstackUrl: String, region: String, propagateTracing: Boolean): S3AsyncClient = S3AsyncClient.builder()
-    .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create("any", "any")))
-    .endpointOverride(URI.create(localstackUrl))
-    .forcePathStyle(true)
-    .region(Region.of(region))
-    .apply {
-      if (propagateTracing) {
-        overrideConfiguration { it.addExecutionInterceptor(TraceInjectingExecutionInterceptor()) }
-      }
-    }
-    .build()
 }
