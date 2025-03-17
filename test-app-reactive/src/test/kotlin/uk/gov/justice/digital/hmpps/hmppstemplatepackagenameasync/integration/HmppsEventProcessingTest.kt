@@ -172,5 +172,4 @@ class HmppsEventProcessingTest : IntegrationTestBase() {
     assertThat(receivedEvent.type).isEqualTo("FIFO-EVENT")
     assertThat(receivedEvent.contents).isEqualTo("some FIFO contents")
   }
-
 }

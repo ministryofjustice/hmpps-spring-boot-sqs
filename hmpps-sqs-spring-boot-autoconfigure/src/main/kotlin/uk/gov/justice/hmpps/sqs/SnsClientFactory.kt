@@ -78,23 +78,11 @@ class SnsClientFactory(val context: ConfigurableApplicationContext) {
     return sns
   }
 
-  private fun createLocalstackS3AsyncClient(localstackUrl: String, region: String, propagateTracing: Boolean): S3AsyncClient? = S3AsyncClient.builder()
-    .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create("any", "any")))
-    .endpointOverride(URI.create(localstackUrl))
-    .forcePathStyle(true)
-    .region(Region.of(region))
-    .apply {
-      if (propagateTracing) {
-        overrideConfiguration { it.addExecutionInterceptor(TraceInjectingExecutionInterceptor()) }
-      }
-    }
-    .build()
-
   private fun getOrDefaultS3AsyncClient(
     localstackUrl: String,
     region: String,
     propagateTracing: Boolean,
-    bucketName: String
+    bucketName: String,
   ): S3AsyncClient = "$bucketName-s3-client".let { beanName ->
     runCatching { context.beanFactory.getBean(beanName) as S3AsyncClient }
       .getOrElse {
@@ -107,41 +95,22 @@ class SnsClientFactory(val context: ConfigurableApplicationContext) {
     localstackUrl: String,
     region: String,
     propagateTracing: Boolean,
-    bucketName: String
-  ): S3AsyncClient =
-    localstackS3AsyncClient(localstackUrl, region, propagateTracing)
-      .also {
-        runBlocking {
-          if (it.listBuckets(ListBucketsRequest.builder().build()).await().buckets().none { it.name() == bucketName }) {
-            it.createBucket(
-              CreateBucketRequest.builder()
-                .bucket(bucketName)
-                .build(),
-            ).await()
-          }
+    bucketName: String,
+  ): S3AsyncClient = localstackS3AsyncClient(localstackUrl, region, propagateTracing)
+    .also {
+      runBlocking {
+        if (it.listBuckets(ListBucketsRequest.builder().build()).await().buckets().none { it.name() == bucketName }) {
+          it.createBucket(
+            CreateBucketRequest.builder()
+              .bucket(bucketName)
+              .build(),
+          ).await()
         }
       }
-      .also { HmppsTopicFactory.log.info("Created a LocalStack S3 Bucket named $bucketName") }
+    }
+    .also { log.info("Created a LocalStack S3 Bucket named $bucketName") }
 
-  fun awsS3AsyncClient(accessKeyId: String, secretAccessKey: String, region: String, useWebToken: Boolean, propagateTracing: Boolean): S3AsyncClient {
-    val credentialsProvider =
-      if (useWebToken) {
-        DefaultCredentialsProvider.builder().build()
-      } else {
-        StaticCredentialsProvider.create(AwsBasicCredentials.create(accessKeyId, secretAccessKey))
-      }
-    return S3AsyncClient.builder()
-      .credentialsProvider(credentialsProvider)
-      .region(Region.of(region))
-      .apply {
-        if (propagateTracing) {
-          overrideConfiguration { it.addExecutionInterceptor(TraceInjectingExecutionInterceptor()) }
-        }
-      }
-      .build()
-  }
-
-  fun localstackS3AsyncClient(localstackUrl: String, region: String, propagateTracing: Boolean): S3AsyncClient = S3AsyncClient.builder()
+  private fun localstackS3AsyncClient(localstackUrl: String, region: String, propagateTracing: Boolean): S3AsyncClient = S3AsyncClient.builder()
     .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create("any", "any")))
     .endpointOverride(URI.create(localstackUrl))
     .forcePathStyle(true)
