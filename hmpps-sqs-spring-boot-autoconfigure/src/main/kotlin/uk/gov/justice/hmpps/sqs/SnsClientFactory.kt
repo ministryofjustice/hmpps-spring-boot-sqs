@@ -66,7 +66,7 @@ class SnsClientFactory(val context: ConfigurableApplicationContext) {
     .build()
 
   private fun localstackSnsExtendedAsyncClient(localstackUrl: String, region: String, propagateTracing: Boolean, bucketName: String): SnsAsyncClient {
-    val amazonS3AsyncClient = getOrDefaultS3AsyncClient(localstackUrl, region, propagateTracing, "localstack", bucketName)
+    val amazonS3AsyncClient = getOrDefaultS3AsyncClient(localstackUrl, region, propagateTracing, bucketName)
     val snsExtendedAsyncClientConfiguration: SNSExtendedAsyncClientConfiguration = SNSExtendedAsyncClientConfiguration()
       .withPayloadSupportEnabled(amazonS3AsyncClient, bucketName)
     val snsClient = snsAsyncClient(localstackUrl, region, propagateTracing)
@@ -90,17 +90,26 @@ class SnsClientFactory(val context: ConfigurableApplicationContext) {
     }
     .build()
 
-  private fun getOrDefaultS3AsyncClient(localstackUrl: String, region: String, propagateTracing: Boolean, provider: String, bucketName: String): S3AsyncClient = "$bucketName-s3-client".let { beanName ->
+  private fun getOrDefaultS3AsyncClient(
+    localstackUrl: String,
+    region: String,
+    propagateTracing: Boolean,
+    bucketName: String
+  ): S3AsyncClient = "$bucketName-s3-client".let { beanName ->
     runCatching { context.beanFactory.getBean(beanName) as S3AsyncClient }
       .getOrElse {
-        createS3AsyncClient(localstackUrl, region, propagateTracing, provider, bucketName)
+        createLocalstackS3AsyncClient(localstackUrl, region, propagateTracing, bucketName)
           .also { context.beanFactory.registerSingleton(beanName, it) }
       }
   }
 
-  private fun createS3AsyncClient(localstackUrl: String, region: String, propagateTracing: Boolean, provider: String, bucketName: String): S3AsyncClient = when (provider) {
-    // "aws" -> awsS3AsyncClient(s3Config.accessKeyId, s3Config.secretAccessKey, region, hmppsSqsProperties.useWebToken, s3Config.propagateTracing)
-    "localstack" -> localstackS3AsyncClient(localstackUrl, region, false) // todo
+  private fun createLocalstackS3AsyncClient(
+    localstackUrl: String,
+    region: String,
+    propagateTracing: Boolean,
+    bucketName: String
+  ): S3AsyncClient =
+    localstackS3AsyncClient(localstackUrl, region, propagateTracing)
       .also {
         runBlocking {
           if (it.listBuckets(ListBucketsRequest.builder().build()).await().buckets().none { it.name() == bucketName }) {
@@ -113,8 +122,6 @@ class SnsClientFactory(val context: ConfigurableApplicationContext) {
         }
       }
       .also { HmppsTopicFactory.log.info("Created a LocalStack S3 Bucket named $bucketName") }
-    else -> throw IllegalStateException("Unrecognised HMPPS S3 provider $provider")
-  }
 
   fun awsS3AsyncClient(accessKeyId: String, secretAccessKey: String, region: String, useWebToken: Boolean, propagateTracing: Boolean): S3AsyncClient {
     val credentialsProvider =
