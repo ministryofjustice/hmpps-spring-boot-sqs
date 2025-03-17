@@ -75,6 +75,14 @@ FIFO allows you the option to configure message deduplication and guarantees ord
 
 To publish a message to a FIFO topic you must include a `MessageGroupId`.
 
+#### SNS Extended Client backed by S3
+
+SNS has a maximum message size of 256kb. If you need to publish messages larger than 256kb, you can configure SNS to store large messages in S3 using the AWS SNS Extended Client. 
+
+[More information on AWS SNS Extended Client](https://docs.aws.amazon.com/sns/latest/dg/large-message-payloads.html)
+
+To configure an SNS topic with an Extended Client, supply a `bucketName` when configuring the topic.
+
 #### HmppsSqsProperties Definitions
 
 ##### :warning: queueId and topicId Must Be All Lowercase And Alpha
