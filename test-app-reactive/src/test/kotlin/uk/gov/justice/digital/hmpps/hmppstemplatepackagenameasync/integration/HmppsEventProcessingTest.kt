@@ -18,6 +18,7 @@ import uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.service.Messag
 import uk.gov.justice.hmpps.sqs.countAllMessagesOnQueue
 import uk.gov.justice.hmpps.sqs.countMessagesOnQueue
 import uk.gov.justice.hmpps.sqs.publish
+import java.io.File
 import java.util.UUID
 
 class HmppsEventProcessingTest : IntegrationTestBase() {
@@ -114,5 +115,27 @@ class HmppsEventProcessingTest : IntegrationTestBase() {
     assertThat(receivedEvent.id).isEqualTo("fifo-event-id")
     assertThat(receivedEvent.type).isEqualTo("FIFO-EVENT")
     assertThat(receivedEvent.contents).isEqualTo("some FIFO contents")
+  }
+
+  @Test
+  fun `large message is published to a topic`() = runTest {
+    val file = File("src/test/resources/events/large-sns-message.json").bufferedReader().readLines()
+    val event = HmppsEvent("fifo-event-id", "FIFO-EVENT", file.toString())
+    largeMessagefifoTopic.publish(
+      eventType = event.type,
+      event = gsonString(event),
+      messageGroupId = UUID.randomUUID().toString(),
+    )
+
+    await untilCallTo { fifoSqsClient.countMessagesOnQueue(fifoQueueUrl).get() } matches { it == 1 }
+
+    val (message) = ReceiveMessageRequest.builder().queueUrl(fifoQueueUrl).build()
+      .let { fifoSqsClient.receiveMessage(it).get().messages()[0].body() }
+      .let { objectMapper.readValue(it, Message::class.java) }
+    val receivedEvent = objectMapper.readValue(message, HmppsEvent::class.java)
+
+    assertThat(receivedEvent.id).isEqualTo("fifo-event-id")
+    assertThat(receivedEvent.type).isEqualTo("FIFO-EVENT")
+    assertThat(receivedEvent.contents).isEqualTo(file.toString())
   }
 }
