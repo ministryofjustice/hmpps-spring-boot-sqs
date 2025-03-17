@@ -151,4 +151,26 @@ class HmppsEventProcessingTest : IntegrationTestBase() {
     ).join()
     assertThat(s3Object.asUtf8String()).contains("large message ID")
   }
+
+  @Test
+  fun `event published to large message fifo topic is received by large message fifo queue`() = runTest {
+    val event = HmppsEvent("fifo-event-id", "FIFO-EVENT", "some FIFO contents")
+    largeMessageFifoTopic.publish(
+      eventType = event.type,
+      event = gsonString(event),
+      messageGroupId = UUID.randomUUID().toString(),
+    )
+
+    await untilCallTo { largeMessageFifoSqsClient.countMessagesOnQueue(largeMessageFifoQueueUrl).get() } matches { it == 1 }
+
+    val (message) = ReceiveMessageRequest.builder().queueUrl(largeMessageFifoQueueUrl).build()
+      .let { largeMessageFifoSqsClient.receiveMessage(it).get().messages()[0].body() }
+      .let { objectMapper.readValue(it, Message::class.java) }
+    val receivedEvent = objectMapper.readValue(message, HmppsEvent::class.java)
+
+    assertThat(receivedEvent.id).isEqualTo("fifo-event-id")
+    assertThat(receivedEvent.type).isEqualTo("FIFO-EVENT")
+    assertThat(receivedEvent.contents).isEqualTo("some FIFO contents")
+  }
+
 }
