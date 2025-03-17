@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.integration
 
+import com.sun.org.apache.xml.internal.serializer.utils.Utils.messages
 import kotlinx.coroutines.test.runTest
 import org.assertj.core.api.Assertions.assertThat
 import org.awaitility.kotlin.await
@@ -121,21 +122,21 @@ class HmppsEventProcessingTest : IntegrationTestBase() {
   fun `large message is published to a topic`() = runTest {
     val file = File("src/test/resources/events/large-sns-message.json").bufferedReader().readLines()
     val event = HmppsEvent("fifo-event-id", "FIFO-EVENT", file.toString())
-    largeMessagefifoTopic.publish(
+    largeMessageFifoTopic.publish(
       eventType = event.type,
       event = gsonString(event),
       messageGroupId = UUID.randomUUID().toString(),
     )
 
-    await untilCallTo { fifoSqsClient.countMessagesOnQueue(fifoQueueUrl).get() } matches { it == 1 }
+    await untilCallTo { largeMessageFifoSqsClient.countMessagesOnQueue(largeMessageFifoQueueUrl).get() } matches { it == 1 }
 
-    val (message) = ReceiveMessageRequest.builder().queueUrl(fifoQueueUrl).build()
-      .let { fifoSqsClient.receiveMessage(it).get().messages()[0].body() }
+    val (message) = ReceiveMessageRequest.builder().queueUrl(largeMessageFifoQueueUrl).build()
+      .let { largeMessageFifoSqsClient.receiveMessage(it).get().messages()[0].body() }
       .let { objectMapper.readValue(it, Message::class.java) }
-    val receivedEvent = objectMapper.readValue(message, HmppsEvent::class.java)
 
-    assertThat(receivedEvent.id).isEqualTo("fifo-event-id")
-    assertThat(receivedEvent.type).isEqualTo("FIFO-EVENT")
-    assertThat(receivedEvent.contents).isEqualTo(file.toString())
+    val s3Reference: java.util.ArrayList<*> = objectMapper.readValue(message, ArrayList::class.java)
+    val s3Pointer = objectMapper.readValue(objectMapper.writeValueAsString(s3Reference[1]), LinkedHashMap::class.java)
+    assertThat(s3Pointer.get("s3BucketName")).isEqualTo("bucket-name")
+    assertThat(s3Pointer.keys).contains("s3Key")
   }
 }

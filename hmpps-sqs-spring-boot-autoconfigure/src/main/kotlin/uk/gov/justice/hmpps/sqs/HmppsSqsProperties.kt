@@ -33,7 +33,7 @@ data class HmppsSqsProperties(
     val accessKeyId: String = "",
     val secretAccessKey: String = "",
     val propagateTracing: Boolean = true,
-    val bucketName: String = ""
+    val bucketName: String = "",
   ) {
     private val arnRegex = Regex("arn:aws:sns:.*:.*:(.*)$")
 

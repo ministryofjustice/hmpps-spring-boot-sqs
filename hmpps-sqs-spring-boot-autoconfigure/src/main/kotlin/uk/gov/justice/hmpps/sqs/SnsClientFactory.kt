@@ -39,18 +39,16 @@ class SnsClientFactory {
     localstackUrl: String,
     region: String,
     propagateTracing: Boolean,
-    bucketName: String
-  ): SnsAsyncClient {
-    return when {
-      bucketName.isBlank() -> snsAsyncClient(localstackUrl, region, propagateTracing)
-      else -> localstackSnsExtendedAsyncClient(localstackUrl, region, propagateTracing, bucketName)
-    }
+    bucketName: String,
+  ): SnsAsyncClient = when {
+    bucketName.isBlank() -> snsAsyncClient(localstackUrl, region, propagateTracing)
+    else -> localstackSnsExtendedAsyncClient(localstackUrl, region, propagateTracing, bucketName)
   }
 
   private fun snsAsyncClient(
     localstackUrl: String,
     region: String,
-    propagateTracing: Boolean
+    propagateTracing: Boolean,
   ): SnsAsyncClient = SnsAsyncClient.builder()
     .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create("any", "any")))
     .endpointOverride(URI.create(localstackUrl))
@@ -77,19 +75,17 @@ class SnsClientFactory {
     return sns
   }
 
-  private fun createS3AsyncClient(localstackUrl: String, region: String, propagateTracing: Boolean): S3AsyncClient? {
-    return S3AsyncClient.builder()
-      .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create("any", "any")))
-      .endpointOverride(URI.create(localstackUrl))
-      .forcePathStyle(true)
-      .region(Region.of(region))
-      .apply {
-        if (propagateTracing) {
-          overrideConfiguration { it.addExecutionInterceptor(TraceInjectingExecutionInterceptor()) }
-        }
+  private fun createS3AsyncClient(localstackUrl: String, region: String, propagateTracing: Boolean): S3AsyncClient? = S3AsyncClient.builder()
+    .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create("any", "any")))
+    .endpointOverride(URI.create(localstackUrl))
+    .forcePathStyle(true)
+    .region(Region.of(region))
+    .apply {
+      if (propagateTracing) {
+        overrideConfiguration { it.addExecutionInterceptor(TraceInjectingExecutionInterceptor()) }
       }
-      .build()
-  }
+    }
+    .build()
 
   private fun awsS3AsyncClient(accessKeyId: String, secretAccessKey: String, region: String, useWebToken: Boolean, propagateTracing: Boolean): S3AsyncClient {
     val credentialsProvider =
