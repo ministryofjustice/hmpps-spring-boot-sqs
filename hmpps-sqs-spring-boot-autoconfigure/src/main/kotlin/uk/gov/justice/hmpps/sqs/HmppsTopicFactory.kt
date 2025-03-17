@@ -40,7 +40,7 @@ class HmppsTopicFactory(
 
   fun createSnsAsyncClient(topicId: String, topicConfig: HmppsSqsProperties.TopicConfig, hmppsSqsProperties: HmppsSqsProperties): SnsAsyncClient = with(hmppsSqsProperties) {
     when (provider) {
-      "aws" -> snsClientFactory.awsSnsAsyncClient(topicConfig.accessKeyId, topicConfig.secretAccessKey, region, hmppsSqsProperties.useWebToken, topicConfig.propagateTracing)
+      "aws" -> snsClientFactory.awsSnsAsyncClient(topicConfig.accessKeyId, topicConfig.secretAccessKey, region, useWebToken, topicConfig.propagateTracing, topicConfig.bucketName)
       "localstack" -> snsClientFactory.localstackSnsAsyncClient(localstackUrl, region, topicConfig.propagateTracing, topicConfig.bucketName)
         .also {
           runBlocking {
