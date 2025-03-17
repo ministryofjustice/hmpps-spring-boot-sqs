@@ -43,7 +43,7 @@ class SnsClientFactory {
   ): SnsAsyncClient {
     return when {
       bucketName.isBlank() -> snsAsyncClient(localstackUrl, region, propagateTracing)
-      else -> awsSnsExtendedAsyncClient(localstackUrl, region, propagateTracing, bucketName)
+      else -> localstackSnsExtendedAsyncClient(localstackUrl, region, propagateTracing, bucketName)
     }
   }
 
@@ -62,7 +62,7 @@ class SnsClientFactory {
     }
     .build()
 
-  fun awsSnsExtendedAsyncClient(localstackUrl: String, region: String, propagateTracing: Boolean, bucketName: String): SnsAsyncClient {
+  private fun localstackSnsExtendedAsyncClient(localstackUrl: String, region: String, propagateTracing: Boolean, bucketName: String): SnsAsyncClient {
     val amazonS3AsyncClient = createS3AsyncClient(localstackUrl, region, propagateTracing)
     val snsExtendedAsyncClientConfiguration: SNSExtendedAsyncClientConfiguration = SNSExtendedAsyncClientConfiguration()
       .withAlwaysThroughS3(true)
