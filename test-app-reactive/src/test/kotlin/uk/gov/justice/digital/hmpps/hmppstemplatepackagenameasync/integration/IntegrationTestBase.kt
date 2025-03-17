@@ -50,6 +50,7 @@ abstract class IntegrationTestBase {
     outboundSqsOnlyClient.purgeQueue(PurgeQueueRequest.builder().queueUrl(outboundSqsOnlyQueueUrl).build()).get()
     outboundSqsOnlyTestSqsClient.purgeQueue(PurgeQueueRequest.builder().queueUrl(outboundSqsOnlyTestQueueUrl).build()).get()
     auditSqsClient.purgeQueue(PurgeQueueRequest.builder().queueUrl(auditQueueUrl).build()).get()
+    largeMessageFifoSqsClient.purgeQueue(PurgeQueueRequest.builder().queueUrl(largeMessageFifoQueueUrl).build()).get()
   }
 
   fun HmppsSqsProperties.inboundQueueConfig() = queues["inboundqueue"] ?: throw MissingQueueException("inboundqueue has not been loaded from configuration properties")
@@ -67,9 +68,11 @@ abstract class IntegrationTestBase {
   private val outboundTestQueue by lazy { hmppsQueueService.findByQueueId("outboundtestqueue") ?: throw MissingQueueException("HmppsQueue outboundtestqueue not found") }
   private val inboundTopic by lazy { hmppsQueueService.findByTopicId("inboundtopic") ?: throw MissingQueueException("HmppsTopic inboundtopic not found") }
   internal val fifoTopic by lazy { hmppsQueueService.findByTopicId("fifotopic") ?: throw MissingQueueException("HmppsTopic fifotopic not found") }
+  internal val largeMessageFifoTopic by lazy { hmppsQueueService.findByTopicId("largemessagefifotopic") ?: throw MissingQueueException("HmppsTopic largemessagefifotopic not found") }
   private val outboundTestNoDlqQueue by lazy { hmppsQueueService.findByQueueId("outboundtestnodlqqueue") ?: throw MissingQueueException("HmppsQueue outboundtestnodlqqueue not found") }
   private val auditQueue by lazy { hmppsQueueService.findByQueueId("audit") ?: throw MissingQueueException("HmppsQueue audit not found") }
   private val fifoQueue by lazy { hmppsQueueService.findByQueueId("fifoqueue") ?: throw MissingQueueException("HmppsQueue fifoqueue not found") }
+  private val largeMessageFifoQueue by lazy { hmppsQueueService.findByQueueId("largemessagefifoqueue") ?: throw MissingQueueException("HmppsQueue largemessagefifoqueue not found") }
   private val inboundSqsOnlyQueue by lazy { hmppsQueueService.findByQueueId("inboundsqsonlyqueue") ?: throw MissingQueueException("HmppsQueue inboundsqsonlyqueue not found") }
   private val outboundSqsOnlyQueue by lazy { hmppsQueueService.findByQueueId("outboundsqsonlyqueue") ?: throw MissingQueueException("HmppsQueue outboundsqsonlyqueue not found") }
   private val outboundSqsOnlyTestQueue by lazy { hmppsQueueService.findByQueueId("outboundsqsonlytestqueue") ?: throw MissingQueueException("HmppsQueue outboundsqsonlytestqueue not found") }
@@ -81,6 +84,7 @@ abstract class IntegrationTestBase {
   protected val outboundTestNoDlqSqsClient by lazy { outboundTestNoDlqQueue.sqsClient }
   protected val auditSqsClient by lazy { auditQueue.sqsClient }
   protected val fifoSqsClient by lazy { fifoQueue.sqsClient }
+  protected val largeMessageFifoSqsClient by lazy { largeMessageFifoQueue.sqsClient }
   protected val auditQueueUrl by lazy { auditQueue.queueUrl }
   protected val inboundSqsOnlyClient by lazy { inboundSqsOnlyQueue.sqsClient }
   protected val outboundSqsOnlyClient by lazy { outboundSqsOnlyQueue.sqsClient }
@@ -101,6 +105,7 @@ abstract class IntegrationTestBase {
   protected val outboundTestQueueUrl by lazy { outboundTestQueue.queueUrl }
   protected val outboundTestNoDlqQueueUrl by lazy { outboundTestNoDlqQueue.queueUrl }
   protected val fifoQueueUrl by lazy { fifoQueue.queueUrl }
+  protected val largeMessageFifoQueueUrl by lazy { largeMessageFifoQueue.queueUrl }
   protected val inboundSqsOnlyQueueUrl by lazy { inboundSqsOnlyQueue.queueUrl }
   protected val outboundSqsOnlyQueueUrl by lazy { outboundSqsOnlyQueue.queueUrl }
   protected val outboundSqsOnlyTestQueueUrl by lazy { outboundSqsOnlyTestQueue.queueUrl }

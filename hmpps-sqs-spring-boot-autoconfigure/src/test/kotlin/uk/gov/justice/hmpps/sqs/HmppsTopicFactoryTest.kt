@@ -43,7 +43,7 @@ class HmppsTopicFactoryTest {
 
     @BeforeEach
     fun `configure mocks and register queues`() {
-      whenever(snsClientFactory.awsSnsAsyncClient(anyString(), anyString(), anyString(), anyBoolean(), anyBoolean()))
+      whenever(snsClientFactory.awsSnsAsyncClient(anyString(), anyString(), anyString(), anyBoolean(), anyBoolean(), anyString()))
         .thenReturn(snsClient)
 
       hmppsTopics = hmppsTopicFactory.createHmppsTopics(hmppsSqsProperties)
@@ -51,7 +51,7 @@ class HmppsTopicFactoryTest {
 
     @Test
     fun `should create async aws sns clients`() {
-      verify(snsClientFactory).awsSnsAsyncClient("some access key id", "some secret access key", "eu-west-2", false, true)
+      verify(snsClientFactory).awsSnsAsyncClient("some access key id", "some secret access key", "eu-west-2", false, true, "")
     }
 
     @Test
@@ -69,7 +69,7 @@ class HmppsTopicFactoryTest {
 
     @BeforeEach
     fun `configure mocks and register queues`() {
-      whenever(snsClientFactory.awsSnsAsyncClient(anyString(), anyString(), anyString(), anyBoolean(), anyBoolean()))
+      whenever(snsClientFactory.awsSnsAsyncClient(anyString(), anyString(), anyString(), anyBoolean(), anyBoolean(), anyString()))
         .thenReturn(snsClient)
 
       hmppsTopics = hmppsTopicFactory.createHmppsTopics(hmppsSqsProperties)
@@ -77,7 +77,7 @@ class HmppsTopicFactoryTest {
 
     @Test
     fun `should create async aws sns clients`() {
-      verify(snsClientFactory).awsSnsAsyncClient("", "", "eu-west-2", true, true)
+      verify(snsClientFactory).awsSnsAsyncClient("", "", "eu-west-2", true, true, "")
     }
 
     @Test
@@ -95,7 +95,7 @@ class HmppsTopicFactoryTest {
 
     @BeforeEach
     fun `configure mocks and register queues`() {
-      whenever(snsClientFactory.localstackSnsAsyncClient(anyString(), anyString(), anyBoolean()))
+      whenever(snsClientFactory.localstackSnsAsyncClient(anyString(), anyString(), any()))
         .thenReturn(snsClient)
       whenever(snsClient.createTopic(any<CreateTopicRequest>()))
         .thenReturn(CompletableFuture.completedFuture(CreateTopicResponse.builder().build()))
@@ -115,7 +115,7 @@ class HmppsTopicFactoryTest {
 
     @Test
     fun `should create async aws sns clients`() {
-      verify(snsClientFactory).localstackSnsAsyncClient("http://localhost:4566", "eu-west-2", true)
+      verify(snsClientFactory).localstackSnsAsyncClient("http://localhost:4566", "eu-west-2", someTopicConfig)
     }
 
     @Test
@@ -133,7 +133,7 @@ class HmppsTopicFactoryTest {
 
     @BeforeEach
     fun `configure mocks and register queues`() {
-      whenever(snsClientFactory.localstackSnsAsyncClient(anyString(), anyString(), anyBoolean()))
+      whenever(snsClientFactory.localstackSnsAsyncClient(anyString(), anyString(), any()))
         .thenReturn(snsClient)
       whenever(snsClient.createTopic(any<CreateTopicRequest>()))
         .thenReturn(CompletableFuture.completedFuture(CreateTopicResponse.builder().build()))
@@ -143,7 +143,7 @@ class HmppsTopicFactoryTest {
 
     @Test
     fun `should create async aws sns clients`() {
-      verify(snsClientFactory).localstackSnsAsyncClient("http://localhost:4566", "eu-west-2", true)
+      verify(snsClientFactory).localstackSnsAsyncClient("http://localhost:4566", "eu-west-2", someTopicConfig)
     }
 
     @Test
