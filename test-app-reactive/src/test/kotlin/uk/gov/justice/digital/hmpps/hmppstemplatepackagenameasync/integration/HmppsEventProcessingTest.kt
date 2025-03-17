@@ -11,6 +11,10 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.mockingDetails
 import org.mockito.kotlin.whenever
+import org.springframework.beans.factory.annotation.Autowired
+import software.amazon.awssdk.core.async.AsyncResponseTransformer
+import software.amazon.awssdk.services.s3.S3AsyncClient
+import software.amazon.awssdk.services.s3.model.GetObjectRequest
 import software.amazon.awssdk.services.sns.model.MessageAttributeValue
 import software.amazon.awssdk.services.sns.model.PublishRequest
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest
@@ -23,6 +27,9 @@ import java.io.File
 import java.util.UUID
 
 class HmppsEventProcessingTest : IntegrationTestBase() {
+
+  @Autowired
+  lateinit var s3Client: S3AsyncClient
 
   @Test
   fun `event is published to outbound topic`() = runTest {
@@ -138,5 +145,10 @@ class HmppsEventProcessingTest : IntegrationTestBase() {
     val s3Pointer = objectMapper.readValue(objectMapper.writeValueAsString(s3Reference[1]), LinkedHashMap::class.java)
     assertThat(s3Pointer.get("s3BucketName")).isEqualTo("bucket-name")
     assertThat(s3Pointer.keys).contains("s3Key")
+    val s3Object = s3Client.getObject(
+      GetObjectRequest.builder().bucket("bucket-name").key(s3Pointer.get("s3Key").toString()).build(),
+      AsyncResponseTransformer.toBytes(),
+    ).join()
+    assertThat(s3Object.asUtf8String()).contains("large message ID")
   }
 }

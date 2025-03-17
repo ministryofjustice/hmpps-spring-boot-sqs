@@ -61,7 +61,7 @@ class SnsClientFactory {
     .build()
 
   private fun localstackSnsExtendedAsyncClient(localstackUrl: String, region: String, propagateTracing: Boolean, bucketName: String): SnsAsyncClient {
-    val amazonS3AsyncClient = createS3AsyncClient(localstackUrl, region, propagateTracing)
+    val amazonS3AsyncClient = createLocalstackS3AsyncClient(localstackUrl, region, propagateTracing)
     val snsExtendedAsyncClientConfiguration: SNSExtendedAsyncClientConfiguration = SNSExtendedAsyncClientConfiguration()
       .withAlwaysThroughS3(true)
       .withPayloadSupportEnabled(amazonS3AsyncClient, bucketName)
@@ -75,7 +75,7 @@ class SnsClientFactory {
     return sns
   }
 
-  private fun createS3AsyncClient(localstackUrl: String, region: String, propagateTracing: Boolean): S3AsyncClient? = S3AsyncClient.builder()
+  private fun createLocalstackS3AsyncClient(localstackUrl: String, region: String, propagateTracing: Boolean): S3AsyncClient? = S3AsyncClient.builder()
     .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create("any", "any")))
     .endpointOverride(URI.create(localstackUrl))
     .forcePathStyle(true)
