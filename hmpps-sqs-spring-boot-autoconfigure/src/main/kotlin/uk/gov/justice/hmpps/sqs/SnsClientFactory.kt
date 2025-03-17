@@ -41,16 +41,15 @@ class SnsClientFactory(val context: ConfigurableApplicationContext) {
     return sns
   }
 
-  private fun awsS3AsyncClient(region: String, propagateTracing: Boolean): S3AsyncClient
-    = S3AsyncClient.builder()
-      .credentialsProvider(DefaultCredentialsProvider.builder().build())
-      .region(Region.of(region))
-      .apply {
-        if (propagateTracing) {
-          overrideConfiguration { it.addExecutionInterceptor(TraceInjectingExecutionInterceptor()) }
-        }
+  private fun awsS3AsyncClient(region: String, propagateTracing: Boolean): S3AsyncClient = S3AsyncClient.builder()
+    .credentialsProvider(DefaultCredentialsProvider.builder().build())
+    .region(Region.of(region))
+    .apply {
+      if (propagateTracing) {
+        overrideConfiguration { it.addExecutionInterceptor(TraceInjectingExecutionInterceptor()) }
       }
-      .build()
+    }
+    .build()
 
   private fun awsSnsAsyncClient(accessKeyId: String, secretAccessKey: String, region: String, useWebToken: Boolean, propagateTracing: Boolean): SnsAsyncClient {
     val credentialsProvider =
@@ -73,11 +72,10 @@ class SnsClientFactory(val context: ConfigurableApplicationContext) {
   fun localstackSnsAsyncClient(
     localstackUrl: String,
     region: String,
-    propagateTracing: Boolean,
-    bucketName: String,
+    topicConfig: HmppsSqsProperties.TopicConfig,
   ): SnsAsyncClient = when {
-    bucketName.isBlank() -> localstackSnsAsyncClient(localstackUrl, region, propagateTracing)
-    else -> localstackSnsExtendedAsyncClient(localstackUrl, region, propagateTracing, bucketName)
+    topicConfig.bucketName.isBlank() -> localstackSnsAsyncClient(localstackUrl, region, topicConfig.propagateTracing)
+    else -> localstackSnsExtendedAsyncClient(localstackUrl, region, topicConfig.propagateTracing, topicConfig.bucketName)
   }
 
   private fun localstackSnsAsyncClient(
