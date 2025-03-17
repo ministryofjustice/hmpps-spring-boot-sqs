@@ -127,6 +127,7 @@ Each topic declared in the `topics` map is defined in the `TopicConfig` property
 | accessKeyId      |         | Only used for `provider=aws`. The AWS access key ID, should be derived from an environment variable of format `HMPPS_SQS_TOPICS_<topicId>_ACCESS_KEY_ID`.                                   | 
 | secretAccessKey  |         | Only used for `provider=aws`. The AWS secret access key, should be derived from an environment variable of format `HMPPS_SQS_TOPICS_<topicId>_SECRET_ACCESS_KEY`.                           |
 | propagateTracing | `true`  | Writes distributed tracing headers to messages and propagates them onwards, keeping a link to message consumers in your Application Monitor e.g. Microsoft Log Analytics.                   |
+| bucketName       |         | Set this to the name of the S3 bucket to be used with this topic in order to configure an SNS Extended Client                                                                               |
 
 ### SqsListener
 
