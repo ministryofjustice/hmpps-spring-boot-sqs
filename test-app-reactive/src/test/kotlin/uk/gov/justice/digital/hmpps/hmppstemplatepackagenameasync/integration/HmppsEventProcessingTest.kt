@@ -126,7 +126,7 @@ class HmppsEventProcessingTest : IntegrationTestBase() {
   }
 
   @Test
-  fun `large message is published to a topic`() = runTest {
+  fun `large message pointer is published to topic and message body stored in S3`() = runTest {
     val file = File("src/test/resources/events/large-sns-message.json").bufferedReader().readLines()
     val event = HmppsEvent("fifo-event-id", "FIFO-EVENT", file.toString())
     largeMessageFifoTopic.publish(
@@ -153,7 +153,7 @@ class HmppsEventProcessingTest : IntegrationTestBase() {
   }
 
   @Test
-  fun `event published to large message fifo topic is received by large message fifo queue`() = runTest {
+  fun `small event published to large message fifo topic is not stored in S3`() = runTest {
     val event = HmppsEvent("fifo-event-id", "FIFO-EVENT", "some FIFO contents")
     largeMessageFifoTopic.publish(
       eventType = event.type,

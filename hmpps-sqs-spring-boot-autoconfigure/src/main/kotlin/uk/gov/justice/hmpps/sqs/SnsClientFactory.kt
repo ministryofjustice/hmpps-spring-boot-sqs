@@ -68,7 +68,6 @@ class SnsClientFactory(val context: ConfigurableApplicationContext) {
   private fun localstackSnsExtendedAsyncClient(localstackUrl: String, region: String, propagateTracing: Boolean, bucketName: String): SnsAsyncClient {
     val amazonS3AsyncClient = getOrDefaultS3AsyncClient(localstackUrl, region, propagateTracing, "localstack", bucketName)
     val snsExtendedAsyncClientConfiguration: SNSExtendedAsyncClientConfiguration = SNSExtendedAsyncClientConfiguration()
-      .withAlwaysThroughS3(true)
       .withPayloadSupportEnabled(amazonS3AsyncClient, bucketName)
     val snsClient = snsAsyncClient(localstackUrl, region, propagateTracing)
 
