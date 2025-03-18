@@ -153,6 +153,26 @@ class HmppsEventProcessingTest : IntegrationTestBase() {
   }
 
   @Test
+  fun `large message stored in S3 can be consumed with extended client`() = runTest {
+    val file = File("src/test/resources/events/large-sns-message.json").bufferedReader().readLines()
+    val event = HmppsEvent("fifo-event-id", "FIFO-EVENT", file.toString())
+    largeMessageFifoTopic.publish(
+      eventType = event.type,
+      event = gsonString(event),
+      messageGroupId = UUID.randomUUID().toString(),
+    )
+
+    await untilCallTo { largeMessageFifoSqsClient.countMessagesOnQueue(largeMessageFifoQueueUrl).get() } matches { it == 1 }
+
+
+    val (message) = ReceiveMessageRequest.builder().queueUrl(largeMessageFifoQueueUrl).build()
+      .let { largeMessageFifoSqsClient.receiveMessage(it).get().messages()[0].body() }
+      .let { objectMapper.readValue(it, Message::class.java) }
+
+    assertThat(message).contains("large message ID")
+  }
+
+  @Test
   fun `small event published to large message fifo topic is not stored in S3`() = runTest {
     val event = HmppsEvent("fifo-event-id", "FIFO-EVENT", "some FIFO contents")
     largeMessageFifoTopic.publish(
@@ -172,4 +192,5 @@ class HmppsEventProcessingTest : IntegrationTestBase() {
     assertThat(receivedEvent.type).isEqualTo("FIFO-EVENT")
     assertThat(receivedEvent.contents).isEqualTo("some FIFO contents")
   }
+
 }

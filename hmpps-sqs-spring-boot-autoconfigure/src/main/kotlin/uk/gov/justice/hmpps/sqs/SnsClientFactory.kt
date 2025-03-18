@@ -118,33 +118,4 @@ class SnsClientFactory(val context: ConfigurableApplicationContext) {
           .also { context.beanFactory.registerSingleton(beanName, it) }
       }
   }
-
-  private fun createLocalstackS3AsyncClient(
-    localstackUrl: String,
-    region: String,
-    propagateTracing: Boolean,
-    bucketName: String,
-  ): S3AsyncClient = S3AsyncClient.builder()
-    .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create("any", "any")))
-    .endpointOverride(URI.create(localstackUrl))
-    .forcePathStyle(true)
-    .region(Region.of(region))
-    .apply {
-      if (propagateTracing) {
-        overrideConfiguration { it.addExecutionInterceptor(TraceInjectingExecutionInterceptor()) }
-      }
-    }
-    .build()
-    .also {
-      runBlocking {
-        if (it.listBuckets(ListBucketsRequest.builder().build()).await().buckets().none { it.name() == bucketName }) {
-          it.createBucket(
-            CreateBucketRequest.builder()
-              .bucket(bucketName)
-              .build(),
-          ).await()
-        }
-      }
-    }
-    .also { log.info("Created a LocalStack S3 Bucket named $bucketName") }
 }

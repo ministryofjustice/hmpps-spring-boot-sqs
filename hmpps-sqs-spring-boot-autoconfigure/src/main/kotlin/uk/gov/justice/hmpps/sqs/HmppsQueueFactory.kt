@@ -99,7 +99,12 @@ class HmppsQueueFactory(
         val attributes = when {
           queueConfig.isFifo() -> mapOf(QueueAttributeName.FIFO_QUEUE to "true") else -> mapOf()
         }
-        sqsClientFactory.localstackSqsAsyncClient(hmppsSqsProperties.localstackUrl, region, queueConfig.propagateTracing)
+        sqsClientFactory.localstackSqsAsyncClient(
+          hmppsSqsProperties.localstackUrl,
+          region,
+          queueConfig.propagateTracing,
+          queueConfig.bucketName
+        )
           .also { sqsDlqClient ->
             runBlocking {
               sqsDlqClient.createQueue(
@@ -118,7 +123,7 @@ class HmppsQueueFactory(
     return when (findProvider(hmppsSqsProperties.provider)) {
       Provider.AWS -> sqsClientFactory.awsSqsAsyncClient(queueConfig.queueAccessKeyId, queueConfig.queueSecretAccessKey, region, hmppsSqsProperties.useWebToken, queueConfig.propagateTracing)
       Provider.LOCALSTACK -> {
-        sqsClientFactory.localstackSqsAsyncClient(hmppsSqsProperties.localstackUrl, region, queueConfig.propagateTracing)
+        sqsClientFactory.localstackSqsAsyncClient(hmppsSqsProperties.localstackUrl, region, queueConfig.propagateTracing, queueConfig.bucketName)
           .also { sqsClient ->
             runBlocking {
               createLocalStackQueue(

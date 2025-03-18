@@ -191,7 +191,7 @@ class HmppsQueueFactoryTest {
 
     @BeforeEach
     fun `configure mocks and register queues`() {
-      whenever(sqsFactory.localstackSqsAsyncClient(anyString(), anyString(), anyBoolean()))
+      whenever(sqsFactory.localstackSqsAsyncClient(anyString(), anyString(), anyBoolean(), queueConfig.bucketName))
         .thenReturn(sqsDlqClient)
         .thenReturn(sqsClient)
       whenever(sqsClient.getQueueUrl(any<GetQueueUrlRequest>()))
@@ -217,7 +217,12 @@ class HmppsQueueFactoryTest {
 
     @Test
     fun `should create async clients from sqs factory`() {
-      verify(sqsFactory, times(2)).localstackSqsAsyncClient("http://localhost:4566", "eu-west-2", true)
+      verify(sqsFactory, times(2)).localstackSqsAsyncClient(
+          "http://localhost:4566",
+          "eu-west-2",
+          true,
+          queueConfig.bucketName
+      )
     }
 
     @Test
@@ -278,7 +283,7 @@ class HmppsQueueFactoryTest {
 
     @BeforeEach
     fun `configure mocks and register queues`() {
-      whenever(sqsFactory.localstackSqsAsyncClient(anyString(), anyString(), anyBoolean()))
+      whenever(sqsFactory.localstackSqsAsyncClient(anyString(), anyString(), anyBoolean(), queueConfig.bucketName))
         .thenReturn(sqsDlqClient)
         .thenReturn(sqsClient)
       whenever(sqsClient.getQueueUrl(any<GetQueueUrlRequest>()))

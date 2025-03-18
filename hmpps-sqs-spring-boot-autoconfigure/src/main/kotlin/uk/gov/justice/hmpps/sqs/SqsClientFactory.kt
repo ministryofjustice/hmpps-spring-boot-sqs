@@ -1,5 +1,9 @@
 package uk.gov.justice.hmpps.sqs
 
+import com.amazon.sqs.javamessaging.AmazonSQSExtendedAsyncClient
+import com.amazon.sqs.javamessaging.AmazonSQSExtendedClient
+import com.amazon.sqs.javamessaging.ExtendedAsyncClientConfiguration
+import com.amazon.sqs.javamessaging.ExtendedClientConfiguration
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
@@ -7,6 +11,7 @@ import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.sqs.SqsAsyncClient
+import software.amazon.sns.SNSExtendedAsyncClientConfiguration
 import uk.gov.justice.hmpps.sqs.telemetry.TraceInjectingExecutionInterceptor
 import java.net.URI
 
@@ -32,6 +37,13 @@ class SqsClientFactory {
       .build()
   }
 
+  fun localstackSqsAsyncClient(localstackUrl: String, region: String, propagateTracing: Boolean, bucketName: String): SqsAsyncClient =
+    when {
+      bucketName.isBlank() -> localstackSqsAsyncClient(localstackUrl, region, propagateTracing)
+      else -> localstackSqsAsyncExtendedClient(localstackUrl, region, propagateTracing, bucketName)
+    }
+
+
   fun localstackSqsAsyncClient(localstackUrl: String, region: String, propagateTracing: Boolean): SqsAsyncClient = SqsAsyncClient.builder()
     .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create("any", "any")))
     .endpointOverride(URI.create(localstackUrl))
@@ -42,4 +54,13 @@ class SqsClientFactory {
       }
     }
     .build()
+
+    fun localstackSqsAsyncExtendedClient(localstackUrl: String, region: String, propagateTracing: Boolean, bucketName: String): SqsAsyncClient {
+      val sqsExtendedAsyncClientConfiguration: ExtendedAsyncClientConfiguration = ExtendedAsyncClientConfiguration()
+        .withPayloadSupportEnabled(createLocalstackS3AsyncClient(localstackUrl,region,propagateTracing, bucketName), bucketName)
+        .withAlwaysThroughS3(true)
+val sqsClient = localstackSqsAsyncClient(localstackUrl, region, propagateTracing)
+      return AmazonSQSExtendedAsyncClient(sqsClient,sqsExtendedAsyncClientConfiguration)
+
+    }
 }
