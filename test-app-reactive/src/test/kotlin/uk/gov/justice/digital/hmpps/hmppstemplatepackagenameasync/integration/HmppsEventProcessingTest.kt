@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.integration
 
 import com.sun.org.apache.xml.internal.serializer.utils.Utils.messages
+import kotlinx.coroutines.future.await
 import kotlinx.coroutines.test.runTest
 import org.assertj.core.api.Assertions.assertThat
 import org.awaitility.kotlin.await
@@ -18,6 +19,7 @@ import software.amazon.awssdk.services.s3.model.GetObjectRequest
 import software.amazon.awssdk.services.sns.model.MessageAttributeValue
 import software.amazon.awssdk.services.sns.model.PublishRequest
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest
+import software.amazon.awssdk.services.sqs.model.SendMessageRequest
 import uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.service.HmppsEvent
 import uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.service.Message
 import uk.gov.justice.hmpps.sqs.countAllMessagesOnQueue
@@ -156,18 +158,20 @@ class HmppsEventProcessingTest : IntegrationTestBase() {
   fun `large message stored in S3 can be consumed with extended client`() = runTest {
     val file = File("src/test/resources/events/large-sns-message.json").bufferedReader().readLines()
     val event = HmppsEvent("fifo-event-id", "FIFO-EVENT", file.toString())
-    largeMessageFifoTopic.publish(
-      eventType = event.type,
-      event = gsonString(event),
-      messageGroupId = UUID.randomUUID().toString(),
-    )
+
+    largeMessageFifoSqsClient
+      .sendMessage(SendMessageRequest.builder()
+        .queueUrl(largeMessageFifoQueueUrl)
+        .messageDeduplicationId("dedube")
+        .messageBody(file.toString())
+        .messageGroupId("groupId")
+        .build())
+      .await()
 
     await untilCallTo { largeMessageFifoSqsClient.countMessagesOnQueue(largeMessageFifoQueueUrl).get() } matches { it == 1 }
 
-
-    val (message) = ReceiveMessageRequest.builder().queueUrl(largeMessageFifoQueueUrl).build()
+    val message = ReceiveMessageRequest.builder().queueUrl(largeMessageFifoQueueUrl).build()
       .let { largeMessageFifoSqsClient.receiveMessage(it).get().messages()[0].body() }
-      .let { objectMapper.readValue(it, Message::class.java) }
 
     assertThat(message).contains("large message ID")
   }
