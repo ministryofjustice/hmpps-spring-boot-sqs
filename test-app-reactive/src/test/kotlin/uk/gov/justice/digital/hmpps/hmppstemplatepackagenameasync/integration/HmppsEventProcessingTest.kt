@@ -157,15 +157,16 @@ class HmppsEventProcessingTest : IntegrationTestBase() {
   @Test
   fun `large message stored in S3 can be consumed with extended client`() = runTest {
     val file = File("src/test/resources/events/large-sns-message.json").bufferedReader().readLines()
-    val event = HmppsEvent("fifo-event-id", "FIFO-EVENT", file.toString())
 
     largeMessageFifoSqsClient
-      .sendMessage(SendMessageRequest.builder()
-        .queueUrl(largeMessageFifoQueueUrl)
-        .messageDeduplicationId("dedube")
-        .messageBody(file.toString())
-        .messageGroupId("groupId")
-        .build())
+      .sendMessage(
+        SendMessageRequest.builder()
+          .queueUrl(largeMessageFifoQueueUrl)
+          .messageDeduplicationId("dedube")
+          .messageBody(file.toString())
+          .messageGroupId("groupId")
+          .build(),
+      )
       .await()
 
     await untilCallTo { largeMessageFifoSqsClient.countMessagesOnQueue(largeMessageFifoQueueUrl).get() } matches { it == 1 }
@@ -196,5 +197,4 @@ class HmppsEventProcessingTest : IntegrationTestBase() {
     assertThat(receivedEvent.type).isEqualTo("FIFO-EVENT")
     assertThat(receivedEvent.contents).isEqualTo("some FIFO contents")
   }
-
 }

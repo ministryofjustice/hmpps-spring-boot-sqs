@@ -218,10 +218,10 @@ class HmppsQueueFactoryTest {
     @Test
     fun `should create async clients from sqs factory`() {
       verify(sqsFactory, times(2)).localstackSqsAsyncClient(
-          "http://localhost:4566",
-          "eu-west-2",
-          true,
-          queueConfig.bucketName
+        "http://localhost:4566",
+        "eu-west-2",
+        true,
+        queueConfig.bucketName,
       )
     }
 

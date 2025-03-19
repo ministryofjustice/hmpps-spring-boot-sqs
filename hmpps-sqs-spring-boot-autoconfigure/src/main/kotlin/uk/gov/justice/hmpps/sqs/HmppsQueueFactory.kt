@@ -103,7 +103,7 @@ class HmppsQueueFactory(
           hmppsSqsProperties.localstackUrl,
           region,
           queueConfig.propagateTracing,
-          queueConfig.bucketName
+          queueConfig.bucketName,
         )
           .also { sqsDlqClient ->
             runBlocking {

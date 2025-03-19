@@ -1,7 +1,5 @@
 package uk.gov.justice.hmpps.sqs
 
-import kotlinx.coroutines.future.await
-import kotlinx.coroutines.runBlocking
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.context.ConfigurableApplicationContext
@@ -10,8 +8,6 @@ import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.S3AsyncClient
-import software.amazon.awssdk.services.s3.model.CreateBucketRequest
-import software.amazon.awssdk.services.s3.model.ListBucketsRequest
 import software.amazon.awssdk.services.sns.SnsAsyncClient
 import software.amazon.sns.AmazonSNSExtendedAsyncClient
 import software.amazon.sns.SNSExtendedAsyncClientConfiguration
