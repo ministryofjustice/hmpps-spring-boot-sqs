@@ -2,6 +2,7 @@ package uk.gov.justice.hmpps.sqs
 
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
+import org.slf4j.LoggerFactory
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
 import software.amazon.awssdk.regions.Region
@@ -10,6 +11,8 @@ import software.amazon.awssdk.services.s3.model.CreateBucketRequest
 import software.amazon.awssdk.services.s3.model.ListBucketsRequest
 import uk.gov.justice.hmpps.sqs.telemetry.TraceInjectingExecutionInterceptor
 import java.net.URI
+
+private val log = LoggerFactory.getLogger(object{}::class.java.`package`.name)
 
 internal fun createLocalstackS3AsyncClient(
   localstackUrl: String,
@@ -38,4 +41,4 @@ internal fun createLocalstackS3AsyncClient(
       }
     }
   }
-  .also { SnsClientFactory.log.info("Created a LocalStack S3 Bucket named $bucketName") }
+  .also { log.info("Created a LocalStack S3 Bucket named $bucketName") }
