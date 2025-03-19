@@ -11,7 +11,7 @@ import software.amazon.awssdk.services.s3.model.ListBucketsRequest
 import uk.gov.justice.hmpps.sqs.telemetry.TraceInjectingExecutionInterceptor
 import java.net.URI
 
-fun createLocalstackS3AsyncClient(
+internal fun createLocalstackS3AsyncClient(
   localstackUrl: String,
   region: String,
   propagateTracing: Boolean,

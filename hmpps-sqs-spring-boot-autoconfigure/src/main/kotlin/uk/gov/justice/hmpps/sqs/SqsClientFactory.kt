@@ -34,9 +34,12 @@ class SqsClientFactory {
       .build()
   }
 
-  fun localstackSqsAsyncClient(localstackUrl: String, region: String, propagateTracing: Boolean, bucketName: String): SqsAsyncClient = when {
-    bucketName.isBlank() -> localstackSqsAsyncClient(localstackUrl, region, propagateTracing)
-    else -> localstackSqsAsyncExtendedClient(localstackUrl, region, propagateTracing, bucketName)
+  fun localstackSqsAsyncClient(localstackUrl: String, region: String, propagateTracing: Boolean, bucketName: String): SqsAsyncClient {
+    if (bucketName.isBlank()) {
+      return localstackSqsAsyncClient(localstackUrl, region, propagateTracing)
+    } else {
+      return localstackSqsAsyncExtendedClient(localstackUrl, region, propagateTracing, bucketName)
+    }
   }
 
   fun localstackSqsAsyncClient(localstackUrl: String, region: String, propagateTracing: Boolean): SqsAsyncClient = SqsAsyncClient.builder()
