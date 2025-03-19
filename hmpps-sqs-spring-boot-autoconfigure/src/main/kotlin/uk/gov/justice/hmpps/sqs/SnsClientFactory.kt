@@ -1,7 +1,5 @@
 package uk.gov.justice.hmpps.sqs
 
-import kotlinx.coroutines.future.await
-import kotlinx.coroutines.runBlocking
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.context.ConfigurableApplicationContext
@@ -10,8 +8,6 @@ import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.S3AsyncClient
-import software.amazon.awssdk.services.s3.model.CreateBucketRequest
-import software.amazon.awssdk.services.s3.model.ListBucketsRequest
 import software.amazon.awssdk.services.sns.SnsAsyncClient
 import software.amazon.sns.AmazonSNSExtendedAsyncClient
 import software.amazon.sns.SNSExtendedAsyncClientConfiguration
@@ -40,16 +36,6 @@ class SnsClientFactory(val context: ConfigurableApplicationContext) {
     )
     return sns
   }
-
-  private fun awsS3AsyncClient(region: String, propagateTracing: Boolean): S3AsyncClient = S3AsyncClient.builder()
-    .credentialsProvider(DefaultCredentialsProvider.builder().build())
-    .region(Region.of(region))
-    .apply {
-      if (propagateTracing) {
-        overrideConfiguration { it.addExecutionInterceptor(TraceInjectingExecutionInterceptor()) }
-      }
-    }
-    .build()
 
   private fun awsSnsAsyncClient(accessKeyId: String, secretAccessKey: String, region: String, useWebToken: Boolean, propagateTracing: Boolean): SnsAsyncClient {
     val credentialsProvider =
@@ -114,37 +100,8 @@ class SnsClientFactory(val context: ConfigurableApplicationContext) {
   ): S3AsyncClient = "$bucketName-s3-client".let { beanName ->
     runCatching { context.beanFactory.getBean(beanName) as S3AsyncClient }
       .getOrElse {
-        createLocalstackS3AsyncClient(localstackUrl, region, propagateTracing, bucketName)
+        localstackS3AsyncClient(localstackUrl, region, propagateTracing, bucketName)
           .also { context.beanFactory.registerSingleton(beanName, it) }
       }
   }
-
-  private fun createLocalstackS3AsyncClient(
-    localstackUrl: String,
-    region: String,
-    propagateTracing: Boolean,
-    bucketName: String,
-  ): S3AsyncClient = S3AsyncClient.builder()
-    .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create("any", "any")))
-    .endpointOverride(URI.create(localstackUrl))
-    .forcePathStyle(true)
-    .region(Region.of(region))
-    .apply {
-      if (propagateTracing) {
-        overrideConfiguration { it.addExecutionInterceptor(TraceInjectingExecutionInterceptor()) }
-      }
-    }
-    .build()
-    .also {
-      runBlocking {
-        if (it.listBuckets(ListBucketsRequest.builder().build()).await().buckets().none { it.name() == bucketName }) {
-          it.createBucket(
-            CreateBucketRequest.builder()
-              .bucket(bucketName)
-              .build(),
-          ).await()
-        }
-      }
-    }
-    .also { log.info("Created a LocalStack S3 Bucket named $bucketName") }
 }

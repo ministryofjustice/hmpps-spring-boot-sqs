@@ -94,12 +94,24 @@ class HmppsQueueFactory(
     val provider = findProvider(hmppsSqsProperties.provider)
     if (queueConfig.dlqName.isEmpty()) throw MissingDlqNameException()
     return when (provider) {
-      Provider.AWS -> sqsClientFactory.awsSqsAsyncClient(queueConfig.dlqAccessKeyId, queueConfig.dlqSecretAccessKey, region, hmppsSqsProperties.useWebToken, queueConfig.propagateTracing)
+      Provider.AWS -> sqsClientFactory.awsSqsAsyncClient(
+        queueConfig.dlqAccessKeyId,
+        queueConfig.dlqSecretAccessKey,
+        region,
+        hmppsSqsProperties.useWebToken,
+        queueConfig.propagateTracing,
+        queueConfig.bucketName,
+      )
       Provider.LOCALSTACK -> {
         val attributes = when {
           queueConfig.isFifo() -> mapOf(QueueAttributeName.FIFO_QUEUE to "true") else -> mapOf()
         }
-        sqsClientFactory.localstackSqsAsyncClient(hmppsSqsProperties.localstackUrl, region, queueConfig.propagateTracing)
+        sqsClientFactory.localstackSqsAsyncClient(
+          hmppsSqsProperties.localstackUrl,
+          region,
+          queueConfig.propagateTracing,
+          queueConfig.bucketName,
+        )
           .also { sqsDlqClient ->
             runBlocking {
               sqsDlqClient.createQueue(
@@ -116,9 +128,9 @@ class HmppsQueueFactory(
   fun createSqsAsyncClient(queueConfig: QueueConfig, hmppsSqsProperties: HmppsSqsProperties, sqsDlqClient: SqsAsyncClient?): SqsAsyncClient {
     val region = hmppsSqsProperties.region
     return when (findProvider(hmppsSqsProperties.provider)) {
-      Provider.AWS -> sqsClientFactory.awsSqsAsyncClient(queueConfig.queueAccessKeyId, queueConfig.queueSecretAccessKey, region, hmppsSqsProperties.useWebToken, queueConfig.propagateTracing)
+      Provider.AWS -> sqsClientFactory.awsSqsAsyncClient(queueConfig.queueAccessKeyId, queueConfig.queueSecretAccessKey, region, hmppsSqsProperties.useWebToken, queueConfig.propagateTracing, queueConfig.bucketName)
       Provider.LOCALSTACK -> {
-        sqsClientFactory.localstackSqsAsyncClient(hmppsSqsProperties.localstackUrl, region, queueConfig.propagateTracing)
+        sqsClientFactory.localstackSqsAsyncClient(hmppsSqsProperties.localstackUrl, region, queueConfig.propagateTracing, queueConfig.bucketName)
           .also { sqsClient ->
             runBlocking {
               createLocalStackQueue(
