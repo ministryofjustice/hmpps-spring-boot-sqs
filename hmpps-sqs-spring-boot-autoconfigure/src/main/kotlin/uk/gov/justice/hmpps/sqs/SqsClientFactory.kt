@@ -16,7 +16,52 @@ class SqsClientFactory {
   companion object {
     val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
-  fun awsSqsAsyncClient(accessKeyId: String, secretAccessKey: String, region: String, useWebToken: Boolean, propagateTracing: Boolean): SqsAsyncClient {
+  fun awsSqsAsyncClient(
+    accessKeyId: String,
+    secretAccessKey: String,
+    region: String,
+    useWebToken: Boolean,
+    propagateTracing: Boolean,
+    bucketName: String,
+  ): SqsAsyncClient = if (bucketName.isBlank()) {
+    awsSqsAsyncClient(
+      accessKeyId,
+      secretAccessKey,
+      region,
+      useWebToken,
+      propagateTracing,
+    )
+  } else {
+    awsSqsExtendedAsyncClient(
+      accessKeyId,
+      secretAccessKey,
+      region,
+      useWebToken,
+      propagateTracing,
+      bucketName,
+    )
+  }
+
+  private fun awsSqsExtendedAsyncClient(accessKeyId: String, secretAccessKey: String, region: String, useWebToken: Boolean, propagateTracing: Boolean, bucketName: String): SqsAsyncClient {
+    val amazonS3AsyncClient = awsS3AsyncClient(region, propagateTracing)
+    val snsExtendedAsyncClientConfiguration: ExtendedAsyncClientConfiguration = ExtendedAsyncClientConfiguration()
+      .withPayloadSupportEnabled(amazonS3AsyncClient, bucketName)
+    val sqsClient = awsSqsAsyncClient(accessKeyId, secretAccessKey, region, useWebToken, propagateTracing)
+
+    val sqs = AmazonSQSExtendedAsyncClient(
+      sqsClient,
+      snsExtendedAsyncClientConfiguration,
+    )
+    return sqs
+  }
+
+  private fun awsSqsAsyncClient(
+    accessKeyId: String,
+    secretAccessKey: String,
+    region: String,
+    useWebToken: Boolean,
+    propagateTracing: Boolean,
+  ): SqsAsyncClient {
     val credentialsProvider =
       if (useWebToken) {
         DefaultCredentialsProvider.builder().build()
@@ -34,15 +79,13 @@ class SqsClientFactory {
       .build()
   }
 
-  fun localstackSqsAsyncClient(localstackUrl: String, region: String, propagateTracing: Boolean, bucketName: String): SqsAsyncClient {
-    if (bucketName.isBlank()) {
-      return localstackSqsAsyncClient(localstackUrl, region, propagateTracing)
-    } else {
-      return localstackSqsAsyncExtendedClient(localstackUrl, region, propagateTracing, bucketName)
-    }
+  fun localstackSqsAsyncClient(localstackUrl: String, region: String, propagateTracing: Boolean, bucketName: String): SqsAsyncClient = if (bucketName.isBlank()) {
+    localstackSqsAsyncClient(localstackUrl, region, propagateTracing)
+  } else {
+    localstackSqsAsyncExtendedClient(localstackUrl, region, propagateTracing, bucketName)
   }
 
-  fun localstackSqsAsyncClient(localstackUrl: String, region: String, propagateTracing: Boolean): SqsAsyncClient = SqsAsyncClient.builder()
+  private fun localstackSqsAsyncClient(localstackUrl: String, region: String, propagateTracing: Boolean): SqsAsyncClient = SqsAsyncClient.builder()
     .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create("any", "any")))
     .endpointOverride(URI.create(localstackUrl))
     .region(Region.of(region))
@@ -53,9 +96,9 @@ class SqsClientFactory {
     }
     .build()
 
-  fun localstackSqsAsyncExtendedClient(localstackUrl: String, region: String, propagateTracing: Boolean, bucketName: String): SqsAsyncClient {
+  private fun localstackSqsAsyncExtendedClient(localstackUrl: String, region: String, propagateTracing: Boolean, bucketName: String): SqsAsyncClient {
     val sqsExtendedAsyncClientConfiguration: ExtendedAsyncClientConfiguration = ExtendedAsyncClientConfiguration()
-      .withPayloadSupportEnabled(createLocalstackS3AsyncClient(localstackUrl, region, propagateTracing, bucketName), bucketName)
+      .withPayloadSupportEnabled(localstackS3AsyncClient(localstackUrl, region, propagateTracing, bucketName), bucketName)
       .withAlwaysThroughS3(true)
     val sqsClient = localstackSqsAsyncClient(localstackUrl, region, propagateTracing)
     return AmazonSQSExtendedAsyncClient(sqsClient, sqsExtendedAsyncClientConfiguration)

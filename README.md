@@ -350,7 +350,7 @@ The library will automatically switch to the reactive Queue admin endpoints if i
 
 ### Testcontainers
 
-In the past many queueing applications have allowed running against either a Testcontainers LocalStack instance or a standalone LocalStack instance started manually with docker-compose (which is required when running the tests on CircleCI).
+In the past many queueing applications have allowed running against either a Testcontainers LocalStack instance or a standalone LocalStack instance started manually with docker compose (which is required when running the tests on CircleCI).
 
 This led to some applications having a very complicated configuration with 3 sets of `AmazonSQS` beans required - production, standalone LocalStack and Testcontainers LocalStack.
 
@@ -403,7 +403,7 @@ If you are developing in this library then starting and stopping Testcontainers 
 
 Use this command to run a standalone LocalStack instance:
 
-`docker-compose -f docker-compose-test.yml up localstack`
+`docker compose -f docker-compose-test.yml up localstack`
 
 And to run the tests use this command - as often as you like:
 
@@ -436,7 +436,7 @@ If you are developing in this library then starting and stopping a Testcontainer
 
 Use this command to start a standalone LocalStack instance:
 
-`docker-compose -f docker-compose-test.yml up localstack`
+`docker compose -f docker-compose-test.yml up localstack`
 
 From the root of the project run the following command to test only the test-app tests:
 
@@ -450,7 +450,7 @@ Running `test-app` or `test-app-reactive` locally can be useful for debugging fe
 
 Start localstack with command:
 
-`docker-compose -f docker-compose-test.yml up localstack`
+`docker compose -f docker-compose-test.yml up localstack`
 
 Then run the `test-app` in your IDE from main class `HmppsTemplateKotlin` using Spring profiles `localstack`.
 

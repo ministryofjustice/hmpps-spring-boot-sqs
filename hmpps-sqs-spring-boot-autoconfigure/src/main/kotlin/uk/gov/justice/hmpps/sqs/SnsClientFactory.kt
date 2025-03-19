@@ -37,16 +37,6 @@ class SnsClientFactory(val context: ConfigurableApplicationContext) {
     return sns
   }
 
-  private fun awsS3AsyncClient(region: String, propagateTracing: Boolean): S3AsyncClient = S3AsyncClient.builder()
-    .credentialsProvider(DefaultCredentialsProvider.builder().build())
-    .region(Region.of(region))
-    .apply {
-      if (propagateTracing) {
-        overrideConfiguration { it.addExecutionInterceptor(TraceInjectingExecutionInterceptor()) }
-      }
-    }
-    .build()
-
   private fun awsSnsAsyncClient(accessKeyId: String, secretAccessKey: String, region: String, useWebToken: Boolean, propagateTracing: Boolean): SnsAsyncClient {
     val credentialsProvider =
       if (useWebToken) {
@@ -110,7 +100,7 @@ class SnsClientFactory(val context: ConfigurableApplicationContext) {
   ): S3AsyncClient = "$bucketName-s3-client".let { beanName ->
     runCatching { context.beanFactory.getBean(beanName) as S3AsyncClient }
       .getOrElse {
-        createLocalstackS3AsyncClient(localstackUrl, region, propagateTracing, bucketName)
+        localstackS3AsyncClient(localstackUrl, region, propagateTracing, bucketName)
           .also { context.beanFactory.registerSingleton(beanName, it) }
       }
   }
