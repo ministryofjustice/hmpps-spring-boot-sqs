@@ -1,7 +1,7 @@
 import com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask
 
 plugins {
-  kotlin("jvm") version "2.1.10"
+  kotlin("jvm") version "2.1.20"
   id("maven-publish")
   id("signing")
   id("com.github.ben-manes.versions") version "0.52.0"
@@ -11,17 +11,17 @@ plugins {
 dependencies {
   api(platform("io.awspring.cloud:spring-cloud-aws-dependencies:3.3.0"))
   api(project(":hmpps-sqs-spring-boot-autoconfigure"))
-  api(platform("software.amazon.awssdk:bom:2.30.29"))
+  api(platform("software.amazon.awssdk:bom:2.31.5"))
   api("software.amazon.awssdk:sns")
   api("io.awspring.cloud:spring-cloud-aws-starter") { exclude("io.awspring.cloud", "spring-cloud-aws-autoconfigure")}
   api("io.awspring.cloud:spring-cloud-aws-sns")
   api("io.awspring.cloud:spring-cloud-aws-sqs")
   api("software.amazon.awssdk:sts")
-  api(platform("org.springframework.boot:spring-boot-dependencies:3.4.3"))
+  api(platform("org.springframework.boot:spring-boot-dependencies:3.4.4"))
   api("org.springframework.boot:spring-boot-starter-web")
   api("org.springframework.boot:spring-boot-starter-security")
   api("org.springframework.boot:spring-boot-starter-actuator")
-  api("com.microsoft.azure:applicationinsights-core:3.7.0")
+  api("com.microsoft.azure:applicationinsights-core:3.7.1")
 }
 
 publishing {

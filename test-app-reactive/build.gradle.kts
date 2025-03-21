@@ -1,6 +1,6 @@
 plugins {
-  id("uk.gov.justice.hmpps.gradle-spring-boot") version "7.1.3"
-  kotlin("plugin.spring") version "2.1.10"
+  id("uk.gov.justice.hmpps.gradle-spring-boot") version "7.1.4"
+  kotlin("plugin.spring") version "2.1.20"
 }
 
 configurations {
@@ -23,17 +23,17 @@ dependencies {
   implementation(project(":hmpps-sqs-spring-boot-starter"))
 
   testImplementation("org.assertj:assertj-core:3.27.3")
-  testImplementation("org.junit.jupiter:junit-jupiter:5.11.4")
-  testImplementation("org.mockito:mockito-junit-jupiter:5.15.2")
+  testImplementation("org.junit.jupiter:junit-jupiter:5.12.1")
+  testImplementation("org.mockito:mockito-junit-jupiter:5.16.1")
   testImplementation("org.mockito.kotlin:mockito-kotlin:5.4.0")
   testImplementation("org.mockito:mockito-inline:5.2.0")
   testImplementation("org.awaitility:awaitility-kotlin:4.3.0")
   testImplementation("io.jsonwebtoken:jjwt-impl:0.12.6")
   testImplementation("io.jsonwebtoken:jjwt-jackson:0.12.6")
-  testImplementation("org.wiremock:wiremock-standalone:3.12.0")
-  testImplementation("org.testcontainers:localstack:1.20.5")
+  testImplementation("org.wiremock:wiremock-standalone:3.12.1")
+  testImplementation("org.testcontainers:localstack:1.20.6")
   testImplementation("com.amazonaws:aws-java-sdk-core:1.12.782") // needed so that Localstack has access to the AWS SDK V1 API
-  testImplementation("software.amazon.awssdk:s3:2.30.0")
+  testImplementation("software.amazon.awssdk:s3:2.31.5")
   testImplementation("com.google.code.gson:gson:2.12.1")
   testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test")
   testImplementation("io.opentelemetry:opentelemetry-extension-trace-propagators")
@@ -48,4 +48,8 @@ tasks {
   withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
     compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21
   }
+}
+
+configure<com.gorylenko.GitPropertiesPluginExtension> {
+  dotGitDirectory.set(File("${project.rootDir}/.git"))
 }
