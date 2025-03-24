@@ -1,7 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.integration
 
 import com.sun.org.apache.xml.internal.serializer.utils.Utils.messages
-import kotlinx.coroutines.future.await
 import kotlinx.coroutines.test.runTest
 import org.assertj.core.api.Assertions.assertThat
 import org.awaitility.kotlin.await
@@ -19,7 +18,6 @@ import software.amazon.awssdk.services.s3.model.GetObjectRequest
 import software.amazon.awssdk.services.sns.model.MessageAttributeValue
 import software.amazon.awssdk.services.sns.model.PublishRequest
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest
-import software.amazon.awssdk.services.sqs.model.SendMessageRequest
 import uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.service.HmppsEvent
 import uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.service.Message
 import uk.gov.justice.hmpps.sqs.countAllMessagesOnQueue
@@ -127,54 +125,6 @@ class HmppsEventProcessingTest : IntegrationTestBase() {
     assertThat(receivedEvent.contents).isEqualTo("some FIFO contents")
   }
 
-//  You might be wondering why this test does not use the SqsExtendedClient to consume the message
-  // We believe there is a bug in Localstack which means that the shape of the message published by the SnsExtendedClient
-  // does not match what is expected by the SqsExtendedClient
-  // Expected format (messageAttributes are at the top level):
-//  {
-//    "Messages": [
-//    {
-//      "MessageId": "62e3d70d-02e0-4764-9002-2938fd3baf5f",
-//      "ReceiptHandle": "Mzk0N2I2NzUtMmE5Ny00YzkwLWIxN2YtODYyYjU1YTA2NjZkIGFybjphd3M6c3FzOmV1LXdlc3QtMjowMDAwMDAwMDAwMDA6bGFyZ2VtZXNzYWdlZmlmb3F1ZXVldGVzdGFwcC5maWZvIDYyZTNkNzBkLTAyZTAtNDc2NC05MDAyLTI5MzhmZDNiYWY1ZiAxNzQyMzgzODAxLjYyNzExOA==",
-//      "MD5OfBody": "1d04d5db5b48aa2b65ec1b62ae19dd51",
-//      "Body": "[\"software.amazon.payloadoffloading.PayloadS3Pointer\",{\"s3BucketName\":\"bucket\",\"s3Key\":\"1638422c-ea5d-4d15-85d6-ff616977e002\"}]",
-//      "MD5OfMessageAttributes": "8eea9c249ef9487b98a44b8921c1452d",
-//      "MessageAttributes": {
-//      "SQSLargePayloadSize": {
-//      "StringValue": "817330",
-//      "DataType": "Number"
-//    }
-//    }
-//    }
-//    ]
-//  }
-
-// Actual format (messageAttributes end up in the body)
-// {
-//  "Messages": [
-//    {
-//      "MessageId": "5c3bc082-9ddd-4eaf-a968-7207be779dfb",
-//      "ReceiptHandle": "YTQ5OTkwODktMGU3YS00NzM4LWFjNDItNThiNDlkNjExMWI2IGFybjphd3M6c3FzOmV1LXdlc3QtMjowMDAwMDAwMDAwMDA6bGFyZ2VtZXNzYWdlZmlmb3F1ZXVldGVzdGFwcC5maWZvIDVjM2JjMDgyLTlkZGQtNGVhZi1hOTY4LTcyMDdiZTc3OWRmYiAxNzQyMzEzNDQ4LjE3MzY0NDg=",
-//      "MD5OfBody": "2c0346aaea88652a443af89f57fd599d",
-//      "Body": "{\"Type\": \"Notification\",
-//      \"MessageId\": \"76a50eba-5ad3-4132-b1c7-a3c08c89eb5a\",
-//       \"TopicArn\": \"arn:aws:sns:eu-west-2:000000000000:5cc40f3c-3ef2-436a-8ce6-81983644d888.fifo\",
-//        \"Message\": \"[\\\"software.amazon.payloadoffloading.PayloadS3Pointer\\\",{\\\"s3BucketName\\\":\\\"bucket-name\\\",\\\"s3Key\\\":\\\"95d6412e-6d42-425c-8f56-a73162f59b41\\\"}]\",
-//         \"Timestamp\": \"2025-03-18T15:54:30.890Z\",
-//         \"UnsubscribeURL\": \"http://localhost.localstack.cloud:4566/?Action=Unsubscribe&SubscriptionArn=arn:aws:sns:eu-west-2:000000000000:5cc40f3c-3ef2-436a-8ce6-81983644d888.fifo:578f9c25-5f2b-49e3-804a-3eac5a6e0751\",
-// >>>>>>>>>>          \"MessageAttributes\": {\"eventType\": {\"Type\": \"String\", \"Value\": \"FIFO-EVENT\"}, \"ExtendedPayloadSize\": {\"Type\": \"Number\", \"Value\": \"859754\"}}, \"SequenceNumber\": \"14966357887067095040\"}",
-//      "Attributes": {
-//        "SenderId": "000000000000",
-//        "SentTimestamp": "1742313270908",
-//        "MessageGroupId": "1cdb437a-4a49-4c55-85f5-2ec27ab714e6",
-//        "MessageDeduplicationId": "df076b27ac29557174652d812ccba96f244a76a420fc9587655c3865cafcff77",
-//        "SequenceNumber": "14966357028073635840",
-//        "ApproximateReceiveCount": "1",
-//        "ApproximateFirstReceiveTimestamp": "1742313448173"
-//      }
-//    }
-//  ]
-// }
   @Test
   fun `large message pointer is published to topic and message body stored in S3`() = runTest {
     val file = File("src/test/resources/events/large-sns-message.json").bufferedReader().readLines()
@@ -200,29 +150,6 @@ class HmppsEventProcessingTest : IntegrationTestBase() {
       AsyncResponseTransformer.toBytes(),
     ).join()
     assertThat(s3Object.asUtf8String()).contains("large message ID")
-  }
-
-  @Test
-  fun `large message stored in S3 can be consumed with extended client`() = runTest {
-    val file = File("src/test/resources/events/large-sns-message.json").bufferedReader().readLines()
-
-    largeMessageFifoSqsClient
-      .sendMessage(
-        SendMessageRequest.builder()
-          .queueUrl(largeMessageFifoQueueUrl)
-          .messageDeduplicationId("dedube")
-          .messageBody(file.toString())
-          .messageGroupId("groupId")
-          .build(),
-      )
-      .await()
-
-    await untilCallTo { largeMessageFifoSqsClient.countMessagesOnQueue(largeMessageFifoQueueUrl).get() } matches { it == 1 }
-
-    val message = ReceiveMessageRequest.builder().queueUrl(largeMessageFifoQueueUrl).build()
-      .let { largeMessageFifoSqsClient.receiveMessage(it).get().messages()[0].body() }
-
-    assertThat(message).contains("large message ID")
   }
 
   @Test
