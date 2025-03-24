@@ -53,10 +53,6 @@ hmpps.sqs:
       dlqName: ${random.uuid}
       queueName: ${random.uuid}
       dlqMaxReceiveCount: 1
-    largemessagefifoqueue:
-      queueName: largemessagefifoqueuetestapp.fifo
-      subscribeTopicId: largemessagefifotopic
-      bucketName: bucket-name
   topics:
     inboundtopic:
       arn: arn:aws:sns:eu-west-2:000000000000:${random.uuid}
@@ -64,6 +60,3 @@ hmpps.sqs:
       arn: arn:aws:sns:eu-west-2:000000000000:${random.uuid}
     fifotopic:
       arn: arn:aws:sns:eu-west-2:000000000000:fifotopictestapp.fifo
-    largemessagefifotopic:
-      arn: arn:aws:sns:eu-west-2:000000000000:${random.uuid}.fifo
-      bucketName: bucket-name

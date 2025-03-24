@@ -59,16 +59,7 @@ class HmppsQueueFactoryTest_NoDlq {
 
     @BeforeEach
     fun `configure mocks and register queues`() {
-      whenever(
-        sqsFactory.awsSqsAsyncClient(
-          anyString(),
-          anyString(),
-          anyString(),
-          anyBoolean(),
-          anyBoolean(),
-          anyString(),
-        ),
-      )
+      whenever(sqsFactory.awsSqsAsyncClient(anyString(), anyString(), anyString(), anyBoolean(), anyBoolean()))
         .thenReturn(sqsClient)
       whenever(sqsClient.getQueueUrl(any<GetQueueUrlRequest>())).thenReturn(
         CompletableFuture.completedFuture(GetQueueUrlResponse.builder().queueUrl("some queue url").build()),
@@ -86,14 +77,7 @@ class HmppsQueueFactoryTest_NoDlq {
 
     @Test
     fun `creates aws sqs client but does not create aws sqs dlq client from sqs factory`() {
-      verify(sqsFactory).awsSqsAsyncClient(
-        "some access key id",
-        "some secret access key",
-        "eu-west-2",
-        false,
-        true,
-        "",
-      )
+      verify(sqsFactory).awsSqsAsyncClient("some access key id", "some secret access key", "eu-west-2", false, true)
       verifyNoMoreInteractions(sqsFactory)
     }
 
@@ -161,7 +145,7 @@ class HmppsQueueFactoryTest_NoDlq {
       whenever(sqsClient.createQueue(any<CreateQueueRequest>())).thenReturn(
         CompletableFuture.completedFuture(CreateQueueResponse.builder().build()),
       )
-      whenever(sqsFactory.localstackSqsAsyncClient(anyString(), anyString(), anyBoolean(), anyString()))
+      whenever(sqsFactory.localstackSqsAsyncClient(anyString(), anyString(), anyBoolean()))
         .thenReturn(sqsClient)
       whenever(sqsClient.getQueueUrl(any<GetQueueUrlRequest>())).thenReturn(
         CompletableFuture.completedFuture(GetQueueUrlResponse.builder().queueUrl("some queue url").build()),
@@ -179,12 +163,7 @@ class HmppsQueueFactoryTest_NoDlq {
 
     @Test
     fun `creates LocalStack sqs client from sqs factory but not dlq client`() {
-      verify(sqsFactory).localstackSqsAsyncClient(
-        localstackUrl = "http://localhost:4566",
-        region = "eu-west-2",
-        true,
-        "",
-      )
+      verify(sqsFactory).localstackSqsAsyncClient(localstackUrl = "http://localhost:4566", region = "eu-west-2", true)
       verifyNoMoreInteractions(sqsFactory)
     }
 
@@ -254,16 +233,7 @@ class HmppsQueueFactoryTest_NoDlq {
 
     @BeforeEach
     fun `configure mocks and register queues`() {
-      whenever(
-        sqsFactory.awsSqsAsyncClient(
-          anyString(),
-          anyString(),
-          anyString(),
-          anyBoolean(),
-          anyBoolean(),
-          anyString(),
-        ),
-      )
+      whenever(sqsFactory.awsSqsAsyncClient(anyString(), anyString(), anyString(), anyBoolean(), anyBoolean()))
         .thenReturn(sqsClient)
       whenever(sqsClient.getQueueUrl(GetQueueUrlRequest.builder().queueName("some queue name").build()))
         .thenReturn(CompletableFuture.completedFuture(GetQueueUrlResponse.builder().queueUrl("some queue url").build()))
@@ -282,22 +252,8 @@ class HmppsQueueFactoryTest_NoDlq {
 
     @Test
     fun `should create multiple sqs clients but no dlq clients from sqs factory`() {
-      verify(sqsFactory).awsSqsAsyncClient(
-        "some access key id",
-        "some secret access key",
-        "eu-west-2",
-        false,
-        true,
-        "",
-      )
-      verify(sqsFactory).awsSqsAsyncClient(
-        "another access key id",
-        "another secret access key",
-        "eu-west-2",
-        false,
-        true,
-        "",
-      )
+      verify(sqsFactory).awsSqsAsyncClient("some access key id", "some secret access key", "eu-west-2", false, true)
+      verify(sqsFactory).awsSqsAsyncClient("another access key id", "another secret access key", "eu-west-2", false, true)
       verifyNoMoreInteractions(sqsFactory)
     }
 
@@ -329,7 +285,7 @@ class HmppsQueueFactoryTest_NoDlq {
       whenever(sqsClient.createQueue(any<CreateQueueRequest>())).thenReturn(
         CompletableFuture.completedFuture(CreateQueueResponse.builder().build()),
       )
-      whenever(sqsFactory.localstackSqsAsyncClient(anyString(), anyString(), anyBoolean(), anyString()))
+      whenever(sqsFactory.localstackSqsAsyncClient(anyString(), anyString(), anyBoolean()))
         .thenReturn(sqsClient)
       whenever(sqsClient.getQueueUrl(any<GetQueueUrlRequest>())).thenReturn(
         CompletableFuture.completedFuture(GetQueueUrlResponse.builder().queueUrl("some queue url").build()),
@@ -383,7 +339,7 @@ class HmppsQueueFactoryTest_NoDlq {
       whenever(sqsClient.createQueue(any<CreateQueueRequest>())).thenReturn(
         CompletableFuture.completedFuture(CreateQueueResponse.builder().build()),
       )
-      whenever(sqsFactory.localstackSqsAsyncClient(anyString(), anyString(), anyBoolean(), anyString()))
+      whenever(sqsFactory.localstackSqsAsyncClient(anyString(), anyString(), anyBoolean()))
         .thenReturn(sqsClient)
       whenever(sqsClient.getQueueUrl(any<GetQueueUrlRequest>())).thenReturn(
         CompletableFuture.completedFuture(GetQueueUrlResponse.builder().queueUrl("some queue url").build()),
@@ -432,16 +388,7 @@ class HmppsQueueFactoryTest_NoDlq {
 
     @BeforeEach
     fun `configure mocks and register queues`() {
-      whenever(
-        sqsFactory.awsSqsAsyncClient(
-          anyString(),
-          anyString(),
-          anyString(),
-          anyBoolean(),
-          anyBoolean(),
-          anyString(),
-        ),
-      )
+      whenever(sqsFactory.awsSqsAsyncClient(anyString(), anyString(), anyString(), anyBoolean(), anyBoolean()))
         .thenReturn(sqsClient)
       whenever(sqsClient.getQueueUrl(any<GetQueueUrlRequest>())).thenReturn(
         CompletableFuture.completedFuture(GetQueueUrlResponse.builder().queueUrl("some queue url").build()),

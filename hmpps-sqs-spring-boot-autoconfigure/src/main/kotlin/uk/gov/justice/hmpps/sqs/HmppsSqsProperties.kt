@@ -24,7 +24,6 @@ data class HmppsSqsProperties(
     val visibilityTimeout: Int = 30,
     val errorVisibilityTimeout: Int = 0,
     val propagateTracing: Boolean = true,
-    val bucketName: String = "",
   ) {
     fun isFifo(): Boolean = queueName.endsWith(".fifo")
   }
@@ -34,7 +33,6 @@ data class HmppsSqsProperties(
     val accessKeyId: String = "",
     val secretAccessKey: String = "",
     val propagateTracing: Boolean = true,
-    val bucketName: String = "",
   ) {
     private val arnRegex = Regex("arn:aws:sns:.*:.*:(.*)$")
 

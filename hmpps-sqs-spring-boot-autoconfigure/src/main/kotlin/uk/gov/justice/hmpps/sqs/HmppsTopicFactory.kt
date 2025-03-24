@@ -38,32 +38,28 @@ class HmppsTopicFactory(
       }
   }
 
-  fun createSnsAsyncClient(topicId: String, topicConfig: HmppsSqsProperties.TopicConfig, hmppsSqsProperties: HmppsSqsProperties): SnsAsyncClient = with(topicConfig) {
-    when (hmppsSqsProperties.provider) {
-      "aws" -> snsClientFactory.awsSnsAsyncClient(accessKeyId, secretAccessKey, hmppsSqsProperties.region, hmppsSqsProperties.useWebToken, propagateTracing, bucketName)
-      "localstack" -> snsClientFactory.localstackSnsAsyncClient(
-        hmppsSqsProperties.localstackUrl,
-        hmppsSqsProperties.region,
-        topicConfig,
-      )
+  fun createSnsAsyncClient(topicId: String, topicConfig: HmppsSqsProperties.TopicConfig, hmppsSqsProperties: HmppsSqsProperties): SnsAsyncClient = with(hmppsSqsProperties) {
+    when (provider) {
+      "aws" -> snsClientFactory.awsSnsAsyncClient(topicConfig.accessKeyId, topicConfig.secretAccessKey, region, hmppsSqsProperties.useWebToken, topicConfig.propagateTracing)
+      "localstack" -> snsClientFactory.localstackSnsAsyncClient(localstackUrl, region, topicConfig.propagateTracing)
         .also {
           runBlocking {
             val attributes = when {
-              isFifo() -> mapOf(
+              topicConfig.isFifo() -> mapOf(
                 "FifoTopic" to "true",
                 "ContentBasedDeduplication" to "true",
               ) else -> mapOf()
             }
             it.createTopic(
               CreateTopicRequest.builder()
-                .name(name)
+                .name(topicConfig.name)
                 .attributes(attributes)
                 .build(),
             ).await()
           }
         }
-        .also { log.info("Created a LocalStack SNS topic for topicId $topicId with ARN $arn") }
-      else -> throw IllegalStateException("Unrecognised HMPPS SQS provider $hmppsSqsProperties.provider")
+        .also { log.info("Created a LocalStack SNS topic for topicId $topicId with ARN ${topicConfig.arn}") }
+      else -> throw IllegalStateException("Unrecognised HMPPS SQS provider $provider")
     }
   }
 }

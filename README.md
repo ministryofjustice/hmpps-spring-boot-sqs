@@ -75,22 +75,6 @@ FIFO allows you the option to configure message deduplication and guarantees ord
 
 To publish a message to a FIFO topic you must include a `MessageGroupId`.
 
-#### SNS Extended Client backed by S3
-
-SNS has a maximum message size of 256kb. If you need to publish messages larger than 256kb, you can configure SNS to store large messages in S3 automatically using the AWS SNS Extended Client. 
-
-[More information on AWS SNS Extended Client](https://docs.aws.amazon.com/sns/latest/dg/large-message-payloads.html)
-
-To configure an SNS topic with an Extended Client, supply a `bucketName` when configuring the topic.
-
-#### SQS Extended Client backed by S3
-
-SNS has a maximum message size of 256kb, and SQS has a maximum payload size of 2GB. If you need to receive messages larger than this, the topic/queue you are reading from can be configured to store large messages in S3 using the AWS SNS/SQS Extended Client. You can use the AWS SQS Extended Client to receive these messages and it will automatically download any large messages from S3
-
-[More information on AWS SQS Extended Client](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-s3-messages.html)
-
-To configure an SQS Queue with an Extended Client, supply a `bucketName` when configuring the queue.
-
 #### HmppsSqsProperties Definitions
 
 ##### :warning: queueId and topicId Must Be All Lowercase And Alpha
@@ -110,23 +94,21 @@ E.g. I know you'd like to use property `hmpps.sqs.queues.my-service-queue.queueN
 
 Each queue declared in the `queues` map is defined in the `QueueConfig` property class
 
-| Property               | Default | Description                                                                                                                                                                                                                                                                                                                               |
-|------------------------|---------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| queueId                |         | The key to the `queues` map. A unique name for the queue configuration, used heavily when automatically creating Spring beans. Must be lower case letters only (no hyphens or underscores).                                                                                                                                               |
-| queueName              |         | The name of the queue as recognised by AWS or LocalStack. The AWS queue name, should be derived from an environment variable of format `HMPPS_SQS_QUEUES_<queueId>_QUEUE_NAME`.                                                                                                                                                           |
-| queueAccessKeyId       |         | Only used for `provider=aws`. The AWS access key ID, should be derived from an environment variable of format `HMPPS_SQS_QUEUES_<queueId>_QUEUE_ACCESS_KEY_ID`.                                                                                                                                                                           |
-| queueSecretAccessKey   |         | Only used for `provider=aws`. The AWS secret access key, should be derived from an environment variable of format `HMPPS_SQS_QUEUES_<queueId>_QUEUE_SECRET_ACCESS_KEY`.                                                                                                                                                                   |
-| subscribeTopicId       |         | Only used for `provider=localstack`. The `topicId` of the topic this queue subscribes to when either running integration tests or running locally.                                                                                                                                                                                        |
-| subscribeFilter        |         | Only used for `provider=localstack`. The filter policy to be applied when subscribing to the topic. Generally used to filter out certain messages. See your queue's `filter_policy` in `cloud-platform-environments` for an example.                                                                                                      |
-| dlqName                |         | The name of the queue's dead letter queue (DLQ) as recognised by AWS or LocalStack. The AWS queue name of the DLQ, should be derived from an environment variable of format `HMPPS_SQS_QUEUES_<queueId>_DLQ_NAME`.                                                                                                                        |
-| dlqAccessKeyId         |         | Only used for `provider=aws`. The AWS access key ID of the DLQ, should be derived from an environment variable of format `HMPPS_SQS_QUEUES_<queueId>_DLQ_ACCESS_KEY_ID`.                                                                                                                                                                  |
-| dlqSecretAccessKey     |         | Only used for `provider=aws`. The AWS secret access key of the DLQ, should be derived from an environment variable of format `HMPPS_SQS_QUEUES_<queueId>_DLQ_SECRET_ACCESS_KEY`.                                                                                                                                                          |
-| dlqMaxReceiveCount     | 5       | Only used for `provider=localstack`. Change the number of retries automatically provided by Localstack on DLQs. e.g. It can be useful to change this to 1 when testing DLQ retry functionality.                                                                                                                                           |
+| Property               | Default | Description                                                                                                                                                                                                                                                                                                                                |
+|------------------------|---------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| queueId                |         | The key to the `queues` map. A unique name for the queue configuration, used heavily when automatically creating Spring beans. Must be lower case letters only (no hyphens or underscores).                                                                                                                                                |
+| queueName              |         | The name of the queue as recognised by AWS or LocalStack. The AWS queue name, should be derived from an environment variable of format `HMPPS_SQS_QUEUES_<queueId>_QUEUE_NAME`.                                                                                                                                                            |
+| queueAccessKeyId       |         | Only used for `provider=aws`. The AWS access key ID, should be derived from an environment variable of format `HMPPS_SQS_QUEUES_<queueId>_QUEUE_ACCESS_KEY_ID`.                                                                                                                                                                            |
+| queueSecretAccessKey   |         | Only used for `provider=aws`. The AWS secret access key, should be derived from an environment variable of format `HMPPS_SQS_QUEUES_<queueId>_QUEUE_SECRET_ACCESS_KEY`.                                                                                                                                                                    |
+| subscribeTopicId       |         | Only used for `provider=localstack`. The `topicId` of the topic this queue subscribes to when either running integration tests or running locally.                                                                                                                                                                                         |
+| subscribeFilter        |         | Only used for `provider=localstack`. The filter policy to be applied when subscribing to the topic. Generally used to filter out certain messages. See your queue's `filter_policy` in `cloud-platform-environments` for an example.                                                                                                       |
+| dlqName                |         | The name of the queue's dead letter queue (DLQ) as recognised by AWS or LocalStack. The AWS queue name of the DLQ, should be derived from an environment variable of format `HMPPS_SQS_QUEUES_<queueId>_DLQ_NAME`.                                                                                                                         |
+| dlqAccessKeyId         |         | Only used for `provider=aws`. The AWS access key ID of the DLQ, should be derived from an environment variable of format `HMPPS_SQS_QUEUES_<queueId>_DLQ_ACCESS_KEY_ID`.                                                                                                                                                                   |
+| dlqSecretAccessKey     |         | Only used for `provider=aws`. The AWS secret access key of the DLQ, should be derived from an environment variable of format `HMPPS_SQS_QUEUES_<queueId>_DLQ_SECRET_ACCESS_KEY`.                                                                                                                                                           |
+| dlqMaxReceiveCount     | 5       | Only used for `provider=localstack`. Change the number of retries automatically provided by Localstack on DLQs. e.g. It can be useful to change this to 1 when testing DLQ retry functionality.                                                                                                                                            |
 | visibilityTimeout      | 30      | Only used for `provider=localstack`. Sets the maximum amount of time (in seconds) that a message is considered to be in process before it is then acknowledged or made visible again to other listeners.  See https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-visibility-timeout.html for more information. |
-| errorVisibilityTimeout | 0       | Sets the amount of time (in seconds) before a message in error is retried.                                                                                                                                                                                                                                                                |
-| propagateTracing       | `true`  | Reads distributed tracing headers and propagates them onwards, keeping a link to the original published message in your Application Monitor e.g. Microsoft Log Analytics.  See [Disabling Tracing of Messages](#disabling-tracing-of-messages) below.                                                                                     |
-| bucketName             |         | Set this to the name of the S3 bucket to be used with this queue in order to configure an SQS Extended Client                                                                                                                                                                                                                             |
-
+| errorVisibilityTimeout | 0       | Sets the amount of time (in seconds) before a message in error is retried.                                                                                                                                                                                                                                                                 |
+| propagateTracing       | `true`  | Reads distributed tracing headers and propagates them onwards, keeping a link to the original published message in your Application Monitor e.g. Microsoft Log Analytics.  See [Disabling Tracing of Messages](#disabling-tracing-of-messages) below.                                                                                      |
 
 Each topic declared in the `topics` map is defined in the `TopicConfig` property class
 
@@ -137,7 +119,6 @@ Each topic declared in the `topics` map is defined in the `TopicConfig` property
 | accessKeyId      |         | Only used for `provider=aws`. The AWS access key ID, should be derived from an environment variable of format `HMPPS_SQS_TOPICS_<topicId>_ACCESS_KEY_ID`.                                   | 
 | secretAccessKey  |         | Only used for `provider=aws`. The AWS secret access key, should be derived from an environment variable of format `HMPPS_SQS_TOPICS_<topicId>_SECRET_ACCESS_KEY`.                           |
 | propagateTracing | `true`  | Writes distributed tracing headers to messages and propagates them onwards, keeping a link to message consumers in your Application Monitor e.g. Microsoft Log Analytics.                   |
-| bucketName       |         | Set this to the name of the S3 bucket to be used with this topic in order to configure an SNS Extended Client                                                                               |
 
 ### SqsListener
 
@@ -350,7 +331,7 @@ The library will automatically switch to the reactive Queue admin endpoints if i
 
 ### Testcontainers
 
-In the past many queueing applications have allowed running against either a Testcontainers LocalStack instance or a standalone LocalStack instance started manually with docker compose (which is required when running the tests on CircleCI).
+In the past many queueing applications have allowed running against either a Testcontainers LocalStack instance or a standalone LocalStack instance started manually with docker-compose (which is required when running the tests on CircleCI).
 
 This led to some applications having a very complicated configuration with 3 sets of `AmazonSQS` beans required - production, standalone LocalStack and Testcontainers LocalStack.
 
@@ -403,7 +384,7 @@ If you are developing in this library then starting and stopping Testcontainers 
 
 Use this command to run a standalone LocalStack instance:
 
-`docker compose -f docker-compose-test.yml up localstack`
+`docker-compose -f docker-compose-test.yml up localstack`
 
 And to run the tests use this command - as often as you like:
 
@@ -436,7 +417,7 @@ If you are developing in this library then starting and stopping a Testcontainer
 
 Use this command to start a standalone LocalStack instance:
 
-`docker compose -f docker-compose-test.yml up localstack`
+`docker-compose -f docker-compose-test.yml up localstack`
 
 From the root of the project run the following command to test only the test-app tests:
 
@@ -450,7 +431,7 @@ Running `test-app` or `test-app-reactive` locally can be useful for debugging fe
 
 Start localstack with command:
 
-`docker compose -f docker-compose-test.yml up localstack`
+`docker-compose -f docker-compose-test.yml up localstack`
 
 Then run the `test-app` in your IDE from main class `HmppsTemplateKotlin` using Spring profiles `localstack`.
 
