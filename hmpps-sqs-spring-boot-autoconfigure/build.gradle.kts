@@ -35,7 +35,6 @@ dependencies {
   implementation("io.opentelemetry:opentelemetry-api")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8")
-  implementation("software.amazon.sns:sns-extended-client:2.1.0")
 
   testImplementation("org.assertj:assertj-core:3.27.3")
   testImplementation("org.junit.jupiter:junit-jupiter:5.12.1")

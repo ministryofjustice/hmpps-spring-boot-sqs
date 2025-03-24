@@ -75,14 +75,6 @@ FIFO allows you the option to configure message deduplication and guarantees ord
 
 To publish a message to a FIFO topic you must include a `MessageGroupId`.
 
-#### SNS Extended Client backed by S3
-
-SNS has a maximum message size of 256kb. If you need to publish messages larger than 256kb, you can configure SNS to store large messages in S3 using the AWS SNS Extended Client. 
-
-[More information on AWS SNS Extended Client](https://docs.aws.amazon.com/sns/latest/dg/large-message-payloads.html)
-
-To configure an SNS topic with an Extended Client, supply a `bucketName` when configuring the topic.
-
 #### HmppsSqsProperties Definitions
 
 ##### :warning: queueId and topicId Must Be All Lowercase And Alpha
@@ -127,7 +119,6 @@ Each topic declared in the `topics` map is defined in the `TopicConfig` property
 | accessKeyId      |         | Only used for `provider=aws`. The AWS access key ID, should be derived from an environment variable of format `HMPPS_SQS_TOPICS_<topicId>_ACCESS_KEY_ID`.                                   | 
 | secretAccessKey  |         | Only used for `provider=aws`. The AWS secret access key, should be derived from an environment variable of format `HMPPS_SQS_TOPICS_<topicId>_SECRET_ACCESS_KEY`.                           |
 | propagateTracing | `true`  | Writes distributed tracing headers to messages and propagates them onwards, keeping a link to message consumers in your Application Monitor e.g. Microsoft Log Analytics.                   |
-| bucketName       |         | Set this to the name of the S3 bucket to be used with this topic in order to configure an SNS Extended Client                                                                               |
 
 ### SqsListener
 
