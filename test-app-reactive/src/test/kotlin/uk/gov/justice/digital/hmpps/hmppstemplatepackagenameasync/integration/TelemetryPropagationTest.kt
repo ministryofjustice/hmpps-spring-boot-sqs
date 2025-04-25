@@ -112,14 +112,14 @@ class TelemetryPropagationTest : IntegrationTestBase() {
     withSpan {
       // having MessageAttributes in the payload will mean that the interceptor will try and parse the message
       // thinking it originated from a topic rather than a queue and thus will throw an exception
-      val event = HmppsEvent("event-id", "OFFENDER_MOVEMENT-RECEPTION", "some MessageAttributes contents")
+      val gsonString = """{"id":"event-id","type":"OFFENDER_MOVEMENT-RECEPTION","contents":"some contents", "MessageAttributes":"yes"}"""
       inboundSqsOnlyClient.sendMessage(
         SendMessageRequest.builder()
           .queueUrl(inboundSqsOnlyQueueUrl)
-          .messageBody(gsonString(event))
+          .messageBody(gsonString)
           .messageAttributes(
             mapOf(
-              "eventType" to MessageAttributeValue.builder().dataType("String").stringValue(event.type).build(),
+              "eventType" to MessageAttributeValue.builder().dataType("String").stringValue("OFFENDER_MOVEMENT-RECEPTION").build(),
             ),
           )
           .build(),
