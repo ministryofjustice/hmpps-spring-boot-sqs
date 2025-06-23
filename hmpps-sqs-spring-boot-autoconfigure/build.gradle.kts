@@ -10,9 +10,9 @@ plugins {
   id("com.github.ben-manes.versions") version "0.52.0"
   id("se.patrikerdes.use-latest-versions") version "0.2.18"
   id("io.spring.dependency-management") version "1.1.7"
-  id("org.jlleitschuh.gradle.ktlint") version "12.2.0"
+  id("org.jlleitschuh.gradle.ktlint") version "12.3.0"
   id("org.owasp.dependencycheck") version "8.4.3"
-  id("org.springframework.boot") version "3.5.0"
+  id("org.springframework.boot") version "3.5.3"
 }
 
 dependencyManagement {
@@ -31,13 +31,13 @@ dependencies {
   implementation("io.awspring.cloud:spring-cloud-aws-sns")
   implementation("io.awspring.cloud:spring-cloud-aws-sqs")
   implementation("com.google.code.gson:gson:2.13.1")
-  implementation("com.microsoft.azure:applicationinsights-core:3.7.2")
+  implementation("com.microsoft.azure:applicationinsights-core:3.7.3")
   implementation("io.opentelemetry:opentelemetry-api")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8")
 
   testImplementation("org.assertj:assertj-core:3.27.3")
-  testImplementation("org.junit.jupiter:junit-jupiter:5.12.2")
+  testImplementation("org.junit.jupiter:junit-jupiter:5.13.1")
   testImplementation("org.mockito:mockito-junit-jupiter:5.18.0")
   testImplementation("org.springframework.boot:spring-boot-starter-test")
   testImplementation("org.mockito.kotlin:mockito-kotlin:5.4.0")
