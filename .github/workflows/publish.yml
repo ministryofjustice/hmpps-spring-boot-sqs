@@ -1,20 +1,11 @@
 name: Publish
 on:
   workflow_call:
-    inputs:
-      java-version:
-        type: string
-        required: false
-        default: '21'
-      gradle-command:
-        type: string
-        default: './gradlew check'
-        required: false
 permissions:
   contents: read
 jobs:
-  gradle-verify:
-    name: Verify the gradle app
+  gradle-publish:
+    name: Publish the gradle library
     runs-on: ubuntu-latest
     environment: 'publish'
     steps:
