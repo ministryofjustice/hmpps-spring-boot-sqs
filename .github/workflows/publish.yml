@@ -1,0 +1,26 @@
+name: Publish
+on:
+  workflow_call:
+permissions:
+  contents: read
+jobs:
+  gradle-publish:
+    name: Publish the gradle library
+    runs-on: ubuntu-latest
+    environment: 'publish'
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '${{ inputs.java-version }}'
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+      - name: Publish the plugin
+        shell: bash
+        run: |
+          ORG_GRADLE_PROJECT_signingKey=$(echo "${{ secrets.ORG_GRADLE_PROJECT_SIGNINGKEY }}")
+          ORG_GRADLE_PROJECT_signingPassword=$(echo "${{ secrets.ORG_GRADLE_PROJECT_SIGNINGPASSWORD }}")
+          ./gradlew publishToSonatype closeAndReleaseSonatypeStagingRepository
