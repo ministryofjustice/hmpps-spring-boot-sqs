@@ -1,7 +1,7 @@
 import com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask
 
 plugins {
-  kotlin("jvm") version "2.1.21"
+  kotlin("jvm") version "2.2.0"
   id("maven-publish")
   id("signing")
   id("com.github.ben-manes.versions") version "0.52.0"
@@ -11,7 +11,7 @@ plugins {
 dependencies {
   api(platform("io.awspring.cloud:spring-cloud-aws-dependencies:3.4.0"))
   api(project(":hmpps-sqs-spring-boot-autoconfigure"))
-  api(platform("software.amazon.awssdk:bom:2.31.68"))
+  api(platform("software.amazon.awssdk:bom:2.31.77"))
   api("software.amazon.awssdk:sns")
   api("io.awspring.cloud:spring-cloud-aws-starter") { exclude("io.awspring.cloud", "spring-cloud-aws-autoconfigure")}
   api("io.awspring.cloud:spring-cloud-aws-sns")
