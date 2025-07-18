@@ -40,7 +40,7 @@ dependencies {
   testImplementation("org.junit.jupiter:junit-jupiter:5.13.3")
   testImplementation("org.mockito:mockito-junit-jupiter:5.18.0")
   testImplementation("org.springframework.boot:spring-boot-starter-test")
-  testImplementation("org.mockito.kotlin:mockito-kotlin:5.4.0")
+  testImplementation("org.mockito.kotlin:mockito-kotlin:6.0.0")
   testImplementation("org.mockito:mockito-inline:5.2.0")
   testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
   testImplementation("org.jetbrains.kotlin:kotlin-reflect")
