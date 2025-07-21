@@ -36,6 +36,9 @@ dependencies {
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8")
 
+  // Temporarily pinned to mitigate https://spring.io/security/cve-2025-22227
+  implementation("io.projectreactor.netty:reactor-netty-http:1.2.8")
+
   testImplementation("org.assertj:assertj-core:3.27.3")
   testImplementation("org.junit.jupiter:junit-jupiter:5.13.3")
   testImplementation("org.mockito:mockito-junit-jupiter:5.18.0")
