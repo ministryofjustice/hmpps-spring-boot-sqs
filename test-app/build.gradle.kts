@@ -1,5 +1,5 @@
 plugins {
-  id("uk.gov.justice.hmpps.gradle-spring-boot") version "8.3.3"
+  id("uk.gov.justice.hmpps.gradle-spring-boot") version "8.3.4"
   kotlin("plugin.spring") version "2.2.0"
 }
 
@@ -21,7 +21,7 @@ dependencies {
   implementation(project(":hmpps-sqs-spring-boot-starter"))
 
   testImplementation("org.assertj:assertj-core:3.27.3")
-  testImplementation("org.junit.jupiter:junit-jupiter:5.13.3")
+  testImplementation("org.junit.jupiter:junit-jupiter:5.13.4")
   testImplementation("org.mockito:mockito-junit-jupiter:5.18.0")
   testImplementation("org.mockito.kotlin:mockito-kotlin:6.0.0")
   testImplementation("org.mockito:mockito-inline:5.2.0")

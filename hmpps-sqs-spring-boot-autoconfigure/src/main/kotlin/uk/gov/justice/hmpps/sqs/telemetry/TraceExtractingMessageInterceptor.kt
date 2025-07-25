@@ -110,8 +110,8 @@ class TraceExtractingMessageInterceptor(private val objectMapper: ObjectMapper) 
     .startSpan()
 
   private class MessageAttribute(
-    @JsonProperty("Type") val Type: String,
-    @JsonProperty("Value") val Value: Any?,
+    @param:JsonProperty("Type") val Type: String,
+    @param:JsonProperty("Value") val Value: Any?,
   )
   companion object {
     private val log = LoggerFactory.getLogger(TraceExtractingMessageInterceptor::class.java)
