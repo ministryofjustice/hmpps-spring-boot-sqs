@@ -2,8 +2,8 @@ import com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-  kotlin("jvm") version "2.2.10"
-  kotlin("plugin.spring") version "2.2.10"
+  kotlin("jvm") version "2.2.20"
+  kotlin("plugin.spring") version "2.2.20"
   id("maven-publish")
   id("signing")
   id("com.adarshr.test-logger") version "4.0.0"
@@ -12,11 +12,11 @@ plugins {
   id("io.spring.dependency-management") version "1.1.7"
   id("org.jlleitschuh.gradle.ktlint") version "13.1.0"
   id("org.owasp.dependencycheck") version "12.1.3"
-  id("org.springframework.boot") version "3.5.5"
+  id("org.springframework.boot") version "3.5.6"
 }
 
 dependencies {
-  implementation(platform("software.amazon.awssdk:bom:2.33.0"))
+  implementation(platform("software.amazon.awssdk:bom:2.33.12"))
   implementation("org.springframework.boot:spring-boot-starter-web")
   implementation("org.springframework.boot:spring-boot-starter-webflux")
   implementation("org.springframework.boot:spring-boot-starter-security")
@@ -27,7 +27,7 @@ dependencies {
   api("io.awspring.cloud:spring-cloud-aws-starter:3.4.0") { exclude("io.awspring.cloud", "spring-cloud-aws-autoconfigure") }
   implementation("io.awspring.cloud:spring-cloud-aws-sns:3.4.0")
   implementation("io.awspring.cloud:spring-cloud-aws-sqs:3.4.0")
-  implementation("com.google.code.gson:gson:2.13.1")
+  implementation("com.google.code.gson:gson:2.13.2")
   implementation("com.microsoft.azure:applicationinsights-core:3.7.4")
   implementation("io.opentelemetry:opentelemetry-api")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")

@@ -1,6 +1,6 @@
 plugins {
-  id("uk.gov.justice.hmpps.gradle-spring-boot") version "9.0.0"
-  kotlin("plugin.spring") version "2.2.10"
+  id("uk.gov.justice.hmpps.gradle-spring-boot") version "9.0.2"
+  kotlin("plugin.spring") version "2.2.20"
 }
 
 configurations {
@@ -16,7 +16,7 @@ dependencies {
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8")
   implementation("io.opentelemetry:opentelemetry-extension-kotlin")
 
-  implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.11")
+  implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.13")
 
   implementation(project(":hmpps-sqs-spring-boot-starter"))
 
@@ -30,8 +30,8 @@ dependencies {
   testImplementation("io.jsonwebtoken:jjwt-jackson:0.13.0")
   testImplementation("org.wiremock:wiremock-standalone:3.13.1")
   testImplementation("org.testcontainers:localstack:1.21.3")
-  testImplementation("com.amazonaws:aws-java-sdk-core:1.12.788") // Needed so Localstack has access to the AWS SDK V1 API
-  testImplementation("com.google.code.gson:gson:2.13.1")
+  testImplementation("com.amazonaws:aws-java-sdk-core:1.12.791") // Needed so Localstack has access to the AWS SDK V1 API
+  testImplementation("com.google.code.gson:gson:2.13.2")
   testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test")
   testImplementation("io.opentelemetry:opentelemetry-extension-trace-propagators")
   testImplementation("io.opentelemetry:opentelemetry-sdk-testing")
