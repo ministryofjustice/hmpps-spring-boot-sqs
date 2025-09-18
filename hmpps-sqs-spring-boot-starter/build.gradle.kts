@@ -9,13 +9,15 @@ plugins {
 }
 
 dependencies {
-  api(platform("io.awspring.cloud:spring-cloud-aws-dependencies:3.4.0"))
   api(project(":hmpps-sqs-spring-boot-autoconfigure"))
   api(platform("software.amazon.awssdk:bom:2.33.12"))
   api("software.amazon.awssdk:sns")
-  api("io.awspring.cloud:spring-cloud-aws-starter") { exclude("io.awspring.cloud", "spring-cloud-aws-autoconfigure")}
-  api("io.awspring.cloud:spring-cloud-aws-sns")
-  api("io.awspring.cloud:spring-cloud-aws-sqs")
+  // couldn't use spring-cloud-aws-dependencies platform bom as it brings in spring-modulith-events-aws-sns at 1.4.0-SNAPSHOT
+  // this then stopped the library being published with an error
+  // - Dependency management dependencies to SNAPSHOT versions not allowed for dependency: org.springframework.modulith:spring-modulith-events-aws-sns
+  api("io.awspring.cloud:spring-cloud-aws-starter:3.4.0") { exclude("io.awspring.cloud", "spring-cloud-aws-autoconfigure") }
+  api("io.awspring.cloud:spring-cloud-aws-sns:3.4.0")
+  api("io.awspring.cloud:spring-cloud-aws-sqs:3.4.0")
   api("software.amazon.awssdk:sts")
   api(platform("org.springframework.boot:spring-boot-dependencies:3.5.6"))
   api("org.springframework.boot:spring-boot-starter-web")
