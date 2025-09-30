@@ -44,7 +44,8 @@ class HmppsQueueFactoryTest_NoDlq {
   private val beanFactory = mock<ConfigurableListableBeanFactory>()
   private val sqsFactory = mock<SqsClientFactory>()
   private val objectMapper = mock<ObjectMapper>()
-  private val hmppsQueueFactory = HmppsQueueFactory(context, healthContributorRegistry, sqsFactory, objectMapper)
+  private val errorVisibilityHandler = mock<HmppsErrorVisibilityHandler>()
+  private val hmppsQueueFactory = HmppsQueueFactory(context, healthContributorRegistry, sqsFactory, errorVisibilityHandler, objectMapper)
 
   init {
     whenever(context.beanFactory).thenReturn(beanFactory)

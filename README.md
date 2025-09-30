@@ -50,6 +50,7 @@ This library is driven by some configuration properties prefixed `hmpps.sqs` tha
 * add `HmppsQueueResource` to the project if at least one non audit queue (see is defined, which provides endpoints for retrying DLQ messages and purging queues
 * create a SQS listener connection factory for each queue defined
 * create LocalStack queues and topics for testing against, and subscribe queues to topics where configured
+* configure the time between retries at the project, queue and event type levels
 
 Examples of property usage can be found in the test project in the following places:
 
@@ -83,32 +84,34 @@ As we define the production queue and topic properties in environment variables 
 
 E.g. I know you'd like to use property `hmpps.sqs.queues.my-service-queue.queueName`, but your life will be much easier if you name the property `hmpps.sqs.queues.myservicequeue.queueName`.
 
-| Property      | Default                 | Description                                                                                                                                                                                                                             |
-|---------------|-------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| provider      | `aws`                   | `aws` for production or `localstack` for running locally / integration tests.                                                                                                                                                           |
-| region        | `eu-west-2`             | The AWS region where the queues live.                                                                                                                                                                                                   |
-| localstackUrl | `http://localhost:4566` | Only used for `provider=localstack`. The location of the running LocalStack instance.                                                                                                                                                   |
-| queues        |                         | A map of `queueId` to `QueueConfig`. One entry is required for each queue. In production these are derived from environment variables with the prefix `HMPPS_SQS_QUEUES_` that should be populated from Kubernetes secrets (see below). |
-| topics        |                         | A map of `topicId` to `TopicConfig`. One entry is required for each topic. In production these are derived from environment variables with the prefix `HMPPS_SQS_TOPICS_` that should be populated from Kubernetes secrets (see below). |
-| useWebToken   | `true`                  | Assumes you will be using Web Identity Token credentials and thus won't need any queue / topic access keys or secrets.  Default from 3.0 is to be `true`, only needs to be `false` if running outside of CloudPlatform AWS clusters.    |
+| Property                      | Default                 | Description                                                                                                                                                                                                                             |
+|-------------------------------|-------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| provider                      | `aws`                   | `aws` for production or `localstack` for running locally / integration tests.                                                                                                                                                           |
+| region                        | `eu-west-2`             | The AWS region where the queues live.                                                                                                                                                                                                   |
+| localstackUrl                 | `http://localhost:4566` | Only used for `provider=localstack`. The location of the running LocalStack instance.                                                                                                                                                   |
+| queues                        |                         | A map of `queueId` to `QueueConfig`. One entry is required for each queue. In production these are derived from environment variables with the prefix `HMPPS_SQS_QUEUES_` that should be populated from Kubernetes secrets (see below). |
+| topics                        |                         | A map of `topicId` to `TopicConfig`. One entry is required for each topic. In production these are derived from environment variables with the prefix `HMPPS_SQS_TOPICS_` that should be populated from Kubernetes secrets (see below). |
+| useWebToken                   | `true`                  | Assumes you will be using Web Identity Token credentials and thus won't need any queue / topic access keys or secrets.  Default from 3.0 is to be `true`, only needs to be `false` if running outside of CloudPlatform AWS clusters.    |
+| defaultErrorVisibilityTimeout | 0                       | A comma separated list of the time in seconds before a failed message is retried. Applies to all message unless overridden at the queue or event level.                                                                                 |
 
 Each queue declared in the `queues` map is defined in the `QueueConfig` property class
 
-| Property               | Default | Description                                                                                                                                                                                                                                                                                                                                |
-|------------------------|---------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| queueId                |         | The key to the `queues` map. A unique name for the queue configuration, used heavily when automatically creating Spring beans. Must be lower case letters only (no hyphens or underscores).                                                                                                                                                |
-| queueName              |         | The name of the queue as recognised by AWS or LocalStack. The AWS queue name, should be derived from an environment variable of format `HMPPS_SQS_QUEUES_<queueId>_QUEUE_NAME`.                                                                                                                                                            |
-| queueAccessKeyId       |         | Only used for `provider=aws`. The AWS access key ID, should be derived from an environment variable of format `HMPPS_SQS_QUEUES_<queueId>_QUEUE_ACCESS_KEY_ID`.                                                                                                                                                                            |
-| queueSecretAccessKey   |         | Only used for `provider=aws`. The AWS secret access key, should be derived from an environment variable of format `HMPPS_SQS_QUEUES_<queueId>_QUEUE_SECRET_ACCESS_KEY`.                                                                                                                                                                    |
-| subscribeTopicId       |         | Only used for `provider=localstack`. The `topicId` of the topic this queue subscribes to when either running integration tests or running locally.                                                                                                                                                                                         |
-| subscribeFilter        |         | Only used for `provider=localstack`. The filter policy to be applied when subscribing to the topic. Generally used to filter out certain messages. See your queue's `filter_policy` in `cloud-platform-environments` for an example.                                                                                                       |
-| dlqName                |         | The name of the queue's dead letter queue (DLQ) as recognised by AWS or LocalStack. The AWS queue name of the DLQ, should be derived from an environment variable of format `HMPPS_SQS_QUEUES_<queueId>_DLQ_NAME`.                                                                                                                         |
-| dlqAccessKeyId         |         | Only used for `provider=aws`. The AWS access key ID of the DLQ, should be derived from an environment variable of format `HMPPS_SQS_QUEUES_<queueId>_DLQ_ACCESS_KEY_ID`.                                                                                                                                                                   |
-| dlqSecretAccessKey     |         | Only used for `provider=aws`. The AWS secret access key of the DLQ, should be derived from an environment variable of format `HMPPS_SQS_QUEUES_<queueId>_DLQ_SECRET_ACCESS_KEY`.                                                                                                                                                           |
-| dlqMaxReceiveCount     | 5       | Only used for `provider=localstack`. Change the number of retries automatically provided by Localstack on DLQs. e.g. It can be useful to change this to 1 when testing DLQ retry functionality.                                                                                                                                            |
-| visibilityTimeout      | 30      | Only used for `provider=localstack`. Sets the maximum amount of time (in seconds) that a message is considered to be in process before it is then acknowledged or made visible again to other listeners.  See https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-visibility-timeout.html for more information. |
-| errorVisibilityTimeout | 0       | Sets the amount of time (in seconds) before a message in error is retried.                                                                                                                                                                                                                                                                 |
-| propagateTracing       | `true`  | Reads distributed tracing headers and propagates them onwards, keeping a link to the original published message in your Application Monitor e.g. Microsoft Log Analytics.  See [Disabling Tracing of Messages](#disabling-tracing-of-messages) below.                                                                                      |
+| Property                    | Default | Description                                                                                                                                                                                                                                                                                                                                |
+|-----------------------------|---------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| queueId                     |         | The key to the `queues` map. A unique name for the queue configuration, used heavily when automatically creating Spring beans. Must be lower case letters only (no hyphens or underscores).                                                                                                                                                |
+| queueName                   |         | The name of the queue as recognised by AWS or LocalStack. The AWS queue name, should be derived from an environment variable of format `HMPPS_SQS_QUEUES_<queueId>_QUEUE_NAME`.                                                                                                                                                            |
+| queueAccessKeyId            |         | Only used for `provider=aws`. The AWS access key ID, should be derived from an environment variable of format `HMPPS_SQS_QUEUES_<queueId>_QUEUE_ACCESS_KEY_ID`.                                                                                                                                                                            |
+| queueSecretAccessKey        |         | Only used for `provider=aws`. The AWS secret access key, should be derived from an environment variable of format `HMPPS_SQS_QUEUES_<queueId>_QUEUE_SECRET_ACCESS_KEY`.                                                                                                                                                                    |
+| subscribeTopicId            |         | Only used for `provider=localstack`. The `topicId` of the topic this queue subscribes to when either running integration tests or running locally.                                                                                                                                                                                         |
+| subscribeFilter             |         | Only used for `provider=localstack`. The filter policy to be applied when subscribing to the topic. Generally used to filter out certain messages. See your queue's `filter_policy` in `cloud-platform-environments` for an example.                                                                                                       |
+| dlqName                     |         | The name of the queue's dead letter queue (DLQ) as recognised by AWS or LocalStack. The AWS queue name of the DLQ, should be derived from an environment variable of format `HMPPS_SQS_QUEUES_<queueId>_DLQ_NAME`.                                                                                                                         |
+| dlqAccessKeyId              |         | Only used for `provider=aws`. The AWS access key ID of the DLQ, should be derived from an environment variable of format `HMPPS_SQS_QUEUES_<queueId>_DLQ_ACCESS_KEY_ID`.                                                                                                                                                                   |
+| dlqSecretAccessKey          |         | Only used for `provider=aws`. The AWS secret access key of the DLQ, should be derived from an environment variable of format `HMPPS_SQS_QUEUES_<queueId>_DLQ_SECRET_ACCESS_KEY`.                                                                                                                                                           |
+| dlqMaxReceiveCount          | 5       | Only used for `provider=localstack`. Change the number of retries automatically provided by Localstack on DLQs. e.g. It can be useful to change this to 1 when testing DLQ retry functionality.                                                                                                                                            |
+| visibilityTimeout           | 30      | Only used for `provider=localstack`. Sets the maximum amount of time (in seconds) that a message is considered to be in process before it is then acknowledged or made visible again to other listeners.  See https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-visibility-timeout.html for more information. |
+| errorVisibilityTimeout      |         | A comma separated list of the time in seconds before a failed message is retried. Missing config falls back to the global `defaultErrorVisibilityTimeout`.                                                                                                                                                                                 |
+| propagateTracing            | `true`  | Reads distributed tracing headers and propagates them onwards, keeping a link to the original published message in your Application Monitor e.g. Microsoft Log Analytics.  See [Disabling Tracing of Messages](#disabling-tracing-of-messages) below.                                                                                      |
+| eventErrorVisibilityTimeout |         | A map of eventTypes -> comma separated list of the time in seconds before a failed message is retried. Missing config for an eventType falls back to the queue's `errorVisibilityTimeout`.                                                                                                                                                 |
 
 Each topic declared in the `topics` map is defined in the `TopicConfig` property class
 
@@ -143,6 +146,37 @@ An example is available in the `test-app`'s [listeners](https://github.com/minis
 #### Overriding the SqsMessageListenerContainerFactory
 
 If you don't wish to use the `HmppsQueueContainerFactoryProxy` because you want to configure your listener in a different way then simply create your own `SqsMessageListenerContainerFactory` and reference it on the `@SqsListener` annotation.
+
+### Error Visibility Timeouts
+
+By default, any message that fails will be retried immediately. Once the queue's `maxReceiveCount` is exhausted the message will be sent to the deal letter queue (DLQ). It would be better to retry failures for longer before they are sent to the DLQ. 
+
+It's possible to configure custom retry behaviour using the `errorVisibilityTimeout` properties to set the time between each retry on the main queue.
+
+To set a global default timeout strategy you can set the number of seconds between each retry. In this example the 1st retry is after 1 seconds, the 2nd after 10 seconds, the 3rd after 1 minute and the 4th after 10 minutes. If the last attempt fails the message will be sent to the DLQ. 
+```yaml
+hmpps.sqs:
+  defaultErrorVisibilityTimeout: 1, 10, 60, 600
+```
+
+It's possible to override the default and set the timeout strategy for a specific queue:
+```yaml
+hmpps.sqs:
+  queues:
+    myqueue:
+      errorVisibilityTimeout: 1, 2, 4, 8
+```
+
+You can also override the queue and set the timeout strategy for a specific event type:
+```yaml
+hmpps.sqs:
+  queues:
+    myqueue:
+      eventErrorVisibilityTimeout:
+        my.special.event: 0, 1, 2, 3 
+```
+
+Note that the number of retries is defined in the Cloud Platform terraform as `maxReceiveCount`. If there are more retries than values defined in the timeout strategy then the last value in the list is re-used.
 
 ### Distributed Tracing of Messages
 
@@ -302,6 +336,8 @@ Class `HmppsQueueResource` provides endpoints to retry and purge messages on a D
 #### Usage
 
 For transient errors you can use the Kubernetes Cronjob defined in the [generic service helm chart](https://github.com/ministryofjustice/hmpps-helm-charts/tree/main/charts/generic-service#retrying-messages-on-a-dead-letter-queue) to automatically retry all DLQ messages. The Cronjob is configured to run every 10 minutes before [an alert triggers for the age of the DLQ message](https://github.com/ministryofjustice/cloud-platform-environments/blob/main/namespaces/live-1.cloud-platform.service.justice.gov.uk/offender-events-prod/09-prometheus-sqs-sns.yaml#L13).
+
+##### :warning: The unauthenticated retry-all-dlqs endpoint is deprecated. Please use the [Error Visibility Timeout configuration](#error-visibility-timeouts) to retry for longer before using the DLQ.
 
 Unrecoverable errors should be fixed such that they no longer fail and are not sent to the DLQ. In the meantime these can be removed by purging the DLQ to prevent the alert from firing.
 

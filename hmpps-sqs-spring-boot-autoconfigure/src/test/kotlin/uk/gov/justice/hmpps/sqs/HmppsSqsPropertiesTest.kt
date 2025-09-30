@@ -539,6 +539,17 @@ class HmppsSqsPropertiesTest {
     }
   }
 
+  @Nested
+  inner class ErrorVisibilityTimeout {
+    @Test
+    fun `should load default timeouts OK`() {
+      val properties = HmppsSqsProperties(provider = "aws", topics = mapOf("topic-id" to validAwsTopicConfig()), queues = mapOf("queue-id" to validAwsQueueConfig()))
+      assertThat(properties.defaultErrorVisibilityTimeout).containsExactly(0)
+      assertThat(properties.queues["queue-id"]?.errorVisibilityTimeout).isNull()
+      assertThat(properties.queues["queue-id"]?.eventErrorVisibilityTimeout).isNull()
+    }
+  }
+
   private fun validAwsQueueConfig(index: Int = 1) = QueueConfig(queueName = "name$index", queueAccessKeyId = "key$index", queueSecretAccessKey = "secret$index", dlqName = "dlqName$index", dlqAccessKeyId = "dlqKey$index", dlqSecretAccessKey = "dlqSecret$index")
   private fun validAwsQueueNoDlqConfig(index: Int = 1) = QueueConfig(queueName = "name$index", queueAccessKeyId = "key$index", queueSecretAccessKey = "secret$index")
   private fun validAwsTopicConfig(index: Int = 1) = TopicConfig(arn = "arn$index", accessKeyId = "key$index", secretAccessKey = "secret$index")
