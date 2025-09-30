@@ -25,7 +25,6 @@ class HmppsQueueResource(hmppsQueueService: HmppsQueueService) {
    * See test-app/src/main/kotlin/uk/gov/justice/digital/hmpps/hmppstemplatepackagename/config/ResourceServerConfiguration.kt for Spring Security config.
    * See https://github.com/ministryofjustice/hmpps-helm-charts/blob/main/charts/generic-service/templates/retry-dlq-cronjob.yaml and test-app/helm_deploy/hmpps-template-kotlin/example/ingress.yaml for Kubernetes config.
    */
-  @Deprecated("Please use the errorVisibilityTimeout configuration available in the configuration properties.")
   @PutMapping("/retry-all-dlqs")
   fun retryAllDlqs() = runBlocking {
     hmppsReactiveQueueResource.retryAllDlqs()
