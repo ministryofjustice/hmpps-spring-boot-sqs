@@ -80,6 +80,26 @@ class HmppsErrorVisibilityHandlerTest(@param:Autowired private val objectMapper:
   }
 
   @Test
+  fun `should fall back to queue timeout if event type not found in message`() {
+    val properties = HmppsSqsProperties(
+      defaultErrorVisibilityTimeout = listOf(1),
+      queues = mapOf(
+        "some-queue-id" to HmppsSqsProperties.QueueConfig(
+          "some-queue",
+          errorVisibilityTimeout = listOf(2),
+          eventErrorVisibilityTimeout = mapOf("some-event" to listOf(3)),
+        ),
+      ),
+    )
+    val message = GenericMessage<Any>("""{"MessageId":null,"MessageAttributes":{}}""", mapOf("Sqs_Msa_ApproximateReceiveCount" to "1", "Sqs_VisibilityTimeout" to queueMessageVisibility))
+    val handler = HmppsErrorVisibilityHandler(objectMapper, properties)
+
+    handler.setErrorVisibilityTimeout(message, "some-queue-id")
+
+    verify(queueMessageVisibility).changeTo(2)
+  }
+
+  @Test
   fun `should set timeout to the event level timeout for a message with event type in header MessageAttributes`() {
     val properties = HmppsSqsProperties(
       defaultErrorVisibilityTimeout = listOf(1),
