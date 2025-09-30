@@ -10,6 +10,7 @@ data class HmppsSqsProperties(
   val queues: Map<String, QueueConfig> = mapOf(),
   val topics: Map<String, TopicConfig> = mapOf(),
   val useWebToken: Boolean = true,
+  val defaultErrorVisibilityTimeout: List<Int> = listOf(0),
 ) {
   data class QueueConfig(
     val queueName: String,
@@ -22,8 +23,9 @@ data class HmppsSqsProperties(
     val dlqSecretAccessKey: String = "",
     val dlqMaxReceiveCount: Int = 5,
     val visibilityTimeout: Int = 30,
-    val errorVisibilityTimeout: Int = 0,
+    val errorVisibilityTimeout: List<Int>? = null,
     val propagateTracing: Boolean = true,
+    val eventErrorVisibilityTimeout: Map<String, List<Int>>? = null,
   ) {
     fun isFifo(): Boolean = queueName.endsWith(".fifo")
   }
