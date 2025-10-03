@@ -31,11 +31,14 @@ class HmppsQueueTest {
   @Test
   fun `should get max receive count`() {
     whenever(sqsClient.getQueueAttributes(any<GetQueueAttributesRequest>()))
-      .thenReturn(CompletableFuture.completedFuture(
-        GetQueueAttributesResponse.builder()
-          .attributes(
-            mapOf(QueueAttributeName.REDRIVE_POLICY to "{\"deadLetterTargetArn\":\"arn:aws:sqs:eu-west-2:000000000000:dqlName\",\"maxReceiveCount\":4}")
-          ).build()))
+      .thenReturn(
+        CompletableFuture.completedFuture(
+          GetQueueAttributesResponse.builder()
+            .attributes(
+              mapOf(QueueAttributeName.REDRIVE_POLICY to "{\"deadLetterTargetArn\":\"arn:aws:sqs:eu-west-2:000000000000:dqlName\",\"maxReceiveCount\":4}"),
+            ).build(),
+        ),
+      )
 
     assertThat(hmppsQueue.maxReceiveCount).isEqualTo(4)
   }
@@ -50,10 +53,13 @@ class HmppsQueueTest {
   @Test
   fun `should return null if no redrive policy`() {
     whenever(sqsClient.getQueueAttributes(any<GetQueueAttributesRequest>()))
-      .thenReturn(CompletableFuture.completedFuture(
-        GetQueueAttributesResponse.builder()
-          .attributes(mapOf())
-          .build()))
+      .thenReturn(
+        CompletableFuture.completedFuture(
+          GetQueueAttributesResponse.builder()
+            .attributes(mapOf())
+            .build(),
+        ),
+      )
 
     assertThat(hmppsQueue.maxReceiveCount).isNull()
   }

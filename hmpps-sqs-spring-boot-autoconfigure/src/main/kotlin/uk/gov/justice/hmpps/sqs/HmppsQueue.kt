@@ -59,4 +59,3 @@ class HmppsQueue(
     private val gson = GsonBuilder().setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE).create()
   }
 }
-
