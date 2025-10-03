@@ -15,6 +15,7 @@ import org.springframework.messaging.support.GenericMessage
 class HmppsErrorVisibilityHandlerTest(@param:Autowired private val objectMapper: ObjectMapper) {
 
   private val queueMessageVisibility = mock<QueueMessageVisibility>()
+  private val someQueue = HmppsQueue("some-queue-id", mock(), "some-queue")
 
   fun aMessage(): Message<Any> = GenericMessage("123", mapOf("Sqs_Msa_ApproximateReceiveCount" to "1", "Sqs_VisibilityTimeout" to queueMessageVisibility))
 
@@ -23,7 +24,7 @@ class HmppsErrorVisibilityHandlerTest(@param:Autowired private val objectMapper:
     val properties = HmppsSqsProperties(queues = mapOf("some-queue-id" to HmppsSqsProperties.QueueConfig("some-queue")))
     val handler = HmppsErrorVisibilityHandler(objectMapper, properties)
 
-    handler.setErrorVisibilityTimeout(aMessage(), "some-queue-id")
+    handler.setErrorVisibilityTimeout(aMessage(), someQueue)
 
     verify(queueMessageVisibility).changeTo(0)
   }
@@ -36,7 +37,7 @@ class HmppsErrorVisibilityHandlerTest(@param:Autowired private val objectMapper:
     )
     val handler = HmppsErrorVisibilityHandler(objectMapper, properties)
 
-    handler.setErrorVisibilityTimeout(aMessage(), "some-queue-id")
+    handler.setErrorVisibilityTimeout(aMessage(), someQueue)
 
     verify(queueMessageVisibility).changeTo(1)
   }
@@ -54,7 +55,7 @@ class HmppsErrorVisibilityHandlerTest(@param:Autowired private val objectMapper:
     )
     val handler = HmppsErrorVisibilityHandler(objectMapper, properties)
 
-    handler.setErrorVisibilityTimeout(aMessage(), "some-queue-id")
+    handler.setErrorVisibilityTimeout(aMessage(), someQueue)
 
     verify(queueMessageVisibility).changeTo(2)
   }
@@ -74,7 +75,7 @@ class HmppsErrorVisibilityHandlerTest(@param:Autowired private val objectMapper:
     val message = GenericMessage<Any>("""{"MessageId":null,"MessageAttributes":{"eventType":{"Type": "String", "Value": "some-event"}}}""", mapOf("Sqs_Msa_ApproximateReceiveCount" to "1", "Sqs_VisibilityTimeout" to queueMessageVisibility))
     val handler = HmppsErrorVisibilityHandler(objectMapper, properties)
 
-    handler.setErrorVisibilityTimeout(message, "some-queue-id")
+    handler.setErrorVisibilityTimeout(message, someQueue)
 
     verify(queueMessageVisibility).changeTo(3)
   }
@@ -94,7 +95,7 @@ class HmppsErrorVisibilityHandlerTest(@param:Autowired private val objectMapper:
     val message = GenericMessage<Any>("""{"MessageId":null,"MessageAttributes":{}}""", mapOf("Sqs_Msa_ApproximateReceiveCount" to "1", "Sqs_VisibilityTimeout" to queueMessageVisibility))
     val handler = HmppsErrorVisibilityHandler(objectMapper, properties)
 
-    handler.setErrorVisibilityTimeout(message, "some-queue-id")
+    handler.setErrorVisibilityTimeout(message, someQueue)
 
     verify(queueMessageVisibility).changeTo(2)
   }
@@ -121,7 +122,7 @@ class HmppsErrorVisibilityHandlerTest(@param:Autowired private val objectMapper:
     )
     val handler = HmppsErrorVisibilityHandler(objectMapper, properties)
 
-    handler.setErrorVisibilityTimeout(message, "some-queue-id")
+    handler.setErrorVisibilityTimeout(message, someQueue)
 
     verify(queueMessageVisibility).changeTo(3)
   }
@@ -135,7 +136,7 @@ class HmppsErrorVisibilityHandlerTest(@param:Autowired private val objectMapper:
     val handler = HmppsErrorVisibilityHandler(objectMapper, properties)
     val message = GenericMessage<Any>("123", mapOf("Sqs_Msa_ApproximateReceiveCount" to "2", "Sqs_VisibilityTimeout" to queueMessageVisibility))
 
-    handler.setErrorVisibilityTimeout(message, "some-queue-id")
+    handler.setErrorVisibilityTimeout(message, someQueue)
 
     verify(queueMessageVisibility).changeTo(2)
   }
@@ -149,7 +150,7 @@ class HmppsErrorVisibilityHandlerTest(@param:Autowired private val objectMapper:
     val handler = HmppsErrorVisibilityHandler(objectMapper, properties)
     val message = GenericMessage<Any>("123", mapOf("Sqs_Msa_ApproximateReceiveCount" to "3", "Sqs_VisibilityTimeout" to queueMessageVisibility))
 
-    handler.setErrorVisibilityTimeout(message, "some-queue-id")
+    handler.setErrorVisibilityTimeout(message, someQueue)
 
     verify(queueMessageVisibility).changeTo(2)
   }

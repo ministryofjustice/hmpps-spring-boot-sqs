@@ -1,0 +1,23 @@
+server:
+  shutdown: immediate
+
+management.endpoint:
+  health.cache.time-to-live: 0
+  info.cache.time-to-live: 0
+
+hmpps.sqs:
+  provider: localstack
+  queues:
+    inboundqueue:
+      dlqName: ${random.uuid}
+      queueName: ${random.uuid}
+      subscribeTopicId: inboundtopic
+      subscribeFilter: '{"eventType":[ "OFFENDER_MOVEMENT-RECEPTION", "OFFENDER_MOVEMENT-DISCHARGE", "OFFENDER_AUDIT-OBJECT", "test.type"] }'
+      dlqMaxReceiveCount: 3
+      errorVisibilityTimeout: 1, 2
+      eventErrorVisibilityTimeout:
+        OFFENDER_MOVEMENT-RECEPTION: 0, 1
+        test.type: 0, 1
+  topics:
+    inboundtopic:
+      arn: arn:aws:sns:eu-west-2:000000000000:${random.uuid}

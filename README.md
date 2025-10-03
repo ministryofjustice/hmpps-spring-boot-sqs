@@ -153,11 +153,14 @@ By default, any message that fails will be retried immediately. Once the queue's
 
 It's possible to configure custom retry behaviour using the `errorVisibilityTimeout` properties to set the time between each retry on the main queue.
 
+Note that the number of message deliveries is defined in the Cloud Platform terraform as `maxReceiveCount`. This includes the initial message delivery - so the number of retries is `maxReceiveCount-1`.  If there are more retries than values defined in the timeout strategy then the last value in the list is re-used. If there are more values defined in the timeout strategy than retries then the later values will be ignored.
+
 To set a global default timeout strategy you can set the number of seconds between each retry. In this example the 1st retry is after 1 seconds, the 2nd after 10 seconds, the 3rd after 1 minute and the 4th after 10 minutes. If the last attempt fails the message will be sent to the DLQ. 
 ```yaml
 hmpps.sqs:
   defaultErrorVisibilityTimeout: 1, 10, 60, 600
 ```
+Note that the above strategy would require `maxReceiveCount=5` and the 4th retry would have visibility timeout of 600.
 
 It's possible to override the default and set the timeout strategy for a specific queue:
 ```yaml
@@ -175,8 +178,6 @@ hmpps.sqs:
       eventErrorVisibilityTimeout:
         my.special.event: 0, 1, 2, 3 
 ```
-
-Note that the number of retries is defined in the Cloud Platform terraform as `maxReceiveCount`. If there are more retries than values defined in the timeout strategy then the last value in the list is re-used.
 
 ### Distributed Tracing of Messages
 
