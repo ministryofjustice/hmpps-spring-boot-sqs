@@ -65,12 +65,12 @@ class HmppsQueueFactory(
     }
 
   private fun createSqsListenerContainerFactory(hmppsQueue: HmppsQueue, propagateTracing: Boolean): HmppsQueueDestinationContainerFactory = getOrDefaultBean("${hmppsQueue.id}-sqs-listener-factory") {
-    HmppsQueueDestinationContainerFactory(hmppsQueue.id, createSqsListenerContainerFactory(hmppsQueue.sqsClient, hmppsQueue.id, propagateTracing))
+    HmppsQueueDestinationContainerFactory(hmppsQueue.id, buildSqsListenerContainerFactory(hmppsQueue, propagateTracing))
   }
 
-  private fun createSqsListenerContainerFactory(awsSqsClient: SqsAsyncClient, queueId: String, propagateTracing: Boolean): SqsMessageListenerContainerFactory<Any> = SqsMessageListenerContainerFactory
+  private fun buildSqsListenerContainerFactory(queue: HmppsQueue, propagateTracing: Boolean): SqsMessageListenerContainerFactory<Any> = SqsMessageListenerContainerFactory
     .builder<Any>()
-    .sqsAsyncClient(awsSqsClient)
+    .sqsAsyncClient(queue.sqsClient)
     .apply {
       if (propagateTracing) {
         messageInterceptor(TraceExtractingMessageInterceptor(objectMapper))
@@ -79,7 +79,7 @@ class HmppsQueueFactory(
     .errorHandler(
       object : ErrorHandler<Any> {
         override fun handle(message: org.springframework.messaging.Message<Any>, t: Throwable) {
-          errorVisibilityHandler.setErrorVisibilityTimeout(message, queueId)
+          errorVisibilityHandler.setErrorVisibilityTimeout(message, queue)
           throw t
         }
       },

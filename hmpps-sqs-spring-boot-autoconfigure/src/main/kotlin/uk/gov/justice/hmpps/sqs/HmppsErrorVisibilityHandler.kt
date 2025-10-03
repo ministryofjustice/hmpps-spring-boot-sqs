@@ -13,12 +13,12 @@ class HmppsErrorVisibilityHandler(
   private val objectMapper: ObjectMapper,
   private val hmppsSqsdProperties: HmppsSqsProperties,
 ) {
-  fun setErrorVisibilityTimeout(message: Message<Any>, queueId: String) {
+  fun setErrorVisibilityTimeout(message: Message<Any>, queue: HmppsQueue) {
     val eventType = getEventType(message)
     val receiveCount = (message.headers["Sqs_Msa_ApproximateReceiveCount"] as String).toInt()
     val sqsVisibility = message.headers["Sqs_VisibilityTimeout"] as QueueMessageVisibility
 
-    val timeouts = hmppsSqsdProperties.queues[queueId]
+    val timeouts = hmppsSqsdProperties.queues[queue.id]
       ?.let { queue ->
         queue.eventErrorVisibilityTimeout?.get(eventType)
           ?: queue.errorVisibilityTimeout
@@ -26,11 +26,22 @@ class HmppsErrorVisibilityHandler(
       ?: hmppsSqsdProperties.defaultErrorVisibilityTimeout
 
     val nextTimeoutSeconds = when {
+      receiveCount == queue.maxReceiveCount -> 0
       receiveCount <= timeouts.size -> timeouts[receiveCount - 1]
       timeouts.isNotEmpty() -> timeouts.last()
       else -> 0
     }
-    log.info("Setting error visibility timeout for event type {} on queue {} with receive count {} to {} seconds", eventType, queueId, receiveCount, nextTimeoutSeconds)
+
+    if (queue.maxReceiveCount == null) {
+      log.warn("No max receive count configured for queue {}", queue.id)
+    }
+
+    if (queue.maxReceiveCount == null || receiveCount < queue.maxReceiveCount!!) {
+      log.info("Setting error visibility timeout for event type {} on queue {} with receive count {} to {} seconds", eventType, queue.id, receiveCount, nextTimeoutSeconds)
+    } else {
+      log.info("Setting error visibility timeout to 0 for event type {} on queue {} with receive count {} because this is the last retry", eventType, queue.id, receiveCount)
+    }
+
     sqsVisibility.changeTo(nextTimeoutSeconds)
   }
 
