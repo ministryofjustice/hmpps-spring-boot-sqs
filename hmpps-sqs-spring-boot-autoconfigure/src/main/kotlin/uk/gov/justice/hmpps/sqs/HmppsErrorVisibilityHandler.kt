@@ -11,19 +11,19 @@ import software.amazon.awssdk.services.sqs.model.MessageAttributeValue
 
 class HmppsErrorVisibilityHandler(
   private val objectMapper: ObjectMapper,
-  private val hmppsSqsdProperties: HmppsSqsProperties,
+  private val hmppsSqsProperties: HmppsSqsProperties,
 ) {
   fun setErrorVisibilityTimeout(message: Message<Any>, queue: HmppsQueue) {
     val eventType = getEventType(message)
     val receiveCount = (message.headers["Sqs_Msa_ApproximateReceiveCount"] as String).toInt()
     val sqsVisibility = message.headers["Sqs_VisibilityTimeout"] as QueueMessageVisibility
 
-    val timeouts = hmppsSqsdProperties.queues[queue.id]
+    val timeouts = hmppsSqsProperties.queues[queue.id]
       ?.let { queue ->
         queue.eventErrorVisibilityTimeout?.get(eventType)
           ?: queue.errorVisibilityTimeout
       }
-      ?: hmppsSqsdProperties.defaultErrorVisibilityTimeout
+      ?: hmppsSqsProperties.defaultErrorVisibilityTimeout
 
     val nextTimeoutSeconds = when {
       receiveCount == queue.maxReceiveCount -> 0

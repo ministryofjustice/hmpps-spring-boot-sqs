@@ -179,6 +179,21 @@ hmpps.sqs:
         my.special.event: 0, 1, 2, 3 
 ```
 
+To see how this is working in your application run the following App Insights Log Analytics query:
+```KQL
+AppTraces
+| where AppRoleName == '<your-app>'
+| where Message startswith 'Setting error visibility timeout'
+```
+
+And to find any messages that were sent to the DLQ try the following:
+```KQL
+AppTraces
+| where AppRoleName == '<your-app>'
+| where Message startswith 'Setting error visibility timeout'
+| where Message has 'last retry'
+```
+
 ### Distributed Tracing of Messages
 
 If `propagateTracing` is set to `true` (the default) then a new [Span](https://opentelemetry.io/docs/concepts/signals/traces/#spans) is created whenever:
@@ -338,9 +353,9 @@ Class `HmppsQueueResource` provides endpoints to retry and purge messages on a D
 
 For transient errors you can use the Kubernetes Cronjob defined in the [generic service helm chart](https://github.com/ministryofjustice/hmpps-helm-charts/tree/main/charts/generic-service#retrying-messages-on-a-dead-letter-queue) to automatically retry all DLQ messages. The Cronjob is configured to run every 10 minutes before [an alert triggers for the age of the DLQ message](https://github.com/ministryofjustice/cloud-platform-environments/blob/main/namespaces/live-1.cloud-platform.service.justice.gov.uk/offender-events-prod/09-prometheus-sqs-sns.yaml#L13).
 
-##### :warning: The unauthenticated retry-all-dlqs endpoint is deprecated. Please use the [Error Visibility Timeout configuration](#error-visibility-timeouts) to retry for longer before using the DLQ.
-
 Unrecoverable errors should be fixed such that they no longer fail and are not sent to the DLQ. In the meantime these can be removed by purging the DLQ to prevent the alert from firing.
+
+Note that we have an alternative strategy for dealing with transient errors which is to set longer retry timeouts using the [Error Visibility Timeout configuration](#error-visibility-timeouts). This is intended to prevent transient errors from ever landing on the DLQ thus removing the need for the retry DLQ cronjob.
 
 #### How Do I find The DLQ/Queue Name?
 
