@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppstemplatepackagename.integration
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.gson.Gson
+import com.microsoft.applicationinsights.TelemetryClient
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.beans.factory.annotation.Autowired
@@ -9,13 +10,13 @@ import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT
 import org.springframework.boot.test.context.TestConfiguration
-import org.springframework.boot.test.mock.mockito.SpyBean
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Import
 import org.springframework.http.HttpHeaders
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean
 import org.springframework.test.web.reactive.server.WebTestClient
 import software.amazon.awssdk.services.sqs.SqsAsyncClient
 import software.amazon.awssdk.services.sqs.model.PurgeQueueRequest
@@ -62,7 +63,7 @@ abstract class IntegrationTestBase {
 
   fun HmppsSqsProperties.outboundTopicConfig() = topics["outboundtopic"] ?: throw MissingTopicException("outboundtopic has not been loaded from configuration properties")
 
-  private val inboundQueue by lazy { hmppsQueueService.findByQueueId("inboundqueue") ?: throw MissingQueueException("HmppsQueue inboundqueue not found") }
+  protected val inboundQueue by lazy { hmppsQueueService.findByQueueId("inboundqueue") ?: throw MissingQueueException("HmppsQueue inboundqueue not found") }
   private val outboundQueue by lazy { hmppsQueueService.findByQueueId("outboundqueue") ?: throw MissingQueueException("HmppsQueue outboundqueue not found") }
   private val outboundTestQueue by lazy { hmppsQueueService.findByQueueId("outboundtestqueue") ?: throw MissingQueueException("HmppsQueue outboundtestqueue not found") }
   private val inboundTopic by lazy { hmppsQueueService.findByTopicId("inboundtopic") ?: throw MissingQueueException("HmppsTopic inboundtopic not found") }
@@ -86,11 +87,11 @@ abstract class IntegrationTestBase {
   protected val outboundSqsOnlyClient by lazy { outboundSqsOnlyQueue.sqsClient }
   protected val outboundSqsOnlyTestSqsClient by lazy { outboundSqsOnlyTestQueue.sqsClient }
 
-  @SpyBean
+  @MockitoSpyBean
   @Qualifier("outboundqueue-sqs-client")
   protected lateinit var outboundSqsClientSpy: SqsAsyncClient
 
-  @SpyBean
+  @MockitoSpyBean
   @Qualifier("outboundqueue-sqs-dlq-client")
   protected lateinit var outboundSqsDlqClientSpy: SqsAsyncClient
 
@@ -118,17 +119,20 @@ abstract class IntegrationTestBase {
   @Autowired
   protected lateinit var hmppsQueueService: HmppsQueueService
 
-  @SpyBean
+  @MockitoSpyBean
   protected lateinit var inboundMessageServiceSpy: InboundMessageService
 
-  @SpyBean
+  @MockitoSpyBean
   protected lateinit var outboundMessageServiceSpy: OutboundMessageService
 
-  @SpyBean
+  @MockitoSpyBean
   protected lateinit var hmppsSqsPropertiesSpy: HmppsSqsProperties
 
-  @SpyBean
+  @MockitoSpyBean
   protected lateinit var outboundEventsEmitterSpy: OutboundEventsEmitter
+
+  @MockitoSpyBean
+  protected lateinit var telemetryClient: TelemetryClient
 
   @Autowired
   lateinit var webTestClient: WebTestClient
