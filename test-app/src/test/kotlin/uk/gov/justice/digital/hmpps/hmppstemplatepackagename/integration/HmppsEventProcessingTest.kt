@@ -9,20 +9,23 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.mockito.kotlin.any
+import org.mockito.kotlin.check
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.doThrow
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.isNull
 import org.mockito.kotlin.mockingDetails
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.boot.test.context.TestConfiguration
-import org.springframework.boot.test.mock.mockito.SpyBean
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Import
 import org.springframework.retry.backoff.NoBackOffPolicy
 import org.springframework.retry.policy.NeverRetryPolicy
 import org.springframework.retry.policy.SimpleRetryPolicy
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean
 import software.amazon.awssdk.services.sns.SnsAsyncClient
 import software.amazon.awssdk.services.sns.model.MessageAttributeValue
 import software.amazon.awssdk.services.sns.model.PublishRequest
@@ -51,7 +54,7 @@ class SnsConfig(private val hmppsTopicFactory: HmppsTopicFactory) {
 
 @Import(SnsConfig::class)
 class HmppsEventProcessingTest : IntegrationTestBase() {
-  @SpyBean
+  @MockitoSpyBean
   @Qualifier("outboundtopic-sns-client")
   protected lateinit var outboundSnsClientSpy: SnsAsyncClient
 
@@ -304,6 +307,34 @@ class HmppsEventProcessingTest : IntegrationTestBase() {
 
     await untilCallTo { inboundSqsDlqClient.countMessagesOnQueue(inboundDlqUrl).get() } matches { it == 1 }
     assertThat(inboundSqsClient.countAllMessagesOnQueue(inboundQueueUrl).get()).isEqualTo(0)
+  }
+
+  @Test
+  fun `telemetry is published when an event is moved to the dead letter queue`() = runTest {
+    doThrow(RuntimeException("some error")).whenever(inboundMessageServiceSpy).handleMessage(any())
+
+    val event = HmppsEvent("event-id", "OFFENDER_MOVEMENT-RECEPTION", "some event contents")
+    inboundSnsClient.publish(
+      PublishRequest.builder()
+        .topicArn(inboundTopicArn)
+        .message(gsonString(event))
+        .messageAttributes(
+          mapOf("eventType" to MessageAttributeValue.builder().dataType("String").stringValue(event.type).build()),
+        )
+        .build(),
+    )
+
+    await untilCallTo { inboundSqsDlqClient.countMessagesOnQueue(inboundDlqUrl).get() } matches { it == 1 }
+    verify(telemetryClient).trackEvent(
+      eq("OFFENDER_MOVEMENT-RECEPTION-sent-to-dlq"),
+      check {
+        assertThat(it["queueName"]).isEqualTo(inboundQueue.queueName)
+        assertThat(it["dlqName"]).isEqualTo(inboundQueue.dlqName)
+        assertThat(it["timeouts"]).isEqualTo("[0]")
+        assertThat(it["maxReceiveCount"]).isEqualTo("1")
+      },
+      isNull(),
+    )
   }
 
   @Test

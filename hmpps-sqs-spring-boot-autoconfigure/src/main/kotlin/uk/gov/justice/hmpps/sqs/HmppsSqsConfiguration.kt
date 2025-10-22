@@ -79,7 +79,7 @@ class HmppsSqsConfiguration {
 
   @Bean
   @ConditionalOnMissingBean
-  fun hmppsErrorVisibilityHandler(objectMapper: ObjectMapper, hmppsSqsProperties: HmppsSqsProperties) = HmppsErrorVisibilityHandler(objectMapper, hmppsSqsProperties)
+  fun hmppsErrorVisibilityHandler(objectMapper: ObjectMapper, hmppsSqsProperties: HmppsSqsProperties, telemetryClient: TelemetryClient?) = HmppsErrorVisibilityHandler(objectMapper, hmppsSqsProperties, telemetryClient)
 
   @Bean
   @ConditionalOnMissingBean

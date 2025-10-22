@@ -194,6 +194,18 @@ AppTraces
 | where Message has 'last retry'
 ```
 
+We also publish a telemetry event when moving a message to the DLQ. To find them for a specific event type:
+```KQL
+AppEvents
+| where Name == '<your-event-type>'-sent-to-dlq'
+```
+
+Or for a more general search in your application:
+```KQL
+AppEvents
+| where AppRoleName == '<your-app>'
+| where Name endswith 'sent-to-dlq'
+```
 ### Distributed Tracing of Messages
 
 If `propagateTracing` is set to `true` (the default) then a new [Span](https://opentelemetry.io/docs/concepts/signals/traces/#spans) is created whenever:

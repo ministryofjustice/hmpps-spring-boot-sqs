@@ -3,6 +3,7 @@ package uk.gov.justice.hmpps.sqs
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.microsoft.applicationinsights.TelemetryClient
 import io.awspring.cloud.sqs.listener.QueueMessageVisibility
 import io.awspring.cloud.sqs.listener.SqsHeaders
 import org.slf4j.LoggerFactory
@@ -12,6 +13,7 @@ import software.amazon.awssdk.services.sqs.model.MessageAttributeValue
 class HmppsErrorVisibilityHandler(
   private val objectMapper: ObjectMapper,
   private val hmppsSqsProperties: HmppsSqsProperties,
+  private val telemetryClient: TelemetryClient?,
 ) {
   fun setErrorVisibilityTimeout(message: Message<Any>, queue: HmppsQueue) {
     val eventType = getEventType(message)
@@ -40,6 +42,9 @@ class HmppsErrorVisibilityHandler(
       log.info("Setting error visibility timeout for event type {} on queue {} with receive count {} to {} seconds", eventType, queue.id, receiveCount, nextTimeoutSeconds)
     } else {
       log.info("Setting error visibility timeout to 0 for event type {} on queue {} with receive count {} because this is the last retry", eventType, queue.id, receiveCount)
+      telemetryClient?.run {
+        trackEvent("$eventType-sent-to-dlq", mapOf("queueName" to queue.queueName, "dlqName" to queue.dlqName, "timeouts" to "$timeouts", "maxReceiveCount" to "$receiveCount"), null)
+      }
     }
 
     sqsVisibility.changeTo(nextTimeoutSeconds)
