@@ -28,3 +28,4 @@ build
 *.iml
 volume
 .kotlin
+/dps-gradle-spring-boot-suppressions.xml
