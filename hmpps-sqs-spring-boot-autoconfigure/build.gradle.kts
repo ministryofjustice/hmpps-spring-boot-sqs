@@ -2,20 +2,20 @@ import com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-  kotlin("jvm") version "2.2.20"
-  kotlin("plugin.spring") version "2.2.20"
+  kotlin("jvm") version "2.2.21"
+  kotlin("plugin.spring") version "2.2.21"
   id("maven-publish")
   id("signing")
   id("com.adarshr.test-logger") version "4.0.0"
-  id("com.github.ben-manes.versions") version "0.52.0"
+  id("com.github.ben-manes.versions") version "0.53.0"
   id("se.patrikerdes.use-latest-versions") version "0.2.19"
   id("io.spring.dependency-management") version "1.1.7"
   id("org.jlleitschuh.gradle.ktlint") version "13.1.0"
-  id("org.springframework.boot") version "3.5.6"
+  id("org.springframework.boot") version "3.5.7"
 }
 
 dependencies {
-  implementation(platform("software.amazon.awssdk:bom:2.33.12"))
+  implementation(platform("software.amazon.awssdk:bom:2.36.3"))
   implementation("org.springframework.boot:spring-boot-starter-web")
   implementation("org.springframework.boot:spring-boot-starter-webflux")
   implementation("org.springframework.boot:spring-boot-starter-security")
@@ -27,16 +27,16 @@ dependencies {
   implementation("io.awspring.cloud:spring-cloud-aws-sns:3.4.0")
   implementation("io.awspring.cloud:spring-cloud-aws-sqs:3.4.0")
   implementation("com.google.code.gson:gson:2.13.2")
-  implementation("com.microsoft.azure:applicationinsights-core:3.7.4")
+  implementation("com.microsoft.azure:applicationinsights-core:3.7.5")
   implementation("io.opentelemetry:opentelemetry-api")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8")
 
-  testImplementation("org.assertj:assertj-core:3.27.4")
-  testImplementation("org.junit.jupiter:junit-jupiter:5.13.4")
-  testImplementation("org.mockito:mockito-junit-jupiter:5.19.0")
+  testImplementation("org.assertj:assertj-core:3.27.6")
+  testImplementation("org.junit.jupiter:junit-jupiter:6.0.0")
+  testImplementation("org.mockito:mockito-junit-jupiter:5.20.0")
   testImplementation("org.springframework.boot:spring-boot-starter-test")
-  testImplementation("org.mockito.kotlin:mockito-kotlin:6.0.0")
+  testImplementation("org.mockito.kotlin:mockito-kotlin:6.1.0")
   testImplementation("org.mockito:mockito-inline:5.2.0")
   testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
   testImplementation("org.jetbrains.kotlin:kotlin-reflect")

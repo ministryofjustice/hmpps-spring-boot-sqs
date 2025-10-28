@@ -92,4 +92,29 @@
     <packageUrl regex="true">^pkg:maven/org\.apache\.commons/commons\-lang3@.*$</packageUrl>
     <vulnerabilityName>CVE-2025-48924</vulnerabilityName>
   </suppress>
+  <suppress>
+    <notes><![CDATA[
+    Suppressed as false positive matching cpe:2.3:a:trusted_boot_project:trusted_boot:1.7.0:*:*:*:*:*:*:* for some reason.
+    Trusted Boot (tboot) before 1.8.2 has a 'loader.c' Security Bypass Vulnerability.
+    file name: hmpps-kotlin-spring-boot-starter-1.7.0.jar
+   ]]></notes>
+    <packageUrl regex="true">^pkg:maven/aws\.sdk\.kotlin/dynamodb-mapper-annotations@.*$</packageUrl>
+    <cve>CVE-2014-5118</cve>
+  </suppress>
+  <suppress>
+    <notes><![CDATA[
+    Suppressed as falsely matching cpe:2.3:a:microsoft:azure_agent:3.7.4:*:*:*:*:*:*:*.
+   file name: applicationinsights-agent-3.7.4.jar
+   ]]></notes>
+    <packageUrl regex="true">^pkg:maven/com\.microsoft\.azure/applicationinsights-agent@.*$</packageUrl>
+    <cve>CVE-2025-21199</cve>
+  </suppress>
+  <suppress>
+    <notes><![CDATA[
+    Suppressed as falsely matching cpe:2.3:a:microsoft:azure_agent:3.7.4:*:*:*:*:*:*:*.
+   file name: applicationinsights-core-3.7.4.jar
+   ]]></notes>
+    <packageUrl regex="true">^pkg:maven/com\.microsoft\.azure/applicationinsights-core@.*$</packageUrl>
+    <cve>CVE-2025-21199</cve>
+  </suppress>
 </suppressions>

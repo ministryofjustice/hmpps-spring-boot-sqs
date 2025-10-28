@@ -1,6 +1,6 @@
 plugins {
-  id("uk.gov.justice.hmpps.gradle-spring-boot") version "9.0.2"
-  kotlin("plugin.spring") version "2.2.20"
+  id("uk.gov.justice.hmpps.gradle-spring-boot") version "9.1.4"
+  kotlin("plugin.spring") version "2.2.21"
 }
 
 configurations {
@@ -20,17 +20,17 @@ dependencies {
 
   implementation(project(":hmpps-sqs-spring-boot-starter"))
 
-  testImplementation("org.assertj:assertj-core:3.27.4")
-  testImplementation("org.junit.jupiter:junit-jupiter:5.13.4")
-  testImplementation("org.mockito:mockito-junit-jupiter:5.19.0")
-  testImplementation("org.mockito.kotlin:mockito-kotlin:6.0.0")
+  testImplementation("org.assertj:assertj-core:3.27.6")
+  testImplementation("org.junit.jupiter:junit-jupiter:6.0.0")
+  testImplementation("org.mockito:mockito-junit-jupiter:5.20.0")
+  testImplementation("org.mockito.kotlin:mockito-kotlin:6.1.0")
   testImplementation("org.mockito:mockito-inline:5.2.0")
   testImplementation("org.awaitility:awaitility-kotlin:4.3.0")
   testImplementation("io.jsonwebtoken:jjwt-impl:0.13.0")
   testImplementation("io.jsonwebtoken:jjwt-jackson:0.13.0")
   testImplementation("org.wiremock:wiremock-standalone:3.13.1")
   testImplementation("org.testcontainers:localstack:1.21.3")
-  testImplementation("com.amazonaws:aws-java-sdk-core:1.12.791") // Needed so Localstack has access to the AWS SDK V1 API
+  testImplementation("com.amazonaws:aws-java-sdk-core:1.12.792") // Needed so Localstack has access to the AWS SDK V1 API
   testImplementation("com.google.code.gson:gson:2.13.2")
   testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test")
   testImplementation("io.opentelemetry:opentelemetry-extension-trace-propagators")

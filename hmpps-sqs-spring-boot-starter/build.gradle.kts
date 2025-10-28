@@ -1,16 +1,16 @@
 import com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask
 
 plugins {
-  kotlin("jvm") version "2.2.20"
+  kotlin("jvm") version "2.2.21"
   id("maven-publish")
   id("signing")
-  id("com.github.ben-manes.versions") version "0.52.0"
+  id("com.github.ben-manes.versions") version "0.53.0"
   id("se.patrikerdes.use-latest-versions") version "0.2.19"
 }
 
 dependencies {
   api(project(":hmpps-sqs-spring-boot-autoconfigure"))
-  api(platform("software.amazon.awssdk:bom:2.33.12"))
+  api(platform("software.amazon.awssdk:bom:2.36.3"))
   api("software.amazon.awssdk:sns")
   // couldn't use spring-cloud-aws-dependencies platform bom as it brings in spring-modulith-events-aws-sns at 1.4.0-SNAPSHOT
   // this then stopped the library being published with an error
@@ -19,11 +19,11 @@ dependencies {
   api("io.awspring.cloud:spring-cloud-aws-sns:3.4.0")
   api("io.awspring.cloud:spring-cloud-aws-sqs:3.4.0")
   api("software.amazon.awssdk:sts")
-  api(platform("org.springframework.boot:spring-boot-dependencies:3.5.6"))
+  api(platform("org.springframework.boot:spring-boot-dependencies:3.5.7"))
   api("org.springframework.boot:spring-boot-starter-web")
   api("org.springframework.boot:spring-boot-starter-security")
   api("org.springframework.boot:spring-boot-starter-actuator")
-  api("com.microsoft.azure:applicationinsights-core:3.7.4")
+  api("com.microsoft.azure:applicationinsights-core:3.7.5")
 }
 
 publishing {
