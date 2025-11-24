@@ -10,20 +10,20 @@ plugins {
 
 dependencies {
   api(project(":hmpps-sqs-spring-boot-autoconfigure"))
-  api(platform("software.amazon.awssdk:bom:2.36.3"))
+  api(platform("software.amazon.awssdk:bom:2.39.2"))
   api("software.amazon.awssdk:sns")
   // couldn't use spring-cloud-aws-dependencies platform bom as it brings in spring-modulith-events-aws-sns at 1.4.0-SNAPSHOT
   // this then stopped the library being published with an error
   // - Dependency management dependencies to SNAPSHOT versions not allowed for dependency: org.springframework.modulith:spring-modulith-events-aws-sns
-  api("io.awspring.cloud:spring-cloud-aws-starter:3.4.0") { exclude("io.awspring.cloud", "spring-cloud-aws-autoconfigure") }
-  api("io.awspring.cloud:spring-cloud-aws-sns:3.4.0")
-  api("io.awspring.cloud:spring-cloud-aws-sqs:3.4.0")
+  api("io.awspring.cloud:spring-cloud-aws-starter:3.4.1") { exclude("io.awspring.cloud", "spring-cloud-aws-autoconfigure") }
+  api("io.awspring.cloud:spring-cloud-aws-sns:3.4.1")
+  api("io.awspring.cloud:spring-cloud-aws-sqs:3.4.1")
   api("software.amazon.awssdk:sts")
-  api(platform("org.springframework.boot:spring-boot-dependencies:3.5.7"))
+  api(platform("org.springframework.boot:spring-boot-dependencies:3.5.8"))
   api("org.springframework.boot:spring-boot-starter-web")
   api("org.springframework.boot:spring-boot-starter-security")
   api("org.springframework.boot:spring-boot-starter-actuator")
-  api("com.microsoft.azure:applicationinsights-core:3.7.5")
+  api("com.microsoft.azure:applicationinsights-core:3.7.6")
 }
 
 publishing {
