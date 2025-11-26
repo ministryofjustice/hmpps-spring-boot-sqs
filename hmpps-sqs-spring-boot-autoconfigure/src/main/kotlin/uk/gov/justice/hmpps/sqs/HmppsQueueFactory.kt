@@ -61,7 +61,7 @@ class HmppsQueueFactory(
   @Suppress("NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
   private inline fun <reified T> getOrDefaultBean(beanName: String, createDefaultBean: () -> T) = runCatching { context.beanFactory.getBean(beanName) as T }
     .getOrElse {
-      createDefaultBean().also { bean -> context.beanFactory.registerSingleton(beanName, bean) }
+      createDefaultBean().also { bean -> context.beanFactory.registerSingleton(beanName, bean as Any) }
     }
 
   private fun createSqsListenerContainerFactory(hmppsQueue: HmppsQueue, propagateTracing: Boolean): HmppsQueueDestinationContainerFactory = getOrDefaultBean("${hmppsQueue.id}-sqs-listener-factory") {

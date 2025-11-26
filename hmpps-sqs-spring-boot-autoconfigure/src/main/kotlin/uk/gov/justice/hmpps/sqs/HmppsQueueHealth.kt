@@ -2,9 +2,9 @@ package uk.gov.justice.hmpps.sqs
 
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import org.springframework.boot.actuate.health.Health
-import org.springframework.boot.actuate.health.Health.Builder
-import org.springframework.boot.actuate.health.HealthIndicator
+import org.springframework.boot.health.contributor.Health
+import org.springframework.boot.health.contributor.Health.Builder
+import org.springframework.boot.health.contributor.HealthIndicator
 import software.amazon.awssdk.services.sqs.model.GetQueueAttributesRequest
 import software.amazon.awssdk.services.sqs.model.GetQueueAttributesResponse
 import software.amazon.awssdk.services.sqs.model.QueueAttributeName

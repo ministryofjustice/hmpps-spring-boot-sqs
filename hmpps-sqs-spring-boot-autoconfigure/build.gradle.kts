@@ -11,12 +11,12 @@ plugins {
   id("se.patrikerdes.use-latest-versions") version "0.2.19"
   id("io.spring.dependency-management") version "1.1.7"
   id("org.jlleitschuh.gradle.ktlint") version "14.0.1"
-  id("org.springframework.boot") version "3.5.8"
+  id("org.springframework.boot") version "4.0.0"
 }
 
 dependencies {
   implementation(platform("software.amazon.awssdk:bom:2.39.2"))
-  implementation("org.springframework.boot:spring-boot-starter-web")
+  implementation("org.springframework.boot:spring-boot-starter-webmvc")
   implementation("org.springframework.boot:spring-boot-starter-webflux")
   implementation("org.springframework.boot:spring-boot-starter-security")
   implementation("org.springframework.boot:spring-boot-starter-actuator")
@@ -31,11 +31,14 @@ dependencies {
   implementation("io.opentelemetry:opentelemetry-api")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8")
+  implementation("org.springframework.boot:spring-boot-jackson2")
 
   testImplementation("org.assertj:assertj-core:3.27.6")
   testImplementation("org.junit.jupiter:junit-jupiter:6.0.1")
   testImplementation("org.mockito:mockito-junit-jupiter:5.20.0")
   testImplementation("org.springframework.boot:spring-boot-starter-test")
+  testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
+  testImplementation("org.springframework.boot:spring-boot-starter-webflux-test")
   testImplementation("org.mockito.kotlin:mockito-kotlin:6.1.0")
   testImplementation("org.mockito:mockito-inline:5.2.0")
   testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")

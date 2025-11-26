@@ -1,8 +1,8 @@
 package uk.gov.justice.hmpps.sqs
 
-import org.springframework.boot.actuate.health.Health
-import org.springframework.boot.actuate.health.Health.Builder
-import org.springframework.boot.actuate.health.HealthIndicator
+import org.springframework.boot.health.contributor.Health
+import org.springframework.boot.health.contributor.Health.Builder
+import org.springframework.boot.health.contributor.HealthIndicator
 import software.amazon.awssdk.services.sns.model.GetTopicAttributesRequest
 import software.amazon.awssdk.services.sns.model.GetTopicAttributesResponse
 
