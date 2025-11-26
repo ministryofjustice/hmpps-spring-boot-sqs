@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppstemplatepackagename.integration
 
 import org.assertj.core.api.Assertions.assertThat
+import org.awaitility.kotlin.atLeast
 import org.awaitility.kotlin.await
 import org.awaitility.kotlin.matches
 import org.awaitility.kotlin.untilCallTo
@@ -26,12 +27,12 @@ import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest
 import software.amazon.awssdk.services.sqs.model.SendMessageResponse
 import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.service.HmppsEvent
-import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.service.Message
-import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.service.MessageAttributes
 import uk.gov.justice.hmpps.sqs.HmppsQueueFactory
 import uk.gov.justice.hmpps.sqs.HmppsSqsProperties
 import uk.gov.justice.hmpps.sqs.countMessagesOnQueue
 import uk.gov.justice.hmpps.sqs.sendMessage
+import java.time.Duration
+import java.time.temporal.ChronoUnit
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ExecutionException
 import kotlin.time.Duration.Companion.seconds
@@ -60,12 +61,6 @@ class HmppsQueueEventProcessingTest : IntegrationTestBase() {
   @Nested
   inner class SendMessageRetry {
     val hmppsEvent = HmppsEvent("event-id", "type", "some event contents")
-
-    val messageToSend = Message(
-      Message = gsonString(hmppsEvent),
-      MessageId = "123456",
-      MessageAttributes = MessageAttributes(),
-    )
 
     @Test
     fun `events are sent straight away when there are no errors`() {
@@ -261,6 +256,21 @@ class HmppsQueueEventProcessingTest : IntegrationTestBase() {
       val message = response.messages()[0]
       assertThat(message.messageAttributes()["eventType"]?.stringValue()).isEqualTo("offender.movement.reception.overwritten")
       assertThat(message.messageAttributes()["fruit"]?.stringValue()).isEqualTo("banana")
+    }
+
+    @Test
+    fun `will delay sending`() {
+      val response = outboundSqsOnlyTestQueue.sendMessage(
+        eventType = "offender.movement.reception",
+        event = gsonString(hmppsEvent),
+        delayInSeconds = 1,
+      )
+
+      assertThat(response.messageId()).isNotNull()
+
+      await atLeast Duration.of(1, ChronoUnit.SECONDS) untilCallTo {
+        outboundSqsOnlyTestSqsClient.countMessagesOnQueue(outboundSqsOnlyTestQueueUrl).get()
+      } matches { it == 1 }
     }
   }
 }
