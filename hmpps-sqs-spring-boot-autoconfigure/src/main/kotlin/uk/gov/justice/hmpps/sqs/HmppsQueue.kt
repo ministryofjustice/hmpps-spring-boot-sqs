@@ -83,7 +83,7 @@ class HmppsQueue(
  * ```
  *
  * Scenario where retrying is already done by the calling code; for instance an SQS Listener that transforms events that is idempotent so the entire process can be rerun:
- * Given we don't want to tie up the listener thread there is no advantage of retrying on this thread so
+ * Given we don't want to tie up the listener thread there is no advantage of retrying on this thread
  *
  * ```
  * hmppsQueue.sendMessage(
@@ -93,8 +93,7 @@ class HmppsQueue(
  *     )
  * ```
  *
- *
- * Scenario where thread can hang for longer with more retries
+ * Scenario where thread can hang for longer with more retries, e.g. where there is no UI waiting such as in a batch job
  * ```
  * hmppsQueue.sendMessage(
  *       eventType = event.eventType,
@@ -113,7 +112,7 @@ class HmppsQueue(
  *     )
  * ```
  *
- * Scenario where we need to set more SNS attributes
+ * Scenario where we need to set more SQS attributes
  * ```
  * hmppsQueue.sendMessage(
  *       eventType = event.eventType,
@@ -121,6 +120,16 @@ class HmppsQueue(
  *       attributes = mapOf(
  *         "fruit" to MessageAttributeValue.builder().dataType("String").stringValue("banana").build(),
  *       ),
+ *     )
+ * ```
+ *
+ * Scenario where we need to delay the sending of the message, possibly to avoid a race condition such as where the
+ * receiving client would otherwise be in danger of prematurely getting stale data
+ * ```
+ * hmppsQueue.sendMessage(
+ *       eventType = event.eventType,
+ *       event = event.body,
+ *       delayInSeconds = 5,
  *     )
  * ```
  *
@@ -146,12 +155,12 @@ fun HmppsQueue.sendMessage(
     setRetryPolicy(retryPolicy)
     setBackOffPolicy(backOffPolicy)
   }
-  val sendMessageRequestBuilder = SendMessageRequest.builder()
+  val sendMessageRequest = SendMessageRequest.builder()
     .queueUrl(queueUrl)
     .messageBody(event)
     .messageAttributes(eventTypeSqsMap(eventType, noTracing) + attributes)
-  delayInSeconds?.let { sendMessageRequestBuilder.delaySeconds(delayInSeconds) }
-  val sendMessageRequest = sendMessageRequestBuilder.build()
+    .apply { delayInSeconds?.also { delaySeconds(it) } }
+    .build()
 
   return runCatching {
     retryTemplate.execute<SendMessageResponse, Exception> { sqsClient.sendMessage(sendMessageRequest).get() }
