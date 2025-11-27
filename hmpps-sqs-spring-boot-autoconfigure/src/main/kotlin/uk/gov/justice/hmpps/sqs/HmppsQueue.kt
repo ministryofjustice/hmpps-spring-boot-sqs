@@ -159,6 +159,3 @@ fun HmppsQueue.sendMessage(
     log.error("""Unable to send message {} with body "{}"""", eventType, event)
   }.getOrThrow()
 }
-
-
-
