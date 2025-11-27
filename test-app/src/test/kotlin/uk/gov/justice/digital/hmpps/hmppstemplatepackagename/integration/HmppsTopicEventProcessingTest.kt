@@ -53,7 +53,7 @@ class SnsConfig(private val hmppsTopicFactory: HmppsTopicFactory) {
 }
 
 @Import(SnsConfig::class)
-class HmppsEventProcessingTest : IntegrationTestBase() {
+class HmppsTopicEventProcessingTest : IntegrationTestBase() {
   @MockitoSpyBean
   @Qualifier("outboundtopic-sns-client")
   protected lateinit var outboundSnsClientSpy: SnsAsyncClient
@@ -213,7 +213,16 @@ class HmppsEventProcessingTest : IntegrationTestBase() {
 
       await untilCallTo { outboundTestSqsClient.countMessagesOnQueue(outboundTestQueueUrl).get() } matches { it == 1 }
 
-      val sqsMessage = objectMapper.readValue(outboundTestSqsClient.receiveMessage(ReceiveMessageRequest.builder().queueUrl(outboundTestQueueUrl).build()).get().messages()[0].body(), Message::class.java)
+      val response = outboundTestSqsClient.receiveMessage(
+        ReceiveMessageRequest.builder()
+          .queueUrl(outboundTestQueueUrl)
+          .messageAttributeNames("All")
+          .build(),
+      ).get()
+      val sqsMessage = objectMapper.readValue(
+        response.messages()[0].body(),
+        Message::class.java,
+      )
       assertThat(sqsMessage.MessageAttributes["eventType"]?.Value).isEqualTo("offender.movement.reception")
     }
 

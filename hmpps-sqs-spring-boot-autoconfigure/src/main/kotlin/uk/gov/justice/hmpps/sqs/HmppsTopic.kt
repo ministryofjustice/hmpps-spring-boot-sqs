@@ -79,10 +79,11 @@ private val log = LoggerFactory.getLogger(HmppsTopic::class.java)
  *
  * @param eventType The type of the event, which clients listen to, e.g., prisoner.movement.added.
  * @param event The event data in JSON format as a string.
- * @oaram noTracing Whether to prevent distributed tracing of this message.  This adds noTracing as a message attribute.
+ * @param noTracing Whether to prevent distributed tracing of this message.  This adds noTracing as a message attribute.
  * @param attributes A map of additional message attributes. eventType is always added as a message attribute, so only supply this if you need additional attributes.
  * @param retryPolicy The policy for retrying the publish request in case of failure. By default, this will retry 3 times after an error.
  * @param backOffPolicy The policy for backing off between retries. By default, this will be an exponential policy starting at 1 second with a multiplier of 2
+ * @param messageGroupId This is for use with a FIFO topic
  * @return A response from the publish request containing details such as the message ID.
  */
 fun HmppsTopic.publish(
