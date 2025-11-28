@@ -84,7 +84,7 @@ class TraceExtractingMessageInterceptor(private val objectMapper: ObjectMapper) 
 
   override fun afterProcessing(messages: Collection<Message<Any>>, t: Throwable?) = messages.forEach { afterProcessing(it, t) }
 
-  private fun <T> Message<T>.withHeader(headerName: String, headerValue: Any) = MessageHeaderUtils.addHeaderIfAbsent(this, headerName, headerValue)
+  private fun <T : Any> Message<T>.withHeader(headerName: String, headerValue: Any) = MessageHeaderUtils.addHeaderIfAbsent(this, headerName, headerValue)
 
   private fun MutableMap<String, MessageAttributeValue>.extractTelemetryContextFromValues(): Context {
     val getter = object : TextMapGetter<MutableMap<String, MessageAttributeValue>> {

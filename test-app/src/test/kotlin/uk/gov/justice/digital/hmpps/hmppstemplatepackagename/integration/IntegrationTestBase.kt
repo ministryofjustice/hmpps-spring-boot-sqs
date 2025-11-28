@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT
 import org.springframework.boot.test.context.TestConfiguration
+import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Import
 import org.springframework.http.HttpHeaders
@@ -36,6 +37,7 @@ import uk.gov.justice.hmpps.sqs.MissingTopicException
 @Import(IntegrationTestBase.SqsConfig::class, JwtAuthHelper::class)
 @ExtendWith(OAuthExtension::class)
 @ActiveProfiles("test")
+@AutoConfigureWebTestClient
 abstract class IntegrationTestBase {
 
   @BeforeEach

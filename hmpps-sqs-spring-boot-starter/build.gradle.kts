@@ -19,11 +19,12 @@ dependencies {
   api("io.awspring.cloud:spring-cloud-aws-sns:3.4.1")
   api("io.awspring.cloud:spring-cloud-aws-sqs:3.4.1")
   api("software.amazon.awssdk:sts")
-  api(platform("org.springframework.boot:spring-boot-dependencies:3.5.8"))
+  api(platform("org.springframework.boot:spring-boot-dependencies:4.0.0"))
   api("org.springframework.boot:spring-boot-starter-web")
   api("org.springframework.boot:spring-boot-starter-security")
   api("org.springframework.boot:spring-boot-starter-actuator")
   api("com.microsoft.azure:applicationinsights-core:3.7.6")
+  api("org.springframework.boot:spring-boot-jackson2")
 }
 
 publishing {

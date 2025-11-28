@@ -7,9 +7,11 @@ import org.mockito.Mockito.mock
 import org.mockito.kotlin.whenever
 import org.springframework.boot.actuate.autoconfigure.endpoint.EndpointAutoConfiguration
 import org.springframework.boot.actuate.autoconfigure.endpoint.web.WebEndpointAutoConfiguration
-import org.springframework.boot.actuate.autoconfigure.health.HealthEndpointAutoConfiguration
-import org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration
 import org.springframework.boot.context.annotation.UserConfigurations
+import org.springframework.boot.health.autoconfigure.actuate.endpoint.HealthEndpointAutoConfiguration
+import org.springframework.boot.health.autoconfigure.registry.HealthContributorRegistryAutoConfiguration
+import org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration
+import org.springframework.boot.jackson2.autoconfigure.Jackson2AutoConfiguration
 import org.springframework.boot.test.context.runner.ReactiveWebApplicationContextRunner
 import org.springframework.boot.test.context.runner.WebApplicationContextRunner
 import org.springframework.context.annotation.ConditionContext
@@ -23,6 +25,8 @@ class HmppsSqsConfigurationTest {
       .withConfiguration(
         UserConfigurations.of(
           JacksonAutoConfiguration::class.java,
+          Jackson2AutoConfiguration::class.java,
+          HealthContributorRegistryAutoConfiguration::class.java,
           HealthEndpointAutoConfiguration::class.java,
           HmppsSqsConfiguration::class.java,
         ),
@@ -95,6 +99,8 @@ class HmppsSqsConfigurationTest {
       .withConfiguration(
         UserConfigurations.of(
           JacksonAutoConfiguration::class.java,
+          Jackson2AutoConfiguration::class.java,
+          HealthContributorRegistryAutoConfiguration::class.java,
           HealthEndpointAutoConfiguration::class.java,
           HmppsSqsConfiguration::class.java,
         ),
@@ -142,6 +148,8 @@ class HmppsSqsConfigurationTest {
       .withConfiguration(
         UserConfigurations.of(
           JacksonAutoConfiguration::class.java,
+          Jackson2AutoConfiguration::class.java,
+          HealthContributorRegistryAutoConfiguration::class.java,
           EndpointAutoConfiguration::class.java,
           WebEndpointAutoConfiguration::class.java,
           HealthEndpointAutoConfiguration::class.java,

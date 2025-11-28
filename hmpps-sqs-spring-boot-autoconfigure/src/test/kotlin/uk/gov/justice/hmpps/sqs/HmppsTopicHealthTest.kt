@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
-import org.springframework.boot.actuate.health.Status
+import org.springframework.boot.health.contributor.Status
 import software.amazon.awssdk.services.sns.SnsAsyncClient
 import software.amazon.awssdk.services.sns.model.GetTopicAttributesRequest
 import software.amazon.awssdk.services.sns.model.GetTopicAttributesResponse

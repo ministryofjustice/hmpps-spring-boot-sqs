@@ -1,5 +1,5 @@
 plugins {
-  id("uk.gov.justice.hmpps.gradle-spring-boot") version "9.2.0"
+  id("uk.gov.justice.hmpps.gradle-spring-boot") version "10.0.0-beta"
   kotlin("plugin.spring") version "2.2.21"
 }
 
@@ -9,17 +9,21 @@ configurations {
 
 dependencies {
   annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
-  implementation("org.springframework.boot:spring-boot-starter-web")
+  implementation("org.springframework.boot:spring-boot-starter-webmvc")
+  implementation("org.springframework.boot:spring-boot-starter-webclient")
   implementation("org.springframework.boot:spring-boot-starter-security")
   implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8")
   implementation("io.opentelemetry:opentelemetry-extension-kotlin")
+  implementation("org.springframework.boot:spring-boot-jackson2")
 
-  implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.14")
+  implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.0")
 
   implementation(project(":hmpps-sqs-spring-boot-starter"))
 
+  testImplementation("org.springframework.boot:spring-boot-starter-webclient-test")
+  testImplementation("org.springframework.boot:spring-boot-starter-webflux-test")
   testImplementation("org.assertj:assertj-core:3.27.6")
   testImplementation("org.junit.jupiter:junit-jupiter:6.0.1")
   testImplementation("org.mockito:mockito-junit-jupiter:5.20.0")

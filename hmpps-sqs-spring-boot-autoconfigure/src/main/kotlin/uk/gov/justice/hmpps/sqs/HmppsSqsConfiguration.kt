@@ -5,19 +5,19 @@ import com.microsoft.applicationinsights.TelemetryClient
 import io.awspring.cloud.sqs.config.SqsBootstrapConfiguration
 import io.awspring.cloud.sqs.config.SqsListenerConfigurer
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.boot.actuate.health.HealthContributor
-import org.springframework.boot.actuate.health.HealthContributorRegistry
-import org.springframework.boot.actuate.health.ReactiveHealthContributor
-import org.springframework.boot.actuate.health.ReactiveHealthContributorRegistry
 import org.springframework.boot.autoconfigure.AutoConfigureBefore
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication.Type.REACTIVE
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication.Type.SERVLET
-import org.springframework.boot.autoconfigure.web.reactive.WebFluxAutoConfiguration
-import org.springframework.boot.autoconfigure.web.servlet.WebMvcAutoConfiguration
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.context.properties.bind.Binder
+import org.springframework.boot.health.contributor.HealthContributor
+import org.springframework.boot.health.contributor.ReactiveHealthContributor
+import org.springframework.boot.health.registry.HealthContributorRegistry
+import org.springframework.boot.health.registry.ReactiveHealthContributorRegistry
+import org.springframework.boot.webflux.autoconfigure.WebFluxAutoConfiguration
+import org.springframework.boot.webmvc.autoconfigure.WebMvcAutoConfiguration
 import org.springframework.context.ConfigurableApplicationContext
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Condition
@@ -48,7 +48,7 @@ class HmppsReactiveHealthContributorRepository(
 ) : HmppsHealthContributorRegistry {
   override fun registerContributor(name: String, contribute: () -> HealthContributor) {
     if (reactiveHealthContributorRegistry.getContributor(name) == null) {
-      reactiveHealthContributorRegistry.registerContributor(name, ReactiveHealthContributor.adapt(contribute()))
+      reactiveHealthContributorRegistry.registerContributor(name, ReactiveHealthContributor.adapt(contribute())!!)
     }
   }
 }
