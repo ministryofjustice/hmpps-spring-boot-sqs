@@ -2,8 +2,8 @@ import com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-  kotlin("jvm") version "2.2.21"
-  kotlin("plugin.spring") version "2.2.21"
+  kotlin("jvm") version "2.3.0"
+  kotlin("plugin.spring") version "2.3.0"
   id("maven-publish")
   id("signing")
   id("com.adarshr.test-logger") version "4.0.0"
@@ -11,11 +11,11 @@ plugins {
   id("se.patrikerdes.use-latest-versions") version "0.2.19"
   id("io.spring.dependency-management") version "1.1.7"
   id("org.jlleitschuh.gradle.ktlint") version "14.0.1"
-  id("org.springframework.boot") version "4.0.0"
+  id("org.springframework.boot") version "4.0.1"
 }
 
 dependencies {
-  implementation(platform("software.amazon.awssdk:bom:2.39.2"))
+  implementation(platform("software.amazon.awssdk:bom:2.40.12"))
   implementation("org.springframework.boot:spring-boot-starter-webmvc")
   implementation("org.springframework.boot:spring-boot-starter-webflux")
   implementation("org.springframework.boot:spring-boot-starter-security")
@@ -23,9 +23,9 @@ dependencies {
   // couldn't use spring-cloud-aws-dependencies platform bom as it brings in spring-modulith-events-aws-sns at 1.4.0-SNAPSHOT
   // this then stopped the library being published with an error
   // - Dependency management dependencies to SNAPSHOT versions not allowed for dependency: org.springframework.modulith:spring-modulith-events-aws-sns
-  api("io.awspring.cloud:spring-cloud-aws-starter:3.4.1") { exclude("io.awspring.cloud", "spring-cloud-aws-autoconfigure") }
-  implementation("io.awspring.cloud:spring-cloud-aws-sns:3.4.1")
-  implementation("io.awspring.cloud:spring-cloud-aws-sqs:3.4.1")
+  api("io.awspring.cloud:spring-cloud-aws-starter:3.4.2") { exclude("io.awspring.cloud", "spring-cloud-aws-autoconfigure") }
+  implementation("io.awspring.cloud:spring-cloud-aws-sns:3.4.2")
+  implementation("io.awspring.cloud:spring-cloud-aws-sqs:3.4.2")
   implementation("com.google.code.gson:gson:2.13.2")
   implementation("com.microsoft.azure:applicationinsights-core:3.7.6")
   implementation("io.opentelemetry:opentelemetry-api")
@@ -35,7 +35,7 @@ dependencies {
 
   testImplementation("org.assertj:assertj-core:3.27.6")
   testImplementation("org.junit.jupiter:junit-jupiter:6.0.1")
-  testImplementation("org.mockito:mockito-junit-jupiter:5.20.0")
+  testImplementation("org.mockito:mockito-junit-jupiter:5.21.0")
   testImplementation("org.springframework.boot:spring-boot-starter-test")
   testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
   testImplementation("org.springframework.boot:spring-boot-starter-webflux-test")
