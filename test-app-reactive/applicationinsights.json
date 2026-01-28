@@ -1,6 +1,6 @@
 {
   "role": {
-    "name": "hmpps-template-kotlin"
+    "name": "test-app-reactive"
   },
   "customDimensions": {
     "service.version": "${BUILD_NUMBER}"
