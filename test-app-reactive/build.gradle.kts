@@ -1,5 +1,5 @@
 plugins {
-  id("uk.gov.justice.hmpps.gradle-spring-boot") version "10.0.0"
+  id("uk.gov.justice.hmpps.gradle-spring-boot") version "10.0.2"
   kotlin("plugin.spring") version "2.3.0"
 }
 
@@ -21,7 +21,7 @@ dependencies {
   implementation("org.springframework.boot:spring-boot-jackson2")
   implementation("org.springframework.security:spring-security-access")
 
-  implementation("org.springdoc:springdoc-openapi-starter-webflux-ui:3.0.0")
+  implementation("org.springdoc:springdoc-openapi-starter-webflux-ui:3.0.1")
 
   implementation(project(":hmpps-sqs-spring-boot-starter"))
 

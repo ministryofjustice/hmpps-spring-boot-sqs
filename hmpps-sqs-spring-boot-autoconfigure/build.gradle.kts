@@ -11,11 +11,11 @@ plugins {
   id("se.patrikerdes.use-latest-versions") version "0.2.19"
   id("io.spring.dependency-management") version "1.1.7"
   id("org.jlleitschuh.gradle.ktlint") version "14.0.1"
-  id("org.springframework.boot") version "4.0.1"
+  id("org.springframework.boot") version "4.0.2"
 }
 
 dependencies {
-  implementation(platform("software.amazon.awssdk:bom:2.40.12"))
+  implementation(platform("software.amazon.awssdk:bom:2.41.16"))
   implementation("org.springframework.boot:spring-boot-starter-webmvc")
   implementation("org.springframework.boot:spring-boot-starter-webflux")
   implementation("org.springframework.boot:spring-boot-starter-security")
@@ -27,7 +27,7 @@ dependencies {
   implementation("io.awspring.cloud:spring-cloud-aws-sns:3.4.2")
   implementation("io.awspring.cloud:spring-cloud-aws-sqs:3.4.2")
   implementation("com.google.code.gson:gson:2.13.2")
-  implementation("com.microsoft.azure:applicationinsights-core:3.7.6")
+  implementation("com.microsoft.azure:applicationinsights-core:3.7.7")
   implementation("io.opentelemetry:opentelemetry-api")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8")
