@@ -34,7 +34,7 @@ class TraceExtractingMessageInterceptor(private val objectMapper: ObjectMapper) 
   override fun intercept(message: Message<Any>): Message<Any> = try {
     // seems to be only true for messages that originated on a topic
     val payload = message.payload as? String
-    val span = (if (payload?.contains("MessageAttributes") == true) startSpanFromAttributesInPayload(payload) else null)
+    val span = (if (payload?.contains("MessageAttributes") == true) startSpanFromAttributesInPayload(payload, message) else null)
       // otherwise we have to grab the attributes from the message
       // unfortunately these appear to then be not populated for a topic, so have to do both
       ?: startSpanFromAttributesInHeader(message)
@@ -46,16 +46,16 @@ class TraceExtractingMessageInterceptor(private val objectMapper: ObjectMapper) 
 
   private fun startSpanFromAttributesInHeader(message: Message<Any>): Span? = extractAttributes(message)?.let { attributes ->
     val spanName = attributes["eventType"]?.let { "RECEIVE ${it.stringValue()}" } ?: "RECEIVE"
-    attributes.extractTelemetryContextFromValues().startSpan(spanName)
+    attributes.extractTelemetryContextFromValues().startSpan(spanName, queueName = message.headers[SqsHeaders.SQS_QUEUE_NAME_HEADER] as String?)
   }
 
-  private fun startSpanFromAttributesInPayload(payload: String?): Span? {
+  private fun startSpanFromAttributesInPayload(payload: String, message: Message<Any>): Span? {
     val attributes = objectMapper.readValue(
       objectMapper.readTree(payload).at("/MessageAttributes").traverse(),
       object : TypeReference<MutableMap<String, MessageAttribute>>() {},
     )
     val spanName = attributes?.get("eventType")?.let { "RECEIVE ${it.Value}" } ?: "RECEIVE"
-    return attributes?.extractTelemetryContext()?.startSpan(spanName)
+    return attributes?.extractTelemetryContext()?.startSpan(spanName, queueName = message.headers[SqsHeaders.SQS_QUEUE_NAME_HEADER] as String?)
   }
 
   private fun extractAttributes(message: Message<Any>): MutableMap<String, MessageAttributeValue>? {
@@ -102,11 +102,13 @@ class TraceExtractingMessageInterceptor(private val objectMapper: ObjectMapper) 
     return GlobalOpenTelemetry.getPropagators().textMapPropagator.extract(Context.current(), this, getter)
   }
 
-  private fun Context.startSpan(spanName: String): Span = GlobalOpenTelemetry
+  private fun Context.startSpan(spanName: String, queueName: String?): Span = GlobalOpenTelemetry
     .getTracer("hmpps-sqs")
     .spanBuilder(spanName)
     .setParent(this)
     .setSpanKind(SpanKind.CONSUMER)
+    .setAttribute("messaging.system", "aws_sqs")
+    .setAttribute("messaging.destination.name", queueName ?: "unknown")
     .startSpan()
 
   private class MessageAttribute(
