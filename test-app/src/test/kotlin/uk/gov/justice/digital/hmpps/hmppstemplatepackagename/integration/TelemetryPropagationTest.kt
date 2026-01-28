@@ -4,6 +4,7 @@ import ch.qos.logback.classic.Level
 import ch.qos.logback.classic.Logger
 import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.core.read.ListAppender
+import io.opentelemetry.api.common.AttributeKey
 import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.StatusCode
 import io.opentelemetry.context.Context
@@ -303,6 +304,67 @@ class TelemetryPropagationTest : IntegrationTestBase() {
     val span = openTelemetryExtension.openTelemetry.getTracer("hmpps-sqs").spanBuilder("test-span").startSpan()
     Context.current().with(span).makeCurrent().use { block() }
     return span.also { it.end() }
+  }
+
+  @Test
+  fun `spans contain enhanced OpenTelemetry messaging attributes`() = runTest {
+    // Given a span
+    withSpan {
+      // When I publish an OFFENDER_MOVEMENT-RECEPTION message
+      val event = HmppsEvent("event-id", "OFFENDER_MOVEMENT-RECEPTION", "some event contents")
+      inboundSqsOnlyClient.sendMessage(
+        SendMessageRequest.builder()
+          .queueUrl(inboundSqsOnlyQueueUrl)
+          .messageBody(gsonString(event))
+          .messageAttributes(
+            mapOf(
+              "eventType" to SqsMessageAttributeValue.builder().dataType("String").stringValue(event.type).build(),
+            ),
+          )
+          .build(),
+      )
+    }
+
+    // And the OFFENDER_MOVEMENT-RECEPTION message is consumed
+    await untilCallTo {
+      outboundSqsOnlyTestSqsClient.countMessagesOnQueue(outboundSqsOnlyTestQueueUrl).get()
+    } matches { it == 1 }
+
+    // Then verify enhanced OpenTelemetry attributes are present
+    val spans = openTelemetryExtension.spans
+
+    // Find PUBLISH and RECEIVE spans
+    val publishSpan = spans.find { it.name == "PUBLISH OFFENDER_MOVEMENT-RECEPTION" }
+    val receiveSpan = spans.find { it.name == "RECEIVE OFFENDER_MOVEMENT-RECEPTION" }
+
+    assertThat(publishSpan).isNotNull
+    assertThat(receiveSpan).isNotNull
+
+    // Verify PUBLISH span attributes
+    publishSpan?.let { span ->
+      val attributes = span.attributes
+      assertThat(attributes.get(AttributeKey.stringKey("messaging.system"))).isEqualTo("aws_sqs")
+      assertThat(attributes.get(AttributeKey.stringKey("messaging.operation.type"))).isEqualTo("send")
+      assertThat(attributes.get(AttributeKey.stringKey("messaging.operation.name"))).isEqualTo("sendMessage")
+      assertThat(attributes.get(AttributeKey.stringKey("server.address"))).isEqualTo("sqs.amazonaws.com")
+      assertThat(attributes.get(AttributeKey.longKey("server.port"))).isEqualTo(443L)
+      assertThat(attributes.get(AttributeKey.stringKey("messaging.message.conversation_id"))).isEqualTo("OFFENDER_MOVEMENT-RECEPTION")
+      // Destination name should be extracted from queue URL
+      assertThat(attributes.get(AttributeKey.stringKey("messaging.destination.name"))).isNotNull()
+    }
+
+    // Verify RECEIVE span attributes
+    receiveSpan?.let { span ->
+      val attributes = span.attributes
+      assertThat(attributes.get(AttributeKey.stringKey("messaging.system"))).isEqualTo("aws_sqs")
+      assertThat(attributes.get(AttributeKey.stringKey("messaging.operation.type"))).isEqualTo("receive")
+      assertThat(attributes.get(AttributeKey.stringKey("messaging.operation.name"))).isEqualTo("receiveMessage")
+      assertThat(attributes.get(AttributeKey.stringKey("server.address"))).isEqualTo("sqs.amazonaws.com")
+      assertThat(attributes.get(AttributeKey.longKey("server.port"))).isEqualTo(443L)
+      assertThat(attributes.get(AttributeKey.stringKey("messaging.message.conversation_id"))).isEqualTo("OFFENDER_MOVEMENT-RECEPTION")
+      // Message ID should be present from SQS
+      assertThat(attributes.get(AttributeKey.stringKey("messaging.message.id"))).isNotNull()
+    }
   }
 
   fun <T> findLogAppender(javaClass: Class<in T>): ListAppender<ILoggingEvent> {

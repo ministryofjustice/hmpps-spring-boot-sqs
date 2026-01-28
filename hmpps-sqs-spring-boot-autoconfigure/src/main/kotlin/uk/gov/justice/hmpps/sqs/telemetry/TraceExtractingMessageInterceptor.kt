@@ -68,6 +68,33 @@ class TraceExtractingMessageInterceptor(private val objectMapper: ObjectMapper) 
 
   override fun afterProcessing(message: Message<Any>, t: Throwable?) {
     (message.headers["span"] as Span?)?.run {
+      // Set standard OpenTelemetry messaging attributes
+      this.setAttribute("messaging.system", "aws_sqs")
+      this.setAttribute("messaging.operation.type", "receive")
+      this.setAttribute("messaging.operation.name", "receiveMessage")
+
+      // Add enhanced messaging attributes
+      val sqsMessage = message.headers[SqsHeaders.SQS_SOURCE_DATA_HEADER] as? SqsMessage
+      sqsMessage?.let { sqs ->
+        // Message ID for correlation
+        this.setAttribute("messaging.message.id", sqs.messageId())
+
+        // Extract queue name from source queue URL if available
+        message.headers[SqsHeaders.SQS_QUEUE_URL_HEADER]?.let { queueUrl ->
+          val queueName = (queueUrl as String).substringAfterLast("/")
+          this.setAttribute("messaging.destination.name", queueName)
+        }
+
+        // AWS region endpoint
+        this.setAttribute("server.address", "sqs.amazonaws.com")
+        this.setAttribute("server.port", 443L)
+
+        // Conversation ID from eventType if available
+        sqs.messageAttributes()["eventType"]?.let { eventType ->
+          this.setAttribute("messaging.message.conversation_id", eventType.stringValue())
+        }
+      }
+
       if (t != null) {
         // by grabbing the cause and recording the exception here we can then use app insights to filter out
         // java.util.concurrent.CompletionException exception messages separately.  This stops the exception being
