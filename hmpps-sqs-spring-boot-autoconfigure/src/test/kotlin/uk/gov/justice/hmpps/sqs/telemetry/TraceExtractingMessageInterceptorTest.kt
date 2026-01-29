@@ -4,9 +4,12 @@ import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.core.read.ListAppender
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.awspring.cloud.sqs.listener.SqsHeaders
+import io.opentelemetry.api.common.AttributeKey
+import io.opentelemetry.sdk.testing.junit5.OpenTelemetryExtension
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.RegisterExtension
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.json.JsonTest
 import org.springframework.messaging.support.GenericMessage
@@ -16,8 +19,13 @@ import uk.gov.justice.hmpps.sqs.findLogAppender
 import uk.gov.justice.hmpps.sqs.formattedMessages
 
 @JsonTest
-class TraceExtractingMessageInterceptorTest(@Autowired private val objectMapper: ObjectMapper) {
+class TraceExtractingMessageInterceptorTest(@param:Autowired private val objectMapper: ObjectMapper) {
   private lateinit var logger: ListAppender<ILoggingEvent>
+
+  companion object {
+    @RegisterExtension
+    val openTelemetryExtension: OpenTelemetryExtension = OpenTelemetryExtension.create()
+  }
 
   @BeforeEach
   fun setupLogAppender() {
@@ -51,6 +59,58 @@ class TraceExtractingMessageInterceptorTest(@Autowired private val objectMapper:
 
     // and no failure log messages
     assertThat(logger.formattedMessages()).isEmpty()
+  }
+
+  @Test
+  fun `span sets destination name to unknown if queue name not found`() {
+    val message = GenericMessage<Any>("""{"MessageId":null,"MessageAttributes":{"eventType": {"Type": "String", "Value": "my-event"}}}""", mapOf("eventType" to "myevent"))
+
+    val interceptor = TraceExtractingMessageInterceptor(objectMapper)
+    val responseMessage = interceptor.intercept(message)
+    interceptor.afterProcessing(responseMessage, null)
+    assertThat(responseMessage.headers).containsAllEntriesOf(message.headers)
+
+    assertThat(openTelemetryExtension.spans.map { it.name }).contains("RECEIVE my-event")
+    val attributes = openTelemetryExtension.spans.find { it.name == "RECEIVE my-event" }!!.attributes
+    assertThat(attributes.get(AttributeKey.stringKey("messaging.system"))).isEqualTo("aws_sqs")
+    assertThat(attributes.get(AttributeKey.stringKey("messaging.destination.name"))).isEqualTo("unknown")
+  }
+
+  @Test
+  fun `span sets destination name if attributes in payload`() {
+    val message = GenericMessage<Any>("""{"MessageId":null,"MessageAttributes":{"eventType": {"Type": "String", "Value": "my-event"}}}""", mapOf("eventType" to "myevent", SqsHeaders.SQS_QUEUE_NAME_HEADER to "my-queue"))
+
+    val interceptor = TraceExtractingMessageInterceptor(objectMapper)
+    val responseMessage = interceptor.intercept(message)
+    interceptor.afterProcessing(responseMessage, null)
+    assertThat(responseMessage.headers).containsAllEntriesOf(message.headers)
+    assertThat(openTelemetryExtension.spans.map { it.name }).contains("RECEIVE my-event")
+
+    val attributes = openTelemetryExtension.spans.find { it.name == "RECEIVE my-event" }!!.attributes
+    assertThat(attributes.get(AttributeKey.stringKey("messaging.system"))).isEqualTo("aws_sqs")
+    assertThat(attributes.get(AttributeKey.stringKey("messaging.destination.name"))).isEqualTo("my-queue")
+  }
+
+  @Test
+  fun `span sets destination name if attributes in header`() {
+    val message = GenericMessage<Any>(
+      """{"MessageId":null}""",
+      mapOf(
+        "eventType" to "myevent",
+        SqsHeaders.SQS_QUEUE_NAME_HEADER to "my-queue",
+        SqsHeaders.SQS_SOURCE_DATA_HEADER to Message.builder().messageAttributes(eventTypeSqsMap("my-event")).build(),
+      ),
+    )
+
+    val interceptor = TraceExtractingMessageInterceptor(objectMapper)
+    val responseMessage = interceptor.intercept(message)
+    interceptor.afterProcessing(responseMessage, null)
+    assertThat(responseMessage.headers).containsAllEntriesOf(message.headers)
+
+    assertThat(openTelemetryExtension.spans.map { it.name }).contains("RECEIVE my-event")
+    val attributes = openTelemetryExtension.spans.find { it.name == "RECEIVE my-event" }!!.attributes
+    assertThat(attributes.get(AttributeKey.stringKey("messaging.system"))).isEqualTo("aws_sqs")
+    assertThat(attributes.get(AttributeKey.stringKey("messaging.destination.name"))).isEqualTo("my-queue")
   }
 
   @Test
