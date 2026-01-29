@@ -2,7 +2,6 @@
 
 package uk.gov.justice.hmpps.sqs
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
@@ -29,6 +28,7 @@ import software.amazon.awssdk.services.sqs.model.GetQueueAttributesResponse
 import software.amazon.awssdk.services.sqs.model.GetQueueUrlRequest
 import software.amazon.awssdk.services.sqs.model.GetQueueUrlResponse
 import software.amazon.awssdk.services.sqs.model.QueueAttributeName
+import tools.jackson.databind.json.JsonMapper
 import uk.gov.justice.hmpps.sqs.HmppsSqsProperties.QueueConfig
 import uk.gov.justice.hmpps.sqs.HmppsSqsProperties.TopicConfig
 import java.util.concurrent.CompletableFuture
@@ -39,9 +39,9 @@ class HmppsQueueFactoryTest {
   private val healthContributorRegistry = mock<HmppsHealthContributorRegistry>()
   private val beanFactory = mock<ConfigurableListableBeanFactory>()
   private val sqsFactory = mock<SqsClientFactory>()
-  private val objectMapper = mock<ObjectMapper>()
+  private val jsonMapper = mock<JsonMapper>()
   private val errorVisibilityHandler = mock<HmppsErrorVisibilityHandler>()
-  private val hmppsQueueFactory = HmppsQueueFactory(context, healthContributorRegistry, sqsFactory, errorVisibilityHandler, objectMapper)
+  private val hmppsQueueFactory = HmppsQueueFactory(context, healthContributorRegistry, sqsFactory, errorVisibilityHandler, jsonMapper)
 
   init {
     whenever(context.beanFactory).thenReturn(beanFactory)

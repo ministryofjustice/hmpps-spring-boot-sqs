@@ -1,8 +1,6 @@
 package uk.gov.justice.hmpps.sqs.telemetry
 
 import com.fasterxml.jackson.annotation.JsonProperty
-import com.fasterxml.jackson.core.type.TypeReference
-import com.fasterxml.jackson.databind.ObjectMapper
 import io.awspring.cloud.sqs.MessageHeaderUtils
 import io.awspring.cloud.sqs.listener.SqsHeaders
 import io.awspring.cloud.sqs.listener.interceptor.MessageInterceptor
@@ -16,6 +14,9 @@ import io.opentelemetry.context.propagation.TextMapGetter
 import org.slf4j.LoggerFactory
 import org.springframework.messaging.Message
 import software.amazon.awssdk.services.sqs.model.MessageAttributeValue
+import tools.jackson.core.ObjectReadContext
+import tools.jackson.core.type.TypeReference
+import tools.jackson.databind.json.JsonMapper
 import java.util.concurrent.CompletionException
 import software.amazon.awssdk.services.sqs.model.Message as SqsMessage
 
@@ -30,7 +31,7 @@ import software.amazon.awssdk.services.sqs.model.Message as SqsMessage
  * Note that we have to wrap the whole processing in a try catch block since exceptions thrown from a MessageInterceptor
  * cause the message to be lost and not go on the dead letter queue.
  */
-class TraceExtractingMessageInterceptor(private val objectMapper: ObjectMapper) : MessageInterceptor<Any> {
+class TraceExtractingMessageInterceptor(private val jsonMapper: JsonMapper) : MessageInterceptor<Any> {
   override fun intercept(message: Message<Any>): Message<Any> = try {
     // seems to be only true for messages that originated on a topic
     val payload = message.payload as? String
@@ -50,8 +51,8 @@ class TraceExtractingMessageInterceptor(private val objectMapper: ObjectMapper) 
   }
 
   private fun startSpanFromAttributesInPayload(payload: String, message: Message<Any>): Span? {
-    val attributes = objectMapper.readValue(
-      objectMapper.readTree(payload).at("/MessageAttributes").traverse(),
+    val attributes = jsonMapper.readValue(
+      jsonMapper.readTree(payload).at("/MessageAttributes").traverse(ObjectReadContext.Base()),
       object : TypeReference<MutableMap<String, MessageAttribute>>() {},
     )
     val spanName = attributes?.get("eventType")?.let { "RECEIVE ${it.Value}" } ?: "RECEIVE"

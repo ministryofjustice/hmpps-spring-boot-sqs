@@ -2,7 +2,6 @@ package uk.gov.justice.hmpps.sqs.telemetry
 
 import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.core.read.ListAppender
-import com.fasterxml.jackson.databind.ObjectMapper
 import io.awspring.cloud.sqs.listener.SqsHeaders
 import io.opentelemetry.api.common.AttributeKey
 import io.opentelemetry.sdk.testing.junit5.OpenTelemetryExtension
@@ -14,12 +13,13 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.json.JsonTest
 import org.springframework.messaging.support.GenericMessage
 import software.amazon.awssdk.services.sqs.model.Message
+import tools.jackson.databind.json.JsonMapper
 import uk.gov.justice.hmpps.sqs.eventTypeSqsMap
 import uk.gov.justice.hmpps.sqs.findLogAppender
 import uk.gov.justice.hmpps.sqs.formattedMessages
 
 @JsonTest
-class TraceExtractingMessageInterceptorTest(@param:Autowired private val objectMapper: ObjectMapper) {
+class TraceExtractingMessageInterceptorTest(@param:Autowired private val jsonMapper: JsonMapper) {
   private lateinit var logger: ListAppender<ILoggingEvent>
 
   companion object {
@@ -36,7 +36,7 @@ class TraceExtractingMessageInterceptorTest(@param:Autowired private val objectM
   fun `should do nothing if no MessageAttributes header found`() {
     val message = GenericMessage<Any>("123", mapOf("eventType" to "myevent"))
 
-    val responseMessage = TraceExtractingMessageInterceptor(objectMapper).intercept(message)
+    val responseMessage = TraceExtractingMessageInterceptor(jsonMapper).intercept(message)
 
     assertThat(responseMessage.headers).isEqualTo(message.headers)
     // no new span will be created, so don't expect these keys
@@ -50,7 +50,7 @@ class TraceExtractingMessageInterceptorTest(@param:Autowired private val objectM
   fun `should start a new span if MessageAttributes payload contains MessageAttributes`() {
     val message = GenericMessage<Any>("""{"MessageId":null,"MessageAttributes":{"my-event":{"Type": "String", "Value": "my-event"}}}""", mapOf("eventType" to "myevent"))
 
-    val responseMessage = TraceExtractingMessageInterceptor(objectMapper).intercept(message)
+    val responseMessage = TraceExtractingMessageInterceptor(jsonMapper).intercept(message)
 
     assertThat(responseMessage.headers).containsAllEntriesOf(message.headers)
 
@@ -65,7 +65,7 @@ class TraceExtractingMessageInterceptorTest(@param:Autowired private val objectM
   fun `span sets destination name to unknown if queue name not found`() {
     val message = GenericMessage<Any>("""{"MessageId":null,"MessageAttributes":{"eventType": {"Type": "String", "Value": "my-event"}}}""", mapOf("eventType" to "myevent"))
 
-    val interceptor = TraceExtractingMessageInterceptor(objectMapper)
+    val interceptor = TraceExtractingMessageInterceptor(jsonMapper)
     val responseMessage = interceptor.intercept(message)
     interceptor.afterProcessing(responseMessage, null)
     assertThat(responseMessage.headers).containsAllEntriesOf(message.headers)
@@ -80,7 +80,7 @@ class TraceExtractingMessageInterceptorTest(@param:Autowired private val objectM
   fun `span sets destination name if attributes in payload`() {
     val message = GenericMessage<Any>("""{"MessageId":null,"MessageAttributes":{"eventType": {"Type": "String", "Value": "my-event"}}}""", mapOf("eventType" to "myevent", SqsHeaders.SQS_QUEUE_NAME_HEADER to "my-queue"))
 
-    val interceptor = TraceExtractingMessageInterceptor(objectMapper)
+    val interceptor = TraceExtractingMessageInterceptor(jsonMapper)
     val responseMessage = interceptor.intercept(message)
     interceptor.afterProcessing(responseMessage, null)
     assertThat(responseMessage.headers).containsAllEntriesOf(message.headers)
@@ -102,7 +102,7 @@ class TraceExtractingMessageInterceptorTest(@param:Autowired private val objectM
       ),
     )
 
-    val interceptor = TraceExtractingMessageInterceptor(objectMapper)
+    val interceptor = TraceExtractingMessageInterceptor(jsonMapper)
     val responseMessage = interceptor.intercept(message)
     interceptor.afterProcessing(responseMessage, null)
     assertThat(responseMessage.headers).containsAllEntriesOf(message.headers)
@@ -117,7 +117,7 @@ class TraceExtractingMessageInterceptorTest(@param:Autowired private val objectM
   fun `should do nothing if MessageAttributes payload is null`() {
     val message = GenericMessage<Any>("""{"MessageId":null,"MessageAttributes":null}""", mapOf("eventType" to "myevent"))
 
-    val responseMessage = TraceExtractingMessageInterceptor(objectMapper).intercept(message)
+    val responseMessage = TraceExtractingMessageInterceptor(jsonMapper).intercept(message)
 
     assertThat(responseMessage.headers).isEqualTo(message.headers)
 
@@ -132,7 +132,7 @@ class TraceExtractingMessageInterceptorTest(@param:Autowired private val objectM
   fun `should do nothing if MessageAttributes payload is invalid json`() {
     val message = GenericMessage<Any>("""{invalid json "MessageAttributes":null""", mapOf("eventType" to "myevent"))
 
-    val responseMessage = TraceExtractingMessageInterceptor(objectMapper).intercept(message)
+    val responseMessage = TraceExtractingMessageInterceptor(jsonMapper).intercept(message)
 
     assertThat(responseMessage.headers).isEqualTo(message.headers)
 
@@ -150,7 +150,7 @@ class TraceExtractingMessageInterceptorTest(@param:Autowired private val objectM
       mapOf("eventType" to "myevent", SqsHeaders.SQS_SOURCE_DATA_HEADER to Message.builder().messageAttributes(eventTypeSqsMap("myevent")).build()),
     )
 
-    val responseMessage = TraceExtractingMessageInterceptor(objectMapper).intercept(message)
+    val responseMessage = TraceExtractingMessageInterceptor(jsonMapper).intercept(message)
 
     assertThat(responseMessage.headers).containsAllEntriesOf(message.headers)
 

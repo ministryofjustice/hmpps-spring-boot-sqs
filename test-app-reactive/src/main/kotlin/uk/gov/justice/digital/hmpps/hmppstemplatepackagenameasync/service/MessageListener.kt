@@ -1,20 +1,21 @@
 package uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.service
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import io.awspring.cloud.sqs.annotation.SqsListener
 import io.opentelemetry.context.Context
 import io.opentelemetry.extension.kotlin.asContextElement
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.future.future
 import org.springframework.stereotype.Service
+import tools.jackson.databind.json.JsonMapper
+import tools.jackson.module.kotlin.readValue
 import java.util.concurrent.CompletableFuture
 
 @Service
-class InboundMessageListener(private val inboundMessageService: InboundMessageService, private val objectMapper: ObjectMapper) {
+class InboundMessageListener(private val inboundMessageService: InboundMessageService, private val jsonMapper: JsonMapper) {
 
   @SqsListener("inboundqueue", factory = "hmppsQueueContainerFactoryProxy")
   fun processMessage(message: Message): CompletableFuture<Void?> {
-    val event = objectMapper.readValue(message.Message, HmppsEvent::class.java)
+    val event: HmppsEvent = jsonMapper.readValue(message.Message)
     return CoroutineScope(Context.current().asContextElement()).future {
       inboundMessageService.handleMessage(event)
       null
@@ -23,11 +24,11 @@ class InboundMessageListener(private val inboundMessageService: InboundMessageSe
 }
 
 @Service
-class OutboundMessageListener(private val outboundMessageService: OutboundMessageService, private val objectMapper: ObjectMapper) {
+class OutboundMessageListener(private val outboundMessageService: OutboundMessageService, private val jsonMapper: JsonMapper) {
 
   @SqsListener("outboundqueue", factory = "hmppsQueueContainerFactoryProxy")
   fun processMessage(message: Message) {
-    val event = objectMapper.readValue(message.Message, HmppsEvent::class.java)
+    val event: HmppsEvent = jsonMapper.readValue(message.Message)
     outboundMessageService.handleMessage(event)
   }
 }

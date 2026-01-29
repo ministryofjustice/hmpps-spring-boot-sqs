@@ -55,7 +55,7 @@ class TelemetryPropagationTest : IntegrationTestBase() {
     await untilCallTo { outboundTestSqsClient.countMessagesOnQueue(outboundTestQueueUrl).get() } matches { it == 1 }
 
     // Then the trace headers have been passed all the way through
-    val message = objectMapper.readValue(outboundTestSqsClient.receiveMessage(ReceiveMessageRequest.builder().queueUrl(outboundTestQueueUrl).build()).get().messages()[0].body(), Message::class.java)
+    val message = jsonMapper.readValue(outboundTestSqsClient.receiveMessage(ReceiveMessageRequest.builder().queueUrl(outboundTestQueueUrl).build()).get().messages()[0].body(), Message::class.java)
 
     assertThat(message.MessageAttributes["traceparent"]?.Value).contains(span.spanContext.traceId)
     assertThat(message.MessageAttributes["traceparent"]?.Value).matches("00-${span.spanContext.traceId}-[0-9a-f]{16}-01")
@@ -90,7 +90,7 @@ class TelemetryPropagationTest : IntegrationTestBase() {
     await untilCallTo { outboundTestSqsClient.countMessagesOnQueue(outboundTestQueueUrl).get() } matches { it == 1 }
 
     // Then the trace headers have been passed all the way through
-    val message = objectMapper.readValue(outboundTestSqsClient.receiveMessage(ReceiveMessageRequest.builder().queueUrl(outboundTestQueueUrl).build()).get().messages()[0].body(), Message::class.java)
+    val message = jsonMapper.readValue(outboundTestSqsClient.receiveMessage(ReceiveMessageRequest.builder().queueUrl(outboundTestQueueUrl).build()).get().messages()[0].body(), Message::class.java)
 
     assertThat(message.MessageAttributes["traceparent"]?.Value).doesNotContain(span.spanContext.traceId)
 

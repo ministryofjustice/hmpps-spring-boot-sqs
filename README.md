@@ -19,6 +19,8 @@ based upon [configuration properties](#hmpps-queue-properties).
 
 ## Release Notes
 
+##### [7.x](release-notes/7.x.md)
+
 ##### [6.x](release-notes/6.x.md)
 
 ##### [5.x](release-notes/5.x.md)

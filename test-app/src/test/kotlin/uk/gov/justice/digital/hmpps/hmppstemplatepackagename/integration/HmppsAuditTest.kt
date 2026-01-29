@@ -36,7 +36,7 @@ class HmppsAuditTest : IntegrationTestBase() {
     await untilCallTo { outboundTestSqsClient.countMessagesOnQueue(outboundTestQueueUrl).get() } matches { it == 1 }
     await untilCallTo { auditSqsClient.countMessagesOnQueue(auditQueueUrl).get() } matches { it == 1 }
 
-    val receivedEvent = objectMapper.readValue(auditSqsClient.receiveMessage(ReceiveMessageRequest.builder().queueUrl(auditQueueUrl).build()).get().messages()[0].body(), HmppsAuditEvent::class.java)
+    val receivedEvent = jsonMapper.readValue(auditSqsClient.receiveMessage(ReceiveMessageRequest.builder().queueUrl(auditQueueUrl).build()).get().messages()[0].body(), HmppsAuditEvent::class.java)
 
     assertThat(receivedEvent.who).isEqualTo("me")
     assertThat(receivedEvent.what).isEqualTo("important event")
@@ -54,7 +54,7 @@ class HmppsAuditTest : IntegrationTestBase() {
     await untilCallTo { outboundTestSqsClient.countMessagesOnQueue(outboundTestQueueUrl).get() } matches { it == 1 }
     await untilCallTo { auditSqsClient.countMessagesOnQueue(auditQueueUrl).get() } matches { it == 1 }
 
-    val receivedEvent = objectMapper.readValue(auditSqsClient.receiveMessage(ReceiveMessageRequest.builder().queueUrl(auditQueueUrl).build()).get().messages()[0].body(), HmppsAuditEvent::class.java)
+    val receivedEvent = jsonMapper.readValue(auditSqsClient.receiveMessage(ReceiveMessageRequest.builder().queueUrl(auditQueueUrl).build()).get().messages()[0].body(), HmppsAuditEvent::class.java)
 
     assertThat(receivedEvent.who).isEqualTo("me")
     assertThat(receivedEvent.what).isEqualTo("important event")

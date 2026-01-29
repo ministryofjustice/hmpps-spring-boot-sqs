@@ -1,6 +1,5 @@
 package uk.gov.justice.hmpps.sqs
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.microsoft.applicationinsights.TelemetryClient
 import io.awspring.cloud.sqs.listener.QueueMessageVisibility
 import io.awspring.cloud.sqs.listener.SqsHeaders
@@ -11,21 +10,22 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.json.JsonTest
 import org.springframework.messaging.Message
 import org.springframework.messaging.support.GenericMessage
+import tools.jackson.databind.json.JsonMapper
 
 @JsonTest
-class HmppsErrorVisibilityHandlerTest(@param:Autowired private val objectMapper: ObjectMapper) {
+class HmppsErrorVisibilityHandlerTest(@param:Autowired private val jsonMapper: JsonMapper) {
 
   private val queueMessageVisibility = mock<QueueMessageVisibility>()
   private val someQueue = HmppsQueue("some-queue-id", mock(), "some-queue")
   private val telemetryClient = mock<TelemetryClient>()
 
   fun aMessage(): Message<Any> = GenericMessage("123", mapOf("Sqs_Msa_ApproximateReceiveCount" to "1", "Sqs_VisibilityTimeout" to queueMessageVisibility))
-  fun aHandler(objectMapper: ObjectMapper, properties: HmppsSqsProperties, client: TelemetryClient = telemetryClient) = HmppsErrorVisibilityHandler(objectMapper, properties, telemetryClient)
+  fun aHandler(jsonMapper: JsonMapper, properties: HmppsSqsProperties, client: TelemetryClient = telemetryClient) = HmppsErrorVisibilityHandler(jsonMapper, properties, telemetryClient)
 
   @Test
   fun `should set timeout to the default value of zero`() {
     val properties = HmppsSqsProperties(queues = mapOf("some-queue-id" to HmppsSqsProperties.QueueConfig("some-queue")))
-    val handler = aHandler(objectMapper, properties)
+    val handler = aHandler(jsonMapper, properties)
 
     handler.setErrorVisibilityTimeout(aMessage(), someQueue)
 
@@ -38,7 +38,7 @@ class HmppsErrorVisibilityHandlerTest(@param:Autowired private val objectMapper:
       defaultErrorVisibilityTimeout = listOf(1),
       queues = mapOf("some-queue-id" to HmppsSqsProperties.QueueConfig("some-queue")),
     )
-    val handler = aHandler(objectMapper, properties)
+    val handler = aHandler(jsonMapper, properties)
 
     handler.setErrorVisibilityTimeout(aMessage(), someQueue)
 
@@ -56,7 +56,7 @@ class HmppsErrorVisibilityHandlerTest(@param:Autowired private val objectMapper:
         ),
       ),
     )
-    val handler = aHandler(objectMapper, properties)
+    val handler = aHandler(jsonMapper, properties)
 
     handler.setErrorVisibilityTimeout(aMessage(), someQueue)
 
@@ -76,7 +76,7 @@ class HmppsErrorVisibilityHandlerTest(@param:Autowired private val objectMapper:
       ),
     )
     val message = GenericMessage<Any>("""{"MessageId":null,"MessageAttributes":{"eventType":{"Type": "String", "Value": "some-event"}}}""", mapOf("Sqs_Msa_ApproximateReceiveCount" to "1", "Sqs_VisibilityTimeout" to queueMessageVisibility))
-    val handler = aHandler(objectMapper, properties)
+    val handler = aHandler(jsonMapper, properties)
 
     handler.setErrorVisibilityTimeout(message, someQueue)
 
@@ -96,7 +96,7 @@ class HmppsErrorVisibilityHandlerTest(@param:Autowired private val objectMapper:
       ),
     )
     val message = GenericMessage<Any>("""{"MessageId":null,"MessageAttributes":{}}""", mapOf("Sqs_Msa_ApproximateReceiveCount" to "1", "Sqs_VisibilityTimeout" to queueMessageVisibility))
-    val handler = aHandler(objectMapper, properties)
+    val handler = aHandler(jsonMapper, properties)
 
     handler.setErrorVisibilityTimeout(message, someQueue)
 
@@ -123,7 +123,7 @@ class HmppsErrorVisibilityHandlerTest(@param:Autowired private val objectMapper:
         SqsHeaders.SQS_SOURCE_DATA_HEADER to software.amazon.awssdk.services.sqs.model.Message.builder().messageAttributes(eventTypeSqsMap("some-event")).build(),
       ),
     )
-    val handler = aHandler(objectMapper, properties)
+    val handler = aHandler(jsonMapper, properties)
 
     handler.setErrorVisibilityTimeout(message, someQueue)
 
@@ -136,7 +136,7 @@ class HmppsErrorVisibilityHandlerTest(@param:Autowired private val objectMapper:
       defaultErrorVisibilityTimeout = listOf(1, 2, 3),
       queues = mapOf("some-queue-id" to HmppsSqsProperties.QueueConfig("some-queue")),
     )
-    val handler = aHandler(objectMapper, properties)
+    val handler = aHandler(jsonMapper, properties)
     val message = GenericMessage<Any>("123", mapOf("Sqs_Msa_ApproximateReceiveCount" to "2", "Sqs_VisibilityTimeout" to queueMessageVisibility))
 
     handler.setErrorVisibilityTimeout(message, someQueue)
@@ -150,7 +150,7 @@ class HmppsErrorVisibilityHandlerTest(@param:Autowired private val objectMapper:
       defaultErrorVisibilityTimeout = listOf(1, 2),
       queues = mapOf("some-queue-id" to HmppsSqsProperties.QueueConfig("some-queue")),
     )
-    val handler = aHandler(objectMapper, properties)
+    val handler = aHandler(jsonMapper, properties)
     val message = GenericMessage<Any>("123", mapOf("Sqs_Msa_ApproximateReceiveCount" to "3", "Sqs_VisibilityTimeout" to queueMessageVisibility))
 
     handler.setErrorVisibilityTimeout(message, someQueue)

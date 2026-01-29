@@ -1,6 +1,5 @@
 package uk.gov.justice.hmpps.sqs
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import io.awspring.cloud.sqs.config.SqsMessageListenerContainerFactory
 import io.awspring.cloud.sqs.listener.errorhandler.ErrorHandler
 import kotlinx.coroutines.future.await
@@ -14,6 +13,7 @@ import software.amazon.awssdk.services.sqs.model.CreateQueueRequest
 import software.amazon.awssdk.services.sqs.model.GetQueueAttributesRequest
 import software.amazon.awssdk.services.sqs.model.GetQueueUrlRequest
 import software.amazon.awssdk.services.sqs.model.QueueAttributeName
+import tools.jackson.databind.json.JsonMapper
 import uk.gov.justice.hmpps.sqs.HmppsSqsProperties.QueueConfig
 import uk.gov.justice.hmpps.sqs.telemetry.TraceExtractingMessageInterceptor
 
@@ -22,7 +22,7 @@ class HmppsQueueFactory(
   private val healthContributorRegistry: HmppsHealthContributorRegistry,
   private val sqsClientFactory: SqsClientFactory,
   private val errorVisibilityHandler: HmppsErrorVisibilityHandler,
-  private val objectMapper: ObjectMapper,
+  private val jsonMapper: JsonMapper,
 ) {
   companion object {
     val log: Logger = LoggerFactory.getLogger(this::class.java)
@@ -73,7 +73,7 @@ class HmppsQueueFactory(
     .sqsAsyncClient(queue.sqsClient)
     .apply {
       if (propagateTracing) {
-        messageInterceptor(TraceExtractingMessageInterceptor(objectMapper))
+        messageInterceptor(TraceExtractingMessageInterceptor(jsonMapper))
       }
     }
     .errorHandler(

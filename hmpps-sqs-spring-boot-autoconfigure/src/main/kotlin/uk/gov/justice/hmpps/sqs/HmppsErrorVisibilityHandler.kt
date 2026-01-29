@@ -1,17 +1,18 @@
 package uk.gov.justice.hmpps.sqs
 
 import com.fasterxml.jackson.annotation.JsonProperty
-import com.fasterxml.jackson.core.type.TypeReference
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.microsoft.applicationinsights.TelemetryClient
 import io.awspring.cloud.sqs.listener.QueueMessageVisibility
 import io.awspring.cloud.sqs.listener.SqsHeaders
 import org.slf4j.LoggerFactory
 import org.springframework.messaging.Message
 import software.amazon.awssdk.services.sqs.model.MessageAttributeValue
+import tools.jackson.core.ObjectReadContext
+import tools.jackson.core.type.TypeReference
+import tools.jackson.databind.json.JsonMapper
 
 class HmppsErrorVisibilityHandler(
-  private val objectMapper: ObjectMapper,
+  private val jsonMapper: JsonMapper,
   private val hmppsSqsProperties: HmppsSqsProperties,
   private val telemetryClient: TelemetryClient?,
 ) {
@@ -53,8 +54,8 @@ class HmppsErrorVisibilityHandler(
   private fun getEventType(message: Message<in Any>): String? {
     val payload = message.payload as? String
     return if (payload?.contains("MessageAttributes") == true) {
-      val attributes = objectMapper.readValue(
-        objectMapper.readTree(payload).at("/MessageAttributes").traverse(),
+      val attributes = jsonMapper.readValue(
+        jsonMapper.readTree(payload).at("/MessageAttributes").traverse(ObjectReadContext.Base()),
         object : TypeReference<MutableMap<String, MessageAttribute>>() {},
       )
       attributes?.get("eventType")?.Value as String?

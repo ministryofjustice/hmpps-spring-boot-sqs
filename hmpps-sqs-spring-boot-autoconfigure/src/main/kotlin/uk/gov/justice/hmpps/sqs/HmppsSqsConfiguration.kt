@@ -27,6 +27,7 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.DependsOn
 import org.springframework.context.annotation.Import
 import org.springframework.core.type.AnnotatedTypeMetadata
+import tools.jackson.databind.json.JsonMapper
 import uk.gov.justice.hmpps.sqs.audit.HmppsAuditService
 
 interface HmppsHealthContributorRegistry {
@@ -75,11 +76,11 @@ class HmppsSqsConfiguration {
 
   @Bean
   @ConditionalOnMissingBean
-  fun hmppsQueueFactory(applicationContext: ConfigurableApplicationContext, healthContributorRegistry: HmppsHealthContributorRegistry, hmppsErrorTimeoutManager: HmppsErrorVisibilityHandler, objectMapper: ObjectMapper) = HmppsQueueFactory(applicationContext, healthContributorRegistry, SqsClientFactory(), hmppsErrorTimeoutManager, objectMapper)
+  fun hmppsQueueFactory(applicationContext: ConfigurableApplicationContext, healthContributorRegistry: HmppsHealthContributorRegistry, hmppsErrorTimeoutManager: HmppsErrorVisibilityHandler, jsonMapper: JsonMapper) = HmppsQueueFactory(applicationContext, healthContributorRegistry, SqsClientFactory(), hmppsErrorTimeoutManager, jsonMapper)
 
   @Bean
   @ConditionalOnMissingBean
-  fun hmppsErrorVisibilityHandler(objectMapper: ObjectMapper, hmppsSqsProperties: HmppsSqsProperties, telemetryClient: TelemetryClient?) = HmppsErrorVisibilityHandler(objectMapper, hmppsSqsProperties, telemetryClient)
+  fun hmppsErrorVisibilityHandler(jsonMapper: JsonMapper, hmppsSqsProperties: HmppsSqsProperties, telemetryClient: TelemetryClient?) = HmppsErrorVisibilityHandler(jsonMapper, hmppsSqsProperties, telemetryClient)
 
   @Bean
   @ConditionalOnMissingBean
@@ -115,9 +116,9 @@ class HmppsSqsConfiguration {
   @Conditional(ConditionalOnAuditQueueDefinition::class)
   fun hmppsAuditService(
     hmppsQueueService: HmppsQueueService,
-    objectMapper: ObjectMapper,
+    jsonMapper: JsonMapper,
     @Value("\${spring.application.name:}") applicationName: String?,
-  ) = HmppsAuditService(hmppsQueueService, objectMapper, applicationName)
+  ) = HmppsAuditService(hmppsQueueService, jsonMapper, applicationName)
 
   @Bean
   fun configurer(objectMapper: ObjectMapper): SqsListenerConfigurer = SqsListenerConfigurer { it.objectMapper = objectMapper }
