@@ -271,7 +271,7 @@ class TelemetryPropagationTest : IntegrationTestBase() {
           .messageBody(gsonString(event))
           .messageAttributes(
             mapOf(
-              "eventType" to software.amazon.awssdk.services.sqs.model.MessageAttributeValue.builder().dataType("String").stringValue(event.type).build(),
+              "eventType" to SqsMessageAttributeValue.builder().dataType("String").stringValue(event.type).build(),
             ),
           )
           .build(),

@@ -21,11 +21,14 @@ import software.amazon.awssdk.services.sqs.model.MessageAttributeValue as SqsMes
  */
 class TraceInjectingExecutionInterceptor : ExecutionInterceptor {
   override fun modifyRequest(context: Context.ModifyRequest?, executionAttributes: ExecutionAttributes?) = when (val request = context?.request()) {
-    is PublishRequest -> withSpan(request.messageAttributes()["eventType"]?.stringValue()) {
+    is PublishRequest -> withTopicSpan(
+      eventType = request.messageAttributes()["eventType"]?.stringValue(),
+      topicArn = request.topicArn(),
+    ) {
       request.toBuilder().messageAttributes(request.messageAttributes().withSnsTelemetryContext()).build()
     }
 
-    is PublishBatchRequest -> withSpan {
+    is PublishBatchRequest -> withTopicSpan(topicArn = request.topicArn()) {
       request.toBuilder().publishBatchRequestEntries(
         request.publishBatchRequestEntries().map { entry ->
           entry.toBuilder().messageAttributes(entry.messageAttributes().withSnsTelemetryContext()).build()
@@ -33,11 +36,14 @@ class TraceInjectingExecutionInterceptor : ExecutionInterceptor {
       ).build()
     }
 
-    is SendMessageRequest -> withSpan(request.messageAttributes()["eventType"]?.stringValue()) {
+    is SendMessageRequest -> withQueueSpan(
+      eventType = request.messageAttributes()["eventType"]?.stringValue(),
+      queueUrl = request.queueUrl(),
+    ) {
       request.toBuilder().messageAttributes(request.messageAttributes().withSqsTelemetryContext()).build()
     }
 
-    is SendMessageBatchRequest -> withSpan {
+    is SendMessageBatchRequest -> withQueueSpan(queueUrl = request.queueUrl()) {
       request.toBuilder().entries(
         request.entries().map { entry ->
           entry.toBuilder().messageAttributes(entry.messageAttributes().withSqsTelemetryContext()).build()
@@ -48,9 +54,41 @@ class TraceInjectingExecutionInterceptor : ExecutionInterceptor {
     else -> request
   }
 
-  private fun <T> withSpan(eventType: String? = null, block: () -> T): T = GlobalOpenTelemetry
+  private fun <T> withTopicSpan(
+    eventType: String? = null,
+    topicArn: String? = null,
+    block: () -> T,
+  ): T = withSpan(
+    eventType = eventType,
+    system = "aws.sns",
+    queueOrTopicName = topicArn?.substringAfterLast(":"),
+    block = block,
+  )
+
+  private fun <T> withQueueSpan(
+    eventType: String? = null,
+    queueUrl: String? = null,
+    block: () -> T,
+  ): T = withSpan(
+    eventType = eventType,
+    // odd to use a _ here instead of a . like in aws.sns, but that is how it is specified in the standard.
+    system = "aws_sqs",
+    queueOrTopicName = queueUrl?.substringAfterLast("/"),
+    block = block,
+  )
+
+  private fun <T> withSpan(
+    eventType: String? = null,
+    system: String,
+    queueOrTopicName: String? = null,
+    block: () -> T,
+  ): T = GlobalOpenTelemetry
     .getTracer("hmpps-sqs")
     .spanBuilder(eventType?.let { "PUBLISH $it" } ?: "PUBLISH")
+    // Set standard messaging attributes - see https://opentelemetry.io/docs/specs/semconv/messaging/messaging-spans/
+    .setAttribute("messaging.system", system)
+    .setAttribute("messaging.operation.type", "send")
+    .setAttribute("messaging.destination.name", queueOrTopicName ?: "unknown")
     .setSpanKind(SpanKind.PRODUCER)
     .startSpan()
     .let {
