@@ -107,6 +107,7 @@ class TraceExtractingMessageInterceptor(private val objectMapper: ObjectMapper) 
     .spanBuilder(spanName)
     .setParent(this)
     .setSpanKind(SpanKind.CONSUMER)
+    // Set standard messaging attributes - see https://opentelemetry.io/docs/specs/semconv/messaging/messaging-spans/
     .setAttribute("messaging.system", "aws_sqs")
     .setAttribute("messaging.destination.name", queueName ?: "unknown")
     .startSpan()
