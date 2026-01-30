@@ -24,7 +24,8 @@ import software.amazon.awssdk.services.sqs.model.MessageAttributeValue
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest
 import uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.service.HmppsEvent
-import uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.service.Message
+import uk.gov.justice.hmpps.sqs.MessageAttributes
+import uk.gov.justice.hmpps.sqs.SnsMessage
 import uk.gov.justice.hmpps.sqs.countMessagesOnQueue
 import uk.gov.justice.hmpps.sqs.eventTypeMessageAttributes
 import uk.gov.justice.hmpps.sqs.telemetry.TraceExtractingMessageInterceptor
@@ -55,10 +56,10 @@ class TelemetryPropagationTest : IntegrationTestBase() {
     await untilCallTo { outboundTestSqsClient.countMessagesOnQueue(outboundTestQueueUrl).get() } matches { it == 1 }
 
     // Then the trace headers have been passed all the way through
-    val message = jsonMapper.readValue(outboundTestSqsClient.receiveMessage(ReceiveMessageRequest.builder().queueUrl(outboundTestQueueUrl).build()).get().messages()[0].body(), Message::class.java)
+    val message = jsonMapper.readValue(outboundTestSqsClient.receiveMessage(ReceiveMessageRequest.builder().queueUrl(outboundTestQueueUrl).build()).get().messages()[0].body(), SnsMessage::class.java)
 
-    assertThat(message.MessageAttributes["traceparent"]?.Value).contains(span.spanContext.traceId)
-    assertThat(message.MessageAttributes["traceparent"]?.Value).matches("00-${span.spanContext.traceId}-[0-9a-f]{16}-01")
+    assertThat(message.MessageAttributes["traceparent"]?.Value.toString()).contains(span.spanContext.traceId)
+    assertThat(message.MessageAttributes["traceparent"]?.Value.toString()).matches("00-${span.spanContext.traceId}-[0-9a-f]{16}-01")
 
     // And PUBLISH and RECEIVE spans are exported
     assertThat(openTelemetryExtension.spans.map { it.name }).containsAll(
@@ -90,9 +91,9 @@ class TelemetryPropagationTest : IntegrationTestBase() {
     await untilCallTo { outboundTestSqsClient.countMessagesOnQueue(outboundTestQueueUrl).get() } matches { it == 1 }
 
     // Then the trace headers have been passed all the way through
-    val message = jsonMapper.readValue(outboundTestSqsClient.receiveMessage(ReceiveMessageRequest.builder().queueUrl(outboundTestQueueUrl).build()).get().messages()[0].body(), Message::class.java)
+    val message = jsonMapper.readValue(outboundTestSqsClient.receiveMessage(ReceiveMessageRequest.builder().queueUrl(outboundTestQueueUrl).build()).get().messages()[0].body(), SnsMessage::class.java)
 
-    assertThat(message.MessageAttributes["traceparent"]?.Value).doesNotContain(span.spanContext.traceId)
+    assertThat(message.MessageAttributes["traceparent"]?.Value.toString()).doesNotContain(span.spanContext.traceId)
 
     // And PUBLISH and RECEIVE spans are exported
     assertThat(openTelemetryExtension.spans.map { it.name }).containsAll(

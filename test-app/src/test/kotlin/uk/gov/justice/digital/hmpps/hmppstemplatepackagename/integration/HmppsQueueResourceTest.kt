@@ -1,10 +1,10 @@
 package uk.gov.justice.digital.hmpps.hmppstemplatepackagename.integration
 
 import kotlinx.coroutines.test.runTest
+import org.assertj.core.api.Assertions.assertThat
 import org.awaitility.kotlin.await
 import org.awaitility.kotlin.matches
 import org.awaitility.kotlin.untilCallTo
-import org.hamcrest.Matchers.containsInAnyOrder
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
@@ -13,10 +13,10 @@ import org.junit.jupiter.params.provider.MethodSource
 import org.mockito.kotlin.verify
 import org.springframework.http.MediaType
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest
-import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.service.EventType
 import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.service.HmppsEvent
-import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.service.Message
-import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.service.MessageAttributes
+import uk.gov.justice.hmpps.sqs.EventType
+import uk.gov.justice.hmpps.sqs.MessageAttributes
+import uk.gov.justice.hmpps.sqs.SnsMessage
 import uk.gov.justice.hmpps.sqs.countMessagesOnQueue
 import java.time.Duration
 
@@ -68,8 +68,8 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
     fun `should transfer messages from inbound DLQ to inbound queue and process them`() {
       val event1 = HmppsEvent("id1", "test.type", "message3")
       val event2 = HmppsEvent("id2", "test.type", "message4")
-      val message1 = Message(gsonString(event1), "message-id1", MessageAttributes(EventType("test.type", "String")))
-      val message2 = Message(gsonString(event2), "message-id2", MessageAttributes(EventType("test.type", "String")))
+      val message1 = SnsMessage(gsonString(event1), "message-id1", MessageAttributes(EventType("test.type", "String")))
+      val message2 = SnsMessage(gsonString(event2), "message-id2", MessageAttributes(EventType("test.type", "String")))
       inboundSqsDlqClient.sendMessage(SendMessageRequest.builder().queueUrl(inboundDlqUrl).messageBody(gsonString(message1)).build())
       inboundSqsDlqClient.sendMessage(SendMessageRequest.builder().queueUrl(inboundDlqUrl).messageBody(gsonString(message2)).build())
       await untilCallTo { inboundSqsDlqClient.countMessagesOnQueue(inboundDlqUrl).get() } matches { it == 2 }
@@ -94,8 +94,8 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
     fun `should transfer messages from outbound DLQ to outbound queue and process them`() {
       val event3 = HmppsEvent("id3", "test.type", "message3")
       val event4 = HmppsEvent("id4", "test.type", "message4")
-      val message3 = Message(gsonString(event3), "message-id3", MessageAttributes(EventType("test.type", "String")))
-      val message4 = Message(gsonString(event4), "message-id4", MessageAttributes(EventType("test.type", "String")))
+      val message3 = SnsMessage(gsonString(event3), "message-id3", MessageAttributes(EventType("test.type", "String")))
+      val message4 = SnsMessage(gsonString(event4), "message-id4", MessageAttributes(EventType("test.type", "String")))
       outboundSqsDlqClientSpy.sendMessage(SendMessageRequest.builder().queueUrl(outboundDlqUrl).messageBody(gsonString(message3)).build())
       outboundSqsDlqClientSpy.sendMessage(SendMessageRequest.builder().queueUrl(outboundDlqUrl).messageBody(gsonString(message4)).build())
       await untilCallTo { outboundSqsDlqClientSpy.countMessagesOnQueue(outboundDlqUrl).get() } matches { it == 2 }
@@ -123,8 +123,8 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
     fun `should transfer messages from DLQ to inbound queue and process them`() {
       val event5 = HmppsEvent("id5", "test.type", "message5")
       val event6 = HmppsEvent("id6", "test.type", "message6")
-      val message5 = Message(gsonString(event5), "message-id5", MessageAttributes(EventType("test.type", "String")))
-      val message6 = Message(gsonString(event6), "message-id6", MessageAttributes(EventType("test.type", "String")))
+      val message5 = SnsMessage(gsonString(event5), "message-id5", MessageAttributes(EventType("test.type", "String")))
+      val message6 = SnsMessage(gsonString(event6), "message-id6", MessageAttributes(EventType("test.type", "String")))
       inboundSqsDlqClient.sendMessage(SendMessageRequest.builder().queueUrl(inboundDlqUrl).messageBody(gsonString(message5)).build())
       outboundSqsDlqClientSpy.sendMessage(SendMessageRequest.builder().queueUrl(outboundDlqUrl).messageBody(gsonString(message6)).build())
       await untilCallTo { inboundSqsDlqClient.countMessagesOnQueue(inboundDlqUrl).get() } matches { it == 1 }
@@ -198,7 +198,7 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
   inner class GetDlqMessages {
     val defaultMessageAttributes = MessageAttributes(EventType("test.type", "String"))
     val defaultEvent = HmppsEvent("event-id", "test.type", "event-contents")
-    fun testMessage(id: String) = Message(gsonString(defaultEvent), "message-$id", defaultMessageAttributes)
+    fun testMessage(id: String) = SnsMessage(gsonString(defaultEvent), "message-$id", defaultMessageAttributes)
 
     @Test
     fun `requires a valid authentication token`() {
@@ -241,13 +241,13 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
         .expectBody()
         .jsonPath("messagesFoundCount").isEqualTo(3)
         .jsonPath("messagesReturnedCount").isEqualTo(3)
-        .jsonPath("messages..body.MessageId").value(
-          containsInAnyOrder(
+        .jsonPath("messages..body.MessageId").value<List<String>> {
+          assertThat(it).containsExactlyInAnyOrder(
             "message-id-1",
             "message-id-2",
             "message-id-3",
-          ),
-        )
+          )
+        }
       // Ensure messages are quickly made visible again
       await.atMost(Duration.ofSeconds(3)) untilCallTo { inboundSqsDlqClient.countMessagesOnQueue(inboundDlqUrl).get() } matches { it == 3 }
     }

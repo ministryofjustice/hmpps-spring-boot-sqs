@@ -15,7 +15,7 @@ import software.amazon.awssdk.services.sns.model.MessageAttributeValue
 import software.amazon.awssdk.services.sns.model.PublishRequest
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest
 import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.service.HmppsEvent
-import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.service.Message
+import uk.gov.justice.hmpps.sqs.SnsMessage
 import uk.gov.justice.hmpps.sqs.countMessagesOnQueue
 
 @TestPropertySource(properties = ["hmpps.sqs.topics.outboundtopic.propagateTracing=false"])
@@ -48,7 +48,7 @@ class TelemetryNoPropagationTest : IntegrationTestBase() {
     await untilCallTo { outboundTestSqsClient.countMessagesOnQueue(outboundTestQueueUrl).get() } matches { it == 1 }
 
     // Then the trace headers have not been propagated
-    val message = jsonMapper.readValue(outboundTestSqsClient.receiveMessage(ReceiveMessageRequest.builder().queueUrl(outboundTestQueueUrl).build()).get().messages()[0].body(), Message::class.java)
+    val message = jsonMapper.readValue(outboundTestSqsClient.receiveMessage(ReceiveMessageRequest.builder().queueUrl(outboundTestQueueUrl).build()).get().messages()[0].body(), SnsMessage::class.java)
     assertThat(message.MessageAttributes["traceparent"]).isNull()
     // and that we have read the message attributes successfully
     assertThat(message.MessageAttributes["eventType"].toString()).contains("offender.movement.reception")
