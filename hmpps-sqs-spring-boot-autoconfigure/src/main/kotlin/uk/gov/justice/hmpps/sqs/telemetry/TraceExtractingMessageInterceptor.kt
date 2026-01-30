@@ -1,6 +1,5 @@
 package uk.gov.justice.hmpps.sqs.telemetry
 
-import com.fasterxml.jackson.annotation.JsonProperty
 import io.awspring.cloud.sqs.MessageHeaderUtils
 import io.awspring.cloud.sqs.listener.SqsHeaders
 import io.awspring.cloud.sqs.listener.interceptor.MessageInterceptor
@@ -17,6 +16,8 @@ import software.amazon.awssdk.services.sqs.model.MessageAttributeValue
 import tools.jackson.core.ObjectReadContext
 import tools.jackson.core.type.TypeReference
 import tools.jackson.databind.json.JsonMapper
+import uk.gov.justice.hmpps.sqs.MessageAttribute
+import uk.gov.justice.hmpps.sqs.MessageAttributes
 import java.util.concurrent.CompletionException
 import software.amazon.awssdk.services.sqs.model.Message as SqsMessage
 
@@ -53,9 +54,9 @@ class TraceExtractingMessageInterceptor(private val jsonMapper: JsonMapper) : Me
   private fun startSpanFromAttributesInPayload(payload: String, message: Message<Any>): Span? {
     val attributes = jsonMapper.readValue(
       jsonMapper.readTree(payload).at("/MessageAttributes").traverse(ObjectReadContext.Base()),
-      object : TypeReference<MutableMap<String, MessageAttribute>>() {},
+      object : TypeReference<MessageAttributes?>() {},
     )
-    val spanName = attributes?.get("eventType")?.let { "RECEIVE ${it.Value}" } ?: "RECEIVE"
+    val spanName = attributes?.eventType?.let { "RECEIVE $it" } ?: "RECEIVE"
     return attributes?.extractTelemetryContext()?.startSpan(spanName, queueName = message.headers[SqsHeaders.SQS_QUEUE_NAME_HEADER] as String?)
   }
 
@@ -113,10 +114,6 @@ class TraceExtractingMessageInterceptor(private val jsonMapper: JsonMapper) : Me
     .setAttribute("messaging.destination.name", queueName ?: "unknown")
     .startSpan()
 
-  private class MessageAttribute(
-    @param:JsonProperty("Type") val Type: String,
-    @param:JsonProperty("Value") val Value: Any?,
-  )
   companion object {
     private val log = LoggerFactory.getLogger(TraceExtractingMessageInterceptor::class.java)
   }
