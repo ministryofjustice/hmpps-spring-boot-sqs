@@ -1,11 +1,11 @@
 package uk.gov.justice.hmpps.sqs.audit
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import kotlinx.coroutines.future.await
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest
 import software.amazon.awssdk.services.sqs.model.SendMessageResponse
+import tools.jackson.databind.json.JsonMapper
 import uk.gov.justice.hmpps.sqs.AUDIT_ID
 import uk.gov.justice.hmpps.sqs.HmppsQueue
 import uk.gov.justice.hmpps.sqs.HmppsQueueService
@@ -21,7 +21,7 @@ import java.time.Instant
  */
 open class HmppsAuditService(
   private val hmppsQueueService: HmppsQueueService,
-  private val objectMapper: ObjectMapper,
+  private val jsonMapper: JsonMapper,
   private val applicationName: String?,
 ) {
   private val auditQueue by lazy { hmppsQueueService.findByQueueId(AUDIT_ID) as HmppsQueue }
@@ -34,7 +34,7 @@ open class HmppsAuditService(
   open suspend fun publishEvent(hmppsAuditEvent: HmppsAuditEvent): SendMessageResponse = auditSqsClient.sendMessage(
     SendMessageRequest.builder()
       .queueUrl(auditQueueUrl)
-      .messageBody(objectMapper.writeValueAsString(hmppsAuditEvent))
+      .messageBody(jsonMapper.writeValueAsString(hmppsAuditEvent))
       .eventTypeMessageAttributes("hmpps-audit-event")
       .build(),
   ).await().also {

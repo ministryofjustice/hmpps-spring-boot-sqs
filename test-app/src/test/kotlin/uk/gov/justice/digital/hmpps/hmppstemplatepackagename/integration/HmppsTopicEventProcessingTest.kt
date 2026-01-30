@@ -71,8 +71,8 @@ class HmppsTopicEventProcessingTest : IntegrationTestBase() {
 
       await untilCallTo { outboundTestSqsClient.countMessagesOnQueue(outboundTestQueueUrl).get() } matches { it == 1 }
 
-      val (message) = objectMapper.readValue(outboundTestSqsClient.receiveMessage(ReceiveMessageRequest.builder().queueUrl(outboundTestQueueUrl).build()).get().messages()[0].body(), Message::class.java)
-      val receivedEvent = objectMapper.readValue(message, HmppsEvent::class.java)
+      val (message) = jsonMapper.readValue(outboundTestSqsClient.receiveMessage(ReceiveMessageRequest.builder().queueUrl(outboundTestQueueUrl).build()).get().messages()[0].body(), Message::class.java)
+      val receivedEvent = jsonMapper.readValue(message, HmppsEvent::class.java)
 
       assertThat(receivedEvent.id).isEqualTo("event-id")
       assertThat(receivedEvent.type).isEqualTo("offender.movement.reception")
@@ -96,8 +96,8 @@ class HmppsTopicEventProcessingTest : IntegrationTestBase() {
 
       await untilCallTo { outboundTestSqsClient.countMessagesOnQueue(outboundTestQueueUrl).get() } matches { it == 1 }
 
-      val (message) = objectMapper.readValue(outboundTestSqsClient.receiveMessage(ReceiveMessageRequest.builder().queueUrl(outboundTestQueueUrl).build()).get().messages()[0].body(), Message::class.java)
-      val receivedEvent = objectMapper.readValue(message, HmppsEvent::class.java)
+      val (message) = jsonMapper.readValue(outboundTestSqsClient.receiveMessage(ReceiveMessageRequest.builder().queueUrl(outboundTestQueueUrl).build()).get().messages()[0].body(), Message::class.java)
+      val receivedEvent = jsonMapper.readValue(message, HmppsEvent::class.java)
 
       assertThat(receivedEvent.id).isEqualTo("event-id")
       assertThat(receivedEvent.type).isEqualTo("offender.movement.reception")
@@ -219,7 +219,7 @@ class HmppsTopicEventProcessingTest : IntegrationTestBase() {
           .messageAttributeNames("All")
           .build(),
       ).get()
-      val sqsMessage = objectMapper.readValue(
+      val sqsMessage = jsonMapper.readValue(
         response.messages()[0].body(),
         Message::class.java,
       )
@@ -239,7 +239,7 @@ class HmppsTopicEventProcessingTest : IntegrationTestBase() {
 
       await untilCallTo { outboundTestSqsClient.countMessagesOnQueue(outboundTestQueueUrl).get() } matches { it == 1 }
 
-      val sqsMessage = objectMapper.readValue(outboundTestSqsClient.receiveMessage(ReceiveMessageRequest.builder().queueUrl(outboundTestQueueUrl).build()).get().messages()[0].body(), Message::class.java)
+      val sqsMessage = jsonMapper.readValue(outboundTestSqsClient.receiveMessage(ReceiveMessageRequest.builder().queueUrl(outboundTestQueueUrl).build()).get().messages()[0].body(), Message::class.java)
       assertThat(sqsMessage.MessageAttributes["eventType"]?.Value).isEqualTo("offender.movement.reception")
       assertThat(sqsMessage.MessageAttributes["fruit"]?.Value).isEqualTo("banana")
     }
@@ -256,8 +256,8 @@ class HmppsTopicEventProcessingTest : IntegrationTestBase() {
 
     await untilCallTo { outboundTestSqsClient.countMessagesOnQueue(outboundTestQueueUrl).get() } matches { it == 1 }
 
-    val (message) = objectMapper.readValue(outboundTestSqsClient.receiveMessage(ReceiveMessageRequest.builder().queueUrl(outboundTestQueueUrl).build()).get().messages()[0].body(), Message::class.java)
-    val receivedEvent = objectMapper.readValue(message, HmppsEvent::class.java)
+    val (message) = jsonMapper.readValue(outboundTestSqsClient.receiveMessage(ReceiveMessageRequest.builder().queueUrl(outboundTestQueueUrl).build()).get().messages()[0].body(), Message::class.java)
+    val receivedEvent = jsonMapper.readValue(message, HmppsEvent::class.java)
 
     assertThat(receivedEvent.id).isEqualTo("event-id")
     assertThat(receivedEvent.type).isEqualTo("offender.movement.reception")
@@ -291,8 +291,8 @@ class HmppsTopicEventProcessingTest : IntegrationTestBase() {
 
     val (message) = ReceiveMessageRequest.builder().queueUrl(outboundTestNoDlqQueueUrl).build()
       .let { outboundTestNoDlqSqsClient.receiveMessage(it).get().messages()[0].body() }
-      .let { objectMapper.readValue(it, Message::class.java) }
-    val receivedEvent = objectMapper.readValue(message, HmppsEvent::class.java)
+      .let { jsonMapper.readValue(it, Message::class.java) }
+    val receivedEvent = jsonMapper.readValue(message, HmppsEvent::class.java)
 
     assertThat(receivedEvent.id).isEqualTo("event-id")
     assertThat(receivedEvent.type).isEqualTo("offender.movement.reception")
@@ -368,8 +368,8 @@ class HmppsTopicEventProcessingTest : IntegrationTestBase() {
 
     val (message) = ReceiveMessageRequest.builder().queueUrl(fifoQueueUrl).build()
       .let { fifoSqsClient.receiveMessage(it).get().messages()[0].body() }
-      .let { objectMapper.readValue(it, Message::class.java) }
-    val receivedEvent = objectMapper.readValue(message, HmppsEvent::class.java)
+      .let { jsonMapper.readValue(it, Message::class.java) }
+    val receivedEvent = jsonMapper.readValue(message, HmppsEvent::class.java)
 
     assertThat(receivedEvent.id).isEqualTo("fifo-event-id")
     assertThat(receivedEvent.type).isEqualTo("FIFO-EVENT")
@@ -377,8 +377,8 @@ class HmppsTopicEventProcessingTest : IntegrationTestBase() {
 
     val (message2) = ReceiveMessageRequest.builder().queueUrl(fifoQueueUrl).build()
       .let { fifoSqsClient.receiveMessage(it).get().messages()[0].body() }
-      .let { objectMapper.readValue(it, Message::class.java) }
-    val receivedEvent2 = objectMapper.readValue(message2, HmppsEvent::class.java)
+      .let { jsonMapper.readValue(it, Message::class.java) }
+    val receivedEvent2 = jsonMapper.readValue(message2, HmppsEvent::class.java)
 
     assertThat(receivedEvent2.id).isEqualTo("fifo-event-id")
     assertThat(receivedEvent2.type).isEqualTo("FIFO-EVENT")
@@ -404,8 +404,8 @@ class HmppsTopicEventProcessingTest : IntegrationTestBase() {
 
     val (message) = ReceiveMessageRequest.builder().queueUrl(fifoQueueUrl).build()
       .let { fifoSqsClient.receiveMessage(it).get().messages()[0].body() }
-      .let { objectMapper.readValue(it, Message::class.java) }
-    val receivedEvent = objectMapper.readValue(message, HmppsEvent::class.java)
+      .let { jsonMapper.readValue(it, Message::class.java) }
+    val receivedEvent = jsonMapper.readValue(message, HmppsEvent::class.java)
 
     assertThat(receivedEvent.id).isEqualTo("fifo-event-id")
     assertThat(receivedEvent.type).isEqualTo("FIFO-EVENT")

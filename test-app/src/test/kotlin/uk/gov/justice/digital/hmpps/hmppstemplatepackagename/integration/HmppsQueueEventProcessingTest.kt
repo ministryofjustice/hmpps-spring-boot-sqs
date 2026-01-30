@@ -73,7 +73,7 @@ class HmppsQueueEventProcessingTest : IntegrationTestBase() {
 
       await untilCallTo { outboundSqsOnlyTestSqsClient.countMessagesOnQueue(outboundSqsOnlyTestQueueUrl).get() } matches { it == 1 }
 
-      val message = objectMapper.readValue(
+      val message = jsonMapper.readValue(
         outboundSqsOnlyTestSqsClient.receiveMessage(
           ReceiveMessageRequest.builder().queueUrl(outboundSqsOnlyTestQueueUrl).build(),
         ).get().messages()[0].body(),
@@ -101,7 +101,7 @@ class HmppsQueueEventProcessingTest : IntegrationTestBase() {
 
       await untilCallTo { outboundSqsOnlyTestSqsClient.countMessagesOnQueue(outboundSqsOnlyTestQueueUrl).get() } matches { it == 1 }
 
-      val message = objectMapper.readValue(
+      val message = jsonMapper.readValue(
         outboundSqsOnlyTestSqsClient.receiveMessage(
           ReceiveMessageRequest.builder().queueUrl(
             outboundSqsOnlyTestQueueUrl,

@@ -1,6 +1,5 @@
 package uk.gov.justice.hmpps.sqs
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import kotlinx.coroutines.test.runTest
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
@@ -18,12 +17,13 @@ import org.springframework.boot.test.autoconfigure.json.JsonTest
 import software.amazon.awssdk.services.sqs.SqsAsyncClient
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest
 import software.amazon.awssdk.services.sqs.model.SendMessageResponse
+import tools.jackson.databind.json.JsonMapper
 import uk.gov.justice.hmpps.sqs.audit.HmppsAuditEvent
 import uk.gov.justice.hmpps.sqs.audit.HmppsAuditService
 import java.util.concurrent.CompletableFuture
 
 @JsonTest
-class HmppsAuditServiceTest(@Autowired private val objectMapper: ObjectMapper) {
+class HmppsAuditServiceTest(@param:Autowired private val jsonMapper: JsonMapper) {
   private val hmppsQueueService: HmppsQueueService = mock()
 
   private val hmppsQueue: HmppsQueue = mock()
@@ -46,7 +46,7 @@ class HmppsAuditServiceTest(@Autowired private val objectMapper: ObjectMapper) {
     fun `test publish event using domain object`() = runTest {
       HmppsAuditService(
         hmppsQueueService = hmppsQueueService,
-        objectMapper = objectMapper,
+        jsonMapper = jsonMapper,
         applicationName = null,
       )
         .publishEvent(HmppsAuditEvent(what = "bob", who = "me", service = "my-service"))
@@ -70,7 +70,7 @@ class HmppsAuditServiceTest(@Autowired private val objectMapper: ObjectMapper) {
     fun `test publish event providing service as parameter`() = runTest {
       HmppsAuditService(
         hmppsQueueService = hmppsQueueService,
-        objectMapper = objectMapper,
+        jsonMapper = jsonMapper,
         applicationName = "application-name",
       )
         .publishEvent(what = "bob", who = "me", service = "my-service")
@@ -90,7 +90,7 @@ class HmppsAuditServiceTest(@Autowired private val objectMapper: ObjectMapper) {
     fun `test publish event defaulting to application name`() = runTest {
       HmppsAuditService(
         hmppsQueueService = hmppsQueueService,
-        objectMapper = objectMapper,
+        jsonMapper = jsonMapper,
         applicationName = "application-name",
       )
         .publishEvent(what = "bob", who = "me")
@@ -111,7 +111,7 @@ class HmppsAuditServiceTest(@Autowired private val objectMapper: ObjectMapper) {
       assertThrows<NullPointerException> {
         HmppsAuditService(
           hmppsQueueService = hmppsQueueService,
-          objectMapper = objectMapper,
+          jsonMapper = jsonMapper,
           applicationName = null,
         )
           .publishEvent(what = "bob", who = "me")
@@ -124,7 +124,7 @@ class HmppsAuditServiceTest(@Autowired private val objectMapper: ObjectMapper) {
     fun `test publish event uses service parameter`() = runTest {
       HmppsAuditService(
         hmppsQueueService = hmppsQueueService,
-        objectMapper = objectMapper,
+        jsonMapper = jsonMapper,
         applicationName = null,
       )
         .publishEvent(what = "bob", who = "me", service = "my-service")

@@ -59,7 +59,7 @@ class TelemetryPropagationTest : IntegrationTestBase() {
     await untilCallTo { outboundTestSqsClient.countMessagesOnQueue(outboundTestQueueUrl).get() } matches { it == 1 }
 
     // Then the trace headers have been passed all the way through
-    val message = objectMapper.readValue(
+    val message = jsonMapper.readValue(
       outboundTestSqsClient.receiveMessage(ReceiveMessageRequest.builder().queueUrl(outboundTestQueueUrl).build()).get().messages()[0].body(),
       Message::class.java,
     )
@@ -96,7 +96,7 @@ class TelemetryPropagationTest : IntegrationTestBase() {
     await untilCallTo { outboundTestSqsClient.countMessagesOnQueue(outboundTestQueueUrl).get() } matches { it == 1 }
 
     // Then the trace headers have been passed all the way through
-    val message = objectMapper.readValue(
+    val message = jsonMapper.readValue(
       outboundTestSqsClient.receiveMessage(ReceiveMessageRequest.builder().queueUrl(outboundTestQueueUrl).build()).get().messages()[0].body(),
       Message::class.java,
     )
