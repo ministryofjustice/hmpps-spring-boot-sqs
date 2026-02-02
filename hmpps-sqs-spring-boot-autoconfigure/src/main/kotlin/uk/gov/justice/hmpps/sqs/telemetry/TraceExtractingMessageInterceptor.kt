@@ -99,7 +99,7 @@ class TraceExtractingMessageInterceptor(private val jsonMapper: JsonMapper) : Me
   private fun MutableMap<String, MessageAttribute>.extractTelemetryContext(): Context {
     val getter = object : TextMapGetter<MutableMap<String, MessageAttribute>> {
       override fun keys(carrier: MutableMap<String, MessageAttribute>) = carrier.keys
-      override fun get(carrier: MutableMap<String, MessageAttribute>?, key: String) = carrier?.get(key)?.Value.toString()
+      override fun get(carrier: MutableMap<String, MessageAttribute>?, key: String) = carrier?.get(key)?.value.toString()
     }
     return GlobalOpenTelemetry.getPropagators().textMapPropagator.extract(Context.current(), this, getter)
   }

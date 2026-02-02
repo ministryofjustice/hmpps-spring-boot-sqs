@@ -30,8 +30,8 @@ class HmppsAuditTest : IntegrationTestBase() {
   fun `event is audited and calls service with domain object`() = runTest {
     val startTime = Instant.now()
     val event = HmppsEvent("audit-id", "OFFENDER_AUDIT-OBJECT", "some event contents")
-    val message1 = SnsMessage(gsonString(event), "message-id1", MessageAttributes(EventType("OFFENDER_AUDIT-OBJECT", "String")))
-    inboundSqsClient.sendMessage(SendMessageRequest.builder().queueUrl(inboundQueueUrl).messageBody(gsonString(message1)).build())
+    val message1 = SnsMessage(jsonString(event), "message-id1", MessageAttributes(EventType("OFFENDER_AUDIT-OBJECT", "String")))
+    inboundSqsClient.sendMessage(SendMessageRequest.builder().queueUrl(inboundQueueUrl).messageBody(jsonString(message1)).build())
 
     await untilCallTo { outboundTestSqsClient.countMessagesOnQueue(outboundTestQueueUrl).get() } matches { it == 1 }
     await untilCallTo { auditSqsClient.countMessagesOnQueue(auditQueueUrl).get() } matches { it == 1 }
@@ -48,8 +48,8 @@ class HmppsAuditTest : IntegrationTestBase() {
   fun `event is audited and calls service with parameters`() = runTest {
     val startTime = Instant.now()
     val event = HmppsEvent("audit-id", "OFFENDER_AUDIT-PARAMETER", "some event contents")
-    val message1 = SnsMessage(gsonString(event), "message-id1", MessageAttributes(EventType("OFFENDER_AUDIT-PARAMETER", "String")))
-    inboundSqsClient.sendMessage(SendMessageRequest.builder().queueUrl(inboundQueueUrl).messageBody(gsonString(message1)).build())
+    val message1 = SnsMessage(jsonString(event), "message-id1", MessageAttributes(EventType("OFFENDER_AUDIT-PARAMETER", "String")))
+    inboundSqsClient.sendMessage(SendMessageRequest.builder().queueUrl(inboundQueueUrl).messageBody(jsonString(message1)).build())
 
     await untilCallTo { outboundTestSqsClient.countMessagesOnQueue(outboundTestQueueUrl).get() } matches { it == 1 }
     await untilCallTo { auditSqsClient.countMessagesOnQueue(auditQueueUrl).get() } matches { it == 1 }
@@ -66,7 +66,7 @@ class HmppsAuditTest : IntegrationTestBase() {
   fun `event is audited and open telemetry spans set to include the what`() = runTest {
     val event = HmppsEvent("audit-id", "OFFENDER_AUDIT-OBJECT", "some event contents")
     inboundSnsClient.publish(
-      PublishRequest.builder().topicArn(inboundTopicArn).message(gsonString(event)).eventTypeMessageAttributes("OFFENDER_AUDIT-OBJECT").build(),
+      PublishRequest.builder().topicArn(inboundTopicArn).message(jsonString(event)).eventTypeMessageAttributes("OFFENDER_AUDIT-OBJECT").build(),
     )
 
     await untilCallTo { outboundTestSqsClient.countMessagesOnQueue(outboundTestQueueUrl).get() } matches { it == 1 }

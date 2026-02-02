@@ -35,7 +35,7 @@ class HmppsErrorVisibilityHandlerTest : IntegrationTestBase() {
     inboundSnsClient.publish(
       PublishRequest.builder()
         .topicArn(inboundTopicArn)
-        .message(gsonString(event))
+        .message(jsonString(event))
         .messageAttributes(
           mapOf("eventType" to MessageAttributeValue.builder().dataType("String").stringValue(event.type).build()),
         )
@@ -57,7 +57,7 @@ class HmppsErrorVisibilityHandlerTest : IntegrationTestBase() {
     inboundSnsClient.publish(
       PublishRequest.builder()
         .topicArn(inboundTopicArn)
-        .message(gsonString(event))
+        .message(jsonString(event))
         .messageAttributes(
           mapOf("eventType" to MessageAttributeValue.builder().dataType("String").stringValue(event.type).build()),
         )
@@ -79,7 +79,7 @@ class HmppsErrorVisibilityHandlerTest : IntegrationTestBase() {
     inboundSnsClient.publish(
       PublishRequest.builder()
         .topicArn(inboundTopicArn)
-        .message(gsonString(event))
+        .message(jsonString(event))
         .messageAttributes(
           mapOf("eventType" to MessageAttributeValue.builder().dataType("String").stringValue(event.type).build()),
         )

@@ -30,7 +30,7 @@ class HmppsEventProcessingTest : IntegrationTestBase() {
   fun `event is published to outbound topic`() = runTest {
     val event = HmppsEvent("event-id", "OFFENDER_MOVEMENT-RECEPTION", "some event contents")
     inboundSnsClient.publish(
-      PublishRequest.builder().topicArn(inboundTopicArn).message(gsonString(event)).messageAttributes(
+      PublishRequest.builder().topicArn(inboundTopicArn).message(jsonString(event)).messageAttributes(
         mapOf("eventType" to MessageAttributeValue.builder().dataType("String").stringValue(event.type).build()),
       ).build(),
     )
@@ -49,7 +49,7 @@ class HmppsEventProcessingTest : IntegrationTestBase() {
   fun `event is published to outbound topic but the test queue subscriber ignores it`() {
     val event = HmppsEvent("event-id", "OFFENDER_MOVEMENT-DISCHARGE", "some event contents")
     inboundSnsClient.publish(
-      PublishRequest.builder().topicArn(inboundTopicArn).message(gsonString(event)).messageAttributes(
+      PublishRequest.builder().topicArn(inboundTopicArn).message(jsonString(event)).messageAttributes(
         mapOf("eventType" to MessageAttributeValue.builder().dataType("String").stringValue(event.type).build()),
       ).build(),
     )
@@ -63,7 +63,7 @@ class HmppsEventProcessingTest : IntegrationTestBase() {
   fun `event is published to outbound topic received by queue with no dlq`() = runTest {
     val event = HmppsEvent("event-id", "OFFENDER_MOVEMENT-RECEPTION", "some event contents")
     inboundSnsClient.publish(
-      PublishRequest.builder().topicArn(inboundTopicArn).message(gsonString(event)).messageAttributes(
+      PublishRequest.builder().topicArn(inboundTopicArn).message(jsonString(event)).messageAttributes(
         mapOf("eventType" to MessageAttributeValue.builder().dataType("String").stringValue(event.type).build()),
       ).build(),
     )
@@ -88,7 +88,7 @@ class HmppsEventProcessingTest : IntegrationTestBase() {
     inboundSnsClient.publish(
       PublishRequest.builder()
         .topicArn(inboundTopicArn)
-        .message(gsonString(event))
+        .message(jsonString(event))
         .messageAttributes(
           mapOf("eventType" to MessageAttributeValue.builder().dataType("String").stringValue(event.type).build()),
         )
@@ -107,7 +107,7 @@ class HmppsEventProcessingTest : IntegrationTestBase() {
     inboundSnsClient.publish(
       PublishRequest.builder()
         .topicArn(inboundTopicArn)
-        .message(gsonString(event))
+        .message(jsonString(event))
         .messageAttributes(
           mapOf("eventType" to MessageAttributeValue.builder().dataType("String").stringValue(event.type).build()),
         )
@@ -132,7 +132,7 @@ class HmppsEventProcessingTest : IntegrationTestBase() {
     val event = HmppsEvent("fifo-event-id", "FIFO-EVENT", "some FIFO contents")
     fifoTopic.publish(
       eventType = event.type,
-      event = gsonString(event),
+      event = jsonString(event),
       messageGroupId = UUID.randomUUID().toString(),
     )
 

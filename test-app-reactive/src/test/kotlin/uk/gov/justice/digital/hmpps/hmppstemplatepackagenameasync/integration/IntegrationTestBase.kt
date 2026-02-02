@@ -1,6 +1,5 @@
 package uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.integration
 
-import com.google.gson.Gson
 import com.microsoft.applicationinsights.TelemetryClient
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.extension.ExtendWith
@@ -147,7 +146,7 @@ abstract class IntegrationTestBase {
     )
   }
 
-  protected fun gsonString(any: Any) = Gson().toJson(any) as String
+  protected fun jsonString(any: Any) = jsonMapper.writeValueAsString(any)
 
   @TestConfiguration
   class SqsConfig(private val hmppsQueueFactory: HmppsQueueFactory) {

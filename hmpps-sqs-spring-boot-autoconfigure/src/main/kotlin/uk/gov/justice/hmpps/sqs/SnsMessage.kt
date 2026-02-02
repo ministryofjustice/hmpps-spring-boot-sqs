@@ -1,22 +1,32 @@
 package uk.gov.justice.hmpps.sqs
 
+import com.fasterxml.jackson.annotation.JsonProperty
+
 /** Part of the standard structure of a queue message that has originated from a topic */
 data class SnsMessage(
-  val Message: String,
-  val MessageId: String,
-  val MessageAttributes: MessageAttributes,
+  /** The payload of the message */
+  @field:JsonProperty("Message")
+  val message: String,
+  /** Unique identifier for the message */
+  @field:JsonProperty("MessageId")
+  val messageId: String,
+  /** Attributes of the message. One of these attributes should be eventType. */
+  @field:JsonProperty("MessageAttributes")
+  val messageAttributes: MessageAttributes,
 )
 
 data class MessageAttribute(
-  val Type: String,
-  val Value: Any?,
+  @field:JsonProperty("Type")
+  val type: String,
+  @field:JsonProperty("Value")
+  val value: Any?,
 )
 typealias EventType = MessageAttribute
 class MessageAttributes() : HashMap<String, MessageAttribute>() {
   constructor(attribute: EventType) : this() {
-    put(attribute.Value.toString(), attribute)
+    put(attribute.value.toString(), attribute)
   }
 
   val eventType: String?
-    get() = this["eventType"]?.Value?.toString()
+    get() = this["eventType"]?.value?.toString()
 }

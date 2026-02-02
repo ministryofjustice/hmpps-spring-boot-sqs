@@ -34,7 +34,7 @@ class TelemetryNoPropagationTest : IntegrationTestBase() {
       inboundSnsClient.publish(
         PublishRequest.builder()
           .topicArn(inboundTopicArn)
-          .message(gsonString(event))
+          .message(jsonString(event))
           .messageAttributes(
             mapOf(
               "eventType" to MessageAttributeValue.builder().dataType("String").stringValue(event.type).build(),
@@ -49,9 +49,9 @@ class TelemetryNoPropagationTest : IntegrationTestBase() {
 
     // Then the trace headers have not been propagated
     val message = jsonMapper.readValue(outboundTestSqsClient.receiveMessage(ReceiveMessageRequest.builder().queueUrl(outboundTestQueueUrl).build()).get().messages()[0].body(), SnsMessage::class.java)
-    assertThat(message.MessageAttributes["traceparent"]).isNull()
+    assertThat(message.messageAttributes["traceparent"]).isNull()
     // and that we have read the message attributes successfully
-    assertThat(message.MessageAttributes["eventType"].toString()).contains("offender.movement.reception")
+    assertThat(message.messageAttributes["eventType"].toString()).contains("offender.movement.reception")
   }
 
   private fun withSpan(block: () -> Unit): Span {

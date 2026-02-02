@@ -64,7 +64,7 @@ class HmppsTopicEventProcessingTest : IntegrationTestBase() {
     fun `events are published straight away when there are no errors`() {
       val response = outboundTopic.publish(
         eventType = "offender.movement.reception",
-        event = gsonString(HmppsEvent("event-id", "offender.movement.reception", "some event contents")),
+        event = jsonString(HmppsEvent("event-id", "offender.movement.reception", "some event contents")),
       )
 
       assertThat(response.messageId()).isNotNull()
@@ -87,7 +87,7 @@ class HmppsTopicEventProcessingTest : IntegrationTestBase() {
 
       val response = outboundTopic.publish(
         eventType = "offender.movement.reception",
-        event = gsonString(HmppsEvent("event-id", "offender.movement.reception", "some event contents")),
+        event = jsonString(HmppsEvent("event-id", "offender.movement.reception", "some event contents")),
       )
 
       assertThat(response.messageId()).isNotNull()
@@ -112,7 +112,7 @@ class HmppsTopicEventProcessingTest : IntegrationTestBase() {
 
       outboundTopic.publish(
         eventType = "offender.movement.reception",
-        event = gsonString(HmppsEvent("event-id", "offender.movement.reception", "some event contents")),
+        event = jsonString(HmppsEvent("event-id", "offender.movement.reception", "some event contents")),
       )
 
       verify(outboundSnsClientSpy, times(2)).publish(any<PublishRequest>())
@@ -131,7 +131,7 @@ class HmppsTopicEventProcessingTest : IntegrationTestBase() {
       val duration = measureTime {
         outboundTopic.publish(
           eventType = "offender.movement.reception",
-          event = gsonString(HmppsEvent("event-id", "offender.movement.reception", "some event contents")),
+          event = jsonString(HmppsEvent("event-id", "offender.movement.reception", "some event contents")),
         )
       }
 
@@ -153,7 +153,7 @@ class HmppsTopicEventProcessingTest : IntegrationTestBase() {
       val exception = assertThrows<ExecutionException> {
         outboundTopic.publish(
           eventType = "offender.movement.reception",
-          event = gsonString(HmppsEvent("event-id", "offender.movement.reception", "some event contents")),
+          event = jsonString(HmppsEvent("event-id", "offender.movement.reception", "some event contents")),
           backOffPolicy = NoBackOffPolicy(),
         )
       }
@@ -174,7 +174,7 @@ class HmppsTopicEventProcessingTest : IntegrationTestBase() {
       val duration = measureTime {
         outboundTopic.publish(
           eventType = "offender.movement.reception",
-          event = gsonString(HmppsEvent("event-id", "offender.movement.reception", "some event contents")),
+          event = jsonString(HmppsEvent("event-id", "offender.movement.reception", "some event contents")),
           retryPolicy = SimpleRetryPolicy().apply { maxAttempts = 5 },
           backOffPolicy = NoBackOffPolicy(),
         )
@@ -195,7 +195,7 @@ class HmppsTopicEventProcessingTest : IntegrationTestBase() {
       val exception = assertThrows<ExecutionException> {
         outboundTopic.publish(
           eventType = "offender.movement.reception",
-          event = gsonString(HmppsEvent("event-id", "offender.movement.reception", "some event contents")),
+          event = jsonString(HmppsEvent("event-id", "offender.movement.reception", "some event contents")),
           retryPolicy = NeverRetryPolicy(),
         )
       }
@@ -208,7 +208,7 @@ class HmppsTopicEventProcessingTest : IntegrationTestBase() {
     fun `message attributes will contain eventType`() {
       outboundTopic.publish(
         eventType = "offender.movement.reception",
-        event = gsonString(HmppsEvent("event-id", "offender.movement.reception", "some event contents")),
+        event = jsonString(HmppsEvent("event-id", "offender.movement.reception", "some event contents")),
       )
 
       await untilCallTo { outboundTestSqsClient.countMessagesOnQueue(outboundTestQueueUrl).get() } matches { it == 1 }
@@ -223,14 +223,14 @@ class HmppsTopicEventProcessingTest : IntegrationTestBase() {
         response.messages()[0].body(),
         SnsMessage::class.java,
       )
-      assertThat(sqsMessage.MessageAttributes["eventType"]?.Value).isEqualTo("offender.movement.reception")
+      assertThat(sqsMessage.messageAttributes["eventType"]?.value).isEqualTo("offender.movement.reception")
     }
 
     @Test
     fun `can overwrite attributes`() {
       outboundTopic.publish(
         eventType = "offender.movement.reception",
-        event = gsonString(HmppsEvent("event-id", "offender.movement.reception", "some event contents")),
+        event = jsonString(HmppsEvent("event-id", "offender.movement.reception", "some event contents")),
         attributes = mapOf(
           "fruit" to MessageAttributeValue.builder().dataType("String").stringValue("banana").build(),
           "eventType" to MessageAttributeValue.builder().dataType("String").stringValue("offender.movement.reception").build(),
@@ -240,8 +240,8 @@ class HmppsTopicEventProcessingTest : IntegrationTestBase() {
       await untilCallTo { outboundTestSqsClient.countMessagesOnQueue(outboundTestQueueUrl).get() } matches { it == 1 }
 
       val sqsMessage = jsonMapper.readValue(outboundTestSqsClient.receiveMessage(ReceiveMessageRequest.builder().queueUrl(outboundTestQueueUrl).build()).get().messages()[0].body(), SnsMessage::class.java)
-      assertThat(sqsMessage.MessageAttributes["eventType"]?.Value).isEqualTo("offender.movement.reception")
-      assertThat(sqsMessage.MessageAttributes["fruit"]?.Value).isEqualTo("banana")
+      assertThat(sqsMessage.messageAttributes["eventType"]?.value).isEqualTo("offender.movement.reception")
+      assertThat(sqsMessage.messageAttributes["fruit"]?.value).isEqualTo("banana")
     }
   }
 
@@ -249,7 +249,7 @@ class HmppsTopicEventProcessingTest : IntegrationTestBase() {
   fun `event is published to outbound topic`() = runTest {
     val event = HmppsEvent("event-id", "OFFENDER_MOVEMENT-RECEPTION", "some event contents")
     inboundSnsClient.publish(
-      PublishRequest.builder().topicArn(inboundTopicArn).message(gsonString(event)).messageAttributes(
+      PublishRequest.builder().topicArn(inboundTopicArn).message(jsonString(event)).messageAttributes(
         mapOf("eventType" to MessageAttributeValue.builder().dataType("String").stringValue(event.type).build()),
       ).build(),
     )
@@ -268,7 +268,7 @@ class HmppsTopicEventProcessingTest : IntegrationTestBase() {
   fun `event is published to outbound topic but the test queue subscriber ignores it`() {
     val event = HmppsEvent("event-id", "OFFENDER_MOVEMENT-DISCHARGE", "some event contents")
     inboundSnsClient.publish(
-      PublishRequest.builder().topicArn(inboundTopicArn).message(gsonString(event)).messageAttributes(
+      PublishRequest.builder().topicArn(inboundTopicArn).message(jsonString(event)).messageAttributes(
         mapOf("eventType" to MessageAttributeValue.builder().dataType("String").stringValue(event.type).build()),
       ).build(),
     )
@@ -282,7 +282,7 @@ class HmppsTopicEventProcessingTest : IntegrationTestBase() {
   fun `event is published to outbound topic received by queue with no dlq`() = runTest {
     val event = HmppsEvent("event-id", "OFFENDER_MOVEMENT-RECEPTION", "some event contents")
     inboundSnsClient.publish(
-      PublishRequest.builder().topicArn(inboundTopicArn).message(gsonString(event)).messageAttributes(
+      PublishRequest.builder().topicArn(inboundTopicArn).message(jsonString(event)).messageAttributes(
         mapOf("eventType" to MessageAttributeValue.builder().dataType("String").stringValue(event.type).build()),
       ).build(),
     )
@@ -307,7 +307,7 @@ class HmppsTopicEventProcessingTest : IntegrationTestBase() {
     inboundSnsClient.publish(
       PublishRequest.builder()
         .topicArn(inboundTopicArn)
-        .message(gsonString(event))
+        .message(jsonString(event))
         .messageAttributes(
           mapOf("eventType" to MessageAttributeValue.builder().dataType("String").stringValue(event.type).build()),
         )
@@ -326,7 +326,7 @@ class HmppsTopicEventProcessingTest : IntegrationTestBase() {
     inboundSnsClient.publish(
       PublishRequest.builder()
         .topicArn(inboundTopicArn)
-        .message(gsonString(event))
+        .message(jsonString(event))
         .messageAttributes(
           mapOf("eventType" to MessageAttributeValue.builder().dataType("String").stringValue(event.type).build()),
         )
@@ -353,14 +353,14 @@ class HmppsTopicEventProcessingTest : IntegrationTestBase() {
 
     fifoTopic.publish(
       eventType = event1.type,
-      event = gsonString(event1),
+      event = jsonString(event1),
       messageGroupId = UUID.randomUUID().toString(),
     )
     await untilCallTo { fifoSqsClient.countMessagesOnQueue(fifoQueueUrl).get() } matches { it == 1 }
 
     fifoTopic.publish(
       eventType = event2.type,
-      event = gsonString(event2),
+      event = jsonString(event2),
       messageGroupId = UUID.randomUUID().toString(),
     )
 
@@ -391,12 +391,12 @@ class HmppsTopicEventProcessingTest : IntegrationTestBase() {
 
     fifoTopic.publish(
       eventType = event.type,
-      event = gsonString(event),
+      event = jsonString(event),
       messageGroupId = UUID.randomUUID().toString(),
     )
     fifoTopic.publish(
       eventType = event.type,
-      event = gsonString(event),
+      event = jsonString(event),
       messageGroupId = UUID.randomUUID().toString(),
     )
 

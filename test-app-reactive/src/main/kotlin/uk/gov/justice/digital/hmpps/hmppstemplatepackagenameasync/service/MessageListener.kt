@@ -18,7 +18,7 @@ class InboundMessageListener(private val inboundMessageService: InboundMessageSe
   @SqsListener("inboundqueue", factory = "hmppsQueueContainerFactoryProxy")
   fun processMessage(message: String): CompletableFuture<Void?> {
     val snsMessage: SnsMessage = jsonMapper.readValue(message)
-    val event: HmppsEvent = jsonMapper.readValue(snsMessage.Message)
+    val event: HmppsEvent = jsonMapper.readValue(snsMessage.message)
     return CoroutineScope(Context.current().asContextElement()).future {
       inboundMessageService.handleMessage(event)
       null
@@ -38,7 +38,7 @@ class OutboundMessageListener(private val outboundMessageService: OutboundMessag
    */
   @SqsListener("outboundqueue", factory = "hmppsQueueContainerFactoryProxy")
   fun processMessage(message: SnsMessage) {
-    val event: HmppsEvent = jsonMapper.readValue(message.Message)
+    val event: HmppsEvent = jsonMapper.readValue(message.message)
     outboundMessageService.handleMessage(event)
   }
 }
