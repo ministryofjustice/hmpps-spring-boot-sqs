@@ -40,9 +40,9 @@ class HmppsQueueSpyBeanTest : IntegrationTestBase() {
   @Test
   fun `Can verify usage of spy bean for retry-dlq endpoint`() = runTest {
     val event = HmppsEvent("id", "test.type", "message1")
-    val message = SnsMessage(gsonString(event), "message-id", MessageAttributes(EventType("test.type", "String")))
+    val message = SnsMessage(jsonString(event), "message-id", MessageAttributes(EventType("test.type", "String")))
     val messageAttributes = mutableMapOf("eventType" to MessageAttributeValue.builder().dataType("String").stringValue("test value").build())
-    outboundSqsDlqClientSpy.sendMessage(SendMessageRequest.builder().queueUrl(outboundDlqUrl).messageBody(gsonString(message)).messageAttributes(messageAttributes).build())
+    outboundSqsDlqClientSpy.sendMessage(SendMessageRequest.builder().queueUrl(outboundDlqUrl).messageBody(jsonMapper.writeValueAsString(message)).messageAttributes(messageAttributes).build())
     await untilCallTo { outboundSqsDlqClientSpy.countMessagesOnQueue(outboundDlqUrl).get() } matches { it == 1 }
 
     webTestClient.put()
@@ -66,7 +66,7 @@ class HmppsQueueSpyBeanTest : IntegrationTestBase() {
 
   @Test
   fun `Can verify usage of spy bean for purge-queue endpoint`() = runTest {
-    outboundSqsDlqClientSpy.sendMessage(SendMessageRequest.builder().queueUrl(outboundDlqUrl).messageBody(gsonString(HmppsEvent("id", "test.type", "message1"))).build())
+    outboundSqsDlqClientSpy.sendMessage(SendMessageRequest.builder().queueUrl(outboundDlqUrl).messageBody(jsonString(HmppsEvent("id", "test.type", "message1"))).build())
     await untilCallTo { outboundSqsDlqClientSpy.countMessagesOnQueue(outboundDlqUrl).get() } matches { it == 1 }
 
     webTestClient.put()

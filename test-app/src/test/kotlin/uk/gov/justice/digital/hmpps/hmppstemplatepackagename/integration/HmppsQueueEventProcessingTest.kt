@@ -66,7 +66,7 @@ class HmppsQueueEventProcessingTest : IntegrationTestBase() {
     fun `events are sent straight away when there are no errors`() {
       val response = outboundSqsOnlyTestQueue.sendMessage(
         eventType = "offender.movement.reception",
-        event = gsonString(hmppsEvent),
+        event = jsonString(hmppsEvent),
       )
 
       assertThat(response.messageId()).isNotNull()
@@ -92,7 +92,7 @@ class HmppsQueueEventProcessingTest : IntegrationTestBase() {
 
       val response = outboundSqsOnlyTestQueue.sendMessage(
         eventType = "offender.movement.reception",
-        event = gsonString(hmppsEvent),
+        event = jsonString(hmppsEvent),
       )
 
       assertThat(response.messageId()).isNotNull()
@@ -123,7 +123,7 @@ class HmppsQueueEventProcessingTest : IntegrationTestBase() {
 
       outboundSqsOnlyTestQueue.sendMessage(
         eventType = "offender.movement.reception",
-        event = gsonString(hmppsEvent),
+        event = jsonString(hmppsEvent),
       )
 
       verify(outboundSqsOnlyTestClientSpy, times(2)).sendMessage(any<SendMessageRequest>())
@@ -142,7 +142,7 @@ class HmppsQueueEventProcessingTest : IntegrationTestBase() {
       val duration = measureTime {
         outboundSqsOnlyTestQueue.sendMessage(
           eventType = "offender.movement.reception",
-          event = gsonString(hmppsEvent),
+          event = jsonString(hmppsEvent),
         )
       }
 
@@ -164,7 +164,7 @@ class HmppsQueueEventProcessingTest : IntegrationTestBase() {
       val exception = assertThrows<ExecutionException> {
         outboundSqsOnlyTestQueue.sendMessage(
           eventType = "offender.movement.reception",
-          event = gsonString(hmppsEvent),
+          event = jsonString(hmppsEvent),
           backOffPolicy = NoBackOffPolicy(),
         )
       }
@@ -185,7 +185,7 @@ class HmppsQueueEventProcessingTest : IntegrationTestBase() {
       val duration = measureTime {
         outboundSqsOnlyTestQueue.sendMessage(
           eventType = "offender.movement.reception",
-          event = gsonString(hmppsEvent),
+          event = jsonString(hmppsEvent),
           retryPolicy = SimpleRetryPolicy().apply { maxAttempts = 5 },
           backOffPolicy = NoBackOffPolicy(),
         )
@@ -206,7 +206,7 @@ class HmppsQueueEventProcessingTest : IntegrationTestBase() {
       val exception = assertThrows<ExecutionException> {
         outboundSqsOnlyTestQueue.sendMessage(
           eventType = "offender.movement.reception",
-          event = gsonString(hmppsEvent),
+          event = jsonString(hmppsEvent),
           retryPolicy = NeverRetryPolicy(),
         )
       }
@@ -219,7 +219,7 @@ class HmppsQueueEventProcessingTest : IntegrationTestBase() {
     fun `message attributes will contain eventType`() {
       outboundSqsOnlyTestQueue.sendMessage(
         eventType = "offender.movement.reception",
-        event = gsonString(hmppsEvent),
+        event = jsonString(hmppsEvent),
       )
 
       await untilCallTo { outboundSqsOnlyTestSqsClient.countMessagesOnQueue(outboundSqsOnlyTestQueueUrl).get() } matches { it == 1 }
@@ -238,7 +238,7 @@ class HmppsQueueEventProcessingTest : IntegrationTestBase() {
     fun `can overwrite attributes`() {
       outboundSqsOnlyTestQueue.sendMessage(
         eventType = "offender.movement.reception",
-        event = gsonString(hmppsEvent),
+        event = jsonString(hmppsEvent),
         attributes = mapOf(
           "fruit" to MessageAttributeValue.builder().dataType("String").stringValue("banana").build(),
           "eventType" to MessageAttributeValue.builder().dataType("String").stringValue("offender.movement.reception.overwritten").build(),
@@ -262,7 +262,7 @@ class HmppsQueueEventProcessingTest : IntegrationTestBase() {
     fun `will delay sending`() {
       val response = outboundSqsOnlyTestQueue.sendMessage(
         eventType = "offender.movement.reception",
-        event = gsonString(hmppsEvent),
+        event = jsonString(hmppsEvent),
         delayInSeconds = 1,
       )
 

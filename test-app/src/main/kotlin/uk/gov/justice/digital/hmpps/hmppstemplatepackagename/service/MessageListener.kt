@@ -18,7 +18,7 @@ class InboundMessageListener(private val inboundMessageService: InboundMessageSe
    */
   @SqsListener("inboundqueue", factory = "hmppsQueueContainerFactoryProxy")
   fun processMessage(message: SnsMessage) {
-    val event: HmppsEvent = jsonMapper.readValue(message.Message)
+    val event: HmppsEvent = jsonMapper.readValue(message.message)
     inboundMessageService.handleMessage(event)
   }
 }
@@ -30,7 +30,7 @@ class OutboundMessageListener(private val outboundMessageService: OutboundMessag
   @SqsListener("outboundqueue", factory = "hmppsQueueContainerFactoryProxy")
   fun processMessage(message: String) {
     val message: SnsMessage = jsonMapper.readValue(message)
-    val event: HmppsEvent = jsonMapper.readValue(message.Message)
+    val event: HmppsEvent = jsonMapper.readValue(message.message)
     outboundMessageService.handleMessage(event)
   }
 }

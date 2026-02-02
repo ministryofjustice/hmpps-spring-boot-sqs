@@ -67,10 +67,10 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
     fun `should transfer messages from inbound DLQ to inbound queue and process them`() {
       val event1 = HmppsEvent("id1", "test.type", "message3")
       val event2 = HmppsEvent("id2", "test.type", "message4")
-      val message1 = SnsMessage(gsonString(event1), "message-id1", MessageAttributes(EventType("test.type", "String")))
-      val message2 = SnsMessage(gsonString(event2), "message-id2", MessageAttributes(EventType("test.type", "String")))
-      inboundSqsDlqClient.sendMessage(SendMessageRequest.builder().queueUrl(inboundDlqUrl).messageBody(gsonString(message1)).build())
-      inboundSqsDlqClient.sendMessage(SendMessageRequest.builder().queueUrl(inboundDlqUrl).messageBody(gsonString(message2)).build())
+      val message1 = SnsMessage(jsonString(event1), "message-id1", MessageAttributes(EventType("test.type", "String")))
+      val message2 = SnsMessage(jsonString(event2), "message-id2", MessageAttributes(EventType("test.type", "String")))
+      inboundSqsDlqClient.sendMessage(SendMessageRequest.builder().queueUrl(inboundDlqUrl).messageBody(jsonMapper.writeValueAsString(message1)).build())
+      inboundSqsDlqClient.sendMessage(SendMessageRequest.builder().queueUrl(inboundDlqUrl).messageBody(jsonMapper.writeValueAsString(message2)).build())
       await untilCallTo { inboundSqsDlqClient.countMessagesOnQueue(inboundDlqUrl).get() } matches { it == 2 }
 
       webTestClient.put()
@@ -93,10 +93,10 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
     fun `should transfer messages from outbound DLQ to outbound queue and process them`() {
       val event3 = HmppsEvent("id3", "test.type", "message3")
       val event4 = HmppsEvent("id4", "test.type", "message4")
-      val message3 = SnsMessage(gsonString(event3), "message-id3", MessageAttributes(EventType("test.type", "String")))
-      val message4 = SnsMessage(gsonString(event4), "message-id4", MessageAttributes(EventType("test.type", "String")))
-      outboundSqsDlqClientSpy.sendMessage(SendMessageRequest.builder().queueUrl(outboundDlqUrl).messageBody(gsonString(message3)).build())
-      outboundSqsDlqClientSpy.sendMessage(SendMessageRequest.builder().queueUrl(outboundDlqUrl).messageBody(gsonString(message4)).build())
+      val message3 = SnsMessage(jsonString(event3), "message-id3", MessageAttributes(EventType("test.type", "String")))
+      val message4 = SnsMessage(jsonString(event4), "message-id4", MessageAttributes(EventType("test.type", "String")))
+      outboundSqsDlqClientSpy.sendMessage(SendMessageRequest.builder().queueUrl(outboundDlqUrl).messageBody(jsonMapper.writeValueAsString(message3)).build())
+      outboundSqsDlqClientSpy.sendMessage(SendMessageRequest.builder().queueUrl(outboundDlqUrl).messageBody(jsonMapper.writeValueAsString(message4)).build())
       await untilCallTo { outboundSqsDlqClientSpy.countMessagesOnQueue(outboundDlqUrl).get() } matches { it == 2 }
 
       webTestClient.put()
@@ -120,10 +120,10 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
     fun `should transfer messages from DLQ to inbound queue and process them`() {
       val event5 = HmppsEvent("id5", "test.type", "message5")
       val event6 = HmppsEvent("id6", "test.type", "message6")
-      val message5 = SnsMessage(gsonString(event5), "message-id5", MessageAttributes(EventType("test.type", "String")))
-      val message6 = SnsMessage(gsonString(event6), "message-id6", MessageAttributes(EventType("test.type", "String")))
-      inboundSqsDlqClient.sendMessage(SendMessageRequest.builder().queueUrl(inboundDlqUrl).messageBody(gsonString(message5)).build())
-      outboundSqsDlqClientSpy.sendMessage(SendMessageRequest.builder().queueUrl(outboundDlqUrl).messageBody(gsonString(message6)).build())
+      val message5 = SnsMessage(jsonString(event5), "message-id5", MessageAttributes(EventType("test.type", "String")))
+      val message6 = SnsMessage(jsonString(event6), "message-id6", MessageAttributes(EventType("test.type", "String")))
+      inboundSqsDlqClient.sendMessage(SendMessageRequest.builder().queueUrl(inboundDlqUrl).messageBody(jsonMapper.writeValueAsString(message5)).build())
+      outboundSqsDlqClientSpy.sendMessage(SendMessageRequest.builder().queueUrl(outboundDlqUrl).messageBody(jsonMapper.writeValueAsString(message6)).build())
       await untilCallTo { inboundSqsDlqClient.countMessagesOnQueue(inboundDlqUrl).get() } matches { it == 1 }
       await untilCallTo { outboundSqsDlqClientSpy.countMessagesOnQueue(outboundDlqUrl).get() } matches { it == 1 }
 
@@ -150,8 +150,8 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
   inner class PurgeQueue {
     @Test
     fun `should purge the inbound dlq`() {
-      inboundSqsDlqClient.sendMessage(SendMessageRequest.builder().queueUrl(inboundDlqUrl).messageBody(gsonString(HmppsEvent("id1", "test.type", "message1"))).build())
-      inboundSqsDlqClient.sendMessage(SendMessageRequest.builder().queueUrl(inboundDlqUrl).messageBody(gsonString(HmppsEvent("id2", "test.type", "message2"))).build())
+      inboundSqsDlqClient.sendMessage(SendMessageRequest.builder().queueUrl(inboundDlqUrl).messageBody(jsonString(HmppsEvent("id1", "test.type", "message1"))).build())
+      inboundSqsDlqClient.sendMessage(SendMessageRequest.builder().queueUrl(inboundDlqUrl).messageBody(jsonString(HmppsEvent("id2", "test.type", "message2"))).build())
       await untilCallTo { inboundSqsDlqClient.countMessagesOnQueue(inboundDlqUrl).get() } matches { it == 2 }
 
       webTestClient.put()
@@ -166,8 +166,8 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
 
     @Test
     fun `should purge the outbound dlq`() {
-      outboundSqsDlqClientSpy.sendMessage(SendMessageRequest.builder().queueUrl(outboundDlqUrl).messageBody(gsonString(HmppsEvent("id3", "test.type", "message3"))).build())
-      outboundSqsDlqClientSpy.sendMessage(SendMessageRequest.builder().queueUrl(outboundDlqUrl).messageBody(gsonString(HmppsEvent("id4", "test.type", "message4"))).build())
+      outboundSqsDlqClientSpy.sendMessage(SendMessageRequest.builder().queueUrl(outboundDlqUrl).messageBody(jsonString(HmppsEvent("id3", "test.type", "message3"))).build())
+      outboundSqsDlqClientSpy.sendMessage(SendMessageRequest.builder().queueUrl(outboundDlqUrl).messageBody(jsonString(HmppsEvent("id4", "test.type", "message4"))).build())
       await untilCallTo { outboundSqsDlqClientSpy.countMessagesOnQueue(outboundDlqUrl).get() } matches { it == 2 }
 
       webTestClient.put()
@@ -195,7 +195,7 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
   inner class GetDlqMessages {
     val defaultMessageAttributes = MessageAttributes(EventType("test.type", "String"))
     val defaultEvent = HmppsEvent("event-id", "test.type", "event-contents")
-    fun testMessage(id: String) = SnsMessage(gsonString(defaultEvent), "message-$id", defaultMessageAttributes)
+    fun testMessage(id: String) = SnsMessage(jsonString(defaultEvent), "message-$id", defaultMessageAttributes)
 
     @Test
     fun `requires a valid authentication token`() {
@@ -226,7 +226,7 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
     @Test
     fun `should get all messages from the specified dlq`() {
       for (i in 1..3) {
-        inboundSqsDlqClient.sendMessage(SendMessageRequest.builder().queueUrl(inboundDlqUrl).messageBody(gsonString(testMessage("id-$i"))).build())
+        inboundSqsDlqClient.sendMessage(SendMessageRequest.builder().queueUrl(inboundDlqUrl).messageBody(jsonMapper.writeValueAsString(testMessage("id-$i"))).build())
       }
       await untilCallTo { inboundSqsDlqClient.countMessagesOnQueue(inboundDlqUrl).get() } matches { it == 3 }
 
@@ -250,7 +250,7 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
     @Test
     fun `should be able to specify the max number of returned messages`() {
       for (i in 1..20) {
-        inboundSqsDlqClient.sendMessage(SendMessageRequest.builder().queueUrl(inboundDlqUrl).messageBody(gsonString(testMessage("id-$i"))).build())
+        inboundSqsDlqClient.sendMessage(SendMessageRequest.builder().queueUrl(inboundDlqUrl).messageBody(jsonString(testMessage("id-$i"))).build())
       }
       await untilCallTo { inboundSqsDlqClient.countMessagesOnQueue(inboundDlqUrl).get() } matches { it == 20 }
 

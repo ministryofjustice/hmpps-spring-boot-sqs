@@ -24,7 +24,6 @@ import software.amazon.awssdk.services.sqs.model.MessageAttributeValue
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest
 import uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.service.HmppsEvent
-import uk.gov.justice.hmpps.sqs.MessageAttributes
 import uk.gov.justice.hmpps.sqs.SnsMessage
 import uk.gov.justice.hmpps.sqs.countMessagesOnQueue
 import uk.gov.justice.hmpps.sqs.eventTypeMessageAttributes
@@ -46,7 +45,7 @@ class TelemetryPropagationTest : IntegrationTestBase() {
       inboundSnsClient.publish(
         PublishRequest.builder()
           .topicArn(inboundTopicArn)
-          .message(gsonString(event))
+          .message(jsonString(event))
           .messageAttributes(mapOf("eventType" to SnsMessageAttributeValue.builder().dataType("String").stringValue(event.type).build()))
           .build(),
       )
@@ -58,8 +57,8 @@ class TelemetryPropagationTest : IntegrationTestBase() {
     // Then the trace headers have been passed all the way through
     val message = jsonMapper.readValue(outboundTestSqsClient.receiveMessage(ReceiveMessageRequest.builder().queueUrl(outboundTestQueueUrl).build()).get().messages()[0].body(), SnsMessage::class.java)
 
-    assertThat(message.MessageAttributes["traceparent"]?.Value.toString()).contains(span.spanContext.traceId)
-    assertThat(message.MessageAttributes["traceparent"]?.Value.toString()).matches("00-${span.spanContext.traceId}-[0-9a-f]{16}-01")
+    assertThat(message.messageAttributes["traceparent"]?.value.toString()).contains(span.spanContext.traceId)
+    assertThat(message.messageAttributes["traceparent"]?.value.toString()).matches("00-${span.spanContext.traceId}-[0-9a-f]{16}-01")
 
     // And PUBLISH and RECEIVE spans are exported
     assertThat(openTelemetryExtension.spans.map { it.name }).containsAll(
@@ -81,7 +80,7 @@ class TelemetryPropagationTest : IntegrationTestBase() {
       inboundSnsClient.publish(
         PublishRequest.builder()
           .topicArn(inboundTopicArn)
-          .message(gsonString(event))
+          .message(jsonString(event))
           .eventTypeMessageAttributes(event.type, noTracing = true)
           .build(),
       )
@@ -93,7 +92,7 @@ class TelemetryPropagationTest : IntegrationTestBase() {
     // Then the trace headers have been passed all the way through
     val message = jsonMapper.readValue(outboundTestSqsClient.receiveMessage(ReceiveMessageRequest.builder().queueUrl(outboundTestQueueUrl).build()).get().messages()[0].body(), SnsMessage::class.java)
 
-    assertThat(message.MessageAttributes["traceparent"]?.Value.toString()).doesNotContain(span.spanContext.traceId)
+    assertThat(message.messageAttributes["traceparent"]?.value.toString()).doesNotContain(span.spanContext.traceId)
 
     // And PUBLISH and RECEIVE spans are exported
     assertThat(openTelemetryExtension.spans.map { it.name }).containsAll(
@@ -143,7 +142,7 @@ class TelemetryPropagationTest : IntegrationTestBase() {
       inboundSqsOnlyClient.sendMessage(
         SendMessageRequest.builder()
           .queueUrl(inboundSqsOnlyQueueUrl)
-          .messageBody(gsonString(event))
+          .messageBody(jsonString(event))
           .messageAttributes(
             mapOf(
               "eventType" to MessageAttributeValue.builder().dataType("String").stringValue(event.type).build(),
@@ -186,7 +185,7 @@ class TelemetryPropagationTest : IntegrationTestBase() {
       inboundSqsOnlyClient.sendMessage(
         SendMessageRequest.builder()
           .queueUrl(inboundSqsOnlyQueueUrl)
-          .messageBody(gsonString(event))
+          .messageBody(jsonString(event))
           .eventTypeMessageAttributes(event.type, noTracing = true)
           .build(),
       )
@@ -226,7 +225,7 @@ class TelemetryPropagationTest : IntegrationTestBase() {
       inboundSnsClient.publish(
         PublishRequest.builder()
           .topicArn(inboundTopicArn)
-          .message(gsonString(event))
+          .message(jsonString(event))
           .messageAttributes(
             mapOf(
               "eventType" to SnsMessageAttributeValue.builder().dataType("String").stringValue(event.type).build(),
@@ -261,7 +260,7 @@ class TelemetryPropagationTest : IntegrationTestBase() {
       inboundSqsOnlyClient.sendMessage(
         SendMessageRequest.builder()
           .queueUrl(inboundSqsOnlyQueueUrl)
-          .messageBody(gsonString(event))
+          .messageBody(jsonString(event))
           .messageAttributes(
             mapOf(
               "eventType" to MessageAttributeValue.builder().dataType("String").stringValue(event.type).build(),
