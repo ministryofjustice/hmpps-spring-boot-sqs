@@ -13,6 +13,7 @@ import java.util.concurrent.CompletableFuture
 @Service
 class SqsOnlyInboundMessageListener(private val inboundMessageService: SqsOnlyInboundMessageService, private val jsonMapper: JsonMapper) {
 
+  /** Example of a listener that takes a String and manually converts into its own type. */
   @SqsListener("inboundsqsonlyqueue", factory = "hmppsQueueContainerFactoryProxy")
   fun processMessage(message: String): CompletableFuture<Void?> {
     val event: HmppsEvent = jsonMapper.readValue(message)
@@ -24,16 +25,17 @@ class SqsOnlyInboundMessageListener(private val inboundMessageService: SqsOnlyIn
 }
 
 @Service
-class SqsOnlyOutboundMessageListener(private val outboundMessageService: SqsOnlyOutboundMessageService, private val jsonMapper: JsonMapper) {
+class SqsOnlyOutboundMessageListener(private val outboundMessageService: SqsOnlyOutboundMessageService) {
 
+  /**
+   * Example of a listener that gets the library to do the conversion into its own type.
+   *
+   * The queue in this example is not linked to a topic so therefore the payload comes through direct in the message
+   * field and doesn't need to be unwrapped.
+   */
   @SqsListener("outboundsqsonlyqueue", factory = "hmppsQueueContainerFactoryProxy")
-  fun processMessage(message: String): CompletableFuture<Void?> {
-    val event: HmppsEvent = jsonMapper.readValue(message)
-    return CoroutineScope(Context.current().asContextElement()).future {
-      outboundMessageService.handleMessage(event)
-      null
-    }
+  fun processMessage(message: HmppsEvent): CompletableFuture<Void?> = CoroutineScope(Context.current().asContextElement()).future {
+    outboundMessageService.handleMessage(message)
+    null
   }
 }
-
-data class SqsHmppsEvent(val id: String, val type: String, val contents: String)

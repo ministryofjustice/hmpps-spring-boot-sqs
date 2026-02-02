@@ -11,10 +11,10 @@ import org.junit.jupiter.api.extension.RegisterExtension
 import software.amazon.awssdk.services.sns.model.PublishRequest
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest
-import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.service.EventType
 import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.service.HmppsEvent
-import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.service.Message
-import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.service.MessageAttributes
+import uk.gov.justice.hmpps.sqs.EventType
+import uk.gov.justice.hmpps.sqs.MessageAttributes
+import uk.gov.justice.hmpps.sqs.SnsMessage
 import uk.gov.justice.hmpps.sqs.audit.HmppsAuditEvent
 import uk.gov.justice.hmpps.sqs.countMessagesOnQueue
 import uk.gov.justice.hmpps.sqs.eventTypeMessageAttributes
@@ -30,7 +30,7 @@ class HmppsAuditTest : IntegrationTestBase() {
   fun `event is audited and calls service with domain object`() = runTest {
     val startTime = Instant.now()
     val event = HmppsEvent("audit-id", "OFFENDER_AUDIT-OBJECT", "some event contents")
-    val message1 = Message(gsonString(event), "message-id1", MessageAttributes(EventType("OFFENDER_AUDIT-OBJECT", "String")))
+    val message1 = SnsMessage(gsonString(event), "message-id1", MessageAttributes(EventType("OFFENDER_AUDIT-OBJECT", "String")))
     inboundSqsClient.sendMessage(SendMessageRequest.builder().queueUrl(inboundQueueUrl).messageBody(gsonString(message1)).build())
 
     await untilCallTo { outboundTestSqsClient.countMessagesOnQueue(outboundTestQueueUrl).get() } matches { it == 1 }
@@ -48,7 +48,7 @@ class HmppsAuditTest : IntegrationTestBase() {
   fun `event is audited and calls service with parameters`() = runTest {
     val startTime = Instant.now()
     val event = HmppsEvent("audit-id", "OFFENDER_AUDIT-PARAMETER", "some event contents")
-    val message1 = Message(gsonString(event), "message-id1", MessageAttributes(EventType("OFFENDER_AUDIT-PARAMETER", "String")))
+    val message1 = SnsMessage(gsonString(event), "message-id1", MessageAttributes(EventType("OFFENDER_AUDIT-PARAMETER", "String")))
     inboundSqsClient.sendMessage(SendMessageRequest.builder().queueUrl(inboundQueueUrl).messageBody(gsonString(message1)).build())
 
     await untilCallTo { outboundTestSqsClient.countMessagesOnQueue(outboundTestQueueUrl).get() } matches { it == 1 }
