@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.microsoft.applicationinsights.TelemetryClient
 import io.awspring.cloud.sqs.config.SqsBootstrapConfiguration
 import io.awspring.cloud.sqs.config.SqsListenerConfigurer
+import io.awspring.cloud.sqs.support.converter.legacy.LegacyJackson2MessageConverterMigration
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.AutoConfigureBefore
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
@@ -121,7 +122,9 @@ class HmppsSqsConfiguration {
   ) = HmppsAuditService(hmppsQueueService, jsonMapper, applicationName)
 
   @Bean
-  fun configurer(objectMapper: ObjectMapper): SqsListenerConfigurer = SqsListenerConfigurer { it.objectMapper = objectMapper }
+  fun configurer(objectMapper: ObjectMapper): SqsListenerConfigurer = SqsListenerConfigurer {
+    it.setJacksonMessageConverterMigration(LegacyJackson2MessageConverterMigration(objectMapper))
+  }
 }
 
 class ConditionalOnNonAuditQueueDefinition : Condition {

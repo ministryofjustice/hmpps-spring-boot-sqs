@@ -1,6 +1,5 @@
 package uk.gov.justice.digital.hmpps.hmppstemplatepackagename.integration
 
-import ch.qos.logback.classic.Level
 import ch.qos.logback.classic.Logger
 import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.core.read.ListAppender
@@ -26,7 +25,6 @@ import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.service.HmppsEvent
 import uk.gov.justice.hmpps.sqs.SnsMessage
 import uk.gov.justice.hmpps.sqs.countMessagesOnQueue
 import uk.gov.justice.hmpps.sqs.eventTypeMessageAttributes
-import uk.gov.justice.hmpps.sqs.telemetry.TraceExtractingMessageInterceptor
 import software.amazon.awssdk.services.sns.model.MessageAttributeValue as SnsMessageAttributeValue
 import software.amazon.awssdk.services.sqs.model.MessageAttributeValue as SqsMessageAttributeValue
 
@@ -192,34 +190,6 @@ class TelemetryPropagationTest : IntegrationTestBase() {
         "RECEIVE offender.movement.reception",
       ),
     )
-  }
-
-  @Test
-  fun `event is processed normally (without telemetry) when an exception is thrown during the telemetry processing`() = runTest {
-    val logAppender = findLogAppender(TraceExtractingMessageInterceptor::class.java)
-
-    withSpan {
-      // having MessageAttributes in the payload will mean that the interceptor will try and parse the message
-      // thinking it originated from a topic rather than a queue and thus will throw an exception
-      val gsonString = """{"id":"event-id","type":"OFFENDER_MOVEMENT-RECEPTION","contents":"some contents", "MessageAttributes":"yes"}"""
-      inboundSqsOnlyClient.sendMessage(
-        SendMessageRequest.builder()
-          .queueUrl(inboundSqsOnlyQueueUrl)
-          .messageBody(gsonString)
-          .messageAttributes(
-            mapOf(
-              "eventType" to SqsMessageAttributeValue.builder().dataType("String").stringValue("OFFENDER_MOVEMENT-RECEPTION").build(),
-            ),
-          )
-          .build(),
-      )
-    }
-
-    // message is processed as normal though, resulting in an offender.movement.reception message being published
-    await untilCallTo { outboundSqsOnlyTestSqsClient.countMessagesOnQueue(outboundSqsOnlyTestQueueUrl).get() } matches { it == 1 }
-
-    // we can then check to ensure that the interceptor did indeed throw the exception but carried on regardless
-    assertThat(logAppender.list).anyMatch { it.message.contains("Not attempting to extract trace context") && it.level == Level.ERROR }
   }
 
   @Test

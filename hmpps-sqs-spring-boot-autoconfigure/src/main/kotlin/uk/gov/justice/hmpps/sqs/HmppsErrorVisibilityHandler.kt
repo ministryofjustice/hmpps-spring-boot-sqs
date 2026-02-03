@@ -52,6 +52,11 @@ class HmppsErrorVisibilityHandler(
   }
 
   private fun getEventType(message: Message<in Any>): String? {
+    // If the listener has typed the message parameter then this needs to be an SnsMessage for us to read it
+    val typedPayload = message.payload as? SnsMessage
+    if (typedPayload?.messageAttributes?.eventType != null) return typedPayload.messageAttributes.eventType
+
+    // otherwise the listener could have the message parameter as a string
     val payload = message.payload as? String
     return if (payload?.contains("MessageAttributes") == true) {
       val attributes = jsonMapper.readValue(

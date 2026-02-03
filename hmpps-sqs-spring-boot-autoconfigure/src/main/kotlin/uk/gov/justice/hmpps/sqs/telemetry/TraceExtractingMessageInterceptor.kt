@@ -18,6 +18,7 @@ import tools.jackson.core.type.TypeReference
 import tools.jackson.databind.json.JsonMapper
 import uk.gov.justice.hmpps.sqs.MessageAttribute
 import uk.gov.justice.hmpps.sqs.MessageAttributes
+import uk.gov.justice.hmpps.sqs.SnsMessage
 import java.util.concurrent.CompletionException
 import software.amazon.awssdk.services.sqs.model.Message as SqsMessage
 
@@ -34,16 +35,31 @@ import software.amazon.awssdk.services.sqs.model.Message as SqsMessage
  */
 class TraceExtractingMessageInterceptor(private val jsonMapper: JsonMapper) : MessageInterceptor<Any> {
   override fun intercept(message: Message<Any>): Message<Any> = try {
-    // seems to be only true for messages that originated on a topic
-    val payload = message.payload as? String
-    val span = (if (payload?.contains("MessageAttributes") == true) startSpanFromAttributesInPayload(payload, message) else null)
-      // otherwise we have to grab the attributes from the message
-      // unfortunately these appear to then be not populated for a topic, so have to do both
-      ?: startSpanFromAttributesInHeader(message)
+    // messages that originate from a topic will have the span information in the message payload
+    val spanFromPayload = tryToStartSpanFromTypedPayload(message) ?: tryToStartSpanFromStringPayload(message)
+    // otherwise we have to grab the attributes from the message
+    // unfortunately these appear to then be not populated for a topic, so have to do both
+    val span = spanFromPayload ?: startSpanFromAttributesInHeader(message)
     span?.let { message.withHeader("span", span).withHeader("scope", span.makeCurrent()) } ?: message
   } catch (e: Exception) {
     log.error("Not attempting to extract trace context from message: {} with headers: {} due to exception", message.payload, message.headers, e)
     message
+  }
+
+  private fun tryToStartSpanFromTypedPayload(message: Message<Any>): Span? = with(message.payload as? SnsMessage) {
+    if (this?.messageAttributes?.eventType != null) startSpanFromAttributes(messageAttributes, message) else null
+  }
+
+  private fun tryToStartSpanFromStringPayload(message: Message<Any>): Span? = with(message.payload as? String) {
+    if (this?.contains("MessageAttributes") == true) {
+      val attributes = jsonMapper.readValue(
+        jsonMapper.readTree(this).at("/MessageAttributes").traverse(ObjectReadContext.Base()),
+        object : TypeReference<MessageAttributes?>() {},
+      )
+      startSpanFromAttributes(attributes, message)
+    } else {
+      null
+    }
   }
 
   private fun startSpanFromAttributesInHeader(message: Message<Any>): Span? = extractAttributes(message)?.let { attributes ->
@@ -51,11 +67,7 @@ class TraceExtractingMessageInterceptor(private val jsonMapper: JsonMapper) : Me
     attributes.extractTelemetryContextFromValues().startSpan(spanName, queueName = message.headers[SqsHeaders.SQS_QUEUE_NAME_HEADER] as String?)
   }
 
-  private fun startSpanFromAttributesInPayload(payload: String, message: Message<Any>): Span? {
-    val attributes = jsonMapper.readValue(
-      jsonMapper.readTree(payload).at("/MessageAttributes").traverse(ObjectReadContext.Base()),
-      object : TypeReference<MessageAttributes?>() {},
-    )
+  private fun startSpanFromAttributes(attributes: MessageAttributes?, message: Message<Any>): Span? {
     val spanName = attributes?.eventType?.let { "RECEIVE $it" } ?: "RECEIVE"
     return attributes?.extractTelemetryContext()?.startSpan(spanName, queueName = message.headers[SqsHeaders.SQS_QUEUE_NAME_HEADER] as String?)
   }

@@ -64,7 +64,36 @@ class HmppsErrorVisibilityHandlerTest(@param:Autowired private val jsonMapper: J
   }
 
   @Test
-  fun `should set timeout to the event level timeout for a message with event type in payload MessageAttributes`() {
+  fun `should set timeout to the event level timeout for a message with event type in typed payload MessageAttributes`() {
+    val properties = HmppsSqsProperties(
+      defaultErrorVisibilityTimeout = listOf(1),
+      queues = mapOf(
+        "some-queue-id" to HmppsSqsProperties.QueueConfig(
+          "some-queue",
+          errorVisibilityTimeout = listOf(2),
+          eventErrorVisibilityTimeout = mapOf("some-event" to listOf(3)),
+        ),
+      ),
+    )
+    val message = GenericMessage<Any>(
+      SnsMessage(
+        "message",
+        "messageId",
+        MessageAttributes().apply {
+          put("eventType", MessageAttribute("String", "some-event"))
+        },
+      ),
+      mapOf("Sqs_Msa_ApproximateReceiveCount" to "1", "Sqs_VisibilityTimeout" to queueMessageVisibility),
+    )
+    val handler = aHandler(jsonMapper, properties)
+
+    handler.setErrorVisibilityTimeout(message, someQueue)
+
+    verify(queueMessageVisibility).changeTo(3)
+  }
+
+  @Test
+  fun `should set timeout to the event level timeout for a message with event type in string payload MessageAttributes`() {
     val properties = HmppsSqsProperties(
       defaultErrorVisibilityTimeout = listOf(1),
       queues = mapOf(
