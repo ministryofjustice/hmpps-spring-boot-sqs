@@ -29,6 +29,8 @@ import uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.service.Outbou
 import uk.gov.justice.hmpps.sqs.HmppsQueueFactory
 import uk.gov.justice.hmpps.sqs.HmppsQueueService
 import uk.gov.justice.hmpps.sqs.HmppsSqsProperties
+import uk.gov.justice.hmpps.sqs.MessageAttribute
+import uk.gov.justice.hmpps.sqs.MessageAttributes
 import uk.gov.justice.hmpps.sqs.MissingQueueException
 import uk.gov.justice.hmpps.sqs.MissingTopicException
 
@@ -147,6 +149,10 @@ abstract class IntegrationTestBase {
   }
 
   protected fun jsonString(any: Any) = jsonMapper.writeValueAsString(any)
+
+  protected fun messageAttributesWithEventType(eventType: String): MessageAttributes = MessageAttributes().apply {
+    put("eventType", MessageAttribute("String", eventType))
+  }
 
   @TestConfiguration
   class SqsConfig(private val hmppsQueueFactory: HmppsQueueFactory) {

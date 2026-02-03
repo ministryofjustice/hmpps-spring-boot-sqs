@@ -14,8 +14,6 @@ import org.mockito.kotlin.verify
 import org.springframework.http.MediaType
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest
 import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.service.HmppsEvent
-import uk.gov.justice.hmpps.sqs.EventType
-import uk.gov.justice.hmpps.sqs.MessageAttributes
 import uk.gov.justice.hmpps.sqs.SnsMessage
 import uk.gov.justice.hmpps.sqs.countMessagesOnQueue
 import java.time.Duration
@@ -68,8 +66,8 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
     fun `should transfer messages from inbound DLQ to inbound queue and process them`() {
       val event1 = HmppsEvent("id1", "test.type", "message3")
       val event2 = HmppsEvent("id2", "test.type", "message4")
-      val message1 = SnsMessage(jsonString(event1), "message-id1", MessageAttributes(EventType("test.type", "String")))
-      val message2 = SnsMessage(jsonString(event2), "message-id2", MessageAttributes(EventType("test.type", "String")))
+      val message1 = SnsMessage(jsonString(event1), "message-id1", messageAttributesWithEventType("test.type"))
+      val message2 = SnsMessage(jsonString(event2), "message-id2", messageAttributesWithEventType("test.type"))
       inboundSqsDlqClient.sendMessage(SendMessageRequest.builder().queueUrl(inboundDlqUrl).messageBody(jsonMapper.writeValueAsString(message1)).build())
       inboundSqsDlqClient.sendMessage(SendMessageRequest.builder().queueUrl(inboundDlqUrl).messageBody(jsonMapper.writeValueAsString(message2)).build())
       await untilCallTo { inboundSqsDlqClient.countMessagesOnQueue(inboundDlqUrl).get() } matches { it == 2 }
@@ -94,8 +92,8 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
     fun `should transfer messages from outbound DLQ to outbound queue and process them`() {
       val event3 = HmppsEvent("id3", "test.type", "message3")
       val event4 = HmppsEvent("id4", "test.type", "message4")
-      val message3 = SnsMessage(jsonString(event3), "message-id3", MessageAttributes(EventType("test.type", "String")))
-      val message4 = SnsMessage(jsonString(event4), "message-id4", MessageAttributes(EventType("test.type", "String")))
+      val message3 = SnsMessage(jsonString(event3), "message-id3", messageAttributesWithEventType("test.type"))
+      val message4 = SnsMessage(jsonString(event4), "message-id4", messageAttributesWithEventType("test.type"))
       outboundSqsDlqClientSpy.sendMessage(SendMessageRequest.builder().queueUrl(outboundDlqUrl).messageBody(jsonMapper.writeValueAsString(message3)).build())
       outboundSqsDlqClientSpy.sendMessage(SendMessageRequest.builder().queueUrl(outboundDlqUrl).messageBody(jsonMapper.writeValueAsString(message4)).build())
       await untilCallTo { outboundSqsDlqClientSpy.countMessagesOnQueue(outboundDlqUrl).get() } matches { it == 2 }
@@ -123,8 +121,8 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
     fun `should transfer messages from DLQ to inbound queue and process them`() {
       val event5 = HmppsEvent("id5", "test.type", "message5")
       val event6 = HmppsEvent("id6", "test.type", "message6")
-      val message5 = SnsMessage(jsonString(event5), "message-id5", MessageAttributes(EventType("test.type", "String")))
-      val message6 = SnsMessage(jsonString(event6), "message-id6", MessageAttributes(EventType("test.type", "String")))
+      val message5 = SnsMessage(jsonString(event5), "message-id5", messageAttributesWithEventType("test.type"))
+      val message6 = SnsMessage(jsonString(event6), "message-id6", messageAttributesWithEventType("test.type"))
       inboundSqsDlqClient.sendMessage(SendMessageRequest.builder().queueUrl(inboundDlqUrl).messageBody(jsonMapper.writeValueAsString(message5)).build())
       outboundSqsDlqClientSpy.sendMessage(SendMessageRequest.builder().queueUrl(outboundDlqUrl).messageBody(jsonMapper.writeValueAsString(message6)).build())
       await untilCallTo { inboundSqsDlqClient.countMessagesOnQueue(inboundDlqUrl).get() } matches { it == 1 }
@@ -196,7 +194,7 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
 
   @Nested
   inner class GetDlqMessages {
-    val defaultMessageAttributes = MessageAttributes(EventType("test.type", "String"))
+    val defaultMessageAttributes = messageAttributesWithEventType("test.type")
     val defaultEvent = HmppsEvent("event-id", "test.type", "event-contents")
     fun testMessage(id: String) = SnsMessage(jsonString(defaultEvent), "message-$id", defaultMessageAttributes)
 

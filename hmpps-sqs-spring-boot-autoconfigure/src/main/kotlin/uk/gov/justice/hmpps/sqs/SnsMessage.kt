@@ -16,17 +16,14 @@ data class SnsMessage(
 )
 
 data class MessageAttribute(
+  /** The data type of the message attribute, often String. */
   @field:JsonProperty("Type")
   val type: String,
   @field:JsonProperty("Value")
   val value: Any?,
 )
-typealias EventType = MessageAttribute
-class MessageAttributes() : HashMap<String, MessageAttribute>() {
-  constructor(attribute: EventType) : this() {
-    put(attribute.value.toString(), attribute)
-  }
 
+class MessageAttributes : HashMap<String, MessageAttribute>() {
   val eventType: String?
     get() = this["eventType"]?.value?.toString()
 }
