@@ -15,18 +15,20 @@ plugins {
 }
 
 dependencies {
-  implementation(platform("software.amazon.awssdk:bom:2.41.16"))
+  implementation(platform("software.amazon.awssdk:bom:2.41.20"))
   implementation("org.springframework.boot:spring-boot-starter-webmvc")
   implementation("org.springframework.boot:spring-boot-starter-webflux")
   implementation("org.springframework.boot:spring-boot-starter-security")
   implementation("org.springframework.boot:spring-boot-starter-actuator")
-  // couldn't use spring-cloud-aws-dependencies platform bom as it brings in spring-modulith-events-aws-sns at 1.4.0-SNAPSHOT
-  // this then stopped the library being published with an error
-  // - Dependency management dependencies to SNAPSHOT versions not allowed for dependency: org.springframework.modulith:spring-modulith-events-aws-sns
-  api("io.awspring.cloud:spring-cloud-aws-starter:3.4.2") { exclude("io.awspring.cloud", "spring-cloud-aws-autoconfigure") }
-  implementation("io.awspring.cloud:spring-cloud-aws-sns:3.4.2")
-  implementation("io.awspring.cloud:spring-cloud-aws-sqs:3.4.2")
-  implementation("com.google.code.gson:gson:2.13.2")
+  implementation("org.springframework.boot:spring-boot-starter-gson")
+  implementation("io.awspring.cloud:spring-cloud-aws-starter-sqs:4.0.0") {
+    exclude("io.awspring.cloud", "spring-cloud-aws-autoconfigure")
+  }
+  implementation("io.awspring.cloud:spring-cloud-aws-starter-sns:4.0.0") {
+    exclude("io.awspring.cloud", "spring-cloud-aws-autoconfigure")
+  }
+  implementation("io.awspring.cloud:spring-cloud-aws-sns:4.0.0")
+  implementation("io.awspring.cloud:spring-cloud-aws-sqs:4.0.0")
   implementation("com.microsoft.azure:applicationinsights-core:3.7.7")
   implementation("io.opentelemetry:opentelemetry-api")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")

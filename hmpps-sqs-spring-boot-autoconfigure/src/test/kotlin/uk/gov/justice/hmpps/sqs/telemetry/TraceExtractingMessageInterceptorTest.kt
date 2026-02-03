@@ -14,6 +14,9 @@ import org.springframework.boot.test.autoconfigure.json.JsonTest
 import org.springframework.messaging.support.GenericMessage
 import software.amazon.awssdk.services.sqs.model.Message
 import tools.jackson.databind.json.JsonMapper
+import uk.gov.justice.hmpps.sqs.MessageAttribute
+import uk.gov.justice.hmpps.sqs.MessageAttributes
+import uk.gov.justice.hmpps.sqs.SnsMessage
 import uk.gov.justice.hmpps.sqs.eventTypeSqsMap
 import uk.gov.justice.hmpps.sqs.findLogAppender
 import uk.gov.justice.hmpps.sqs.formattedMessages
@@ -47,7 +50,30 @@ class TraceExtractingMessageInterceptorTest(@param:Autowired private val jsonMap
   }
 
   @Test
-  fun `should start a new span if MessageAttributes payload contains MessageAttributes`() {
+  fun `should start a new span if MessageAttributes payload contains Typed MessageAttributes`() {
+    val message = GenericMessage<Any>(
+      SnsMessage(
+        "hello",
+        "messageId",
+        MessageAttributes().apply {
+          put("eventType", MessageAttribute("String", "my-event"))
+        },
+      ),
+    )
+
+    val responseMessage = TraceExtractingMessageInterceptor(jsonMapper).intercept(message)
+
+    assertThat(responseMessage.headers).containsAllEntriesOf(message.headers)
+
+    // this shows that we have created a new span
+    assertThat(responseMessage.headers).containsKeys("span", "scope")
+
+    // and no failure log messages
+    assertThat(logger.formattedMessages()).isEmpty()
+  }
+
+  @Test
+  fun `should start a new span if MessageAttributes payload contains String MessageAttributes`() {
     val message = GenericMessage<Any>("""{"MessageId":null,"MessageAttributes":{"my-event":{"Type": "String", "Value": "my-event"}}}""", mapOf("eventType" to "myevent"))
 
     val responseMessage = TraceExtractingMessageInterceptor(jsonMapper).intercept(message)
