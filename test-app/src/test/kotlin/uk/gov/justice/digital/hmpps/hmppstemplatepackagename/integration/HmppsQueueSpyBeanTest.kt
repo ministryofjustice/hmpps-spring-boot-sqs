@@ -16,8 +16,6 @@ import software.amazon.awssdk.services.sqs.model.PurgeQueueRequest
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest
 import software.amazon.awssdk.services.sqs.model.StartMessageMoveTaskRequest
 import uk.gov.justice.digital.hmpps.hmppstemplatepackagename.service.HmppsEvent
-import uk.gov.justice.hmpps.sqs.EventType
-import uk.gov.justice.hmpps.sqs.MessageAttributes
 import uk.gov.justice.hmpps.sqs.SnsMessage
 import uk.gov.justice.hmpps.sqs.countMessagesOnQueue
 
@@ -39,7 +37,7 @@ class HmppsQueueSpyBeanTest : IntegrationTestBase() {
   @Test
   fun `Can verify usage of spy bean for retry-dlq endpoint`() {
     val event = HmppsEvent("id", "test.type", "message1")
-    val message = SnsMessage(jsonString(event), "message-id", MessageAttributes(EventType("test.type", "String")))
+    val message = SnsMessage(jsonString(event), "message-id", messageAttributesWithEventType("test.type"))
     val messageAttributes = mutableMapOf("eventType" to MessageAttributeValue.builder().dataType("String").stringValue("test value").build())
     outboundSqsDlqClientSpy.sendMessage(SendMessageRequest.builder().queueUrl(outboundDlqUrl).messageBody(jsonMapper.writeValueAsString(message)).messageAttributes(messageAttributes).build())
     await untilCallTo { outboundSqsDlqClientSpy.countMessagesOnQueue(outboundDlqUrl).get() } matches { it == 1 }
