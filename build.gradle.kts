@@ -1,6 +1,6 @@
 plugins {
   id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
-  kotlin("jvm") version "2.3.0" apply false
+  kotlin("jvm") version "2.3.10" apply false
 }
 
 /*
