@@ -10,7 +10,7 @@ plugins {
 
 dependencies {
   api(project(":hmpps-sqs-spring-boot-autoconfigure"))
-  api(platform("software.amazon.awssdk:bom:2.41.34"))
+  api(platform("software.amazon.awssdk:bom:2.42.11"))
   api("software.amazon.awssdk:sns")
   api("io.awspring.cloud:spring-cloud-aws-starter-sqs:4.0.0") {
     exclude("io.awspring.cloud", "spring-cloud-aws-autoconfigure")

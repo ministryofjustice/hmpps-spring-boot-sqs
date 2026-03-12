@@ -33,7 +33,7 @@ import software.amazon.awssdk.services.sqs.model.Message as SqsMessage
  * Note that we have to wrap the whole processing in a try catch block since exceptions thrown from a MessageInterceptor
  * cause the message to be lost and not go on the dead letter queue.
  */
-class TraceExtractingMessageInterceptor(private val jsonMapper: JsonMapper) : MessageInterceptor<Any> {
+class TraceExtractingMessageInterceptor(private val jsonMapper: JsonMapper, private val propagateTracing: Boolean) : MessageInterceptor<Any> {
   override fun intercept(message: Message<Any>): Message<Any> = try {
     // messages that originate from a topic will have the span information in the message payload
     val spanFromPayload = tryToStartSpanFromTypedPayload(message) ?: tryToStartSpanFromStringPayload(message)
@@ -102,16 +102,20 @@ class TraceExtractingMessageInterceptor(private val jsonMapper: JsonMapper) : Me
 
   private fun MutableMap<String, MessageAttributeValue>.extractTelemetryContextFromValues(): Context {
     val getter = object : TextMapGetter<MutableMap<String, MessageAttributeValue>> {
-      override fun keys(carrier: MutableMap<String, MessageAttributeValue>) = carrier.keys
-      override fun get(carrier: MutableMap<String, MessageAttributeValue>?, key: String) = carrier?.get(key)?.stringValue()
+      override fun keys(carrier: MutableMap<String, MessageAttributeValue>) = carrier.keys.filter {
+        if (propagateTracing) notAW3CTraceField(it) else true
+      }
+      override fun get(carrier: MutableMap<String, MessageAttributeValue>?, key: String) = if (propagateTracing || notAW3CTraceField(key)) carrier?.get(key)?.stringValue() else null
     }
     return GlobalOpenTelemetry.getPropagators().textMapPropagator.extract(Context.current(), this, getter)
   }
 
   private fun MutableMap<String, MessageAttribute>.extractTelemetryContext(): Context {
     val getter = object : TextMapGetter<MutableMap<String, MessageAttribute>> {
-      override fun keys(carrier: MutableMap<String, MessageAttribute>) = carrier.keys
-      override fun get(carrier: MutableMap<String, MessageAttribute>?, key: String) = carrier?.get(key)?.value.toString()
+      override fun keys(carrier: MutableMap<String, MessageAttribute>) = carrier.keys.filter {
+        if (propagateTracing) notAW3CTraceField(it) else true
+      }
+      override fun get(carrier: MutableMap<String, MessageAttribute>?, key: String) = if (propagateTracing || notAW3CTraceField(key)) carrier?.get(key)?.value.toString() else null
     }
     return GlobalOpenTelemetry.getPropagators().textMapPropagator.extract(Context.current(), this, getter)
   }
@@ -128,5 +132,6 @@ class TraceExtractingMessageInterceptor(private val jsonMapper: JsonMapper) : Me
 
   companion object {
     private val log = LoggerFactory.getLogger(TraceExtractingMessageInterceptor::class.java)
+    private fun notAW3CTraceField(string: String): Boolean = !setOf("traceparent", "tracestate").contains(string)
   }
 }

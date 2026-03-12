@@ -72,9 +72,7 @@ class HmppsQueueFactory(
     .builder<Any>()
     .sqsAsyncClient(queue.sqsClient)
     .apply {
-      if (propagateTracing) {
-        messageInterceptor(TraceExtractingMessageInterceptor(jsonMapper))
-      }
+      messageInterceptor(TraceExtractingMessageInterceptor(jsonMapper, propagateTracing))
     }
     .errorHandler(
       object : ErrorHandler<Any> {

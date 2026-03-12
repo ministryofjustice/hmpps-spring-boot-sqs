@@ -7,6 +7,7 @@ import io.opentelemetry.api.common.AttributeKey
 import io.opentelemetry.sdk.testing.junit5.OpenTelemetryExtension
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
 import org.springframework.beans.factory.annotation.Autowired
@@ -35,155 +36,190 @@ class TraceExtractingMessageInterceptorTest(@param:Autowired private val jsonMap
     logger = findLogAppender(TraceExtractingMessageInterceptor::class.java)
   }
 
-  @Test
-  fun `should do nothing if no MessageAttributes header found`() {
-    val message = GenericMessage<Any>("123", mapOf("eventType" to "myevent"))
+  @Nested
+  inner class DoNothingTests {
+    @Test
+    fun `should do nothing if no MessageAttributes header found`() {
+      val message = GenericMessage<Any>("123", mapOf("eventType" to "myevent"))
 
-    val responseMessage = TraceExtractingMessageInterceptor(jsonMapper).intercept(message)
+      val responseMessage = TraceExtractingMessageInterceptor(jsonMapper, true).intercept(message)
 
-    assertThat(responseMessage.headers).isEqualTo(message.headers)
-    // no new span will be created, so don't expect these keys
-    assertThat(responseMessage.headers).doesNotContainKeys("span", "scope")
+      assertThat(responseMessage.headers).isEqualTo(message.headers)
+      // no new span will be created, so don't expect these keys
+      assertThat(responseMessage.headers).doesNotContainKeys("span", "scope")
 
-    // and log message informing us that it couldn't find the header message attributes
-    assertThat(logger.formattedMessages()).anyMatch { it.contains("Unable to find header") }
+      // and log message informing us that it couldn't find the header message attributes
+      assertThat(logger.formattedMessages()).anyMatch { it.contains("Unable to find header") }
+    }
+
+    @Test
+    fun `should do nothing if MessageAttributes payload is null`() {
+      val message = GenericMessage<Any>("""{"MessageId":null,"MessageAttributes":null}""", mapOf("eventType" to "myevent"))
+
+      val responseMessage = TraceExtractingMessageInterceptor(jsonMapper, true).intercept(message)
+
+      assertThat(responseMessage.headers).isEqualTo(message.headers)
+
+      // no new span will be created, so don't expect these keys
+      assertThat(responseMessage.headers).doesNotContainKeys("span", "scope")
+
+      // and log message informing us that it couldn't find the header message attributes
+      assertThat(logger.formattedMessages()).anyMatch { it.contains("Unable to find header") }
+    }
+
+    @Test
+    fun `should do nothing if MessageAttributes payload is invalid json`() {
+      val message = GenericMessage<Any>("""{invalid json "MessageAttributes":null""", mapOf("eventType" to "myevent"))
+
+      val responseMessage = TraceExtractingMessageInterceptor(jsonMapper, true).intercept(message)
+
+      assertThat(responseMessage.headers).isEqualTo(message.headers)
+
+      // no new span will be created, so don't expect these keys
+      assertThat(responseMessage.headers).doesNotContainKeys("span", "scope")
+
+      // but we do get a failure log message
+      assertThat(logger.formattedMessages()).anyMatch { it.contains("Not attempting to extract trace context from message") }
+    }
   }
 
-  @Test
-  fun `should start a new span if MessageAttributes payload contains Typed MessageAttributes`() {
-    val message = GenericMessage<Any>(
-      SnsMessage(
-        "hello",
-        "messageId",
-        MessageAttributes().apply {
-          put("eventType", MessageAttribute("String", "my-event"))
-        },
-      ),
-    )
+  @Nested
+  inner class NewSpanTests {
+    @Test
+    fun `should start a new span if MessageAttributes payload contains Typed MessageAttributes`() {
+      val message = GenericMessage<Any>(
+        SnsMessage(
+          "hello",
+          "messageId",
+          MessageAttributes().apply {
+            put("eventType", MessageAttribute("String", "my-event"))
+          },
+        ),
+      )
 
-    val responseMessage = TraceExtractingMessageInterceptor(jsonMapper).intercept(message)
+      val responseMessage = TraceExtractingMessageInterceptor(jsonMapper, true).intercept(message)
 
-    assertThat(responseMessage.headers).containsAllEntriesOf(message.headers)
+      assertThat(responseMessage.headers).containsAllEntriesOf(message.headers)
 
-    // this shows that we have created a new span
-    assertThat(responseMessage.headers).containsKeys("span", "scope")
+      // this shows that we have created a new span
+      assertThat(responseMessage.headers).containsKeys("span", "scope")
 
-    // and no failure log messages
-    assertThat(logger.formattedMessages()).isEmpty()
-  }
+      // and no failure log messages
+      assertThat(logger.formattedMessages()).isEmpty()
+    }
 
-  @Test
-  fun `should start a new span if MessageAttributes payload contains String MessageAttributes`() {
-    val message = GenericMessage<Any>("""{"MessageId":null,"MessageAttributes":{"my-event":{"Type": "String", "Value": "my-event"}}}""", mapOf("eventType" to "myevent"))
+    @Test
+    fun `should start a new span if MessageAttributes payload contains String MessageAttributes`() {
+      val message = GenericMessage<Any>(
+        """{"MessageId":null,"MessageAttributes":{"my-event":{"Type": "String", "Value": "my-event"}}}""",
+        mapOf("eventType" to "myevent"),
+      )
 
-    val responseMessage = TraceExtractingMessageInterceptor(jsonMapper).intercept(message)
+      val responseMessage = TraceExtractingMessageInterceptor(jsonMapper, true).intercept(message)
 
-    assertThat(responseMessage.headers).containsAllEntriesOf(message.headers)
+      assertThat(responseMessage.headers).containsAllEntriesOf(message.headers)
 
-    // this shows that we have created a new span
-    assertThat(responseMessage.headers).containsKeys("span", "scope")
+      // this shows that we have created a new span
+      assertThat(responseMessage.headers).containsKeys("span", "scope")
 
-    // and no failure log messages
-    assertThat(logger.formattedMessages()).isEmpty()
-  }
+      // and no failure log messages
+      assertThat(logger.formattedMessages()).isEmpty()
+    }
 
-  @Test
-  fun `span sets destination name to unknown if queue name not found`() {
-    val message = GenericMessage<Any>("""{"MessageId":null,"MessageAttributes":{"eventType": {"Type": "String", "Value": "my-event"}}}""", mapOf("eventType" to "myevent"))
+    @Test
+    fun `should start a new span if MessageAttributes payload is null but message attributes exist in header`() {
+      val message = GenericMessage<Any>(
+        """{"MessageId":null,"MessageAttributes":null}""",
+        mapOf("eventType" to "myevent", SqsHeaders.SQS_SOURCE_DATA_HEADER to Message.builder().messageAttributes(eventTypeSqsMap("myevent")).build()),
+      )
 
-    val interceptor = TraceExtractingMessageInterceptor(jsonMapper)
-    val responseMessage = interceptor.intercept(message)
-    interceptor.afterProcessing(responseMessage, null)
-    assertThat(responseMessage.headers).containsAllEntriesOf(message.headers)
+      val responseMessage = TraceExtractingMessageInterceptor(jsonMapper, true).intercept(message)
 
-    assertThat(openTelemetryExtension.spans.map { it.name }).contains("RECEIVE my-event")
-    val attributes = openTelemetryExtension.spans.find { it.name == "RECEIVE my-event" }!!.attributes
-    assertThat(attributes.get(AttributeKey.stringKey("messaging.system"))).isEqualTo("aws_sqs")
-    assertThat(attributes.get(AttributeKey.stringKey("messaging.destination.name"))).isEqualTo("unknown")
-  }
+      assertThat(responseMessage.headers).containsAllEntriesOf(message.headers)
 
-  @Test
-  fun `span sets destination name if attributes in payload`() {
-    val message = GenericMessage<Any>("""{"MessageId":null,"MessageAttributes":{"eventType": {"Type": "String", "Value": "my-event"}}}""", mapOf("eventType" to "myevent", SqsHeaders.SQS_QUEUE_NAME_HEADER to "my-queue"))
+      // this shows that we have created a new span
+      assertThat(responseMessage.headers).containsKeys("span", "scope")
 
-    val interceptor = TraceExtractingMessageInterceptor(jsonMapper)
-    val responseMessage = interceptor.intercept(message)
-    interceptor.afterProcessing(responseMessage, null)
-    assertThat(responseMessage.headers).containsAllEntriesOf(message.headers)
-    assertThat(openTelemetryExtension.spans.map { it.name }).contains("RECEIVE my-event")
+      // and no failure log messages
+      assertThat(logger.formattedMessages()).isEmpty()
+    }
 
-    val attributes = openTelemetryExtension.spans.find { it.name == "RECEIVE my-event" }!!.attributes
-    assertThat(attributes.get(AttributeKey.stringKey("messaging.system"))).isEqualTo("aws_sqs")
-    assertThat(attributes.get(AttributeKey.stringKey("messaging.destination.name"))).isEqualTo("my-queue")
-  }
+    @Test
+    fun `should copy w3c trace attributes when creating a new span with propagation on`() {
+      val message = GenericMessage<Any>(
+        """
+            {
+              "MessageId":null,
+              "MessageAttributes":{
+                "my-event":{"Type": "String", "Value": "my-event"},
+                "traceparent":{"Type": "String", "Value": "90aef759bc324f5bb6cd7227ea0f2870"}
+              }
+            }
+        """.trimIndent(),
+        mapOf("eventType" to "myevent"),
+      )
 
-  @Test
-  fun `span sets destination name if attributes in header`() {
-    val message = GenericMessage<Any>(
-      """{"MessageId":null}""",
-      mapOf(
-        "eventType" to "myevent",
-        SqsHeaders.SQS_QUEUE_NAME_HEADER to "my-queue",
-        SqsHeaders.SQS_SOURCE_DATA_HEADER to Message.builder().messageAttributes(eventTypeSqsMap("my-event")).build(),
-      ),
-    )
+      val responseMessage = TraceExtractingMessageInterceptor(jsonMapper, true).intercept(message)
 
-    val interceptor = TraceExtractingMessageInterceptor(jsonMapper)
-    val responseMessage = interceptor.intercept(message)
-    interceptor.afterProcessing(responseMessage, null)
-    assertThat(responseMessage.headers).containsAllEntriesOf(message.headers)
+      assertThat(responseMessage.headers).containsAllEntriesOf(message.headers)
 
-    assertThat(openTelemetryExtension.spans.map { it.name }).contains("RECEIVE my-event")
-    val attributes = openTelemetryExtension.spans.find { it.name == "RECEIVE my-event" }!!.attributes
-    assertThat(attributes.get(AttributeKey.stringKey("messaging.system"))).isEqualTo("aws_sqs")
-    assertThat(attributes.get(AttributeKey.stringKey("messaging.destination.name"))).isEqualTo("my-queue")
-  }
+      // this shows that we have created a new span
+      assertThat(responseMessage.headers).containsKeys("span", "scope")
 
-  @Test
-  fun `should do nothing if MessageAttributes payload is null`() {
-    val message = GenericMessage<Any>("""{"MessageId":null,"MessageAttributes":null}""", mapOf("eventType" to "myevent"))
+      // and no failure log messages
+      assertThat(logger.formattedMessages()).isEmpty()
+    }
 
-    val responseMessage = TraceExtractingMessageInterceptor(jsonMapper).intercept(message)
+    @Test
+    fun `span sets destination name to unknown if queue name not found`() {
+      val message = GenericMessage<Any>("""{"MessageId":null,"MessageAttributes":{"eventType": {"Type": "String", "Value": "my-event"}}}""", mapOf("eventType" to "myevent"))
 
-    assertThat(responseMessage.headers).isEqualTo(message.headers)
+      val interceptor = TraceExtractingMessageInterceptor(jsonMapper, true)
+      val responseMessage = interceptor.intercept(message)
+      interceptor.afterProcessing(responseMessage, null)
+      assertThat(responseMessage.headers).containsAllEntriesOf(message.headers)
 
-    // no new span will be created, so don't expect these keys
-    assertThat(responseMessage.headers).doesNotContainKeys("span", "scope")
+      assertThat(openTelemetryExtension.spans.map { it.name }).contains("RECEIVE my-event")
+      val attributes = openTelemetryExtension.spans.find { it.name == "RECEIVE my-event" }!!.attributes
+      assertThat(attributes.get(AttributeKey.stringKey("messaging.system"))).isEqualTo("aws_sqs")
+      assertThat(attributes.get(AttributeKey.stringKey("messaging.destination.name"))).isEqualTo("unknown")
+    }
 
-    // and log message informing us that it couldn't find the header message attributes
-    assertThat(logger.formattedMessages()).anyMatch { it.contains("Unable to find header") }
-  }
+    @Test
+    fun `span sets destination name if attributes in payload`() {
+      val message = GenericMessage<Any>("""{"MessageId":null,"MessageAttributes":{"eventType": {"Type": "String", "Value": "my-event"}}}""", mapOf("eventType" to "myevent", SqsHeaders.SQS_QUEUE_NAME_HEADER to "my-queue"))
 
-  @Test
-  fun `should do nothing if MessageAttributes payload is invalid json`() {
-    val message = GenericMessage<Any>("""{invalid json "MessageAttributes":null""", mapOf("eventType" to "myevent"))
+      val interceptor = TraceExtractingMessageInterceptor(jsonMapper, true)
+      val responseMessage = interceptor.intercept(message)
+      interceptor.afterProcessing(responseMessage, null)
+      assertThat(responseMessage.headers).containsAllEntriesOf(message.headers)
+      assertThat(openTelemetryExtension.spans.map { it.name }).contains("RECEIVE my-event")
 
-    val responseMessage = TraceExtractingMessageInterceptor(jsonMapper).intercept(message)
+      val attributes = openTelemetryExtension.spans.find { it.name == "RECEIVE my-event" }!!.attributes
+      assertThat(attributes.get(AttributeKey.stringKey("messaging.system"))).isEqualTo("aws_sqs")
+      assertThat(attributes.get(AttributeKey.stringKey("messaging.destination.name"))).isEqualTo("my-queue")
+    }
 
-    assertThat(responseMessage.headers).isEqualTo(message.headers)
+    @Test
+    fun `span sets destination name if attributes in header`() {
+      val message = GenericMessage<Any>(
+        """{"MessageId":null}""",
+        mapOf(
+          "eventType" to "myevent",
+          SqsHeaders.SQS_QUEUE_NAME_HEADER to "my-queue",
+          SqsHeaders.SQS_SOURCE_DATA_HEADER to Message.builder().messageAttributes(eventTypeSqsMap("my-event")).build(),
+        ),
+      )
 
-    // no new span will be created, so don't expect these keys
-    assertThat(responseMessage.headers).doesNotContainKeys("span", "scope")
+      val interceptor = TraceExtractingMessageInterceptor(jsonMapper, true)
+      val responseMessage = interceptor.intercept(message)
+      interceptor.afterProcessing(responseMessage, null)
+      assertThat(responseMessage.headers).containsAllEntriesOf(message.headers)
 
-    // but we do get a failure log message
-    assertThat(logger.formattedMessages()).anyMatch { it.contains("Not attempting to extract trace context from message") }
-  }
-
-  @Test
-  fun `should start a new spa if MessageAttributes payload is null but message attributes exist in header`() {
-    val message = GenericMessage<Any>(
-      """{"MessageId":null,"MessageAttributes":null}""",
-      mapOf("eventType" to "myevent", SqsHeaders.SQS_SOURCE_DATA_HEADER to Message.builder().messageAttributes(eventTypeSqsMap("myevent")).build()),
-    )
-
-    val responseMessage = TraceExtractingMessageInterceptor(jsonMapper).intercept(message)
-
-    assertThat(responseMessage.headers).containsAllEntriesOf(message.headers)
-
-    // this shows that we have created a new span
-    assertThat(responseMessage.headers).containsKeys("span", "scope")
-
-    // and no failure log messages
-    assertThat(logger.formattedMessages()).isEmpty()
+      assertThat(openTelemetryExtension.spans.map { it.name }).contains("RECEIVE my-event")
+      val attributes = openTelemetryExtension.spans.find { it.name == "RECEIVE my-event" }!!.attributes
+      assertThat(attributes.get(AttributeKey.stringKey("messaging.system"))).isEqualTo("aws_sqs")
+      assertThat(attributes.get(AttributeKey.stringKey("messaging.destination.name"))).isEqualTo("my-queue")
+    }
   }
 }
