@@ -10,12 +10,12 @@ plugins {
   id("com.github.ben-manes.versions") version "0.53.0"
   id("se.patrikerdes.use-latest-versions") version "0.2.19"
   id("io.spring.dependency-management") version "1.1.7"
-  id("org.jlleitschuh.gradle.ktlint") version "14.0.1"
+  id("org.jlleitschuh.gradle.ktlint") version "14.2.0"
   id("org.springframework.boot") version "4.0.3"
 }
 
 dependencies {
-  implementation(platform("software.amazon.awssdk:bom:2.41.34"))
+  implementation(platform("software.amazon.awssdk:bom:2.42.11"))
   implementation("org.springframework.boot:spring-boot-starter-webmvc")
   implementation("org.springframework.boot:spring-boot-starter-webflux")
   implementation("org.springframework.boot:spring-boot-starter-security")

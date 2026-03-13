@@ -1,5 +1,5 @@
 plugins {
-  id("uk.gov.justice.hmpps.gradle-spring-boot") version "10.0.4"
+  id("uk.gov.justice.hmpps.gradle-spring-boot") version "10.0.5"
   kotlin("plugin.spring") version "2.3.10"
 }
 
@@ -18,7 +18,7 @@ dependencies {
   implementation("io.opentelemetry:opentelemetry-extension-kotlin")
   implementation("org.springframework.boot:spring-boot-jackson2")
 
-  implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.1")
+  implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.2")
 
   implementation(project(":hmpps-sqs-spring-boot-starter"))
 
