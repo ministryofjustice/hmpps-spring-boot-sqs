@@ -1,7 +1,7 @@
 import com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask
 
 plugins {
-  kotlin("jvm") version "2.3.10"
+  kotlin("jvm") version "2.3.20"
   id("maven-publish")
   id("signing")
   id("com.github.ben-manes.versions") version "0.53.0"
@@ -10,7 +10,7 @@ plugins {
 
 dependencies {
   api(project(":hmpps-sqs-spring-boot-autoconfigure"))
-  api(platform("software.amazon.awssdk:bom:2.42.11"))
+  api(platform("software.amazon.awssdk:bom:2.42.16"))
   api("software.amazon.awssdk:sns")
   api("io.awspring.cloud:spring-cloud-aws-starter-sqs:4.0.0") {
     exclude("io.awspring.cloud", "spring-cloud-aws-autoconfigure")
@@ -19,7 +19,7 @@ dependencies {
     exclude("io.awspring.cloud", "spring-cloud-aws-autoconfigure")
   }
   api("software.amazon.awssdk:sts")
-  api(platform("org.springframework.boot:spring-boot-dependencies:4.0.3"))
+  api(platform("org.springframework.boot:spring-boot-dependencies:4.0.4"))
   api("org.springframework.boot:spring-boot-starter-web")
   api("org.springframework.boot:spring-boot-starter-security")
   api("org.springframework.boot:spring-boot-starter-actuator")
