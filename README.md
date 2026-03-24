@@ -295,14 +295,8 @@ Alternatively going to Transaction Search in Log Analytics will then show a grap
 
 ### Disabling Tracing of Messages
 
-if `propagateTracing` is set to `false` then no spans are automatically created when a message is received. This means
-that the spans will need to be automatically created i.e.
-
-```kotlin
-  @WithSpan(value = "dps-syscon-migration_allocations_queue", kind = SpanKind.SERVER)
-```
-
-otherwise there will be no `AppRequests` entry when a message is processed.
+if `propagateTracing` is set to `false` the new spans will still be created, but they will not be linked to the
+original message by `OperationId`.
 
 ### AmazonSQS Beans
 
@@ -504,6 +498,10 @@ Note that any endpoints defined in `HmppsQueueResource` that are not secured by 
 the Kubernetes namespace and must not be left wide open - instead they should be secured in the Kubernetes ingress. See
 the [example ingress](https://github.com/ministryofjustice/hmpps-spring-boot-sqs/blob/main/test-app/helm_deploy/hmpps-template-kotlin/example/ingress.yaml)
 for how to block the endpoints from outside the namespace.
+
+By default, the `/retry-all-dlqs` endpoint is unsecured. This is because it was originally only intended to be used by
+the Kubernetes Cronjob. However, it can be secured by setting the property `hmpps.sqs.protectRetryAll` and it will then
+behave like all the other endpoints.
 
 #### Open API Docs
 
