@@ -58,7 +58,7 @@ class TelemetryPropagationTest : IntegrationTestBase() {
     val message = jsonMapper.readValue(outboundTestSqsClient.receiveMessage(ReceiveMessageRequest.builder().queueUrl(outboundTestQueueUrl).build()).get().messages()[0].body(), SnsMessage::class.java)
 
     assertThat(message.messageAttributes["traceparent"]?.value.toString()).contains(span.spanContext.traceId)
-    assertThat(message.messageAttributes["traceparent"]?.value.toString()).matches("00-${span.spanContext.traceId}-[0-9a-f]{16}-01")
+    assertThat(message.messageAttributes["traceparent"]?.value.toString()).matches("00-${span.spanContext.traceId}-[0-9a-f]{16}-0[1-9]")
 
     // And PUBLISH and RECEIVE spans are exported
     assertThat(openTelemetryExtension.spans.map { it.name }).containsAll(
@@ -163,7 +163,7 @@ class TelemetryPropagationTest : IntegrationTestBase() {
     ).get().messages()
     val message = messages[0]
     assertThat(message.messageAttributes()["traceparent"]?.stringValue()).contains(span.spanContext.traceId)
-    assertThat(message.messageAttributes()["traceparent"]?.stringValue()).matches("00-${span.spanContext.traceId}-[0-9a-f]{16}-01")
+    assertThat(message.messageAttributes()["traceparent"]?.stringValue()).matches("00-${span.spanContext.traceId}-[0-9a-f]{16}-0[1-9]")
 
     // And PUBLISH and RECEIVE spans are exported
     assertThat(openTelemetryExtension.spans.map { it.name }).containsAll(

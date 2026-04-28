@@ -1,29 +1,29 @@
 import com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask
 
 plugins {
-  kotlin("jvm") version "2.3.20"
+  kotlin("jvm") version "2.3.21"
   id("maven-publish")
   id("signing")
-  id("com.github.ben-manes.versions") version "0.53.0"
+  id("com.github.ben-manes.versions") version "0.54.0"
   id("se.patrikerdes.use-latest-versions") version "0.2.19"
 }
 
 dependencies {
   api(project(":hmpps-sqs-spring-boot-autoconfigure"))
-  api(platform("software.amazon.awssdk:bom:2.42.16"))
+  api(platform("software.amazon.awssdk:bom:2.43.0"))
   api("software.amazon.awssdk:sns")
-  api("io.awspring.cloud:spring-cloud-aws-starter-sqs:4.0.0") {
+  api("io.awspring.cloud:spring-cloud-aws-starter-sqs:4.0.1") {
     exclude("io.awspring.cloud", "spring-cloud-aws-autoconfigure")
   }
-  api("io.awspring.cloud:spring-cloud-aws-starter-sns:4.0.0") {
+  api("io.awspring.cloud:spring-cloud-aws-starter-sns:4.0.1") {
     exclude("io.awspring.cloud", "spring-cloud-aws-autoconfigure")
   }
   api("software.amazon.awssdk:sts")
-  api(platform("org.springframework.boot:spring-boot-dependencies:4.0.4"))
+  api(platform("org.springframework.boot:spring-boot-dependencies:4.0.6"))
   api("org.springframework.boot:spring-boot-starter-web")
   api("org.springframework.boot:spring-boot-starter-security")
   api("org.springframework.boot:spring-boot-starter-actuator")
-  api("com.microsoft.azure:applicationinsights-core:3.7.7")
+  api("com.microsoft.azure:applicationinsights-core:3.7.8")
   api("org.springframework.boot:spring-boot-jackson2")
 }
 

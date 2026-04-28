@@ -2,34 +2,34 @@ import com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-  kotlin("jvm") version "2.3.20"
-  kotlin("plugin.spring") version "2.3.20"
+  kotlin("jvm") version "2.3.21"
+  kotlin("plugin.spring") version "2.3.21"
   id("maven-publish")
   id("signing")
   id("com.adarshr.test-logger") version "4.0.0"
-  id("com.github.ben-manes.versions") version "0.53.0"
+  id("com.github.ben-manes.versions") version "0.54.0"
   id("se.patrikerdes.use-latest-versions") version "0.2.19"
   id("io.spring.dependency-management") version "1.1.7"
   id("org.jlleitschuh.gradle.ktlint") version "14.2.0"
-  id("org.springframework.boot") version "4.0.4"
+  id("org.springframework.boot") version "4.0.6"
 }
 
 dependencies {
-  implementation(platform("software.amazon.awssdk:bom:2.42.16"))
+  implementation(platform("software.amazon.awssdk:bom:2.43.0"))
   implementation("org.springframework.boot:spring-boot-starter-webmvc")
   implementation("org.springframework.boot:spring-boot-starter-webflux")
   implementation("org.springframework.boot:spring-boot-starter-security")
   implementation("org.springframework.boot:spring-boot-starter-actuator")
   implementation("org.springframework.boot:spring-boot-starter-gson")
-  implementation("io.awspring.cloud:spring-cloud-aws-starter-sqs:4.0.0") {
+  implementation("io.awspring.cloud:spring-cloud-aws-starter-sqs:4.0.1") {
     exclude("io.awspring.cloud", "spring-cloud-aws-autoconfigure")
   }
-  implementation("io.awspring.cloud:spring-cloud-aws-starter-sns:4.0.0") {
+  implementation("io.awspring.cloud:spring-cloud-aws-starter-sns:4.0.1") {
     exclude("io.awspring.cloud", "spring-cloud-aws-autoconfigure")
   }
-  implementation("io.awspring.cloud:spring-cloud-aws-sns:4.0.0")
-  implementation("io.awspring.cloud:spring-cloud-aws-sqs:4.0.0")
-  implementation("com.microsoft.azure:applicationinsights-core:3.7.7")
+  implementation("io.awspring.cloud:spring-cloud-aws-sns:4.0.1")
+  implementation("io.awspring.cloud:spring-cloud-aws-sqs:4.0.1")
+  implementation("com.microsoft.azure:applicationinsights-core:3.7.8")
   implementation("io.opentelemetry:opentelemetry-api")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8")
