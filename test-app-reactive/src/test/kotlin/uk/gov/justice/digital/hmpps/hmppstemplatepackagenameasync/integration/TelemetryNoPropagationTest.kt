@@ -45,7 +45,7 @@ class TelemetryNoPropagationTest : IntegrationTestBase() {
 
     // Then the trace headers haven't been propagated (a new trace header was started on the outbound topic)
     val message = jsonMapper.readValue(outboundTestSqsClient.receiveMessage(ReceiveMessageRequest.builder().queueUrl(outboundTestQueueUrl).build()).get().messages()[0].body(), SnsMessage::class.java)
-    assertThat(message.messageAttributes["traceparent"]?.value.toString()).doesNotMatch("00-${span.spanContext.traceId}-[0-9a-f]{16}-01")
+    assertThat(message.messageAttributes["traceparent"]?.value.toString()).doesNotMatch("00-${span.spanContext.traceId}-[0-9a-f]{16}-0[1-9]")
 
     // and that we have read the message attributes successfully
     assertThat(message.messageAttributes["eventType"].toString()).contains("offender.movement.reception")
