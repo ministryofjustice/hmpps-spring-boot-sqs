@@ -15,20 +15,20 @@ plugins {
 }
 
 dependencies {
-  implementation(platform("software.amazon.awssdk:bom:2.43.0"))
+  implementation(platform("software.amazon.awssdk:bom:2.44.4"))
   implementation("org.springframework.boot:spring-boot-starter-webmvc")
   implementation("org.springframework.boot:spring-boot-starter-webflux")
   implementation("org.springframework.boot:spring-boot-starter-security")
   implementation("org.springframework.boot:spring-boot-starter-actuator")
   implementation("org.springframework.boot:spring-boot-starter-gson")
-  implementation("io.awspring.cloud:spring-cloud-aws-starter-sqs:4.0.1") {
+  implementation("io.awspring.cloud:spring-cloud-aws-starter-sqs:4.0.2") {
     exclude("io.awspring.cloud", "spring-cloud-aws-autoconfigure")
   }
-  implementation("io.awspring.cloud:spring-cloud-aws-starter-sns:4.0.1") {
+  implementation("io.awspring.cloud:spring-cloud-aws-starter-sns:4.0.2") {
     exclude("io.awspring.cloud", "spring-cloud-aws-autoconfigure")
   }
-  implementation("io.awspring.cloud:spring-cloud-aws-sns:4.0.1")
-  implementation("io.awspring.cloud:spring-cloud-aws-sqs:4.0.1")
+  implementation("io.awspring.cloud:spring-cloud-aws-sns:4.0.2")
+  implementation("io.awspring.cloud:spring-cloud-aws-sqs:4.0.2")
   implementation("com.microsoft.azure:applicationinsights-core:3.7.8")
   implementation("io.opentelemetry:opentelemetry-api")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
