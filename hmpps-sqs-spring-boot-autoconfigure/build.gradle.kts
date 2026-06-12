@@ -2,8 +2,8 @@ import com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-  kotlin("jvm") version "2.3.21"
-  kotlin("plugin.spring") version "2.3.21"
+  kotlin("jvm") version "2.4.0"
+  kotlin("plugin.spring") version "2.4.0"
   id("maven-publish")
   id("signing")
   id("com.adarshr.test-logger") version "4.0.0"
@@ -11,11 +11,11 @@ plugins {
   id("se.patrikerdes.use-latest-versions") version "0.2.19"
   id("io.spring.dependency-management") version "1.1.7"
   id("org.jlleitschuh.gradle.ktlint") version "14.2.0"
-  id("org.springframework.boot") version "4.0.6"
+  id("org.springframework.boot") version "4.0.7"
 }
 
 dependencies {
-  implementation(platform("software.amazon.awssdk:bom:2.44.4"))
+  implementation(platform("software.amazon.awssdk:bom:2.46.9"))
   implementation("org.springframework.boot:spring-boot-starter-webmvc")
   implementation("org.springframework.boot:spring-boot-starter-webflux")
   implementation("org.springframework.boot:spring-boot-starter-security")
@@ -27,6 +27,8 @@ dependencies {
   implementation("io.awspring.cloud:spring-cloud-aws-starter-sns:4.0.2") {
     exclude("io.awspring.cloud", "spring-cloud-aws-autoconfigure")
   }
+  // Temporarily include an upgrade to retry for CVE-2026-41710 until included in the awsspring.cloud release
+  implementation("org.springframework.retry:spring-retry:2.0.13")
   implementation("io.awspring.cloud:spring-cloud-aws-sns:4.0.2")
   implementation("io.awspring.cloud:spring-cloud-aws-sqs:4.0.2")
   implementation("com.microsoft.azure:applicationinsights-core:3.7.8")
