@@ -2,8 +2,8 @@ import com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-  kotlin("jvm") version "2.4.0"
-  kotlin("plugin.spring") version "2.4.0"
+  kotlin("jvm") version "2.4.10"
+  kotlin("plugin.spring") version "2.4.10"
   id("maven-publish")
   id("signing")
   id("com.adarshr.test-logger") version "4.0.0"
@@ -11,27 +11,27 @@ plugins {
   id("se.patrikerdes.use-latest-versions") version "0.2.19"
   id("io.spring.dependency-management") version "1.1.7"
   id("org.jlleitschuh.gradle.ktlint") version "14.2.0"
-  id("org.springframework.boot") version "4.0.7"
+  id("org.springframework.boot") version "4.1.1"
 }
 
 dependencies {
-  implementation(platform("software.amazon.awssdk:bom:2.46.9"))
+  implementation(platform("software.amazon.awssdk:bom:2.54.4"))
   implementation("org.springframework.boot:spring-boot-starter-webmvc")
   implementation("org.springframework.boot:spring-boot-starter-webflux")
   implementation("org.springframework.boot:spring-boot-starter-security")
   implementation("org.springframework.boot:spring-boot-starter-actuator")
   implementation("org.springframework.boot:spring-boot-starter-gson")
-  implementation("io.awspring.cloud:spring-cloud-aws-starter-sqs:4.0.2") {
+  implementation("io.awspring.cloud:spring-cloud-aws-starter-sqs:4.1.0") {
     exclude("io.awspring.cloud", "spring-cloud-aws-autoconfigure")
   }
-  implementation("io.awspring.cloud:spring-cloud-aws-starter-sns:4.0.2") {
+  implementation("io.awspring.cloud:spring-cloud-aws-starter-sns:4.1.0") {
     exclude("io.awspring.cloud", "spring-cloud-aws-autoconfigure")
   }
   // Temporarily include an upgrade to retry for CVE-2026-41710 until included in the awsspring.cloud release
   implementation("org.springframework.retry:spring-retry:2.0.13")
-  implementation("io.awspring.cloud:spring-cloud-aws-sns:4.0.2")
-  implementation("io.awspring.cloud:spring-cloud-aws-sqs:4.0.2")
-  implementation("com.microsoft.azure:applicationinsights-core:3.7.8")
+  implementation("io.awspring.cloud:spring-cloud-aws-sns:4.1.0")
+  implementation("io.awspring.cloud:spring-cloud-aws-sqs:4.1.0")
+  implementation("com.microsoft.azure:applicationinsights-core:3.7.9")
   implementation("io.opentelemetry:opentelemetry-api")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8")

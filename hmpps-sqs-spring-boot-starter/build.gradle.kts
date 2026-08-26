@@ -1,7 +1,7 @@
 import com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask
 
 plugins {
-  kotlin("jvm") version "2.4.0"
+  kotlin("jvm") version "2.4.10"
   id("maven-publish")
   id("signing")
   id("com.github.ben-manes.versions") version "0.54.0"
@@ -10,22 +10,22 @@ plugins {
 
 dependencies {
   api(project(":hmpps-sqs-spring-boot-autoconfigure"))
-  api(platform("software.amazon.awssdk:bom:2.46.9"))
+  api(platform("software.amazon.awssdk:bom:2.54.4"))
   api("software.amazon.awssdk:sns")
-  api("io.awspring.cloud:spring-cloud-aws-starter-sqs:4.0.2") {
+  api("io.awspring.cloud:spring-cloud-aws-starter-sqs:4.1.0") {
     exclude("io.awspring.cloud", "spring-cloud-aws-autoconfigure")
   }
-  api("io.awspring.cloud:spring-cloud-aws-starter-sns:4.0.2") {
+  api("io.awspring.cloud:spring-cloud-aws-starter-sns:4.1.0") {
     exclude("io.awspring.cloud", "spring-cloud-aws-autoconfigure")
   }
   // Temporarily include an upgrade to retry for CVE-2026-41710 until included in the awsspring.cloud release
   api("org.springframework.retry:spring-retry:2.0.13")
   api("software.amazon.awssdk:sts")
-  api(platform("org.springframework.boot:spring-boot-dependencies:4.0.7"))
+  api(platform("org.springframework.boot:spring-boot-dependencies:4.1.1"))
   api("org.springframework.boot:spring-boot-starter-web")
   api("org.springframework.boot:spring-boot-starter-security")
   api("org.springframework.boot:spring-boot-starter-actuator")
-  api("com.microsoft.azure:applicationinsights-core:3.7.8")
+  api("com.microsoft.azure:applicationinsights-core:3.7.9")
   api("org.springframework.boot:spring-boot-jackson2")
 }
 
