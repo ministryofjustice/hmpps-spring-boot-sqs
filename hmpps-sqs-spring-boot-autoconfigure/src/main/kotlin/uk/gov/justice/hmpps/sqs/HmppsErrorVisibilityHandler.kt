@@ -44,12 +44,31 @@ class HmppsErrorVisibilityHandler(
     } else {
       log.info("Setting error visibility timeout to 0 for event type {} on queue {} with receive count {} because this is the last retry", eventType, queue.id, receiveCount)
       telemetryClient?.run {
-        trackEvent("$eventType-sent-to-dlq", mapOf("queueName" to queue.queueName, "dlqName" to queue.dlqName, "timeouts" to "$timeouts", "maxReceiveCount" to "$receiveCount"), null)
+        val messageId = getMessageId(message)
+        val properties = mapOf("queueName" to queue.queueName, "dlqName" to queue.dlqName, "timeouts" to "$timeouts", "maxReceiveCount" to "$receiveCount") +
+          messageId.toRetryProperties(queue.dlqName)
+        trackEvent("$eventType-sent-to-dlq", properties, null)
       }
     }
 
     sqsVisibility.changeTo(nextTimeoutSeconds)
   }
+
+  /**
+   * Solution 3: the SQS-assigned messageId of the raw message that is about to receive its final failed delivery
+   * attempt and be moved to the DLQ by SQS's redrive policy. SQS preserves this messageId across that move, so it
+   * is also the id that will later be used to retry this specific message via retry-dlq-messages, hence it's
+   * included below (alongside a ready-made retry command) in the "sent-to-dlq" telemetry event to make the failure
+   * directly actionable without first having to search the DLQ to find it.
+   */
+  private fun getMessageId(message: Message<in Any>): String? = (message.headers[SqsHeaders.SQS_SOURCE_DATA_HEADER] as? software.amazon.awssdk.services.sqs.model.Message)?.messageId()
+
+  private fun String?.toRetryProperties(dlqName: String?): Map<String, String> = this?.let { messageId ->
+    mapOf(
+      "messageId" to messageId,
+      "retryCommand" to """PUT /queue-admin/retry-dlq-messages/$dlqName {"messageIds":["$messageId"]}""",
+    )
+  } ?: emptyMap()
 
   private fun getEventType(message: Message<in Any>): String? {
     // If the listener has typed the message parameter then this needs to be an SnsMessage for us to read it

@@ -5,12 +5,23 @@ import io.awspring.cloud.sqs.listener.QueueMessageVisibility
 import io.awspring.cloud.sqs.listener.SqsHeaders
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
+import org.mockito.kotlin.any
+import org.mockito.kotlin.argThat
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.json.JsonTest
 import org.springframework.messaging.Message
 import org.springframework.messaging.support.GenericMessage
+import software.amazon.awssdk.services.sqs.SqsAsyncClient
+import software.amazon.awssdk.services.sqs.model.GetQueueAttributesRequest
+import software.amazon.awssdk.services.sqs.model.GetQueueAttributesResponse
+import software.amazon.awssdk.services.sqs.model.GetQueueUrlRequest
+import software.amazon.awssdk.services.sqs.model.GetQueueUrlResponse
+import software.amazon.awssdk.services.sqs.model.QueueAttributeName
 import tools.jackson.databind.json.JsonMapper
+import java.util.concurrent.CompletableFuture
 
 @JsonTest
 class HmppsErrorVisibilityHandlerTest(@param:Autowired private val jsonMapper: JsonMapper) {
@@ -185,5 +196,61 @@ class HmppsErrorVisibilityHandlerTest(@param:Autowired private val jsonMapper: J
     handler.setErrorVisibilityTimeout(message, someQueue)
 
     verify(queueMessageVisibility).changeTo(2)
+  }
+
+  private fun queueWithMaxReceiveCount(maxReceiveCount: Int): HmppsQueue {
+    val sqsClient = mock<SqsAsyncClient>()
+    whenever(sqsClient.getQueueUrl(any<GetQueueUrlRequest>()))
+      .thenReturn(CompletableFuture.completedFuture(GetQueueUrlResponse.builder().queueUrl("some-queue-url").build()))
+    whenever(sqsClient.getQueueAttributes(any<GetQueueAttributesRequest>()))
+      .thenReturn(
+        CompletableFuture.completedFuture(
+          GetQueueAttributesResponse.builder()
+            .attributes(mapOf(QueueAttributeName.REDRIVE_POLICY to """{"deadLetterTargetArn":"arn:aws:sqs:eu-west-2:000000000000:some-dlq","maxReceiveCount":$maxReceiveCount}"""))
+            .build(),
+        ),
+      )
+    return HmppsQueue("some-queue-id", sqsClient, "some-queue", mock(), "some-dlq")
+  }
+
+  @Test
+  fun `should log messageId and a ready-made retry command when a message is sent to the dlq for the last time`() {
+    val properties = HmppsSqsProperties(queues = mapOf("some-queue-id" to HmppsSqsProperties.QueueConfig("some-queue")))
+    val handler = aHandler(jsonMapper, properties)
+    val rawSqsMessage = software.amazon.awssdk.services.sqs.model.Message.builder().messageId("the-sqs-message-id").build()
+    val message = GenericMessage<Any>(
+      "123",
+      mapOf(
+        "Sqs_Msa_ApproximateReceiveCount" to "1",
+        "Sqs_VisibilityTimeout" to queueMessageVisibility,
+        SqsHeaders.SQS_SOURCE_DATA_HEADER to rawSqsMessage,
+      ),
+    )
+
+    handler.setErrorVisibilityTimeout(message, queueWithMaxReceiveCount(1))
+
+    verify(telemetryClient).trackEvent(
+      eq("null-sent-to-dlq"),
+      argThat { properties ->
+        properties["messageId"] == "the-sqs-message-id" &&
+          properties["retryCommand"] == """PUT /queue-admin/retry-dlq-messages/some-dlq {"messageIds":["the-sqs-message-id"]}"""
+      },
+      eq(null),
+    )
+  }
+
+  @Test
+  fun `should not include messageId or retryCommand when the raw sqs message is not available`() {
+    val properties = HmppsSqsProperties(queues = mapOf("some-queue-id" to HmppsSqsProperties.QueueConfig("some-queue")))
+    val handler = aHandler(jsonMapper, properties)
+    val message = GenericMessage<Any>("123", mapOf("Sqs_Msa_ApproximateReceiveCount" to "1", "Sqs_VisibilityTimeout" to queueMessageVisibility))
+
+    handler.setErrorVisibilityTimeout(message, queueWithMaxReceiveCount(1))
+
+    verify(telemetryClient).trackEvent(
+      eq("null-sent-to-dlq"),
+      argThat { properties -> !properties.containsKey("messageId") && !properties.containsKey("retryCommand") },
+      eq(null),
+    )
   }
 }

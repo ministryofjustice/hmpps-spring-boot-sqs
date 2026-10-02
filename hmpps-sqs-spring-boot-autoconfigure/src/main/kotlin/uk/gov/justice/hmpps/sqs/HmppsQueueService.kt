@@ -4,6 +4,7 @@ import com.google.gson.GsonBuilder
 import com.google.gson.ToNumberPolicy
 import com.microsoft.applicationinsights.TelemetryClient
 import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.toList
@@ -11,6 +12,7 @@ import kotlinx.coroutines.future.await
 import org.slf4j.LoggerFactory
 import software.amazon.awssdk.services.sns.model.PublishRequest
 import software.amazon.awssdk.services.sqs.SqsAsyncClient
+import software.amazon.awssdk.services.sqs.model.DeleteMessageRequest
 import software.amazon.awssdk.services.sqs.model.GetQueueAttributesRequest
 import software.amazon.awssdk.services.sqs.model.QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES
 import software.amazon.awssdk.services.sqs.model.QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES_NOT_VISIBLE
@@ -51,6 +53,30 @@ open class HmppsQueueService(
   open suspend fun retryDlqMessages(request: RetryDlqRequest): RetryDlqResult = request.hmppsQueue.retryDlqMessages()
 
   open suspend fun getDlqMessages(request: GetDlqRequest): GetDlqResult = request.hmppsQueue.getDlqMessages(request.maxMessages)
+
+  /**
+   * Solution 1: read-only/dry-run search of a DLQ. Scans the DLQ applying a simple substring filter against the
+   * message body (no filter means "return everything") and returns matching messages without sending or deleting
+   * anything. Intended to be used before [retryDlqMessagesByIds] so an engineer can confirm exactly which messages
+   * will be retried before committing to the action.
+   */
+  open suspend fun searchDlqMessages(request: SearchDlqRequest): SearchDlqResult = request.hmppsQueue.searchDlqMessages(request.filter, request.maxMessages)
+
+  /**
+   * Solution 2: read-only/dry-run search of a DLQ for messages whose publish-time message attribute (e.g. a
+   * correlation id attached by the producer) matches the given value. Matching messages are left on the DLQ
+   * untouched. Intended to be used before [retryDlqMessagesByIds] in the same way as [searchDlqMessages], but
+   * filtering precisely on a structured attribute rather than a body substring.
+   */
+  open suspend fun searchDlqMessagesByAttribute(request: SearchDlqByAttributeRequest): SearchDlqByAttributeResult = request.hmppsQueue.searchDlqMessagesByAttribute(request.attributeName, request.attributeValue, request.maxMessages)
+
+  /**
+   * Solutions 1 & 2: retry only the DLQ messages whose messageId is in [RetryDlqMessagesRequest.messageIds]. Every
+   * other message on the DLQ is left untouched. Typically used after inspecting results from [searchDlqMessages] or
+   * [searchDlqMessagesByAttribute]; the messageId can also come from the enriched "sent-to-dlq" telemetry event
+   * (solution 3, see [HmppsErrorVisibilityHandler]).
+   */
+  open suspend fun retryDlqMessagesByIds(request: RetryDlqMessagesRequest): RetryDlqMessagesResult = request.hmppsQueue.retryDlqMessagesByIds(request.messageIds)
 
   open suspend fun retryAllDlqs() = hmppsQueues
     .map { hmppsQueue -> RetryDlqRequest(hmppsQueue) }
@@ -104,6 +130,130 @@ open class HmppsQueueService(
     return GetDlqResult(messageCount, messagesToReturnCount, messages)
   }
 
+  private suspend fun HmppsQueue.searchDlqMessages(filter: String?, maxMessages: Int): SearchDlqResult {
+    if (sqsDlqClient == null || dlqUrl == null) return SearchDlqResult(0, 0, listOf())
+
+    val messageCount = sqsDlqClient.countMessagesOnQueue(dlqUrl!!).await()
+    val map: Map<String, Any> = HashMap()
+
+    val matches = (1..messageCount)
+      .asFlow()
+      .map {
+        sqsDlqClient.receiveMessage(
+          ReceiveMessageRequest.builder()
+            .queueUrl(dlqUrl)
+            .maxNumberOfMessages(1)
+            .visibilityTimeout(1)
+            .build(),
+        ).await()
+      }
+      .mapNotNull { it.messages().firstOrNull() }
+      .filter { filter.isNullOrEmpty() || it.body().contains(filter) }
+      .map { msg -> DlqMessage(messageId = msg.messageId(), body = gson.fromJson(msg.body(), map.javaClass)) }
+      .toList()
+      .take(maxMessages)
+
+    log.info("For dlq $dlqName searched $messageCount messages, found ${matches.size} matching filter '$filter'")
+
+    return SearchDlqResult(messageCount, matches.size, matches)
+  }
+
+  /**
+   * Solution 2: scans a DLQ for messages whose publish-time message attribute (e.g. a correlation id attached by
+   * the producer) matches the given value. The attribute is expected to be present in the SNS envelope that
+   * SNS->SQS subscriptions wrap the message body in, i.e. under the `MessageAttributes.<attributeName>.Value` JSON
+   * path - the same convention already used by HmppsErrorVisibilityHandler to read the `eventType` attribute.
+   */
+  private suspend fun HmppsQueue.searchDlqMessagesByAttribute(attributeName: String, attributeValue: String, maxMessages: Int): SearchDlqByAttributeResult {
+    if (sqsDlqClient == null || dlqUrl == null) return SearchDlqByAttributeResult(0, 0, listOf())
+
+    val messageCount = sqsDlqClient.countMessagesOnQueue(dlqUrl!!).await()
+    val messagesToScanCount = min(messageCount, maxMessages)
+    val map: Map<String, Any> = HashMap()
+
+    val matches = (1..messagesToScanCount)
+      .asFlow()
+      .map {
+        sqsDlqClient.receiveMessage(
+          ReceiveMessageRequest.builder()
+            .queueUrl(dlqUrl)
+            .maxNumberOfMessages(1)
+            .visibilityTimeout(1)
+            .build(),
+        ).await()
+      }
+      .mapNotNull { it.messages().firstOrNull() }
+      .filter { msg -> extractMessageAttributeValue(msg.body(), attributeName) == attributeValue }
+      .map { msg -> DlqMessage(messageId = msg.messageId(), body = gson.fromJson(msg.body(), map.javaClass)) }
+      .toList()
+
+    return SearchDlqByAttributeResult(messageCount, matches.size, matches)
+  }
+
+  /**
+   * Extracts the value of a named attribute from a DLQ message body, assuming the message arrived via an
+   * SNS->SQS subscription and so is wrapped in the standard SNS envelope, e.g.
+   * `{ "Message": "...", "MessageAttributes": { "<attributeName>": { "Type": "String", "Value": "..." } } }`.
+   */
+  private fun extractMessageAttributeValue(body: String, attributeName: String): String? = runCatching {
+    @Suppress("UNCHECKED_CAST")
+    val bodyMap = gson.fromJson(body, Map::class.java) as Map<String, Any?>
+    val messageAttributes = bodyMap["MessageAttributes"] as? Map<*, *>
+    val attribute = messageAttributes?.get(attributeName) as? Map<*, *>
+    attribute?.get("Value") as? String
+  }.getOrNull()
+
+  /**
+   * Solutions 1, 2 & 3: retries (sends to the main queue and removes from the DLQ) only those DLQ messages whose
+   * SQS-assigned messageId is in the given list, leaving all other messages on the DLQ untouched.
+   */
+  private suspend fun HmppsQueue.retryDlqMessagesByIds(messageIds: List<String>): RetryDlqMessagesResult {
+    if (sqsDlqClient == null || dlqUrl == null || messageIds.isEmpty()) return RetryDlqMessagesResult(0, 0, listOf())
+
+    val messageCount = sqsDlqClient.countMessagesOnQueue(dlqUrl!!).await()
+    val remainingIds = messageIds.toMutableSet()
+    val retriedIds = mutableListOf<String>()
+
+    (1..messageCount)
+      .asFlow()
+      .map {
+        sqsDlqClient.receiveMessage(
+          ReceiveMessageRequest.builder()
+            .queueUrl(dlqUrl)
+            .maxNumberOfMessages(1)
+            .visibilityTimeout(1)
+            .messageAttributeNames("All")
+            .build(),
+        ).await()
+      }
+      .mapNotNull { it.messages().firstOrNull() }
+      .filter { msg -> remainingIds.remove(msg.messageId()) }
+      .toList()
+      .forEach { msg ->
+        sqsClient.sendMessage(
+          SendMessageRequest.builder()
+            .queueUrl(queueUrl)
+            .messageBody(msg.body())
+            .messageAttributes(msg.messageAttributes())
+            .build(),
+        ).await()
+        sqsDlqClient.deleteMessage(
+          DeleteMessageRequest.builder()
+            .queueUrl(dlqUrl)
+            .receiptHandle(msg.receiptHandle())
+            .build(),
+        ).await()
+        retriedIds.add(msg.messageId())
+      }
+
+    if (retriedIds.isNotEmpty()) {
+      log.info("For dlq $dlqName retried ${retriedIds.size} of ${messageIds.size} requested messages")
+      telemetryClient?.trackEvent("RetryDLQMessagesById", mapOf("dlq-name" to dlqName, "messages-requested" to "${messageIds.size}", "messages-retried" to "${retriedIds.size}"), null)
+    }
+
+    return RetryDlqMessagesResult(messageCount, retriedIds.size, retriedIds)
+  }
+
   open suspend fun purgeQueue(request: PurgeQueueRequest): PurgeQueueResult = with(request) {
     val messageCount = sqsClient.countMessagesOnQueue(queueUrl).await()
     return if (messageCount > 0) {
@@ -129,6 +279,19 @@ data class RetryDlqResult(val messagesFoundCount: Int)
 data class GetDlqRequest(val hmppsQueue: HmppsQueue, val maxMessages: Int)
 data class GetDlqResult(val messagesFoundCount: Int, val messagesReturnedCount: Int, val messages: List<DlqMessage>)
 data class DlqMessage(val body: Map<String, Any>, val messageId: String)
+
+/** Solution 1: dry-run search request - filter is a plain substring match against the message body, or null/empty to return everything. */
+data class SearchDlqRequest(val hmppsQueue: HmppsQueue, val filter: String?, val maxMessages: Int)
+data class SearchDlqResult(val messagesFoundCount: Int, val messagesReturnedCount: Int, val messages: List<DlqMessage>)
+
+/** Solution 2: dry-run search request - matches messages whose publish-time message attribute equals attributeValue. */
+data class SearchDlqByAttributeRequest(val hmppsQueue: HmppsQueue, val attributeName: String, val attributeValue: String, val maxMessages: Int)
+data class SearchDlqByAttributeResult(val messagesFoundCount: Int, val messagesReturnedCount: Int, val messages: List<DlqMessage>)
+
+/** Solutions 1, 2 & 3: retry request naming the exact DLQ messages (by messageId) to send back to the main queue. */
+data class RetryDlqMessagesRequest(val hmppsQueue: HmppsQueue, val messageIds: List<String>)
+data class RetryDlqMessagesResult(val messagesFoundCount: Int, val messagesRetriedCount: Int, val retriedMessageIds: List<String>)
+
 data class PurgeQueueRequest(val queueName: String, val sqsClient: SqsAsyncClient, val queueUrl: String)
 data class PurgeQueueResult(val messagesFoundCount: Int)
 
