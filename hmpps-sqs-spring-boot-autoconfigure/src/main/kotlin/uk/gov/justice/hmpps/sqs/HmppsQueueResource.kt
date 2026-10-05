@@ -58,17 +58,6 @@ class HmppsQueueResource(hmppsQueueService: HmppsQueueService) {
     hmppsReactiveQueueResource.searchDlqMessages(dlqName, filter, maxMessages)
   }
 
-  @GetMapping("/search-dlq-messages-by-attribute/{dlqName}")
-  @PreAuthorize("hasRole(@environment.getProperty('hmpps.sqs.queueAdminRole', 'ROLE_QUEUE_ADMIN'))")
-  fun searchDlqMessagesByAttribute(
-    @PathVariable("dlqName") dlqName: String,
-    @RequestParam("attributeName") attributeName: String,
-    @RequestParam("attributeValue") attributeValue: String,
-    @RequestParam("maxMessages", required = false, defaultValue = "100") maxMessages: Int,
-  ) = runBlocking {
-    hmppsReactiveQueueResource.searchDlqMessagesByAttribute(dlqName, attributeName, attributeValue, maxMessages)
-  }
-
   @PutMapping("/retry-dlq-messages/{dlqName}")
   @PreAuthorize("hasRole(@environment.getProperty('hmpps.sqs.queueAdminRole', 'ROLE_QUEUE_ADMIN'))")
   fun retryDlqMessages(@PathVariable("dlqName") dlqName: String, @RequestBody request: RetryDlqMessagesBody) = runBlocking {

@@ -69,26 +69,9 @@ class HmppsReactiveQueueResource(private val hmppsQueueService: HmppsQueueServic
     ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "$dlqName not found")
 
   /*
-   * Solution 2 (selective retry): read-only/dry-run search of a DLQ for messages whose publish-time message
-   * attribute (e.g. a correlation id attached by the producer) matches the given value. This is read-only -
-   * matching messages are left on the DLQ. Once combined with retry-dlq-messages below, this lets an engineer find
-   * and retry only the messages related to a particular failure, without needing to know SQS message IDs up front.
-   */
-  @GetMapping("/search-dlq-messages-by-attribute/{dlqName}")
-  @PreAuthorize("hasRole(@environment.getProperty('hmpps.sqs.queueAdminRole', 'ROLE_QUEUE_ADMIN'))")
-  suspend fun searchDlqMessagesByAttribute(
-    @PathVariable("dlqName") dlqName: String,
-    @RequestParam("attributeName") attributeName: String,
-    @RequestParam("attributeValue") attributeValue: String,
-    @RequestParam("maxMessages", required = false, defaultValue = "100") maxMessages: Int,
-  ) = hmppsQueueService.findByDlqName(dlqName)
-    ?.let { hmppsQueue -> hmppsQueueService.searchDlqMessagesByAttribute(SearchDlqByAttributeRequest(hmppsQueue, attributeName, attributeValue, maxMessages)) }
-    ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "$dlqName not found")
-
-  /*
-   * Solutions 1, 2 & 3 (selective retry): retry only the named messageIds from a DLQ, leaving every other message on
-   * the DLQ untouched. Typically called with IDs obtained from searchDlqMessages/searchDlqMessagesByAttribute above,
-   * or from the messageId logged in the enriched "sent-to-dlq" telemetry event (see HmppsErrorVisibilityHandler).
+   * Solutions 1 & 3 (selective retry): retry only the named messageIds from a DLQ, leaving every other message on
+   * the DLQ untouched. Typically called with IDs obtained from searchDlqMessages above, or from the messageId
+   * logged in the enriched "sent-to-dlq" telemetry event (see HmppsErrorVisibilityHandler).
    */
   @PutMapping("/retry-dlq-messages/{dlqName}")
   @PreAuthorize("hasRole(@environment.getProperty('hmpps.sqs.queueAdminRole', 'ROLE_QUEUE_ADMIN'))")

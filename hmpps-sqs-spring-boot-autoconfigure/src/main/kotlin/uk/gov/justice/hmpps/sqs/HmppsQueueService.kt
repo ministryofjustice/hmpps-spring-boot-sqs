@@ -63,18 +63,10 @@ open class HmppsQueueService(
   open suspend fun searchDlqMessages(request: SearchDlqRequest): SearchDlqResult = request.hmppsQueue.searchDlqMessages(request.filter, request.maxMessages)
 
   /**
-   * Solution 2: read-only/dry-run search of a DLQ for messages whose publish-time message attribute (e.g. a
-   * correlation id attached by the producer) matches the given value. Matching messages are left on the DLQ
-   * untouched. Intended to be used before [retryDlqMessagesByIds] in the same way as [searchDlqMessages], but
-   * filtering precisely on a structured attribute rather than a body substring.
-   */
-  open suspend fun searchDlqMessagesByAttribute(request: SearchDlqByAttributeRequest): SearchDlqByAttributeResult = request.hmppsQueue.searchDlqMessagesByAttribute(request.attributeName, request.attributeValue, request.maxMessages)
-
-  /**
-   * Solutions 1 & 2: retry only the DLQ messages whose messageId is in [RetryDlqMessagesRequest.messageIds]. Every
-   * other message on the DLQ is left untouched. Typically used after inspecting results from [searchDlqMessages] or
-   * [searchDlqMessagesByAttribute]; the messageId can also come from the enriched "sent-to-dlq" telemetry event
-   * (solution 3, see [HmppsErrorVisibilityHandler]).
+   * Solutions 1 & 3: retry only the DLQ messages whose messageId is in [RetryDlqMessagesRequest.messageIds]. Every
+   * other message on the DLQ is left untouched. Typically used after inspecting results from [searchDlqMessages];
+   * the messageId can also come from the enriched "sent-to-dlq" telemetry event (solution 3, see
+   * [HmppsErrorVisibilityHandler]).
    */
   open suspend fun retryDlqMessagesByIds(request: RetryDlqMessagesRequest): RetryDlqMessagesResult = request.hmppsQueue.retryDlqMessagesByIds(request.messageIds)
 
@@ -159,52 +151,7 @@ open class HmppsQueueService(
   }
 
   /**
-   * Solution 2: scans a DLQ for messages whose publish-time message attribute (e.g. a correlation id attached by
-   * the producer) matches the given value. The attribute is expected to be present in the SNS envelope that
-   * SNS->SQS subscriptions wrap the message body in, i.e. under the `MessageAttributes.<attributeName>.Value` JSON
-   * path - the same convention already used by HmppsErrorVisibilityHandler to read the `eventType` attribute.
-   */
-  private suspend fun HmppsQueue.searchDlqMessagesByAttribute(attributeName: String, attributeValue: String, maxMessages: Int): SearchDlqByAttributeResult {
-    if (sqsDlqClient == null || dlqUrl == null) return SearchDlqByAttributeResult(0, 0, listOf())
-
-    val messageCount = sqsDlqClient.countMessagesOnQueue(dlqUrl!!).await()
-    val messagesToScanCount = min(messageCount, maxMessages)
-    val map: Map<String, Any> = HashMap()
-
-    val matches = (1..messagesToScanCount)
-      .asFlow()
-      .map {
-        sqsDlqClient.receiveMessage(
-          ReceiveMessageRequest.builder()
-            .queueUrl(dlqUrl)
-            .maxNumberOfMessages(1)
-            .visibilityTimeout(1)
-            .build(),
-        ).await()
-      }
-      .mapNotNull { it.messages().firstOrNull() }
-      .filter { msg -> extractMessageAttributeValue(msg.body(), attributeName) == attributeValue }
-      .map { msg -> DlqMessage(messageId = msg.messageId(), body = gson.fromJson(msg.body(), map.javaClass)) }
-      .toList()
-
-    return SearchDlqByAttributeResult(messageCount, matches.size, matches)
-  }
-
-  /**
-   * Extracts the value of a named attribute from a DLQ message body, assuming the message arrived via an
-   * SNS->SQS subscription and so is wrapped in the standard SNS envelope, e.g.
-   * `{ "Message": "...", "MessageAttributes": { "<attributeName>": { "Type": "String", "Value": "..." } } }`.
-   */
-  private fun extractMessageAttributeValue(body: String, attributeName: String): String? = runCatching {
-    @Suppress("UNCHECKED_CAST")
-    val bodyMap = gson.fromJson(body, Map::class.java) as Map<String, Any?>
-    val messageAttributes = bodyMap["MessageAttributes"] as? Map<*, *>
-    val attribute = messageAttributes?.get(attributeName) as? Map<*, *>
-    attribute?.get("Value") as? String
-  }.getOrNull()
-
-  /**
-   * Solutions 1, 2 & 3: retries (sends to the main queue and removes from the DLQ) only those DLQ messages whose
+   * Solutions 1 & 3: retries (sends to the main queue and removes from the DLQ) only those DLQ messages whose
    * SQS-assigned messageId is in the given list, leaving all other messages on the DLQ untouched.
    */
   private suspend fun HmppsQueue.retryDlqMessagesByIds(messageIds: List<String>): RetryDlqMessagesResult {
@@ -284,11 +231,7 @@ data class DlqMessage(val body: Map<String, Any>, val messageId: String)
 data class SearchDlqRequest(val hmppsQueue: HmppsQueue, val filter: String?, val maxMessages: Int)
 data class SearchDlqResult(val messagesFoundCount: Int, val messagesReturnedCount: Int, val messages: List<DlqMessage>)
 
-/** Solution 2: dry-run search request - matches messages whose publish-time message attribute equals attributeValue. */
-data class SearchDlqByAttributeRequest(val hmppsQueue: HmppsQueue, val attributeName: String, val attributeValue: String, val maxMessages: Int)
-data class SearchDlqByAttributeResult(val messagesFoundCount: Int, val messagesReturnedCount: Int, val messages: List<DlqMessage>)
-
-/** Solutions 1, 2 & 3: retry request naming the exact DLQ messages (by messageId) to send back to the main queue. */
+/** Solutions 1 & 3: retry request naming the exact DLQ messages (by messageId) to send back to the main queue. */
 data class RetryDlqMessagesRequest(val hmppsQueue: HmppsQueue, val messageIds: List<String>)
 data class RetryDlqMessagesResult(val messagesFoundCount: Int, val messagesRetriedCount: Int, val retriedMessageIds: List<String>)
 
