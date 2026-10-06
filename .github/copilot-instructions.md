@@ -41,3 +41,34 @@ Also check that the version in `build.gradle.kts` has been bumped appropriately 
 author (human or agent) to forget this. If you're reviewing a PR and believe the change is breaking but the version
 number has not been bumped as a major upgrade, flag this in your review comments. Do not fix it yourself — the
 correct version bump is a judgement call for the author/maintainers to make.
+
+## Syncing test-app / test-app-reactive with hmpps-template-kotlin
+
+`test-app` and `test-app-reactive` were originally copied from
+[`hmpps-template-kotlin`](https://github.com/ministryofjustice/hmpps-template-kotlin), the template all HMPPS Kotlin
+projects are bootstrapped from. The intention is to keep them reasonably close to the template so that the tests in
+this repo continue to exercise the library against a realistic, up-to-date consumer project.
+
+**Only perform this sync when an engineer explicitly asks for it** — do not do this proactively as part of an
+unrelated PR or review, since it's a deliberate, potentially large piece of work rather than routine maintenance.
+
+When asked to perform the sync:
+
+1. **First check whether there are any changes to apply.** Get a clean checkout of `hmpps-template-kotlin`'s `main`
+   branch and diff it against the current `test-app` (and/or `test-app-reactive`), covering: `build.gradle.kts` and
+   dependency versions, security/auth configuration, test infrastructure (mock servers, JWT helpers, base test
+   classes), `application.yml`/`application-*.yml` properties, and deployment-only files (`.github/workflows`,
+   `helm_deploy`, `Dockerfile`, `.java-version`, `renovate.json`, `applicationinsights*.json`). If there are no
+   meaningful differences, say so and stop — do not make changes for the sake of it.
+2. **If there are changes, ask clarifying questions before applying them.** Prior syncs have needed engineer input on
+   judgement calls such as: whether to adopt new shared starter libraries, whether to bump versions, whether
+   deployment-only/inert files are in scope, package renames, new template-introduced tests, and whether
+   `test-app-reactive` needs to stay fully in sync with `test-app` (it does not necessarily need to be — treat it as
+   a second, independent pass).
+3. Apply the agreed changes on a new branch prefixed `mh-SDIT-4122` (or the current ticket prefix, if different),
+   while **preserving the existing tests and their intent** — the goal is parity with the template's structure/config,
+   not a rewrite of what the tests check. Deliberate, intentional deviations from the template (e.g. fixes needed
+   because `test-app` uses this library in ways the template doesn't) should be preserved and called out, not
+   silently reverted.
+4. Verify the full test suite (and `ktlintCheck`) passes before presenting the change back for review, and
+   explicitly flag any judgement calls made along the way so they can be reviewed before the PR is raised.
