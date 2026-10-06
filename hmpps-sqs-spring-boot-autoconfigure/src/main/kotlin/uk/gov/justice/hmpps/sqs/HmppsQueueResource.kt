@@ -5,6 +5,7 @@ import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PutMapping
+import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
@@ -45,5 +46,21 @@ class HmppsQueueResource(hmppsQueueService: HmppsQueueService) {
   @PreAuthorize("hasRole(@environment.getProperty('hmpps.sqs.queueAdminRole', 'ROLE_QUEUE_ADMIN'))")
   fun getDlqMessages(@PathVariable("dlqName") dlqName: String, @RequestParam("maxMessages", required = false, defaultValue = "100") maxMessages: Int) = runBlocking {
     hmppsReactiveQueueResource.getDlqMessages(dlqName, maxMessages)
+  }
+
+  @GetMapping("/search-dlq-messages/{dlqName}")
+  @PreAuthorize("hasRole(@environment.getProperty('hmpps.sqs.queueAdminRole', 'ROLE_QUEUE_ADMIN'))")
+  fun searchDlqMessages(
+    @PathVariable("dlqName") dlqName: String,
+    @RequestParam("filter", required = false) filter: String?,
+    @RequestParam("maxMessages", required = false, defaultValue = "100") maxMessages: Int,
+  ) = runBlocking {
+    hmppsReactiveQueueResource.searchDlqMessages(dlqName, filter, maxMessages)
+  }
+
+  @PutMapping("/retry-dlq-messages/{dlqName}")
+  @PreAuthorize("hasRole(@environment.getProperty('hmpps.sqs.queueAdminRole', 'ROLE_QUEUE_ADMIN'))")
+  fun retryDlqMessages(@PathVariable("dlqName") dlqName: String, @RequestBody request: RetryDlqMessagesBody) = runBlocking {
+    hmppsReactiveQueueResource.retryDlqMessages(dlqName, request)
   }
 }
