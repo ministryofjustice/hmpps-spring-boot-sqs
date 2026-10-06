@@ -83,8 +83,8 @@ configuration lives differs between integration tests and deployed environments:
      [cloud-platform-environments](https://github.com/ministryofjustice/cloud-platform-environments) repository).
   2. Your service's `helm_deploy/<service>/values.yaml` maps each of those Kubernetes secret keys onto an
      `HMPPS_SQS_QUEUES_<queueId>_...`/`HMPPS_SQS_TOPICS_<topicId>_...` environment variable (using the generic-service
-     chart's `namespace_secrets` block) — see `test-app/helm_deploy/hmpps-template-kotlin/values.yaml` in this repo
-     for a worked example of that mapping.
+     chart's `namespace_secrets` block). For topics, use `HMPPS_SQS_TOPICS_<topicId>_ARN` to bind
+     `TopicConfig.arn`.
   3. Spring Boot's relaxed binding then maps those environment variables onto the matching `hmpps.sqs.queues.<queueId>.*`/
      `hmpps.sqs.topics.<topicId>.*` properties automatically — there's no equivalent YAML to write for these.
 
@@ -122,8 +122,8 @@ class EventListener(private val jsonMapper: JsonMapper) {
 ```
 
 That's it — you now also get, for free: a `HealthIndicator` for the queue/topic on your `/health` page, queue admin
-endpoints for retrying/purging/inspecting the DLQ, `AmazonSQS`/`AmazonSNS` beans (wired for LocalStack when testing
-and for AWS in production), distributed tracing of the published/received messages, and configurable DLQ retry
+endpoints for retrying/purging/inspecting the DLQ, `SqsAsyncClient`/`SnsAsyncClient` beans (wired for LocalStack when 
+testing and for AWS in production), distributed tracing of the published/received messages, and configurable DLQ retry
 timing. Each of these is covered in detail in [Features](#features) below.
 
 For a fuller worked example (including an audit queue, FIFO queues, and both reactive and non-reactive variants) see
@@ -140,9 +140,9 @@ See [Running Locally](readme-docs/RunningLocally.md)
 This library is driven by some configuration properties prefixed `hmpps.sqs` that are loaded into class
 `HmppsSqsProperties`. Based on the properties defined the library will attempt to:
 
-* create `AmazonSQS` beans for each queue defined which are configured for AWS (or LocalStack for testing / running
+* create `SqsAsyncClient` beans for each queue defined which are configured for AWS (or LocalStack for testing / running
   locally)
-* create `AmazonSNS` beans for each topic defined which are configured for AWS (or LocalStack for testing / running
+* create `SnsAsyncClient` beans for each topic defined which are configured for AWS (or LocalStack for testing / running
   locally)
 * create a `HealthIndicator` for each queue and topic which is registered with Spring Boot Actuator and appears on
   your `/health` page
@@ -245,7 +245,8 @@ Each topic declared in the `topics` map is defined in the `TopicConfig` property
 ### Publishing & Sending Messages
 
 This is normally the first thing you need once your queues and topics are configured — how do you actually get an
-event onto them? The library provides three helpers, all built on the same underlying retry/backoff machinery.
+event onto them? The library provides three helpers. `HmppsTopic.publish` and `HmppsQueue.sendMessage` share
+Spring retry/backoff machinery; `HmppsAuditService.publishEvent` sends directly through the AWS SDK client.
 
 #### Publishing to an SNS topic: `HmppsTopic.publish`
 
@@ -262,8 +263,8 @@ hmppsDomainTopic.publish(
 This automatically adds `eventType` as a message attribute (so consumers and the library's own DLQ/error-visibility
 handling can read it), retries the publish on failure, and returns a `PublishResponse` containing the message ID.
 
-By default this will retry 4 times with an exponential backoff starting at 1 second — enough to block a UI-facing
-request for a few seconds while giving transient errors a chance to clear. Other scenarios are supported by
+By default this makes up to 4 attempts (the initial call plus 3 retries), with exponential backoff starting at 1 second.
+If all retries run, the backoff waits total about 7 seconds, excluding request duration. Other scenarios are supported by
 overriding the optional parameters:
 
 | Parameter        | Default                                             | Description                                                                                             |
@@ -293,7 +294,7 @@ hmppsQueue.sendMessage(
 )
 ```
 
-This supports the same `noTracing`, `attributes`, `retryPolicy`, `backOffPolicy` and `delayInSeconds` parameters as
+This supports the same `noTracing`, `attributes`, `retryPolicy` and `backOffPolicy` parameters as
 `HmppsTopic.publish` (see the KDoc on `HmppsQueue.sendMessage` in
 [`HmppsQueue.kt`](hmpps-sqs-spring-boot-autoconfigure/src/main/kotlin/uk/gov/justice/hmpps/sqs/HmppsQueue.kt) for
 worked examples), plus an optional `delayInSeconds` to delay delivery — useful for avoiding race conditions where a
@@ -509,9 +510,9 @@ Class `HmppsQueueResource` provides the following endpoints, all under `/queue-a
 * `messagesFoundCount` in the response is a snapshot of how many messages were on the DLQ at the moment the task
   started — it isn't a guarantee of how many were actually moved, and the move happens asynchronously in the
   background (AWS applies its own rate limiting to the move).
-* If you need to confirm the DLQ is empty afterwards, poll it (e.g. via the health page, or
-  `get-dlq-messages`/`countMessagesOnQueue` — see [Observability](#observability)) rather than relying on the retry
-  response alone.
+* To monitor draining, check the native message move task's status and poll the DLQ with
+  `countAllMessagesOnQueue` (see [Observability](#observability)), which includes visible and in-flight messages.
+  Queue counts are approximate; a zero visible-message count alone does not confirm that the DLQ is empty.
 
 #### Usage
 
@@ -657,13 +658,13 @@ Both return a `CompletableFuture<Int>`. See the KDoc in
 [`HmppsQueueService.kt`](hmpps-sqs-spring-boot-autoconfigure/src/main/kotlin/uk/gov/justice/hmpps/sqs/HmppsQueueService.kt)
 for more detail on the distinction between the two.
 
-### AmazonSQS Beans
+### SQS Beans
 
 As each queue and dead letter queue (DLQ) has its own access key and secret we create an SQS client for each one.
 Historically this has been done in Spring `@Configuration` classes for both AWS and LocalStack (for testing) but this
 becomes complicated and hard to follow when there are multiple queues and DLQs.
 
-To remove this pain each queue defined in `HmppsSqsProperties` should have an `AmazonSQS` created for both the main
+To remove this pain each queue defined in `HmppsSqsProperties` should have an `SqsAsyncClient` created for both the main
 queue and the associated DLQ.
 
 The bean names have the following format and can be used with `@Qualifier` to inject the beans into another
@@ -672,7 +673,7 @@ The bean names have the following format and can be used with `@Qualifier` to in
 * main queue - `<queueId>-sqs-client`
 * DLQ - `<queueId>-sqs-dlq-client`
 
-#### LocalStack AmazonSQS Beans
+#### LocalStack SQS Beans
 
 In the past we would generally have a shell script to create any queues in a running LocalStack instance so that we
 can run tests against them.
@@ -680,16 +681,16 @@ can run tests against them.
 This library will now create the queues automatically when the provider is LocalStack so we don't need the queue
 creation shell script.
 
-#### Overriding AmazonSQS Beans
+#### Overriding SQS Beans
 
-If for any reason you don't want to use the `AmazonSQS` beans automatically created by this library but still want
+If for any reason you don't want to use the `SqsAsyncClient` beans automatically created by this library but still want
 other features such as a `HealthIndicator` or queue admin endpoints then it's possible to override them.
 
 At the point this library attempts to generate any bean and register with the `ApplicationContext`, if it finds an
 existing bean with the same name then it does nothing and uses the existing bean.
 
-So first find the bean names you wish to override as mentioned in [AmazonSQS Beans](#amazonsqs-beans). Then create
-your own `AmazonSQS` bean with the same name.
+So first find the bean names you wish to override as mentioned in [SQS Beans](#sqs-beans). Then create
+your own `SqsAsyncClient` bean with the same name.
 
 ### AmazonSNS Beans
 
@@ -718,7 +719,7 @@ If you look in the `test-app`'s
 [application properties](https://github.com/ministryofjustice/hmpps-spring-boot-sqs/blob/main/test-app/src/test/resources/application-test.yml)
 you can see that it uses random queue and topic names. These are only needed for integration testing.
 
-When `provider=localstack` the queues/topics are created in LocalStack as soon as the `AmazonSQS`/`AmazonSNS` beans
+When `provider=localstack` the queues/topics are created in LocalStack as soon as the `SqsAsyncClient`/`SnsAsyncClient` beans
 are created. By using random names we can ensure that if Spring loads a new context during integration testing then
 the new context gets new queues/topics which cannot interfere with tests from another context.
 
@@ -768,7 +769,7 @@ In the past many queueing applications have allowed running against either a Tes
 standalone LocalStack instance started manually with docker compose (which is required when running the tests in
 CI).
 
-This led to some applications having a very complicated configuration with 3 sets of `AmazonSQS` beans required -
+This led to some applications having a very complicated configuration with 3 sets of `SqsAsyncClient` beans required -
 production, standalone LocalStack and Testcontainers LocalStack.
 
 When using this library there is an easier way to use Testcontainers. Look in the `test-app` at class
