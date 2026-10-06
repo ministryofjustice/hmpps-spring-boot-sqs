@@ -6,8 +6,8 @@ These instructions apply whenever an AI agent is creating or reviewing a pull re
 
 This repository publishes a library (`hmpps-spring-boot-sqs`) whose `README.md` is the primary source of
 documentation for consumers. Whenever you create or review a PR, check the diff against the current `README.md`
-(and the supporting docs it links to: `readme-docs/RunningLocally.md`, `readme-docs/CONTRIBUTING.md`,
-`readme-docs/PUBLISHING.md`, and `release-notes/*.md`) and consider whether the README needs updating:
+(and the supporting docs it links to: `readme-docs/*.md` and `release-notes/*.md`) and consider whether the README
+needs updating:
 
 * **Where existing code has changed** (e.g. a property's name, default, validation rules, or behaviour; an endpoint's
   path, request/response shape, or semantics), check whether the README's description of that feature is now
@@ -36,3 +36,8 @@ linked from the README, if the PR bumps the major version in `build.gradle.kts`)
 If you're creating a PR with a change that should be covered by release notes but the PR doesn't update them, add an
 entry yourself. If you're reviewing a PR and it doesn't update release notes despite changing published behaviour,
 flag this in your review comments rather than silently approving.
+
+Also check that the version in `build.gradle.kts` has been bumped appropriately for the change — it's easy for an
+author (human or agent) to forget this. If you're reviewing a PR and believe the change is breaking but the version
+number has not been bumped as a major upgrade, flag this in your review comments. Do not fix it yourself — the
+correct version bump is a judgement call for the author/maintainers to make.
