@@ -24,3 +24,15 @@ documentation for consumers. Whenever you create or review a PR, check the diff 
 
 If you find the README is out of date, update it as part of the PR. If you're reviewing a PR and the README looks
 like it needs an update but hasn't been changed, flag this in your review comments rather than silently approving.
+
+## Always update Release Notes
+
+Release notes (`release-notes/<major>.x.md`, e.g. `release-notes/7.x.md`, linked from the
+[`Release Notes`](../README.md#release-notes) section of the README) should be updated for every PR that changes
+published behaviour — this includes new features, behavioural changes, deprecations, and bug fixes, not just breaking
+changes. Add an entry to the file for the current major version (create a new `release-notes/<next-major>.x.md` file,
+linked from the README, if the PR bumps the major version in `build.gradle.kts`).
+
+If you're creating a PR with a change that should be covered by release notes but the PR doesn't update them, add an
+entry yourself. If you're reviewing a PR and it doesn't update release notes despite changing published behaviour,
+flag this in your review comments rather than silently approving.
