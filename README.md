@@ -362,7 +362,7 @@ This means that to get a SQS listener working for each queue in `HmppsSqsPropert
 where `<queueId>` is taken from [HmppsSqsProperties Definitions](#hmppssqsproperties-definitions).
 
 An example is available in the `test-app`'s
-[listeners](https://github.com/ministryofjustice/hmpps-spring-boot-sqs/blob/main/test-app/src/main/kotlin/uk/gov/justice/digital/hmpps/hmppstemplatepackagename/service/MessageListener.kt).
+[listeners](https://github.com/ministryofjustice/hmpps-spring-boot-sqs/blob/main/test-app/src/main/kotlin/uk/gov/justice/digital/hmpps/templatepackagename/service/MessageListener.kt).
 
 ##### Overriding the SqsMessageListenerContainerFactory
 
@@ -398,7 +398,7 @@ A message arriving on a queue that's subscribed to an SNS topic is wrapped in an
   ```
 
 Both patterns are demonstrated side by side in `test-app`'s
-[MessageListener.kt](https://github.com/ministryofjustice/hmpps-spring-boot-sqs/blob/main/test-app/src/main/kotlin/uk/gov/justice/digital/hmpps/hmppstemplatepackagename/service/MessageListener.kt).
+[MessageListener.kt](https://github.com/ministryofjustice/hmpps-spring-boot-sqs/blob/main/test-app/src/main/kotlin/uk/gov/justice/digital/hmpps/templatepackagename/service/MessageListener.kt).
 
 Note that [7.0.0](release-notes/7.x.md) changed the point at which `MessageInterceptor` sees the message (now after
 deserialization) — if you're upgrading from an older version and your listener used to receive a raw `String`
@@ -753,7 +753,7 @@ real bean from the `HmppsQueueService` by doing:
 
 If you definitely need a SpyBean then there is an example in the `test-app` which defines beans to spy on in a
 `@TestConfiguration`. See
-[IntegrationTestBase](https://github.com/ministryofjustice/hmpps-spring-boot-sqs/blob/main/test-app/src/test/kotlin/uk/gov/justice/digital/hmpps/hmppstemplatepackagename/integration/IntegrationTestBase.kt).
+[IntegrationTestBase](https://github.com/ministryofjustice/hmpps-spring-boot-sqs/blob/main/test-app/src/test/kotlin/uk/gov/justice/digital/hmpps/templatepackagename/integration/IntegrationTestBase.kt).
 
 #### MockBeans
 

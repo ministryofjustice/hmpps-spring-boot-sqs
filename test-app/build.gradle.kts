@@ -1,27 +1,23 @@
 plugins {
-  id("uk.gov.justice.hmpps.gradle-spring-boot") version "11.0.6"
-  kotlin("plugin.spring") version "2.4.10"
-}
-
-configurations {
-  testImplementation { exclude(group = "org.junit.vintage") }
+  id("uk.gov.justice.hmpps.gradle-spring-boot") version "11.0.11"
+  kotlin("plugin.spring") version "2.4.20"
 }
 
 dependencies {
   annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
+  implementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter:3.0.3")
   implementation("org.springframework.boot:spring-boot-starter-webmvc")
   implementation("org.springframework.boot:spring-boot-starter-webclient")
-  implementation("org.springframework.boot:spring-boot-starter-security")
-  implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8")
   implementation("io.opentelemetry:opentelemetry-extension-kotlin")
   implementation("org.springframework.boot:spring-boot-jackson2")
 
-  implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.3")
+  implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.1.1")
 
   implementation(project(":hmpps-sqs-spring-boot-starter"))
 
+  testImplementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter-test:3.0.3")
   testImplementation("org.springframework.boot:spring-boot-starter-webclient-test")
   testImplementation("org.springframework.boot:spring-boot-starter-webflux-test")
   testImplementation("org.assertj:assertj-core:3.27.6")
@@ -30,8 +26,6 @@ dependencies {
   testImplementation("org.mockito.kotlin:mockito-kotlin:6.1.0")
   testImplementation("org.mockito:mockito-inline:5.2.0")
   testImplementation("org.awaitility:awaitility-kotlin:4.3.0")
-  testImplementation("io.jsonwebtoken:jjwt-impl:0.13.0")
-  testImplementation("io.jsonwebtoken:jjwt-jackson:0.13.0")
   testImplementation("org.wiremock:wiremock-standalone:3.13.2")
   testImplementation("org.testcontainers:localstack:1.21.4")
   testImplementation("com.amazonaws:aws-java-sdk-core:1.12.796") // Needed so Localstack has access to the AWS SDK V1 API
@@ -39,15 +33,18 @@ dependencies {
   testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test")
   testImplementation("io.opentelemetry:opentelemetry-extension-trace-propagators")
   testImplementation("io.opentelemetry:opentelemetry-sdk-testing")
+  testImplementation("io.swagger.parser.v3:swagger-parser:2.1.48") {
+    exclude(group = "io.swagger.core.v3")
+  }
 }
 
 kotlin {
-  jvmToolchain(21)
+  jvmToolchain(25)
 }
 
 tasks {
   withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-    compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21
+    compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_25
   }
 }
 
