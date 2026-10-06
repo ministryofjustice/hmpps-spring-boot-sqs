@@ -17,7 +17,7 @@ If your PR is accepted, make sure the version number in `build.gradle.kts` has b
 * Then publish the plugin to your local maven repository:
 
 ```
-./gradlew publishToMavenLocal -x :hmpps-sqs-spring-boot-autoconfigure:signAutoconfigurePublication -x :hmpps-sqs-spring-boot-starter:signStarterPublication
+./gradlew publishToMavenLocal
 ```
 
 In the other project's Gradle build script change the version to match and it should now be pulled into the project.
@@ -36,7 +36,7 @@ Publishing is automated via GitHub Actions:
 * That `publish` environment has required reviewers configured, so publishing a new version still requires someone
   with access to manually approve the GitHub Actions run before it proceeds — this is the modern equivalent of the
   old CircleCI manual-approval step. If you do not have permission to approve this step please ask in Slack channel
-  `#hmpps_dev` to find someone that does.
+  `#kotlin-dev` to find someone that does.
 
 ### Published Version Numbers
 
@@ -67,13 +67,15 @@ However, please note that the document above is old and a couple of things have 
 
 ### Authenticating with Sonatype
 
+TODO - this has all changed recently and needs reworking.
+
 When publishing to Maven Central we authenticate with a username and password.
 
 In order to use groupId (see [Maven coordinates](https://maven.apache.org/pom.html#Maven_Coordinates))
-`uk.org.justice.service.hmpps` we claimed the domain `uk.org.justice.service.hmpps` with
+`uk.gov.justice.service.hmpps` we claimed the domain `uk.gov.justice.service.hmpps` with
 Sonatype ( [see this PR](https://github.com/ministryofjustice/cloud-platform-environments/pull/4872) ) and registered
 this against a personal Sonatype username (service accounts not supported). Several members of the former
-`dps-tech-team` have accounts associated with that domain too — ask in Slack channel `#hmpps_dev` to find such people.
+`dps-tech-team` have accounts associated with that domain too — ask in Slack channel `#kotlin-dev` to find such people.
 
 An account also gives us access to the [Staging repository](https://s01.oss.sonatype.org/#stagingRepositories) which is
 used to validate Maven publications before they are published.
@@ -85,7 +87,7 @@ check there for some clues.
 
 #### Creating a Sonatype User
 
-To get access to the Sonatype domain `uk.org.justice.service.hmpps`:
+To get access to the Sonatype domain `uk.gov.justice.service.hmpps`:
 
 * [Create a Sonatype user account](https://issues.sonatype.org/secure/Signup!default.jspa)
 * Get an existing Sonatype user with access to the domain to

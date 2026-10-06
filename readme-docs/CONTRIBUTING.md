@@ -1,9 +1,9 @@
 # Contributing To This Library
 
-Raise a PR and ask for a review in the MOJDT Slack channel `#hmpps_dev`.
+Raise a PR and ask for a review in the MOJDT Slack channel `#kotlin-dev`.
 
 If accepted, make sure that the version number in `build.gradle.kts` has been upgraded according to
-[Semver rules](https://semver.org/spec/v2.0.0.html) and ask in `#hmpps_dev` to publish the library — see
+[Semver rules](https://semver.org/spec/v2.0.0.html) and ask in `#kotlin-dev` to publish the library — see
 [PUBLISHING.md](PUBLISHING.md) for the full publishing process.
 
 ## Contribution Guidelines
