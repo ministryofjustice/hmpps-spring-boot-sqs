@@ -4,14 +4,17 @@ import com.google.gson.GsonBuilder
 import com.google.gson.ToNumberPolicy
 import com.microsoft.applicationinsights.TelemetryClient
 import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
+import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.future.await
 import org.slf4j.LoggerFactory
 import software.amazon.awssdk.services.sns.model.PublishRequest
 import software.amazon.awssdk.services.sqs.SqsAsyncClient
+import software.amazon.awssdk.services.sqs.model.ChangeMessageVisibilityRequest
 import software.amazon.awssdk.services.sqs.model.DeleteMessageRequest
 import software.amazon.awssdk.services.sqs.model.GetQueueAttributesRequest
 import software.amazon.awssdk.services.sqs.model.QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES
@@ -27,6 +30,11 @@ import software.amazon.awssdk.services.sqs.model.PurgeQueueRequest as AwsPurgeQu
 
 class MissingQueueException(message: String) : RuntimeException(message)
 class MissingTopicException(message: String) : RuntimeException(message)
+
+// Long enough to comfortably cover the sendMessage + deleteMessage calls made against a matched message in
+// HmppsQueueService.retryDlqMessagesByIds, once its visibility has been explicitly extended past the short
+// scan-only timeout other (non-matching) messages receive.
+private const val RETRY_VISIBILITY_TIMEOUT_SECONDS = 30
 
 const val AUDIT_ID = "audit"
 
@@ -161,8 +169,16 @@ open class HmppsQueueService(
     val remainingIds = messageIds.toMutableSet()
     val retriedIds = mutableListOf<String>()
 
+    // Each matched message is sent/deleted immediately, as part of the same pass that receives it, rather than
+    // being collected into a list first - this keeps the gap between receipt and deletion as small as possible, so
+    // the receipt handle doesn't go stale (and the message doesn't become concurrently visible to others) before
+    // we act on it. Non-matching messages keep the short scan-only visibility timeout (so they reappear quickly,
+    // same as search/getDlqMessages); only an actual match has its visibility explicitly extended, just before the
+    // send-and-delete, to comfortably cover that pair of calls. Scanning stops as soon as every requested id has
+    // been found, rather than always scanning the whole DLQ.
     (1..messageCount)
       .asFlow()
+      .takeWhile { remainingIds.isNotEmpty() }
       .map {
         sqsDlqClient.receiveMessage(
           ReceiveMessageRequest.builder()
@@ -175,8 +191,14 @@ open class HmppsQueueService(
       }
       .mapNotNull { it.messages().firstOrNull() }
       .filter { msg -> remainingIds.remove(msg.messageId()) }
-      .toList()
-      .forEach { msg ->
+      .collect { msg ->
+        sqsDlqClient.changeMessageVisibility(
+          ChangeMessageVisibilityRequest.builder()
+            .queueUrl(dlqUrl)
+            .receiptHandle(msg.receiptHandle())
+            .visibilityTimeout(RETRY_VISIBILITY_TIMEOUT_SECONDS)
+            .build(),
+        ).await()
         sqsClient.sendMessage(
           SendMessageRequest.builder()
             .queueUrl(queueUrl)
