@@ -60,15 +60,20 @@ When asked to perform the sync:
    classes), `application.yml`/`application-*.yml` properties, and deployment-only files (`.github/workflows`,
    `helm_deploy`, `Dockerfile`, `.java-version`, `renovate.json`, `applicationinsights*.json`). If there are no
    meaningful differences, say so and stop — do not make changes for the sake of it.
-2. **If there are changes, ask clarifying questions before applying them.** Prior syncs have needed engineer input on
-   judgement calls such as: whether to adopt new shared starter libraries, whether to bump versions, whether
-   deployment-only/inert files are in scope, package renames, new template-introduced tests, and whether
-   `test-app-reactive` needs to stay fully in sync with `test-app` (it does not necessarily need to be — treat it as
-   a second, independent pass).
-3. Apply the agreed changes on a new branch prefixed `mh-SDIT-4122` (or the current ticket prefix, if different),
-   while **preserving the existing tests and their intent** — the goal is parity with the template's structure/config,
-   not a rewrite of what the tests check. Deliberate, intentional deviations from the template (e.g. fixes needed
-   because `test-app` uses this library in ways the template doesn't) should be preserved and called out, not
-   silently reverted.
-4. Verify the full test suite (and `ktlintCheck`) passes before presenting the change back for review, and
+2. **Match the template as closely as possible — everything should be synced by default**, including dependency
+   versions, new shared starter libraries, package renames, new template-introduced tests, and deployment-only/inert
+   files. Don't treat any of these as optional judgement calls to raise with the engineer; the default is always to
+   adopt the template's approach unless doing so would be actively wrong for `test-app` (e.g. a file that serves a
+   genuine, different local-dev purpose in `test-app` rather than being an inert copy — flag cases like this rather
+   than silently deviating). `test-app-reactive` does **not** need to stay in sync with `test-app` — that's up to the
+   engineers maintaining the library, not something to reconcile as part of this task. Only ask clarifying questions
+   for genuinely new judgement calls not covered by this guidance (or by prior answers already recorded in this
+   section, once any are added).
+3. Ask the engineer which branch to work on — e.g. a new branch name to create, or confirmation that the current
+   branch is fine (as long as it isn't `main`). Do not assume or invent a branch naming convention.
+4. Apply the agreed changes, **preserving the existing tests and their intent** — the goal is parity with the
+   template's structure/config, not a rewrite of what the tests check. Deliberate, intentional deviations from the
+   template (e.g. fixes needed because `test-app` uses this library in ways the template doesn't) should be preserved
+   and called out, not silently reverted.
+5. Verify the full test suite (and `ktlintCheck`) passes before presenting the change back for review, and
    explicitly flag any judgement calls made along the way so they can be reviewed before the PR is raised.
