@@ -54,20 +54,42 @@ implementation("uk.gov.justice.service.hmpps:hmpps-sqs-spring-boot-starter:<libr
 A minimal end-to-end example: configure one queue subscribed to one topic, publish an event onto the topic, and
 listen for it on the queue.
 
-Configuration (see [HmppsSqsProperties Definitions](#hmppssqsproperties-definitions) for every available property):
+#### Configuration
 
-```yaml
-hmpps.sqs:
-  provider: localstack
-  queues:
-    myqueue:
-      queueName: my-queue
-      dlqName: my-queue-dlq
-      subscribeTopicId: domainevents
-  topics:
-    domainevents:
-      arn: arn:aws:sns:eu-west-2:000000000000:domain-events-topic
-```
+Each queue and topic is configured under `hmpps.sqs` (see
+[HmppsSqsProperties Definitions](#hmppssqsproperties-definitions) for every available property), but *where* that
+configuration lives differs between integration tests and deployed environments:
+
+* **Integration tests against LocalStack** — configure everything inline in `application-test.yaml`, as this is used
+  directly to create the queues/topics/subscriptions in LocalStack:
+
+  ```yaml
+  hmpps.sqs:
+    provider: localstack
+    queues:
+      myqueue:
+        queueName: my-queue
+        dlqName: my-queue-dlq
+        subscribeTopicId: domainevents
+    topics:
+      domainevents:
+        arn: arn:aws:sns:eu-west-2:000000000000:domain-events-topic
+  ```
+
+* **Deployed environments (dev/preprod/prod)** — queue/topic names and ARNs are real AWS resource identifiers, so
+  they must never be hardcoded in `application.yaml`. Instead:
+  1. The actual SQS queue/DLQ names and SNS topic ARNs are provisioned by Terraform and land as Kubernetes secrets in
+     your namespace (see your service's resources in the
+     [cloud-platform-environments](https://github.com/ministryofjustice/cloud-platform-environments) repository).
+  2. Your service's `helm_deploy/<service>/values.yaml` maps each of those Kubernetes secret keys onto an
+     `HMPPS_SQS_QUEUES_<queueId>_...`/`HMPPS_SQS_TOPICS_<topicId>_...` environment variable (using the generic-service
+     chart's `namespace_secrets` block) — see `test-app/helm_deploy/hmpps-template-kotlin/values.yaml` in this repo
+     for a worked example of that mapping.
+  3. Spring Boot's relaxed binding then maps those environment variables onto the matching `hmpps.sqs.queues.<queueId>.*`/
+     `hmpps.sqs.topics.<topicId>.*` properties automatically — there's no equivalent YAML to write for these.
+
+  Any `hmpps.sqs` properties that aren't secret (e.g. `provider`, `dlqMaxReceiveCount`) can still be set directly in
+  `application.yaml`.
 
 Publish an event onto the topic using [`HmppsTopic.publish`](#publishing-to-an-sns-topic-hmppstopicpublish):
 
@@ -109,7 +131,7 @@ the [test-app](https://github.com/ministryofjustice/hmpps-spring-boot-sqs/tree/m
 
 ## How To Run This Locally
 
-See [Running Locally](./RunningLocally.md)
+See [Running Locally](readme-docs/RunningLocally.md)
 
 ## Features
 
@@ -197,28 +219,28 @@ Each queue declared in the `queues` map is defined in the `QueueConfig` property
 |-----------------------------|---------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | queueId                     |         | The key to the `queues` map. A unique name for the queue configuration, used heavily when automatically creating Spring beans. Must be lower case letters only (no hyphens or underscores).                                                                                                                                                |
 | queueName                   |         | The name of the queue as recognised by AWS or LocalStack. The AWS queue name, should be derived from an environment variable of format `HMPPS_SQS_QUEUES_<queueId>_QUEUE_NAME`.                                                                                                                                                            |
-| queueAccessKeyId            |         | Only used for `provider=aws`. The AWS access key ID, should be derived from an environment variable of format `HMPPS_SQS_QUEUES_<queueId>_QUEUE_ACCESS_KEY_ID`.                                                                                                                                                                            |
-| queueSecretAccessKey        |         | Only used for `provider=aws`. The AWS secret access key, should be derived from an environment variable of format `HMPPS_SQS_QUEUES_<queueId>_QUEUE_SECRET_ACCESS_KEY`.                                                                                                                                                                    |
 | subscribeTopicId            |         | Only used for `provider=localstack`. The `topicId` of the topic this queue subscribes to when either running integration tests or running locally.                                                                                                                                                                                         |
 | subscribeFilter             |         | Only used for `provider=localstack`. The filter policy to be applied when subscribing to the topic. Generally used to filter out certain messages. See your queue's `filter_policy` in `cloud-platform-environments` for an example.                                                                                                       |
-| dlqName                     |         | The name of the queue's dead letter queue (DLQ) as recognised by AWS or LocalStack. The AWS queue name of the DLQ, should be derived from an environment variable of format `HMPPS_SQS_QUEUES_<queueId>_DLQ_NAME`.                                                                                                                         |
-| dlqAccessKeyId              |         | Only used for `provider=aws`. The AWS access key ID of the DLQ, should be derived from an environment variable of format `HMPPS_SQS_QUEUES_<queueId>_DLQ_ACCESS_KEY_ID`.                                                                                                                                                                   |
-| dlqSecretAccessKey          |         | Only used for `provider=aws`. The AWS secret access key of the DLQ, should be derived from an environment variable of format `HMPPS_SQS_QUEUES_<queueId>_DLQ_SECRET_ACCESS_KEY`.                                                                                                                                                           |
+| dlqName                     |         | The name of the queue's dead letter queue (DLQ) as recognised by AWS or LocalStack. The AWS queue name of the DLQ, should be derived from an environment variable of format `HMPPS_SQS_QUEUES_<queueId>_DLQ_NAME`. Omit this (along with the other `dlq*` properties below) entirely if the queue doesn't need a DLQ — it's optional.      |
 | dlqMaxReceiveCount          | 5       | Only used for `provider=localstack`. Change the number of retries automatically provided by Localstack on DLQs. e.g. It can be useful to change this to 1 when testing DLQ retry functionality.                                                                                                                                            |
 | visibilityTimeout           | 30      | Only used for `provider=localstack`. Sets the maximum amount of time (in seconds) that a message is considered to be in process before it is then acknowledged or made visible again to other listeners. See https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-visibility-timeout.html for more information. |
 | errorVisibilityTimeout      |         | A comma separated list of the time in seconds before a failed message is retried. Missing config falls back to the global `defaultErrorVisibilityTimeout`.                                                                                                                                                                                 |
 | propagateTracing            | `true`  | Reads distributed tracing headers and propagates them onwards, keeping a link to the original published message in your Application Monitor e.g. Microsoft Log Analytics. See [Disabling Tracing of Messages](#disabling-tracing-of-messages) below.                                                                                      |
 | eventErrorVisibilityTimeout |         | A map of eventTypes -> comma separated list of the time in seconds before a failed message is retried. Missing config for an eventType falls back to the queue's `errorVisibilityTimeout`.                                                                                                                                                 |
+| queueAccessKeyId            |         | DEPRECATED: use IRSA in your Cloud Platform configuration to control queue access. Only used for `provider=aws`. The AWS access key ID, should be derived from an environment variable of format `HMPPS_SQS_QUEUES_<queueId>_QUEUE_ACCESS_KEY_ID`.                                                                                         |
+| queueSecretAccessKey        |         | DEPRECATED: use IRSA in your Cloud Platform configuration to control queue access. Only used for `provider=aws`. The AWS secret access key, should be derived from an environment variable of format `HMPPS_SQS_QUEUES_<queueId>_QUEUE_SECRET_ACCESS_KEY`.                                                                                 |
+| dlqAccessKeyId              |         | DEPRECATED: use IRSA in your Cloud Platform configuration to control queue access. Only used for `provider=aws`. The AWS access key ID of the DLQ, should be derived from an environment variable of format `HMPPS_SQS_QUEUES_<queueId>_DLQ_ACCESS_KEY_ID`.                                                                                |
+| dlqSecretAccessKey          |         | DEPRECATED: use IRSA in your Cloud Platform configuration to control queue access. Only used for `provider=aws`. The AWS secret access key of the DLQ, should be derived from an environment variable of format `HMPPS_SQS_QUEUES_<queueId>_DLQ_SECRET_ACCESS_KEY`.                                                                        |
 
 Each topic declared in the `topics` map is defined in the `TopicConfig` property class
 
 | Property         | Default | Description                                                                                                                                                                                 |
 |------------------|---------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | topicId          |         | The key to the `topics` map. A unique name for the topic configuration, used heavily when automatically creating Spring beans. Must be lower case letters only (no hyphens or underscores). |
-| arn              |         | The ARN of the topic as recognised by AWS and LocalStack.                                                                                                                                   |
-| accessKeyId      |         | Only used for `provider=aws`. The AWS access key ID, should be derived from an environment variable of format `HMPPS_SQS_TOPICS_<topicId>_ACCESS_KEY_ID`.                                   |
-| secretAccessKey  |         | Only used for `provider=aws`. The AWS secret access key, should be derived from an environment variable of format `HMPPS_SQS_TOPICS_<topicId>_SECRET_ACCESS_KEY`.                           |
+| arn              |         | The ARN of the topic as recognised by AWS and LocalStack. For `provider=aws` this is a real topic ARN, derived from an environment variable of format `HMPPS_SQS_TOPICS_<topicId>_ARN` mapped in your Helm values file. For `provider=localstack` this is just a test configuration value, e.g. `arn:aws:sns:eu-west-2:000000000000:${random.uuid}`. |
 | propagateTracing | `true`  | Writes distributed tracing headers to messages and propagates them onwards, keeping a link to message consumers in your Application Monitor e.g. Microsoft Log Analytics.                   |
+| accessKeyId      |         | DEPRECATED: use IRSA in your Cloud Platform configuration to control queue access. Only used for `provider=aws`. The AWS access key ID, should be derived from an environment variable of format `HMPPS_SQS_TOPICS_<topicId>_ACCESS_KEY_ID`.                                   |
+| secretAccessKey  |         | DEPRECATED: use IRSA in your Cloud Platform configuration to control queue access. Only used for `provider=aws`. The AWS secret access key, should be derived from an environment variable of format `HMPPS_SQS_TOPICS_<topicId>_SECRET_ACCESS_KEY`.                           |
 
 ### Publishing & Sending Messages
 
@@ -293,21 +315,11 @@ hmppsAuditService.publishEvent(
 )
 ```
 
-The full shape of an audit event (`HmppsAuditEvent`) is:
-
-| Field           | Required | Description                                                                 |
-|-----------------|----------|------------------------------------------------------------------------------|
-| `what`          | yes      | The action that took place, e.g. `PRISONER_UPDATED`.                        |
-| `who`           | yes      | Who performed the action.                                                    |
-| `service`       | no       | Defaults to `spring.application.name` if not supplied.                       |
-| `subjectId`     | no       | The id of the thing being acted upon.                                        |
-| `subjectType`   | no       | The type of the thing being acted upon.                                      |
-| `correlationId` | no       | A correlation id linking related events/requests together.                   |
-| `when`          | no       | Defaults to `Instant.now()` if not supplied.                                 |
-| `details`       | no       | Any additional free-text detail about the event.                             |
-
 You can also build and pass an `HmppsAuditEvent` directly via the other `publishEvent(hmppsAuditEvent: HmppsAuditEvent)`
 overload if you'd rather construct it yourself.
+
+For what audit is, why we have it, and what each field means, see the
+[HMPPS Audit documentation](https://dsdmoj.atlassian.net/wiki/x/bIC2SgE).
 
 #### `eventType` message attribute helpers
 
@@ -346,9 +358,7 @@ This means that to get a SQS listener working for each queue in `HmppsSqsPropert
   @SqsListener("<queueId>", factory = "hmppsQueueContainerFactoryProxy")
 ```
 
-where `<queueId>` is taken from [HmppsSqsProperties Definitions](#hmppssqsproperties-definitions). Note the attribute
-is `factory`, not `containerFactory` — `io.awspring.cloud.sqs.annotation.SqsListener` doesn't have a
-`containerFactory` attribute.
+where `<queueId>` is taken from [HmppsSqsProperties Definitions](#hmppssqsproperties-definitions).
 
 An example is available in the `test-app`'s
 [listeners](https://github.com/ministryofjustice/hmpps-spring-boot-sqs/blob/main/test-app/src/main/kotlin/uk/gov/justice/digital/hmpps/hmppstemplatepackagename/service/MessageListener.kt).
@@ -486,14 +496,13 @@ Class `HmppsQueueResource` provides the following endpoints, all under `/queue-a
 | Method | Path                            | Description                                                                                                 |
 |--------|----------------------------------|---------------------------------------------------------------------------------------------------------------|
 | `GET`  | `/get-dlq-messages/{dlqName}`    | Peek at (without removing) up to `maxMessages` (default 100) messages currently on the DLQ.                   |
-| `PUT`  | `/retry-dlq/{dlqName}`           | Retry every message currently on the named DLQ (see below for how this actually works).                       |
+| `PUT`  | `/retry-dlq/{dlqName}`           | Retry every message currently on the named DLQ (see [How retry actually works](#how-retry-actually-works)).   |
 | `PUT`  | `/retry-all-dlqs`                | Retry every DLQ configured in the application.                                                                 |
 | `PUT`  | `/purge-queue/{queueName}`       | Purge all messages from the named queue (works for both main queues and DLQs; the `audit` queue is excluded).  |
 
 ##### How retry actually works
 
-Retrying is not a message-by-message replay performed by this library. `retry-dlq`/`retry-all-dlqs` count the
-messages currently on the DLQ, then start a single native SQS
+`retry-dlq`/`retry-all-dlqs` count the messages currently on the DLQ, then start a single native SQS
 [message move task](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-dlq-message-moving.html)
 (`StartMessageMoveTaskRequest`) to move them all back onto the main queue, and return immediately. This means:
 
@@ -590,10 +599,6 @@ AppRequests
 will show all the messages that were then received and published from that original message. Alternatively going to
 Transaction Search in Log Analytics will then show a graph with that information.
 
-> Note: [7.0.0](release-notes/7.x.md) changed the `AppDependencies`/`AppRequests` field names used for tracing
-> (`Target` and `DependencyType`) — if you have saved Log Analytics queries from before that version that stopped
-> matching, this is why.
-
 #### Disabling Tracing of Messages
 
 if `propagateTracing` is set to `false` the new spans will still be created, but they will not be linked to the
@@ -686,26 +691,6 @@ existing bean with the same name then it does nothing and uses the existing bean
 So first find the bean names you wish to override as mentioned in [AmazonSQS Beans](#amazonsqs-beans). Then create
 your own `AmazonSQS` bean with the same name.
 
-#### Optional DLQ
-
-Queues without dead letter queues are supported by this library. Configure the queue in the same manner as a normal
-queue, but omit any dlq properties.
-
-#### Random Queue Names
-
-If you look in the `test-app`'s
-[application properties](https://github.com/ministryofjustice/hmpps-spring-boot-sqs/blob/main/test-app/src/test/resources/application-test.yml)
-you can see that it uses random queue names.
-
-When `provider=localstack` the queues are created in LocalStack as soon as the `AmazonSQS` beans are created. By
-using random queue names we can ensure that if Spring loads a new context during integration testing then the new
-context gets new queues which cannot interfere with tests from another context.
-
-If you need to know the actual queue names used you can find them in the Spring logs. You can also see them in
-LocalStack with command:
-
-`AWS_ACCESS_KEY_ID=foobar AWS_SECRET_ACCESS_KEY=foobar aws --endpoint-url=http://localhost:4566 --region=eu-west-2 sqs list-queues`
-
 ### AmazonSNS Beans
 
 As each topic has its own access key and secret we create an Amazon SNS client for each one. Historically this has
@@ -725,21 +710,25 @@ can run tests against them. The same goes for queues subscribing to the topics.
 This library will now create the topics automatically and subscribe queues to them when `provider=localstack` so we
 don't need the shell script.
 
-#### Random Topic Names
+### Testing
+
+#### Random Queue and Topic Names
 
 If you look in the `test-app`'s
 [application properties](https://github.com/ministryofjustice/hmpps-spring-boot-sqs/blob/main/test-app/src/test/resources/application-test.yml)
-you can see that it uses random topic names.
+you can see that it uses random queue and topic names. These are only needed for integration testing.
 
-When `provider=localstack` the topics are created in LocalStack as soon as the `AmazonSNS` beans are created. By
-using random topic names we can ensure tests do not interfere with each other.
+When `provider=localstack` the queues/topics are created in LocalStack as soon as the `AmazonSQS`/`AmazonSNS` beans
+are created. By using random names we can ensure that if Spring loads a new context during integration testing then
+the new context gets new queues/topics which cannot interfere with tests from another context.
 
-If you need to know the actual topic names used you can find them in the Spring logs. You can also see them in
-LocalStack with command:
+If you need to know the actual queue/topic names used you can find them in the Spring logs. You can also see them in
+LocalStack with the commands:
 
-`AWS_ACCESS_KEY_ID=foobar AWS_SECRET_ACCESS_KEY=foobar aws --endpoint-url=http://localhost:4566 --region=eu-west-2 sns list-topics`
-
-### Testing
+```
+AWS_ACCESS_KEY_ID=foobar AWS_SECRET_ACCESS_KEY=foobar aws --endpoint-url=http://localhost:4566 --region=eu-west-2 sqs list-queues
+AWS_ACCESS_KEY_ID=foobar AWS_SECRET_ACCESS_KEY=foobar aws --endpoint-url=http://localhost:4566 --region=eu-west-2 sns list-topics
+```
 
 #### SpyBeans
 
@@ -842,8 +831,8 @@ test-app-reactive too, for the functionality it does cover.
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md).
+See [CONTRIBUTING.md](readme-docs/CONTRIBUTING.md).
 
 ## Publishing
 
-See [PUBLISHING.md](PUBLISHING.md).
+See [PUBLISHING.md](readme-docs/PUBLISHING.md).

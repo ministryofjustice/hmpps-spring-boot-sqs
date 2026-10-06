@@ -1,7 +1,7 @@
 # Publishing This Library
 
 This document is for maintainers of `hmpps-spring-boot-sqs` who need to publish a new version to Maven Central. It is
-not needed if you're just consuming the library — see [README.md](README.md) for that.
+not needed if you're just consuming the library — see [README.md](../README.md) for that.
 
 ## How To Contribute To This Library
 
@@ -26,10 +26,10 @@ In the other project's Gradle build script change the version to match and it sh
 
 Publishing is automated via GitHub Actions:
 
-* [`.github/workflows/pipeline.yml`](.github/workflows/pipeline.yml) runs on every push to any branch. It always runs
-  the test suite (via the shared `gradle_verify` reusable workflow); only when the push is to `main` does it then
-  call `publish.yml`.
-* [`.github/workflows/publish.yml`](.github/workflows/publish.yml) runs
+* [`.github/workflows/pipeline.yml`](../.github/workflows/pipeline.yml) runs on every push to any branch. It always
+  runs the test suite (via the shared `gradle_verify` reusable workflow); only when the push is to `main` does it
+  then call `publish.yml`.
+* [`.github/workflows/publish.yml`](../.github/workflows/publish.yml) runs
   `./gradlew publishToSonatype closeAndReleaseSonatypeStagingRepository`, using secrets scoped to a GitHub
   [Environment](https://docs.github.com/en/actions/deployment/targeting-different-environments/using-environments-for-deployment)
   named `publish`.
@@ -46,7 +46,7 @@ upgrade to the new version automatically with some fancy tooling.
 Use some common sense when changing the version number and publishing:
 
 * Try NOT to introduce breaking changes. Be creative, there are often ways around this. If a change is breaking,
-  describe it clearly in the [release notes](release-notes) for the relevant major version.
+  describe it clearly in the [release notes](../release-notes) for the relevant major version.
 * Use [semantic versioning](https://semver.org/) to indicate the scope of the change.
 * You might think you can only test your change in the wild — consider
   [testing locally on other projects](#publishing-locally-to-test-against-other-projects) first.
