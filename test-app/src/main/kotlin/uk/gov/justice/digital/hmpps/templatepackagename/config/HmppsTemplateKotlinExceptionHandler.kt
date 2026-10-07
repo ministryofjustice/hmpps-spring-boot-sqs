@@ -51,12 +51,13 @@ class HmppsTemplateKotlinExceptionHandler {
     // handled here first.
     val authentication = SecurityContextHolder.getContext().authentication
     val status = if (authentication == null || authentication is AnonymousAuthenticationToken) UNAUTHORIZED else FORBIDDEN
+    val reason = if (status == UNAUTHORIZED) "Unauthorized" else "Forbidden"
     return ResponseEntity
       .status(status)
       .body(
         ErrorResponse(
           status = status,
-          userMessage = "Forbidden: ${e.message}",
+          userMessage = "$reason: ${e.message}",
           developerMessage = e.message,
         ),
       ).also { log.debug("{} returned: {}", status.value(), e.message) }
