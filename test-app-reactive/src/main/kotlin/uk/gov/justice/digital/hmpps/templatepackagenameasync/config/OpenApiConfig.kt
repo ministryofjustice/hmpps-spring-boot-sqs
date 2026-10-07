@@ -1,4 +1,4 @@
-package uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.config
+package uk.gov.justice.digital.hmpps.templatepackagenameasync.config
 
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.servers.Server

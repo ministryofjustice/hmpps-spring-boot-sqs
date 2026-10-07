@@ -1,4 +1,4 @@
-package uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.service
+package uk.gov.justice.digital.hmpps.templatepackagenameasync.service
 
 import com.microsoft.applicationinsights.TelemetryClient
 import kotlinx.coroutines.future.await
@@ -7,7 +7,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import software.amazon.awssdk.services.sns.model.PublishRequest
 import tools.jackson.databind.json.JsonMapper
-import uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.config.trackEvent
+import uk.gov.justice.digital.hmpps.templatepackagenameasync.config.trackEvent
 import uk.gov.justice.hmpps.sqs.HmppsQueueService
 import uk.gov.justice.hmpps.sqs.MissingTopicException
 import uk.gov.justice.hmpps.sqs.eventTypeMessageAttributes

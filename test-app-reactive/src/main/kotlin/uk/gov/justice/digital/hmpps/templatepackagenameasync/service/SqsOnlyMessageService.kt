@@ -1,4 +1,4 @@
-package uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.service
+package uk.gov.justice.digital.hmpps.templatepackagenameasync.service
 
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -7,8 +7,8 @@ import uk.gov.justice.hmpps.sqs.audit.HmppsAuditEvent
 import uk.gov.justice.hmpps.sqs.audit.HmppsAuditService
 
 @Service
-class InboundMessageService(
-  private val outboundEventsEmitter: OutboundEventsEmitter,
+class SqsOnlyInboundMessageService(
+  private val outboundEventsEmitter: SqsOnlyOutboundEventsEmitter,
   private val hmppsAuditService: HmppsAuditService,
 ) {
   private companion object {
@@ -41,12 +41,15 @@ class InboundMessageService(
 }
 
 @Service
-class OutboundMessageService {
+class SqsOnlyOutboundMessageService(
+  private val outboundEventsEmitter: SqsOnlyOutboundTestEventsEmitter,
+) {
   private companion object {
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
-  fun handleMessage(hmppsEvent: HmppsEvent) {
+  suspend fun handleMessage(hmppsEvent: HmppsEvent) {
     log.info("received event: {}", hmppsEvent)
+    outboundEventsEmitter.sendEvent(hmppsEvent)
   }
 }

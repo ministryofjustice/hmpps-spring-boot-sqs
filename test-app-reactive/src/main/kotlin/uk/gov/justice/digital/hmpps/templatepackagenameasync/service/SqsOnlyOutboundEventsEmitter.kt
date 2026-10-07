@@ -1,4 +1,4 @@
-package uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.service
+package uk.gov.justice.digital.hmpps.templatepackagenameasync.service
 
 import kotlinx.coroutines.future.await
 import org.slf4j.Logger
@@ -11,12 +11,12 @@ import uk.gov.justice.hmpps.sqs.HmppsQueueService
 import uk.gov.justice.hmpps.sqs.MissingQueueException
 
 @Service
-class SqsOnlyOutboundTestEventsEmitter(hmppsQueueService: HmppsQueueService, private val jsonMapper: JsonMapper) {
+class SqsOnlyOutboundEventsEmitter(hmppsQueueService: HmppsQueueService, private val jsonMapper: JsonMapper) {
   companion object {
     val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
-  private val outboundTestQueue = hmppsQueueService.findByQueueId("outboundsqsonlytestqueue") ?: throw MissingQueueException("Could not find queue outboundsqsonlytestqueue")
+  private val outboundQueue = hmppsQueueService.findByQueueId("outboundsqsonlyqueue") ?: throw MissingQueueException("Could not find queue outboundsqsonlyqueue")
 
   suspend fun sendEvent(hmppsEvent: HmppsEvent) {
     when (hmppsEvent.type) {
@@ -27,14 +27,14 @@ class SqsOnlyOutboundTestEventsEmitter(hmppsQueueService: HmppsQueueService, pri
   }
 
   private suspend fun publishToOutboundQueue(hmppsEvent: HmppsEvent) {
-    outboundTestQueue.sqsClient.sendMessage(
+    outboundQueue.sqsClient.sendMessage(
       SendMessageRequest.builder()
-        .queueUrl(outboundTestQueue.queueUrl)
+        .queueUrl(outboundQueue.queueUrl)
         .messageBody(jsonMapper.writeValueAsString(hmppsEvent))
         .messageAttributes(
           mapOf("eventType" to MessageAttributeValue.builder().dataType("String").stringValue(hmppsEvent.type).build()),
         )
         .build(),
-    ).await().also { log.info("Published event $hmppsEvent to outbound test queue") }
+    ).await().also { log.info("Published event $hmppsEvent to outbound queue") }
   }
 }

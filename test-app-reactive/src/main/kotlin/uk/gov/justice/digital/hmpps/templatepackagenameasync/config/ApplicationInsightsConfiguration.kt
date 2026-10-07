@@ -1,4 +1,4 @@
-package uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.config
+package uk.gov.justice.digital.hmpps.templatepackagenameasync.config
 
 import com.microsoft.applicationinsights.TelemetryClient
 import org.springframework.context.annotation.Bean

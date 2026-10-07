@@ -1,4 +1,4 @@
-package uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.health
+package uk.gov.justice.digital.hmpps.templatepackagenameasync.health
 
 import org.springframework.boot.health.contributor.Health
 import org.springframework.boot.health.contributor.ReactiveHealthIndicator
