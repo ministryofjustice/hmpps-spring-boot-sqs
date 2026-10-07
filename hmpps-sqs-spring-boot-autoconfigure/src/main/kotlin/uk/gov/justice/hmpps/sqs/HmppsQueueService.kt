@@ -26,18 +26,32 @@ import software.amazon.awssdk.services.sqs.model.PurgeQueueRequest as AwsPurgeQu
 class MissingQueueException(message: String) : RuntimeException(message)
 class MissingTopicException(message: String) : RuntimeException(message)
 
-// Long enough to comfortably cover the sendMessage + deleteMessage calls made against a matched message in
-// HmppsQueueService.retryDlqMessagesByIds, once its visibility has been explicitly extended past the short
-// scan-only timeout other (non-matching) messages receive.
+// Long enough to comfortably cover the sendMessage + deleteMessage calls made against every matched message in a
+// single scan batch in HmppsQueueService.retryDlqMessagesByIds - the whole batch (up to DLQ_RECEIVE_BATCH_SIZE
+// messages) is given this visibility timeout immediately on receipt, before any match is identified or processed,
+// so a match discovered later in the batch can't have its receipt handle go stale while earlier matches in the
+// same batch are still being sent/deleted. Any scanned message that doesn't turn out to be a match has its
+// visibility released immediately (see retryDlqMessagesByIds), so this long timeout only actually delays
+// reappearance of messages that are in the middle of being retried, not the whole batch.
 private const val RETRY_VISIBILITY_TIMEOUT_SECONDS = 30
 
-// Deliberately short visibility timeout used while scanning a DLQ (getDlqMessages/searchDlqMessages/
-// retryDlqMessagesByIds), so that any message which isn't actually retried/returned reappears quickly for normal
-// queue processing rather than being held invisible for longer than necessary.
+// Deliberately short visibility timeout used while scanning a DLQ (getDlqMessages/searchDlqMessages), so that any
+// message which isn't actually returned reappears quickly for normal queue processing rather than being held
+// invisible for longer than necessary.
 private const val SCAN_VISIBILITY_TIMEOUT_SECONDS = 1
 
 // The maximum number of messages SQS allows per receiveMessage call.
 private const val DLQ_RECEIVE_BATCH_SIZE = 10
+
+// SQS samples only a subset of its servers per receiveMessage call (short polling), so an empty response does not
+// guarantee no messages remain - enabling a short amount of long polling considerably reduces (without fully
+// eliminating) the chance of a false-empty response while a scan is still in progress.
+private const val SCAN_WAIT_TIME_SECONDS = 2
+
+// Number of consecutive empty receiveMessage responses tolerated before a scan concludes it has exhausted the
+// DLQ. Stopping after a single empty response risks truncating get/search results and incorrectly reporting
+// requested retry ids as not found; a few retries makes that far less likely.
+private const val MAX_CONSECUTIVE_EMPTY_RECEIVES = 3
 
 /** Upper bound enforced (by the REST layer) on the maxMessages parameter of getDlqMessages/searchDlqMessages. */
 const val MAX_DLQ_MESSAGES_LIMIT = 1000
@@ -118,11 +132,19 @@ open class HmppsQueueService(
    * Scans up to [scanLimit] messages on this queue's DLQ, in batches of up to [DLQ_RECEIVE_BATCH_SIZE] (the SQS
    * maximum per receiveMessage call), invoking [onMessage] once for each distinct message encountered. Duplicates -
    * which can occur if a message's visibility expires and it is redelivered mid-scan - are only passed to
-   * [onMessage] once. Scanning stops early as soon as [onMessage] returns true (meaning "stop here"), or once
-   * [scanLimit] messages have been received in total, whichever happens first.
+   * [onMessage] once. Once [onMessage] returns true (meaning "stop here"), every other message already received in
+   * that same batch is still passed to [onMessage] (so, for example, retryDlqMessagesByIds gets a chance to release
+   * the visibility of batch-mates that turn out not to be matches) before scanning stops; no further batches are
+   * received after that. Scanning also stops once [scanLimit] messages have been received in total, or once
+   * [MAX_CONSECUTIVE_EMPTY_RECEIVES] consecutive receives come back empty (SQS short-polls by default, so a single
+   * empty response doesn't guarantee the DLQ is actually exhausted) - whichever happens first.
    *
    * Receiving in batches (rather than one message per call, as before) both reduces the number of round trips to
-   * SQS and shortens the overall scan, reducing the chance of a message's visibility timeout lapsing mid-scan.
+   * SQS and shortens the overall scan, reducing the chance of a message's visibility timeout lapsing mid-scan. Every
+   * message received in a batch is given [visibilityTimeoutSeconds] immediately, before any of them are inspected
+   * or acted on by [onMessage] - this matters for retryDlqMessagesByIds, where it ensures a match found later in the
+   * batch doesn't have its receipt handle go stale while earlier matches in the same batch are still being
+   * sent/deleted.
    */
   private suspend fun HmppsQueue.scanDlqMessages(
     scanLimit: Int,
@@ -131,21 +153,28 @@ open class HmppsQueueService(
   ) {
     val seenMessageIds = mutableSetOf<String>()
     var remainingToScan = scanLimit
-    while (remainingToScan > 0) {
+    var consecutiveEmptyReceives = 0
+    var stopRequested = false
+    while (!stopRequested && remainingToScan > 0 && consecutiveEmptyReceives < MAX_CONSECUTIVE_EMPTY_RECEIVES) {
       val batchSize = min(DLQ_RECEIVE_BATCH_SIZE, remainingToScan)
       val received = sqsDlqClient!!.receiveMessage(
         ReceiveMessageRequest.builder()
           .queueUrl(dlqUrl)
           .maxNumberOfMessages(batchSize)
           .visibilityTimeout(visibilityTimeoutSeconds)
+          .waitTimeSeconds(SCAN_WAIT_TIME_SECONDS)
           .messageAttributeNames("All")
           .messageSystemAttributeNames(MessageSystemAttributeName.ALL)
           .build(),
       ).await().messages()
-      if (received.isEmpty()) break
+      if (received.isEmpty()) {
+        consecutiveEmptyReceives++
+        continue
+      }
+      consecutiveEmptyReceives = 0
       remainingToScan -= received.size
       for (msg in received) {
-        if (seenMessageIds.add(msg.messageId()) && onMessage(msg)) return
+        if (seenMessageIds.add(msg.messageId()) && onMessage(msg)) stopRequested = true
       }
     }
   }
@@ -165,7 +194,7 @@ open class HmppsQueueService(
     val messages = mutableListOf<DlqMessage>()
 
     scanDlqMessages(scanLimit = messageCount) { msg ->
-      messages.add(msg.toDlqMessage(bodyMapType))
+      if (messages.size < messagesToReturnCount) messages.add(msg.toDlqMessage(bodyMapType))
       messages.size >= messagesToReturnCount
     }
 
@@ -180,7 +209,7 @@ open class HmppsQueueService(
     val matches = mutableListOf<DlqMessage>()
 
     scanDlqMessages(scanLimit = messageCount) { msg ->
-      if (filter.isNullOrEmpty() || msg.body().contains(filter) || msg.messageId() == filter) {
+      if (matches.size < maxMessages && (filter.isNullOrEmpty() || msg.body().contains(filter) || msg.messageId() == filter)) {
         matches.add(msg.toDlqMessage(bodyMapType))
       }
       matches.size >= maxMessages
@@ -210,19 +239,16 @@ open class HmppsQueueService(
     // Each matched message is sent/deleted immediately, as part of the same scan pass that receives it, rather
     // than being collected into a list first - this keeps the gap between receipt and deletion as small as
     // possible, so the receipt handle doesn't go stale (and the message doesn't become concurrently visible to
-    // others) before we act on it. Non-matching messages keep the short scan-only visibility timeout (so they
-    // reappear quickly, same as search/getDlqMessages); only an actual match has its visibility explicitly
-    // extended, just before the send-and-delete, to comfortably cover that pair of calls. Scanning stops as soon
-    // as every requested id has been found, rather than always scanning the whole DLQ.
-    scanDlqMessages(scanLimit = messageCount) { msg ->
+    // others) before we act on it. Every message in a scan batch (not just matches) is given the longer
+    // RETRY_VISIBILITY_TIMEOUT_SECONDS as soon as it's received (see scanDlqMessages), since matches are identified
+    // and processed one at a time within the batch - without this, a match found later in the batch could have its
+    // receipt handle expire while earlier matches in the same batch are still being sent/deleted. Any message that
+    // turns out not to be a requested id has its visibility released immediately (rather than being left invisible
+    // for the full RETRY_VISIBILITY_TIMEOUT_SECONDS), so it doesn't appear to vanish from the DLQ for other callers
+    // until that timeout lapses. Scanning stops as soon as every requested id has been found, rather than always
+    // scanning the whole DLQ.
+    scanDlqMessages(scanLimit = messageCount, visibilityTimeoutSeconds = RETRY_VISIBILITY_TIMEOUT_SECONDS) { msg ->
       if (remainingIds.remove(msg.messageId())) {
-        sqsDlqClient.changeMessageVisibility(
-          ChangeMessageVisibilityRequest.builder()
-            .queueUrl(dlqUrl)
-            .receiptHandle(msg.receiptHandle())
-            .visibilityTimeout(RETRY_VISIBILITY_TIMEOUT_SECONDS)
-            .build(),
-        ).await()
         sqsClient.sendMessage(
           SendMessageRequest.builder()
             .queueUrl(queueUrl)
@@ -243,6 +269,14 @@ open class HmppsQueueService(
             .build(),
         ).await()
         retriedIds.add(msg.messageId())
+      } else {
+        sqsDlqClient.changeMessageVisibility(
+          ChangeMessageVisibilityRequest.builder()
+            .queueUrl(dlqUrl)
+            .receiptHandle(msg.receiptHandle())
+            .visibilityTimeout(0)
+            .build(),
+        ).await()
       }
       remainingIds.isEmpty()
     }
@@ -285,7 +319,7 @@ data class RetryDlqResult(val messagesFoundCount: Int)
 data class GetDlqRequest(val hmppsQueue: HmppsQueue, val maxMessages: Int)
 data class GetDlqResult(val messagesFoundCount: Int, val messagesReturnedCount: Int, val messages: List<DlqMessage>)
 
-/** @param approximateReceiveCount the number of times this message has been received (and not deleted) from the main queue before landing on the DLQ - a rough proxy for "how many times has this failed". Not always available, hence nullable. */
+/** @param approximateReceiveCount SQS's ApproximateReceiveCount for this message - incremented every time it is received without being deleted, including by get-dlq-messages/search-dlq-messages themselves while scanning. It is not exclusively a count of failed deliveries on the main queue, but a higher value still broadly indicates a message that has been retried/inspected repeatedly. Not always available, hence nullable. */
 data class DlqMessage(val body: Map<String, Any>, val messageId: String, val approximateReceiveCount: Int? = null)
 
 /** Dry-run search request - filter matches a message if it is a substring of the message body, or an exact match for the messageId. Null/empty filter matches everything. */

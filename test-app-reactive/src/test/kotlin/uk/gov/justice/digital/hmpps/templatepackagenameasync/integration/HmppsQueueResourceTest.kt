@@ -14,6 +14,7 @@ import org.mockito.ArgumentCaptor
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.verify
 import org.springframework.http.MediaType
+import software.amazon.awssdk.services.sqs.SqsAsyncClient
 import software.amazon.awssdk.services.sqs.model.MessageSystemAttributeName
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest
@@ -194,6 +195,25 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
     }
   }
 
+  /** Sends [body] (serialised as JSON) straight onto a dlq, bypassing the main queue/listener entirely. */
+  private fun sendToDlq(client: SqsAsyncClient, dlqUrl: String, body: Any, messageGroupId: String? = null, messageDeduplicationId: String? = null) {
+    client.sendMessage(
+      SendMessageRequest.builder()
+        .queueUrl(dlqUrl)
+        .messageBody(jsonMapper.writeValueAsString(body))
+        .apply {
+          messageGroupId?.let { messageGroupId(it) }
+          messageDeduplicationId?.let { messageDeduplicationId(it) }
+        }
+        .build(),
+    ).get()
+  }
+
+  /** Waits (by default, using awaitility's standard timeout) until [queueUrl] reports exactly [count] messages. */
+  private fun awaitMessageCount(client: SqsAsyncClient, queueUrl: String, count: Int, atMost: Duration = Duration.ofSeconds(10)) {
+    await.atMost(atMost) untilCallTo { client.countMessagesOnQueue(queueUrl).get() } matches { it == count }
+  }
+
   @Nested
   inner class GetDlqMessages {
     val defaultMessageAttributes = messageAttributesWithEventType("test.type")
@@ -229,9 +249,9 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
     @Test
     fun `should get all messages from the specified dlq`() {
       for (i in 1..3) {
-        inboundSqsDlqClient.sendMessage(SendMessageRequest.builder().queueUrl(inboundDlqUrl).messageBody(jsonMapper.writeValueAsString(testMessage("id-$i"))).build())
+        sendToDlq(inboundSqsDlqClient, inboundDlqUrl, testMessage("id-$i"))
       }
-      await untilCallTo { inboundSqsDlqClient.countMessagesOnQueue(inboundDlqUrl).get() } matches { it == 3 }
+      awaitMessageCount(inboundSqsDlqClient, inboundDlqUrl, 3)
 
       webTestClient.get()
         .uri("/queue-admin/get-dlq-messages/${hmppsSqsPropertiesSpy.inboundQueueConfig().dlqName}")
@@ -253,9 +273,9 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
     @Test
     fun `should be able to specify the max number of returned messages`() {
       for (i in 1..20) {
-        inboundSqsDlqClient.sendMessage(SendMessageRequest.builder().queueUrl(inboundDlqUrl).messageBody(jsonString(testMessage("id-$i"))).build())
+        sendToDlq(inboundSqsDlqClient, inboundDlqUrl, testMessage("id-$i"))
       }
-      await untilCallTo { inboundSqsDlqClient.countMessagesOnQueue(inboundDlqUrl).get() } matches { it == 20 }
+      awaitMessageCount(inboundSqsDlqClient, inboundDlqUrl, 20)
 
       webTestClient.get()
         .uri("/queue-admin/get-dlq-messages/${hmppsSqsPropertiesSpy.inboundQueueConfig().dlqName}?maxMessages=12")
@@ -288,8 +308,8 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
 
     @Test
     fun `should surface the approximateReceiveCount for each message`() {
-      inboundSqsDlqClient.sendMessage(SendMessageRequest.builder().queueUrl(inboundDlqUrl).messageBody(jsonMapper.writeValueAsString(testMessage("id-1"))).build())
-      await untilCallTo { inboundSqsDlqClient.countMessagesOnQueue(inboundDlqUrl).get() } matches { it == 1 }
+      sendToDlq(inboundSqsDlqClient, inboundDlqUrl, testMessage("id-1"))
+      awaitMessageCount(inboundSqsDlqClient, inboundDlqUrl, 1)
 
       webTestClient.get()
         .uri("/queue-admin/get-dlq-messages/${hmppsSqsPropertiesSpy.inboundQueueConfig().dlqName}")
@@ -335,9 +355,9 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
 
     @Test
     fun `should return all messages when no filter is supplied`() {
-      inboundSqsDlqClient.sendMessage(SendMessageRequest.builder().queueUrl(inboundDlqUrl).messageBody(jsonMapper.writeValueAsString(testMessage("id-1", "message one"))).build())
-      inboundSqsDlqClient.sendMessage(SendMessageRequest.builder().queueUrl(inboundDlqUrl).messageBody(jsonMapper.writeValueAsString(testMessage("id-2", "message two"))).build())
-      await untilCallTo { inboundSqsDlqClient.countMessagesOnQueue(inboundDlqUrl).get() } matches { it == 2 }
+      sendToDlq(inboundSqsDlqClient, inboundDlqUrl, testMessage("id-1", "message one"))
+      sendToDlq(inboundSqsDlqClient, inboundDlqUrl, testMessage("id-2", "message two"))
+      awaitMessageCount(inboundSqsDlqClient, inboundDlqUrl, 2)
 
       webTestClient.get()
         .uri("/queue-admin/search-dlq-messages/${hmppsSqsPropertiesSpy.inboundQueueConfig().dlqName}")
@@ -351,9 +371,9 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
 
     @Test
     fun `should return only messages matching the filter, leaving all messages on the dlq`() {
-      inboundSqsDlqClient.sendMessage(SendMessageRequest.builder().queueUrl(inboundDlqUrl).messageBody(jsonMapper.writeValueAsString(testMessage("id-1", "message one"))).build())
-      inboundSqsDlqClient.sendMessage(SendMessageRequest.builder().queueUrl(inboundDlqUrl).messageBody(jsonMapper.writeValueAsString(testMessage("id-2", "message two"))).build())
-      await untilCallTo { inboundSqsDlqClient.countMessagesOnQueue(inboundDlqUrl).get() } matches { it == 2 }
+      sendToDlq(inboundSqsDlqClient, inboundDlqUrl, testMessage("id-1", "message one"))
+      sendToDlq(inboundSqsDlqClient, inboundDlqUrl, testMessage("id-2", "message two"))
+      awaitMessageCount(inboundSqsDlqClient, inboundDlqUrl, 2)
 
       webTestClient.get()
         .uri("/queue-admin/search-dlq-messages/${hmppsSqsPropertiesSpy.inboundQueueConfig().dlqName}?filter=message+one")
@@ -364,13 +384,13 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
         .jsonPath("messagesFoundCount").isEqualTo(2)
         .jsonPath("messagesReturnedCount").isEqualTo(1)
 
-      await.atMost(Duration.ofSeconds(3)) untilCallTo { inboundSqsDlqClient.countMessagesOnQueue(inboundDlqUrl).get() } matches { it == 2 }
+      awaitMessageCount(inboundSqsDlqClient, inboundDlqUrl, 2, atMost = Duration.ofSeconds(3))
     }
 
     @Test
     fun `should return no messages when filter matches nothing`() {
-      inboundSqsDlqClient.sendMessage(SendMessageRequest.builder().queueUrl(inboundDlqUrl).messageBody(jsonMapper.writeValueAsString(testMessage("id-1", "message one"))).build())
-      await untilCallTo { inboundSqsDlqClient.countMessagesOnQueue(inboundDlqUrl).get() } matches { it == 1 }
+      sendToDlq(inboundSqsDlqClient, inboundDlqUrl, testMessage("id-1", "message one"))
+      awaitMessageCount(inboundSqsDlqClient, inboundDlqUrl, 1)
 
       webTestClient.get()
         .uri("/queue-admin/search-dlq-messages/${hmppsSqsPropertiesSpy.inboundQueueConfig().dlqName}?filter=NO_SUCH_MATCH")
@@ -384,9 +404,9 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
 
     @Test
     fun `should match an exact messageId as well as a body substring`() {
-      inboundSqsDlqClient.sendMessage(SendMessageRequest.builder().queueUrl(inboundDlqUrl).messageBody(jsonMapper.writeValueAsString(testMessage("id-1", "message one"))).build())
-      inboundSqsDlqClient.sendMessage(SendMessageRequest.builder().queueUrl(inboundDlqUrl).messageBody(jsonMapper.writeValueAsString(testMessage("id-2", "message two"))).build())
-      await untilCallTo { inboundSqsDlqClient.countMessagesOnQueue(inboundDlqUrl).get() } matches { it == 2 }
+      sendToDlq(inboundSqsDlqClient, inboundDlqUrl, testMessage("id-1", "message one"))
+      sendToDlq(inboundSqsDlqClient, inboundDlqUrl, testMessage("id-2", "message two"))
+      awaitMessageCount(inboundSqsDlqClient, inboundDlqUrl, 2)
 
       // find out the real messageId of one message, as an engineer would from an earlier search or telemetry event
       val allMessages = webTestClient.get()
@@ -397,7 +417,7 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
         .expectBody()
         .returnResult()
       val targetMessageId = jsonMapper.readTree(allMessages.responseBody).at("/messages/0/messageId").asText()
-      await.atMost(Duration.ofSeconds(3)) untilCallTo { inboundSqsDlqClient.countMessagesOnQueue(inboundDlqUrl).get() } matches { it == 2 }
+      awaitMessageCount(inboundSqsDlqClient, inboundDlqUrl, 2, atMost = Duration.ofSeconds(3))
 
       webTestClient.get()
         .uri("/queue-admin/search-dlq-messages/${hmppsSqsPropertiesSpy.inboundQueueConfig().dlqName}?filter=$targetMessageId")
@@ -460,9 +480,9 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
       val eventToLeave = HmppsEvent("id2", "test.type", "leave-me-marker")
       val messageToRetry = SnsMessage(jsonString(eventToRetry), "message-id1", messageAttributesWithEventType("test.type"))
       val messageToLeave = SnsMessage(jsonString(eventToLeave), "message-id2", messageAttributesWithEventType("test.type"))
-      inboundSqsDlqClient.sendMessage(SendMessageRequest.builder().queueUrl(inboundDlqUrl).messageBody(jsonMapper.writeValueAsString(messageToRetry)).build())
-      inboundSqsDlqClient.sendMessage(SendMessageRequest.builder().queueUrl(inboundDlqUrl).messageBody(jsonMapper.writeValueAsString(messageToLeave)).build())
-      await untilCallTo { inboundSqsDlqClient.countMessagesOnQueue(inboundDlqUrl).get() } matches { it == 2 }
+      sendToDlq(inboundSqsDlqClient, inboundDlqUrl, messageToRetry)
+      sendToDlq(inboundSqsDlqClient, inboundDlqUrl, messageToLeave)
+      awaitMessageCount(inboundSqsDlqClient, inboundDlqUrl, 2)
 
       // realistic workflow: search first to discover the actual SQS-assigned messageId of the one we want
       val searchResponse = webTestClient.get()
@@ -477,7 +497,7 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
       val messageIdToRetry = jsonMapper.readTree(searchResponse.responseBody).at("/messages/0/messageId").asText()
 
       // let the messages read during search become visible again before retrying (same ~1s visibility timeout note as getDlqMessages)
-      await.atMost(Duration.ofSeconds(3)) untilCallTo { inboundSqsDlqClient.countMessagesOnQueue(inboundDlqUrl).get() } matches { it == 2 }
+      awaitMessageCount(inboundSqsDlqClient, inboundDlqUrl, 2, atMost = Duration.ofSeconds(3))
 
       webTestClient.put()
         .uri("/queue-admin/retry-dlq-messages/${hmppsSqsPropertiesSpy.inboundQueueConfig().dlqName}")
@@ -498,13 +518,13 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
       }
 
       // ...while the other message is left untouched on the dlq
-      await.atMost(Duration.ofSeconds(3)) untilCallTo { inboundSqsDlqClient.countMessagesOnQueue(inboundDlqUrl).get() } matches { it == 1 }
+      awaitMessageCount(inboundSqsDlqClient, inboundDlqUrl, 1, atMost = Duration.ofSeconds(3))
     }
 
     @Test
     fun `should report requested message ids that were not found on the dlq`() {
-      inboundSqsDlqClient.sendMessage(SendMessageRequest.builder().queueUrl(inboundDlqUrl).messageBody(jsonMapper.writeValueAsString(SnsMessage(jsonString(HmppsEvent("id1", "test.type", "contents")), "message-id1", messageAttributesWithEventType("test.type")))).build())
-      await untilCallTo { inboundSqsDlqClient.countMessagesOnQueue(inboundDlqUrl).get() } matches { it == 1 }
+      sendToDlq(inboundSqsDlqClient, inboundDlqUrl, SnsMessage(jsonString(HmppsEvent("id1", "test.type", "contents")), "message-id1", messageAttributesWithEventType("test.type")))
+      awaitMessageCount(inboundSqsDlqClient, inboundDlqUrl, 1)
 
       webTestClient.put()
         .uri("/queue-admin/retry-dlq-messages/${hmppsSqsPropertiesSpy.inboundQueueConfig().dlqName}")
@@ -518,7 +538,7 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
         .jsonPath("messagesRetriedCount").isEqualTo(0)
         .jsonPath("notFoundMessageIds[0]").isEqualTo("no-such-message-id")
 
-      await.atMost(Duration.ofSeconds(3)) untilCallTo { inboundSqsDlqClient.countMessagesOnQueue(inboundDlqUrl).get() } matches { it == 1 }
+      awaitMessageCount(inboundSqsDlqClient, inboundDlqUrl, 1, atMost = Duration.ofSeconds(3))
     }
 
     @Test
@@ -536,8 +556,8 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
 
     @Test
     fun `should record the identity of the caller against the retry telemetry event`() {
-      inboundSqsDlqClient.sendMessage(SendMessageRequest.builder().queueUrl(inboundDlqUrl).messageBody(jsonMapper.writeValueAsString(SnsMessage(jsonString(HmppsEvent("id1", "test.type", "contents")), "message-id1", messageAttributesWithEventType("test.type")))).build())
-      await untilCallTo { inboundSqsDlqClient.countMessagesOnQueue(inboundDlqUrl).get() } matches { it == 1 }
+      sendToDlq(inboundSqsDlqClient, inboundDlqUrl, SnsMessage(jsonString(HmppsEvent("id1", "test.type", "contents")), "message-id1", messageAttributesWithEventType("test.type")))
+      awaitMessageCount(inboundSqsDlqClient, inboundDlqUrl, 1)
       val searchResponse = webTestClient.get()
         .uri("/queue-admin/search-dlq-messages/${hmppsSqsPropertiesSpy.inboundQueueConfig().dlqName}")
         .headers { it.authToken() }
@@ -545,7 +565,7 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
         .expectBody()
         .returnResult()
       val messageId = jsonMapper.readTree(searchResponse.responseBody).at("/messages/0/messageId").asText()
-      await.atMost(Duration.ofSeconds(3)) untilCallTo { inboundSqsDlqClient.countMessagesOnQueue(inboundDlqUrl).get() } matches { it == 1 }
+      awaitMessageCount(inboundSqsDlqClient, inboundDlqUrl, 1, atMost = Duration.ofSeconds(3))
 
       webTestClient.put()
         .uri("/queue-admin/retry-dlq-messages/${hmppsSqsPropertiesSpy.inboundQueueConfig().dlqName}")
@@ -565,15 +585,8 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
     fun `should preserve the FIFO message group id and deduplication id when retrying from a FIFO dlq`() {
       val event = HmppsEvent("fifo-retry-id", "test.type", "fifo retry contents")
       val message = SnsMessage(jsonString(event), "fifo-message", messageAttributesWithEventType("test.type"))
-      fifoSqsDlqClient.sendMessage(
-        SendMessageRequest.builder()
-          .queueUrl(fifoDlqUrl)
-          .messageBody(jsonMapper.writeValueAsString(message))
-          .messageGroupId("test-group")
-          .messageDeduplicationId("test-dedup-id")
-          .build(),
-      ).get()
-      await untilCallTo { fifoSqsDlqClient.countMessagesOnQueue(fifoDlqUrl).get() } matches { it == 1 }
+      sendToDlq(fifoSqsDlqClient, fifoDlqUrl, message, messageGroupId = "test-group", messageDeduplicationId = "test-dedup-id")
+      awaitMessageCount(fifoSqsDlqClient, fifoDlqUrl, 1)
 
       val searchResponse = webTestClient.get()
         .uri("/queue-admin/search-dlq-messages/${fifoQueue.dlqName}")
@@ -583,7 +596,7 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
         .expectBody()
         .returnResult()
       val messageId = jsonMapper.readTree(searchResponse.responseBody).at("/messages/0/messageId").asText()
-      await.atMost(Duration.ofSeconds(3)) untilCallTo { fifoSqsDlqClient.countMessagesOnQueue(fifoDlqUrl).get() } matches { it == 1 }
+      awaitMessageCount(fifoSqsDlqClient, fifoDlqUrl, 1, atMost = Duration.ofSeconds(3))
 
       webTestClient.put()
         .uri("/queue-admin/retry-dlq-messages/${fifoQueue.dlqName}")
@@ -597,8 +610,8 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
 
       // without forwarding MessageGroupId, AWS would reject the sendMessage to the FIFO main queue and this message
       // would still be stuck on the dlq
-      await untilCallTo { fifoSqsDlqClient.countMessagesOnQueue(fifoDlqUrl).get() } matches { it == 0 }
-      await untilCallTo { fifoSqsClient.countMessagesOnQueue(fifoQueueUrl).get() } matches { it == 1 }
+      awaitMessageCount(fifoSqsDlqClient, fifoDlqUrl, 0)
+      awaitMessageCount(fifoSqsClient, fifoQueueUrl, 1)
 
       val retriedMessage = fifoSqsClient.receiveMessage(
         ReceiveMessageRequest.builder()

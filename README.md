@@ -497,7 +497,7 @@ Class `HmppsQueueResource` provides the following endpoints, all under `/queue-a
 | Method | Path                            | Description                                                                                                 |
 |--------|----------------------------------|---------------------------------------------------------------------------------------------------------------|
 | `GET`  | `/get-dlq-messages/{dlqName}`    | Peek at (without removing) up to `maxMessages` (default 100, max 1000) messages currently on the DLQ.          |
-| `GET`  | `/search-dlq-messages/{dlqName}` | Peek at (without removing) up to `maxMessages` (default 100, max 1000) messages whose body or `messageId` contains the (optional) `filter` text. |
+| `GET`  | `/search-dlq-messages/{dlqName}` | Peek at (without removing) up to `maxMessages` (default 100, max 1000) messages whose body contains, or whose `messageId` exactly matches, the (optional) `filter` text. |
 | `PUT`  | `/retry-dlq-messages/{dlqName}`  | Retry only the DLQ messages whose SQS `messageId` is in the `messageIds` list in the request body (max 100 ids). |
 | `PUT`  | `/retry-dlq/{dlqName}`           | Retry every message currently on the named DLQ (see [How retry actually works](#how-retry-actually-works)).   |
 | `PUT`  | `/retry-all-dlqs`                | Retry every DLQ configured in the application.                                                                 |
@@ -535,8 +535,7 @@ are preserved on the retried message so it is correctly accepted back onto the F
 
 ###### Audit trail
 
-If the request to `retry-dlq-messages` carries an authenticated `Principal` (which it will if the endpoint is secured
-by the standard role-based security, see [Securing Endpoints](#securing-endpoints)), their identity is recorded as
+Requests to `retry-dlq-messages` that carry an authenticated `Principal` have their identity recorded as
 `retried-by` on the `RetryDLQMessagesById` telemetry event, so you can see who retried which messages. To find them:
 
 ```KQL
