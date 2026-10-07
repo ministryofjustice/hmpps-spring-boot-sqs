@@ -59,12 +59,13 @@ class HmppsTemplateKotlinExceptionHandler {
     .defaultIfEmpty(false)
     .map { authenticated ->
       val status = if (authenticated) FORBIDDEN else UNAUTHORIZED
+      val reason = if (status == UNAUTHORIZED) "Unauthorized" else "Forbidden"
       ResponseEntity
         .status(status)
         .body(
           ErrorResponse(
             status = status,
-            userMessage = "Forbidden: ${e.message}",
+            userMessage = "$reason: ${e.message}",
             developerMessage = e.message,
           ),
         )
