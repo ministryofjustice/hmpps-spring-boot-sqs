@@ -23,7 +23,7 @@ class HmppsReactiveQueueResource(private val hmppsQueueService: HmppsQueueServic
 
   /*
    * By default, this endpoint is not secured because it should only be called from inside the Kubernetes service.
-   * See test-app/src/main/kotlin/uk/gov/justice/digital/hmpps/hmppstemplatepackagename/config/ResourceServerConfiguration.kt for Spring Security config.
+   * See test-app/src/main/kotlin/uk/gov/justice/digital/hmpps/templatepackagename/config/ResourceServerConfiguration.kt for Spring Security config.
    * See https://github.com/ministryofjustice/hmpps-helm-charts/blob/main/charts/generic-service/templates/retry-dlq-cronjob.yaml and test-app/helm_deploy/hmpps-template-kotlin/example/ingress.yaml for Kubernetes config.
    */
   @PutMapping("/retry-all-dlqs")

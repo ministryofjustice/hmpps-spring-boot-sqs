@@ -13,7 +13,7 @@
         </layout>
     </appender>
 
-    <logger name="uk.gov.justice.digital.hmpps.hmppstemplatepackagename.AppKt" additivity="false"
+    <logger name="uk.gov.justice.digital.hmpps.templatepackagename.AppKt" additivity="false"
             level="DEBUG">
         <appender-ref ref="logAppender"/>
         <appender-ref ref="consoleAppender"/>
