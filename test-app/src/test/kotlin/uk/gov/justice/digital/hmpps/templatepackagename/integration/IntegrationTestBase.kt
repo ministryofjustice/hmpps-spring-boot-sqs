@@ -51,6 +51,7 @@ abstract class IntegrationTestBase {
     outboundTestSqsClient.purgeQueue(PurgeQueueRequest.builder().queueUrl(outboundTestQueueUrl).build()).get()
     outboundTestNoDlqSqsClient.purgeQueue(PurgeQueueRequest.builder().queueUrl(outboundTestNoDlqQueueUrl).build()).get()
     fifoSqsClient.purgeQueue(PurgeQueueRequest.builder().queueUrl(fifoQueueUrl).build()).get()
+    fifoSqsDlqClient.purgeQueue(PurgeQueueRequest.builder().queueUrl(fifoDlqUrl).build()).get()
     inboundSqsOnlyClient.purgeQueue(PurgeQueueRequest.builder().queueUrl(inboundSqsOnlyQueueUrl).build()).get()
     outboundSqsOnlyClient.purgeQueue(PurgeQueueRequest.builder().queueUrl(outboundSqsOnlyQueueUrl).build()).get()
     outboundSqsOnlyTestSqsClient.purgeQueue(PurgeQueueRequest.builder().queueUrl(outboundSqsOnlyTestQueueUrl).build()).get()
@@ -87,6 +88,7 @@ abstract class IntegrationTestBase {
   protected val outboundTestNoDlqSqsClient by lazy { outboundTestNoDlqQueue.sqsClient }
   protected val auditSqsClient by lazy { auditQueue.sqsClient }
   protected val fifoSqsClient by lazy { fifoQueue.sqsClient }
+  protected val fifoSqsDlqClient by lazy { fifoQueue.sqsDlqClient as SqsAsyncClient }
   protected val inboundSqsOnlyClient by lazy { inboundSqsOnlyQueue.sqsClient }
   protected val outboundSqsOnlyClient by lazy { outboundSqsOnlyQueue.sqsClient }
   protected val outboundSqsOnlyTestSqsClient by lazy { outboundSqsOnlyTestQueue.sqsClient }
@@ -107,6 +109,7 @@ abstract class IntegrationTestBase {
   protected val outboundTestNoDlqQueueUrl by lazy { outboundTestNoDlqQueue.queueUrl }
   protected val auditQueueUrl by lazy { auditQueue.queueUrl }
   protected val fifoQueueUrl by lazy { fifoQueue.queueUrl }
+  protected val fifoDlqUrl by lazy { fifoQueue.dlqUrl as String }
   protected val inboundSqsOnlyQueueUrl by lazy { inboundSqsOnlyQueue.queueUrl }
   protected val outboundSqsOnlyQueueUrl by lazy { outboundSqsOnlyQueue.queueUrl }
   protected val outboundSqsOnlyTestQueueUrl by lazy { outboundSqsOnlyTestQueue.queueUrl }

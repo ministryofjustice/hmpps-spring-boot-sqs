@@ -496,10 +496,60 @@ Class `HmppsQueueResource` provides the following endpoints, all under `/queue-a
 
 | Method | Path                            | Description                                                                                                 |
 |--------|----------------------------------|---------------------------------------------------------------------------------------------------------------|
-| `GET`  | `/get-dlq-messages/{dlqName}`    | Peek at (without removing) up to `maxMessages` (default 100) messages currently on the DLQ.                   |
+| `GET`  | `/get-dlq-messages/{dlqName}`    | Peek at (without removing) up to `maxMessages` (default 100, max 1000) messages currently on the DLQ.          |
+| `GET`  | `/search-dlq-messages/{dlqName}` | Peek at (without removing) up to `maxMessages` (default 100, max 1000) messages whose body or `messageId` contains the (optional) `filter` text. |
+| `PUT`  | `/retry-dlq-messages/{dlqName}`  | Retry only the DLQ messages whose SQS `messageId` is in the `messageIds` list in the request body (max 100 ids). |
 | `PUT`  | `/retry-dlq/{dlqName}`           | Retry every message currently on the named DLQ (see [How retry actually works](#how-retry-actually-works)).   |
 | `PUT`  | `/retry-all-dlqs`                | Retry every DLQ configured in the application.                                                                 |
 | `PUT`  | `/purge-queue/{queueName}`       | Purge all messages from the named queue (works for both main queues and DLQs; the `audit` queue is excluded).  |
+
+##### Selectively retrying DLQ messages
+
+Sometimes a DLQ accumulates a mix of messages that failed for different reasons, and you only want to retry some of
+them (for example those related to one incident) rather than everything on the queue. `search-dlq-messages` and
+`retry-dlq-messages` work together to support this:
+
+1. Call `GET /queue-admin/search-dlq-messages/{dlqName}?filter=<text>` to find the messages you're interested in.
+   `filter` is optional (omit it to list everything) and matches either a substring of the message body or an exact
+   `messageId`, so you can paste in a `messageId` you already have (for example from the `sent-to-dlq` telemetry
+   event — see below) to jump straight to a single message.
+2. Take the `messageId` of the messages you want to retry from the search response and call
+   `PUT /queue-admin/retry-dlq-messages/{dlqName}` with a JSON body of `{"messageIds": ["id-1", "id-2"]}`.
+
+Both endpoints accept an optional `maxMessages` query parameter (default 100) that limits how many messages on the
+DLQ are scanned; it is capped at `MAX_DLQ_MESSAGES_LIMIT` (1000). `retry-dlq-messages` also limits `messageIds` to at
+most `MAX_RETRY_MESSAGE_IDS_LIMIT` (100) entries. Requests exceeding either limit, or specifying a negative
+`maxMessages`, are rejected with `400 Bad Request`. If you need to retry more than 100 messages at once, or don't
+need to be selective, use `retry-dlq`/`retry-all-dlqs` instead.
+
+The response from both `get-dlq-messages` and `search-dlq-messages` includes an `approximateReceiveCount` for each
+message (how many times SQS has attempted to deliver it), which can help identify messages that have been retried
+repeatedly without success.
+
+The response from `retry-dlq-messages` includes `retriedMessageIds` (the ids that were found and resent) and
+`notFoundMessageIds` (requested ids that were not present on the DLQ, for example because they were already retried
+or purged by someone else).
+
+FIFO DLQs are supported: when retrying a message from a FIFO DLQ, its `MessageGroupId` and `MessageDeduplicationId`
+are preserved on the retried message so it is correctly accepted back onto the FIFO main queue.
+
+###### Audit trail
+
+If the request to `retry-dlq-messages` carries an authenticated `Principal` (which it will if the endpoint is secured
+by the standard role-based security, see [Securing Endpoints](#securing-endpoints)), their identity is recorded as
+`retried-by` on the `RetryDLQMessagesById` telemetry event, so you can see who retried which messages. To find them:
+
+```KQL
+AppEvents
+| where Name == 'RetryDLQMessagesById'
+```
+
+###### Finding the messageId to retry from telemetry
+
+The `<event type>-sent-to-dlq` telemetry event (see above) includes a `messageId` property identifying the specific
+SQS message that was sent to the DLQ, and a `retryCommand` property containing a ready-to-use
+`PUT /queue-admin/retry-dlq-messages/{dlqName} {"messageIds":["<messageId>"]}` command for retrying just that
+message, so you don't have to search for it or construct the request body yourself.
 
 ##### How retry actually works
 
