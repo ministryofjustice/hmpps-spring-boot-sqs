@@ -1,4 +1,4 @@
-package uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.integration.health
+package uk.gov.justice.digital.hmpps.templatepackagenameasync.integration.health
 
 import org.junit.jupiter.api.Test
 import org.springframework.boot.test.context.TestConfiguration
@@ -7,8 +7,8 @@ import org.springframework.context.annotation.Import
 import software.amazon.awssdk.auth.credentials.AnonymousCredentialsProvider
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.sqs.SqsAsyncClient
-import uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.integration.IntegrationTestBase
-import uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.integration.mocks.OAuthExtension.Companion.oAuthApi
+import uk.gov.justice.digital.hmpps.templatepackagenameasync.integration.IntegrationTestBase
+import uk.gov.justice.digital.hmpps.templatepackagenameasync.integration.wiremock.HmppsAuthApiExtension.Companion.hmppsAuth
 import uk.gov.justice.hmpps.sqs.HmppsQueue
 import uk.gov.justice.hmpps.sqs.HmppsQueueHealth
 import uk.gov.justice.hmpps.sqs.HmppsSqsProperties
@@ -32,7 +32,7 @@ class QueueHealthCheckNegativeTest : IntegrationTestBase() {
 
   @Test
   fun `Queue health down`() {
-    oAuthApi.stubHealthPing(200)
+    hmppsAuth.stubHealthPing(200)
 
     webTestClient.get()
       .uri("/health")

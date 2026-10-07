@@ -1,14 +1,14 @@
-package uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.integration.health
+package uk.gov.justice.digital.hmpps.templatepackagenameasync.integration.health
 
 import org.junit.jupiter.api.Test
-import uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.integration.IntegrationTestBase
-import uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.integration.mocks.OAuthExtension.Companion.oAuthApi
+import uk.gov.justice.digital.hmpps.templatepackagenameasync.integration.IntegrationTestBase
+import uk.gov.justice.digital.hmpps.templatepackagenameasync.integration.wiremock.HmppsAuthApiExtension.Companion.hmppsAuth
 
 class TopicHealthCheckTest : IntegrationTestBase() {
 
   @Test
   fun `Inbound topic health ok`() {
-    oAuthApi.stubHealthPing(200)
+    hmppsAuth.stubHealthPing(200)
 
     webTestClient.get()
       .uri("/health")
@@ -25,7 +25,7 @@ class TopicHealthCheckTest : IntegrationTestBase() {
 
   @Test
   fun `Outbound queue health ok`() {
-    oAuthApi.stubHealthPing(200)
+    hmppsAuth.stubHealthPing(200)
 
     webTestClient.get()
       .uri("/health")

@@ -1,4 +1,4 @@
-package uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.integration
+package uk.gov.justice.digital.hmpps.templatepackagenameasync.integration
 
 import com.microsoft.applicationinsights.TelemetryClient
 import org.junit.jupiter.api.BeforeEach
@@ -20,12 +20,12 @@ import org.springframework.test.web.reactive.server.WebTestClient
 import software.amazon.awssdk.services.sqs.SqsAsyncClient
 import software.amazon.awssdk.services.sqs.model.PurgeQueueRequest
 import tools.jackson.databind.json.JsonMapper
-import uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.integration.mocks.OAuthExtension
-import uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.integration.testcontainers.LocalStackContainer
-import uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.integration.testcontainers.LocalStackContainer.setLocalStackProperties
-import uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.service.InboundMessageService
-import uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.service.OutboundEventsEmitter
-import uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.service.OutboundMessageService
+import uk.gov.justice.digital.hmpps.templatepackagenameasync.integration.testcontainers.LocalStackContainer
+import uk.gov.justice.digital.hmpps.templatepackagenameasync.integration.testcontainers.LocalStackContainer.setLocalStackProperties
+import uk.gov.justice.digital.hmpps.templatepackagenameasync.integration.wiremock.HmppsAuthApiExtension
+import uk.gov.justice.digital.hmpps.templatepackagenameasync.service.InboundMessageService
+import uk.gov.justice.digital.hmpps.templatepackagenameasync.service.OutboundEventsEmitter
+import uk.gov.justice.digital.hmpps.templatepackagenameasync.service.OutboundMessageService
 import uk.gov.justice.hmpps.sqs.HmppsQueueFactory
 import uk.gov.justice.hmpps.sqs.HmppsQueueService
 import uk.gov.justice.hmpps.sqs.HmppsSqsProperties
@@ -33,10 +33,11 @@ import uk.gov.justice.hmpps.sqs.MessageAttribute
 import uk.gov.justice.hmpps.sqs.MessageAttributes
 import uk.gov.justice.hmpps.sqs.MissingQueueException
 import uk.gov.justice.hmpps.sqs.MissingTopicException
+import uk.gov.justice.hmpps.test.kotlin.auth.JwtAuthorisationHelper
 
 @SpringBootTest(webEnvironment = RANDOM_PORT)
-@Import(IntegrationTestBase.SqsConfig::class, JwtAuthHelper::class)
-@ExtendWith(OAuthExtension::class)
+@Import(IntegrationTestBase.SqsConfig::class)
+@ExtendWith(HmppsAuthApiExtension::class)
 @ActiveProfiles("test")
 @AutoConfigureWebTestClient
 abstract class IntegrationTestBase {
@@ -115,7 +116,7 @@ abstract class IntegrationTestBase {
   protected lateinit var jsonMapper: JsonMapper
 
   @Autowired
-  protected lateinit var jwtAuthHelper: JwtAuthHelper
+  protected lateinit var jwtAuthHelper: JwtAuthorisationHelper
 
   @Autowired
   protected lateinit var hmppsQueueService: HmppsQueueService
@@ -139,13 +140,11 @@ abstract class IntegrationTestBase {
   lateinit var webTestClient: WebTestClient
 
   internal fun HttpHeaders.authToken(roles: List<String> = listOf("ROLE_QUEUE_ADMIN")) {
-    this.setBearerAuth(
-      jwtAuthHelper.createJwt(
-        subject = "SOME_USER",
-        roles = roles,
-        clientId = "some-client",
-      ),
-    )
+    jwtAuthHelper.setAuthorisationHeader(
+      username = "SOME_USER",
+      roles = roles,
+      clientId = "some-client",
+    )(this)
   }
 
   protected fun jsonString(any: Any) = jsonMapper.writeValueAsString(any)

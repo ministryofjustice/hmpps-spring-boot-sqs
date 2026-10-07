@@ -1,4 +1,4 @@
-package uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.integration
+package uk.gov.justice.digital.hmpps.templatepackagenameasync.integration
 
 import io.opentelemetry.sdk.testing.junit5.OpenTelemetryExtension
 import kotlinx.coroutines.test.runTest
@@ -11,7 +11,7 @@ import org.junit.jupiter.api.extension.RegisterExtension
 import software.amazon.awssdk.services.sns.model.PublishRequest
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest
-import uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.service.HmppsEvent
+import uk.gov.justice.digital.hmpps.templatepackagenameasync.service.HmppsEvent
 import uk.gov.justice.hmpps.sqs.SnsMessage
 import uk.gov.justice.hmpps.sqs.audit.HmppsAuditEvent
 import uk.gov.justice.hmpps.sqs.countMessagesOnQueue

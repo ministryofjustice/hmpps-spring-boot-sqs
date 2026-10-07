@@ -1,4 +1,4 @@
-package uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.integration
+package uk.gov.justice.digital.hmpps.templatepackagenameasync.integration
 
 import ch.qos.logback.classic.Level
 import ch.qos.logback.classic.Logger
@@ -23,7 +23,7 @@ import software.amazon.awssdk.services.sns.model.PublishRequest
 import software.amazon.awssdk.services.sqs.model.MessageAttributeValue
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest
-import uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.service.HmppsEvent
+import uk.gov.justice.digital.hmpps.templatepackagenameasync.service.HmppsEvent
 import uk.gov.justice.hmpps.sqs.SnsMessage
 import uk.gov.justice.hmpps.sqs.countMessagesOnQueue
 import uk.gov.justice.hmpps.sqs.eventTypeMessageAttributes

@@ -1,4 +1,4 @@
-package uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.integration
+package uk.gov.justice.digital.hmpps.templatepackagenameasync.integration
 
 import org.junit.jupiter.api.Test
 import org.springframework.http.MediaType

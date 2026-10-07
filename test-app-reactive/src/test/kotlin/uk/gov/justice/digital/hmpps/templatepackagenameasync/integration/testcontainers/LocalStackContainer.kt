@@ -1,4 +1,4 @@
-package uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.integration.testcontainers
+package uk.gov.justice.digital.hmpps.templatepackagenameasync.integration.testcontainers
 
 import org.slf4j.LoggerFactory
 import org.springframework.test.context.DynamicPropertyRegistry

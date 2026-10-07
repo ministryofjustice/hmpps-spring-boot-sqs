@@ -1,55 +1,58 @@
-package uk.gov.justice.digital.hmpps.hmppstemplatepackagenameasync.integration.mocks
+package uk.gov.justice.digital.hmpps.templatepackagenameasync.integration.wiremock
 
 import com.github.tomakehurst.wiremock.WireMockServer
-import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock.aResponse
 import com.github.tomakehurst.wiremock.client.WireMock.get
+import com.github.tomakehurst.wiremock.client.WireMock.post
+import com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo
 import com.github.tomakehurst.wiremock.http.HttpHeader
 import com.github.tomakehurst.wiremock.http.HttpHeaders
 import org.junit.jupiter.api.extension.AfterAllCallback
 import org.junit.jupiter.api.extension.BeforeAllCallback
 import org.junit.jupiter.api.extension.BeforeEachCallback
 import org.junit.jupiter.api.extension.ExtensionContext
+import java.time.LocalDateTime
+import java.time.ZoneOffset
 
-class OAuthExtension :
+class HmppsAuthApiExtension :
   BeforeAllCallback,
   AfterAllCallback,
   BeforeEachCallback {
   companion object {
     @JvmField
-    val oAuthApi = OAuthMockServer()
+    val hmppsAuth = HmppsAuthMockServer()
   }
 
   override fun beforeAll(context: ExtensionContext) {
-    oAuthApi.start()
-    oAuthApi.stubGrantToken()
+    hmppsAuth.start()
   }
 
   override fun beforeEach(context: ExtensionContext) {
-    oAuthApi.resetRequests()
-    oAuthApi.stubGrantToken()
+    hmppsAuth.resetRequests()
   }
 
   override fun afterAll(context: ExtensionContext) {
-    oAuthApi.stop()
+    hmppsAuth.stop()
   }
 }
 
-class OAuthMockServer : WireMockServer(WIREMOCK_PORT) {
+class HmppsAuthMockServer : WireMockServer(WIREMOCK_PORT) {
   companion object {
     private const val WIREMOCK_PORT = 8090
   }
 
   fun stubGrantToken() {
     stubFor(
-      WireMock.post(WireMock.urlEqualTo("/auth/oauth/token"))
+      post(urlEqualTo("/auth/oauth/token"))
         .willReturn(
           aResponse()
             .withHeaders(HttpHeaders(HttpHeader("Content-Type", "application/json")))
             .withBody(
-              """{
-                    "token_type": "bearer",
-                    "access_token": "ABCDE"
+              """
+                {
+                  "token_type": "bearer",
+                  "access_token": "ABCDE",
+                  "expires_in": ${LocalDateTime.now().plusHours(2).toEpochSecond(ZoneOffset.UTC)}
                 }
               """.trimIndent(),
             ),
@@ -62,7 +65,7 @@ class OAuthMockServer : WireMockServer(WIREMOCK_PORT) {
       get("/auth/health/ping").willReturn(
         aResponse()
           .withHeader("Content-Type", "application/json")
-          .withBody(if (status == 200) "pong" else "some error")
+          .withBody(if (status == 200) """{"status":"UP"}""" else """{"status":"DOWN"}""")
           .withStatus(status),
       ),
     )
