@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.server.ResponseStatusException
+import java.security.Principal
 
 @RestController
 @RequestMapping("/queue-admin")
@@ -47,13 +48,13 @@ class HmppsReactiveQueueResource(private val hmppsQueueService: HmppsQueueServic
   @GetMapping("/get-dlq-messages/{dlqName}")
   @PreAuthorize("hasRole(@environment.getProperty('hmpps.sqs.queueAdminRole', 'ROLE_QUEUE_ADMIN'))")
   suspend fun getDlqMessages(@PathVariable("dlqName") dlqName: String, @RequestParam("maxMessages", required = false, defaultValue = "100") maxMessages: Int) = hmppsQueueService.findByDlqName(dlqName)
-    ?.let { hmppsQueue -> hmppsQueueService.getDlqMessages(GetDlqRequest(hmppsQueue, maxMessages)) }
+    ?.let { hmppsQueue -> hmppsQueueService.getDlqMessages(GetDlqRequest(hmppsQueue, maxMessages.validMaxMessages())) }
     ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "$dlqName not found")
 
   /*
-   * Solution 1 (selective retry): read-only/dry-run search of a DLQ's messages. Nothing is sent or deleted - this is
-   * intended to let an engineer find the messageId(s) of interest (e.g. via a substring filter matching a business
-   * entity ID in the message body) before calling retryDlqMessages below with those exact IDs.
+   * Read-only/dry-run search of a DLQ's messages. Nothing is sent or deleted - this is intended to let an engineer
+   * find the messageId(s) of interest (e.g. via a substring filter matching a business entity ID in the message
+   * body, or by the exact messageId itself) before calling retryDlqMessages below with those exact IDs.
    *
    * Note: as with getDlqMessages, messages read here are briefly invisible to other reads for ~1 second due to the
    * visibility timeout used while scanning.
@@ -65,23 +66,36 @@ class HmppsReactiveQueueResource(private val hmppsQueueService: HmppsQueueServic
     @RequestParam("filter", required = false) filter: String?,
     @RequestParam("maxMessages", required = false, defaultValue = "100") maxMessages: Int,
   ) = hmppsQueueService.findByDlqName(dlqName)
-    ?.let { hmppsQueue -> hmppsQueueService.searchDlqMessages(SearchDlqRequest(hmppsQueue, filter, maxMessages)) }
+    ?.let { hmppsQueue -> hmppsQueueService.searchDlqMessages(SearchDlqRequest(hmppsQueue, filter, maxMessages.validMaxMessages())) }
     ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "$dlqName not found")
 
   /*
-   * Solutions 1 & 3 (selective retry): retry only the named messageIds from a DLQ, leaving every other message on
-   * the DLQ untouched. Typically called with IDs obtained from searchDlqMessages above, or from the messageId
-   * logged in the enriched "sent-to-dlq" telemetry event (see HmppsErrorVisibilityHandler).
+   * Retry only the named messageIds from a DLQ, leaving every other message on the DLQ untouched. Typically called
+   * with IDs obtained from searchDlqMessages above, or from the messageId logged in the enriched "sent-to-dlq"
+   * telemetry event (see HmppsErrorVisibilityHandler).
    */
   @PutMapping("/retry-dlq-messages/{dlqName}")
   @PreAuthorize("hasRole(@environment.getProperty('hmpps.sqs.queueAdminRole', 'ROLE_QUEUE_ADMIN'))")
   suspend fun retryDlqMessages(
     @PathVariable("dlqName") dlqName: String,
     @RequestBody request: RetryDlqMessagesBody,
+    principal: Principal?,
   ) = hmppsQueueService.findByDlqName(dlqName)
-    ?.let { hmppsQueue -> hmppsQueueService.retryDlqMessagesByIds(RetryDlqMessagesRequest(hmppsQueue, request.messageIds)) }
+    ?.let { hmppsQueue -> hmppsQueueService.retryDlqMessagesByIds(RetryDlqMessagesRequest(hmppsQueue, request.messageIds.validMessageIds(), principal?.name)) }
     ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "$dlqName not found")
 }
 
 /** Request body for PUT /queue-admin/retry-dlq-messages/{dlqName} */
 data class RetryDlqMessagesBody(val messageIds: List<String>)
+
+internal fun Int.validMaxMessages(): Int = also {
+  if (it < 0 || it > MAX_DLQ_MESSAGES_LIMIT) {
+    throw ResponseStatusException(HttpStatus.BAD_REQUEST, "maxMessages must be between 0 and $MAX_DLQ_MESSAGES_LIMIT, got $it")
+  }
+}
+
+internal fun List<String>.validMessageIds(): List<String> = also {
+  if (it.size > MAX_RETRY_MESSAGE_IDS_LIMIT) {
+    throw ResponseStatusException(HttpStatus.BAD_REQUEST, "messageIds must contain at most $MAX_RETRY_MESSAGE_IDS_LIMIT ids, got ${it.size}")
+  }
+}

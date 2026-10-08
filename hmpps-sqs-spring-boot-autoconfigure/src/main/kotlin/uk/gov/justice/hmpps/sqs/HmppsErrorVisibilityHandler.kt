@@ -10,6 +10,7 @@ import software.amazon.awssdk.services.sqs.model.MessageAttributeValue
 import tools.jackson.core.ObjectReadContext
 import tools.jackson.core.type.TypeReference
 import tools.jackson.databind.json.JsonMapper
+import software.amazon.awssdk.services.sqs.model.Message as SqsMessage
 
 class HmppsErrorVisibilityHandler(
   private val jsonMapper: JsonMapper,
@@ -55,13 +56,13 @@ class HmppsErrorVisibilityHandler(
   }
 
   /**
-   * Solution 3: the SQS-assigned messageId of the raw message that is about to receive its final failed delivery
-   * attempt and be moved to the DLQ by SQS's redrive policy. SQS preserves this messageId across that move, so it
-   * is also the id that will later be used to retry this specific message via retry-dlq-messages, hence it's
-   * included below (alongside a ready-made retry command) in the "sent-to-dlq" telemetry event to make the failure
-   * directly actionable without first having to search the DLQ to find it.
+   * The SQS-assigned messageId of the raw message that is about to receive its final failed delivery attempt and
+   * be moved to the DLQ by SQS's redrive policy. SQS preserves this messageId across that move, so it is also the
+   * id that will later be used to retry this specific message via retry-dlq-messages, hence it's included below
+   * (alongside a ready-made retry command) in the "sent-to-dlq" telemetry event to make the failure directly
+   * actionable without first having to search the DLQ to find it.
    */
-  private fun getMessageId(message: Message<in Any>): String? = (message.headers[SqsHeaders.SQS_SOURCE_DATA_HEADER] as? software.amazon.awssdk.services.sqs.model.Message)?.messageId()
+  private fun getMessageId(message: Message<in Any>): String? = (message.headers[SqsHeaders.SQS_SOURCE_DATA_HEADER] as? SqsMessage)?.messageId()
 
   private fun String?.toRetryProperties(dlqName: String?): Map<String, String> = this?.let { messageId ->
     mapOf(

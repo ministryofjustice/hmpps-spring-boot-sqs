@@ -3,13 +3,6 @@ package uk.gov.justice.hmpps.sqs
 import com.google.gson.GsonBuilder
 import com.google.gson.ToNumberPolicy
 import com.microsoft.applicationinsights.TelemetryClient
-import kotlinx.coroutines.flow.asFlow
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.mapNotNull
-import kotlinx.coroutines.flow.takeWhile
-import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.future.await
 import org.slf4j.LoggerFactory
 import software.amazon.awssdk.services.sns.model.PublishRequest
@@ -17,6 +10,8 @@ import software.amazon.awssdk.services.sqs.SqsAsyncClient
 import software.amazon.awssdk.services.sqs.model.ChangeMessageVisibilityRequest
 import software.amazon.awssdk.services.sqs.model.DeleteMessageRequest
 import software.amazon.awssdk.services.sqs.model.GetQueueAttributesRequest
+import software.amazon.awssdk.services.sqs.model.Message
+import software.amazon.awssdk.services.sqs.model.MessageSystemAttributeName
 import software.amazon.awssdk.services.sqs.model.QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES
 import software.amazon.awssdk.services.sqs.model.QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES_NOT_VISIBLE
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest
@@ -31,10 +26,11 @@ import software.amazon.awssdk.services.sqs.model.PurgeQueueRequest as AwsPurgeQu
 class MissingQueueException(message: String) : RuntimeException(message)
 class MissingTopicException(message: String) : RuntimeException(message)
 
-// Long enough to comfortably cover the sendMessage + deleteMessage calls made against a matched message in
-// HmppsQueueService.retryDlqMessagesByIds, once its visibility has been explicitly extended past the short
-// scan-only timeout other (non-matching) messages receive.
-private const val RETRY_VISIBILITY_TIMEOUT_SECONDS = 30
+/** Upper bound enforced (by the REST layer) on the maxMessages parameter of getDlqMessages/searchDlqMessages. */
+const val MAX_DLQ_MESSAGES_LIMIT = 1000
+
+/** Upper bound enforced (by the REST layer) on the number of messageIds accepted by a single retryDlqMessagesByIds call. */
+const val MAX_RETRY_MESSAGE_IDS_LIMIT = 100
 
 const val AUDIT_ID = "audit"
 
@@ -63,20 +59,20 @@ open class HmppsQueueService(
   open suspend fun getDlqMessages(request: GetDlqRequest): GetDlqResult = request.hmppsQueue.getDlqMessages(request.maxMessages)
 
   /**
-   * Solution 1: read-only/dry-run search of a DLQ. Scans the DLQ applying a simple substring filter against the
-   * message body (no filter means "return everything") and returns matching messages without sending or deleting
-   * anything. Intended to be used before [retryDlqMessagesByIds] so an engineer can confirm exactly which messages
-   * will be retried before committing to the action.
+   * Read-only/dry-run search of a DLQ. Scans the DLQ, matching each message against [SearchDlqRequest.filter] - a
+   * message matches if the filter is null/empty (meaning "return everything"), is found as a substring of the
+   * message body, or is an exact match for the message's messageId. No messages are sent or deleted. Intended to
+   * be used before [retryDlqMessagesByIds] so an engineer can confirm exactly which messages will be retried
+   * before committing to the action.
    */
   open suspend fun searchDlqMessages(request: SearchDlqRequest): SearchDlqResult = request.hmppsQueue.searchDlqMessages(request.filter, request.maxMessages)
 
   /**
-   * Solutions 1 & 3: retry only the DLQ messages whose messageId is in [RetryDlqMessagesRequest.messageIds]. Every
-   * other message on the DLQ is left untouched. Typically used after inspecting results from [searchDlqMessages];
-   * the messageId can also come from the enriched "sent-to-dlq" telemetry event (solution 3, see
-   * [HmppsErrorVisibilityHandler]).
+   * Retry only the DLQ messages whose messageId is in [RetryDlqMessagesRequest.messageIds]. Every other message on
+   * the DLQ is left untouched. Typically used after inspecting results from [searchDlqMessages]; the messageId can
+   * also come from the enriched "sent-to-dlq" telemetry event (see [HmppsErrorVisibilityHandler]).
    */
-  open suspend fun retryDlqMessagesByIds(request: RetryDlqMessagesRequest): RetryDlqMessagesResult = request.hmppsQueue.retryDlqMessagesByIds(request.messageIds)
+  open suspend fun retryDlqMessagesByIds(request: RetryDlqMessagesRequest): RetryDlqMessagesResult = request.hmppsQueue.retryDlqMessagesByIds(request.messageIds, request.retriedBy)
 
   open suspend fun retryAllDlqs() = hmppsQueues
     .map { hmppsQueue -> RetryDlqRequest(hmppsQueue) }
@@ -105,53 +101,77 @@ open class HmppsQueueService(
     return RetryDlqResult(messageCount)
   }
 
+  /**
+   * Scans up to [scanLimit] messages on this queue's DLQ, one at a time, invoking [onMessage] for each distinct
+   * message encountered until it returns true (meaning "stop here") or [scanLimit] is reached.
+   */
+  private suspend fun HmppsQueue.scanDlqMessages(
+    scanLimit: Int,
+    onMessage: suspend (Message) -> Boolean,
+  ) {
+    val visibilityTimeoutSeconds = 1 // short, so an unactioned message reappears quickly
+    val waitTimeSeconds = 2 // long poll to reduce chance of false-empty response
+    val maxConsecutiveEmptyReceives = 3 // retry to reduce chance of false-empty response
+    val seenMessageIds = mutableSetOf<String>()
+    var consecutiveEmptyReceives = 0
+    var scanned = 0
+    while (scanned < scanLimit && consecutiveEmptyReceives < maxConsecutiveEmptyReceives) {
+      val received = sqsDlqClient!!.receiveMessage(
+        ReceiveMessageRequest.builder()
+          .queueUrl(dlqUrl)
+          .maxNumberOfMessages(1)
+          .visibilityTimeout(visibilityTimeoutSeconds)
+          .waitTimeSeconds(waitTimeSeconds)
+          .messageAttributeNames("All")
+          .messageSystemAttributeNames(MessageSystemAttributeName.ALL)
+          .build(),
+      ).await().messages().firstOrNull()
+
+      if (received == null) {
+        consecutiveEmptyReceives++
+        continue
+      }
+      consecutiveEmptyReceives = 0
+      scanned++
+      if (seenMessageIds.add(received.messageId()) && onMessage(received)) return
+    }
+  }
+
+  private fun Message.toDlqMessage(bodyMapType: Map<String, Any>): DlqMessage = DlqMessage(
+    messageId = messageId(),
+    body = gson.fromJson(body(), bodyMapType.javaClass),
+    approximateReceiveCount = attributes()[MessageSystemAttributeName.APPROXIMATE_RECEIVE_COUNT]?.toIntOrNull(),
+  )
+
   private suspend fun HmppsQueue.getDlqMessages(maxMessages: Int): GetDlqResult {
     if (sqsDlqClient == null || dlqUrl == null) return GetDlqResult(0, 0, listOf())
 
     val messageCount = sqsDlqClient.countMessagesOnQueue(dlqUrl!!).await()
     val messagesToReturnCount = min(messageCount, maxMessages)
-    val map: Map<String, Any> = HashMap()
+    val bodyMapType: Map<String, Any> = HashMap()
+    val messages = mutableListOf<DlqMessage>()
 
-    val messages = (1..messagesToReturnCount)
-      .asFlow()
-      .map {
-        sqsDlqClient.receiveMessage(
-          ReceiveMessageRequest.builder()
-            .queueUrl(dlqUrl)
-            .maxNumberOfMessages(1)
-            .visibilityTimeout(1)
-            .build(),
-        ).await()
-      }
-      .mapNotNull { it.messages().firstOrNull() }
-      .map { msg -> DlqMessage(messageId = msg.messageId(), body = gson.fromJson(msg.body(), map.javaClass)) }
-      .toList()
+    scanDlqMessages(scanLimit = messageCount) { msg ->
+      messages.add(msg.toDlqMessage(bodyMapType))
+      messages.size >= messagesToReturnCount
+    }
 
-    return GetDlqResult(messageCount, messagesToReturnCount, messages)
+    return GetDlqResult(messageCount, messages.size, messages)
   }
 
   private suspend fun HmppsQueue.searchDlqMessages(filter: String?, maxMessages: Int): SearchDlqResult {
     if (sqsDlqClient == null || dlqUrl == null) return SearchDlqResult(0, 0, listOf())
 
     val messageCount = sqsDlqClient.countMessagesOnQueue(dlqUrl!!).await()
-    val map: Map<String, Any> = HashMap()
+    val bodyMapType: Map<String, Any> = HashMap()
+    val matches = mutableListOf<DlqMessage>()
 
-    val matches = (1..messageCount)
-      .asFlow()
-      .map {
-        sqsDlqClient.receiveMessage(
-          ReceiveMessageRequest.builder()
-            .queueUrl(dlqUrl)
-            .maxNumberOfMessages(1)
-            .visibilityTimeout(1)
-            .build(),
-        ).await()
+    scanDlqMessages(scanLimit = messageCount) { msg ->
+      if (filter.isNullOrEmpty() || msg.body().contains(filter) || msg.messageId() == filter) {
+        matches.add(msg.toDlqMessage(bodyMapType))
       }
-      .mapNotNull { it.messages().firstOrNull() }
-      .filter { filter.isNullOrEmpty() || it.body().contains(filter) }
-      .map { msg -> DlqMessage(messageId = msg.messageId(), body = gson.fromJson(msg.body(), map.javaClass)) }
-      .toList()
-      .take(maxMessages)
+      matches.size >= maxMessages
+    }
 
     log.info("For dlq $dlqName searched $messageCount messages, found ${matches.size} matching filter '$filter'")
 
@@ -159,44 +179,29 @@ open class HmppsQueueService(
   }
 
   /**
-   * Solutions 1 & 3: retries (sends to the main queue and removes from the DLQ) only those DLQ messages whose
-   * SQS-assigned messageId is in the given list, leaving all other messages on the DLQ untouched.
+   * Retries (sends to the main queue and removes from the DLQ) only those DLQ messages whose SQS-assigned
+   * messageId is in the given list, leaving all other messages on the DLQ untouched.
    */
-  private suspend fun HmppsQueue.retryDlqMessagesByIds(messageIds: List<String>): RetryDlqMessagesResult {
-    if (sqsDlqClient == null || dlqUrl == null || messageIds.isEmpty()) return RetryDlqMessagesResult(0, 0, listOf())
+  private suspend fun HmppsQueue.retryDlqMessagesByIds(messageIds: List<String>, retriedBy: String?): RetryDlqMessagesResult {
+    if (sqsDlqClient == null || dlqUrl == null) return RetryDlqMessagesResult(0, 0, listOf(), listOf())
 
     val messageCount = sqsDlqClient.countMessagesOnQueue(dlqUrl!!).await()
+    if (messageIds.isEmpty()) return RetryDlqMessagesResult(messageCount, 0, listOf(), listOf())
+
     val remainingIds = messageIds.toMutableSet()
     val retriedIds = mutableListOf<String>()
+    // The destination (main) queue is FIFO if its name ends in .fifo - in which case every sendMessage must carry
+    // the originating message's MessageGroupId (and MessageDeduplicationId, if one was set), or AWS rejects it.
+    val isFifoDestination = queueName.endsWith(".fifo")
 
-    // Each matched message is sent/deleted immediately, as part of the same pass that receives it, rather than
-    // being collected into a list first - this keeps the gap between receipt and deletion as small as possible, so
-    // the receipt handle doesn't go stale (and the message doesn't become concurrently visible to others) before
-    // we act on it. Non-matching messages keep the short scan-only visibility timeout (so they reappear quickly,
-    // same as search/getDlqMessages); only an actual match has its visibility explicitly extended, just before the
-    // send-and-delete, to comfortably cover that pair of calls. Scanning stops as soon as every requested id has
-    // been found, rather than always scanning the whole DLQ.
-    (1..messageCount)
-      .asFlow()
-      .takeWhile { remainingIds.isNotEmpty() }
-      .map {
-        sqsDlqClient.receiveMessage(
-          ReceiveMessageRequest.builder()
-            .queueUrl(dlqUrl)
-            .maxNumberOfMessages(1)
-            .visibilityTimeout(1)
-            .messageAttributeNames("All")
-            .build(),
-        ).await()
-      }
-      .mapNotNull { it.messages().firstOrNull() }
-      .filter { msg -> remainingIds.remove(msg.messageId()) }
-      .collect { msg ->
+    scanDlqMessages(scanLimit = messageCount) { msg ->
+      if (remainingIds.remove(msg.messageId())) {
+        // extend visibility so the send+delete below has time to complete before this message could reappear
         sqsDlqClient.changeMessageVisibility(
           ChangeMessageVisibilityRequest.builder()
             .queueUrl(dlqUrl)
             .receiptHandle(msg.receiptHandle())
-            .visibilityTimeout(RETRY_VISIBILITY_TIMEOUT_SECONDS)
+            .visibilityTimeout(30)
             .build(),
         ).await()
         sqsClient.sendMessage(
@@ -204,6 +209,12 @@ open class HmppsQueueService(
             .queueUrl(queueUrl)
             .messageBody(msg.body())
             .messageAttributes(msg.messageAttributes())
+            .apply {
+              if (isFifoDestination) {
+                messageGroupId(msg.attributes()[MessageSystemAttributeName.MESSAGE_GROUP_ID])
+                messageDeduplicationId(msg.attributes()[MessageSystemAttributeName.MESSAGE_DEDUPLICATION_ID])
+              }
+            }
             .build(),
         ).await()
         sqsDlqClient.deleteMessage(
@@ -214,13 +225,20 @@ open class HmppsQueueService(
         ).await()
         retriedIds.add(msg.messageId())
       }
+      remainingIds.isEmpty()
+    }
 
     if (retriedIds.isNotEmpty()) {
       log.info("For dlq $dlqName retried ${retriedIds.size} of ${messageIds.size} requested messages")
-      telemetryClient?.trackEvent("RetryDLQMessagesById", mapOf("dlq-name" to dlqName, "messages-requested" to "${messageIds.size}", "messages-retried" to "${retriedIds.size}"), null)
+      telemetryClient?.trackEvent(
+        "RetryDLQMessagesById",
+        mapOf("dlq-name" to dlqName, "messages-requested" to "${messageIds.size}", "messages-retried" to "${retriedIds.size}") +
+          (retriedBy?.let { mapOf("retried-by" to it) } ?: emptyMap()),
+        null,
+      )
     }
 
-    return RetryDlqMessagesResult(messageCount, retriedIds.size, retriedIds)
+    return RetryDlqMessagesResult(messageCount, retriedIds.size, retriedIds, remainingIds.toList())
   }
 
   open suspend fun purgeQueue(request: PurgeQueueRequest): PurgeQueueResult = with(request) {
@@ -247,15 +265,20 @@ data class RetryDlqRequest(val hmppsQueue: HmppsQueue)
 data class RetryDlqResult(val messagesFoundCount: Int)
 data class GetDlqRequest(val hmppsQueue: HmppsQueue, val maxMessages: Int)
 data class GetDlqResult(val messagesFoundCount: Int, val messagesReturnedCount: Int, val messages: List<DlqMessage>)
-data class DlqMessage(val body: Map<String, Any>, val messageId: String)
 
-/** Solution 1: dry-run search request - filter is a plain substring match against the message body, or null/empty to return everything. */
+/** @param approximateReceiveCount SQS's ApproximateReceiveCount - incremented on every receive, including the get/search-dlq-messages scans themselves, not just main-queue delivery attempts. Not always available, hence nullable. */
+data class DlqMessage(val body: Map<String, Any>, val messageId: String, val approximateReceiveCount: Int? = null)
+
+/** Dry-run search request - filter matches a message if it is a substring of the message body, or an exact match for the messageId. Null/empty filter matches everything. */
 data class SearchDlqRequest(val hmppsQueue: HmppsQueue, val filter: String?, val maxMessages: Int)
 data class SearchDlqResult(val messagesFoundCount: Int, val messagesReturnedCount: Int, val messages: List<DlqMessage>)
 
-/** Solutions 1 & 3: retry request naming the exact DLQ messages (by messageId) to send back to the main queue. */
-data class RetryDlqMessagesRequest(val hmppsQueue: HmppsQueue, val messageIds: List<String>)
-data class RetryDlqMessagesResult(val messagesFoundCount: Int, val messagesRetriedCount: Int, val retriedMessageIds: List<String>)
+/** Retry request naming the exact DLQ messages (by messageId) to send back to the main queue.
+ * @param retriedBy the identity (if known) of the caller making the request, recorded in telemetry for audit purposes. */
+data class RetryDlqMessagesRequest(val hmppsQueue: HmppsQueue, val messageIds: List<String>, val retriedBy: String? = null)
+
+/** @param notFoundMessageIds any requested messageIds that were not present on the DLQ (so could not be retried). */
+data class RetryDlqMessagesResult(val messagesFoundCount: Int, val messagesRetriedCount: Int, val retriedMessageIds: List<String>, val notFoundMessageIds: List<String> = listOf())
 
 data class PurgeQueueRequest(val queueName: String, val sqsClient: SqsAsyncClient, val queueUrl: String)
 data class PurgeQueueResult(val messagesFoundCount: Int)
