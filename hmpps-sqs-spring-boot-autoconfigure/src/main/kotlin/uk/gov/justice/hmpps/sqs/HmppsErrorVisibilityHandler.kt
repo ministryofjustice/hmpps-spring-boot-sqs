@@ -10,6 +10,7 @@ import software.amazon.awssdk.services.sqs.model.MessageAttributeValue
 import tools.jackson.core.ObjectReadContext
 import tools.jackson.core.type.TypeReference
 import tools.jackson.databind.json.JsonMapper
+import software.amazon.awssdk.services.sqs.model.Message as SqsMessage
 
 class HmppsErrorVisibilityHandler(
   private val jsonMapper: JsonMapper,
@@ -61,7 +62,7 @@ class HmppsErrorVisibilityHandler(
    * (alongside a ready-made retry command) in the "sent-to-dlq" telemetry event to make the failure directly
    * actionable without first having to search the DLQ to find it.
    */
-  private fun getMessageId(message: Message<in Any>): String? = (message.headers[SqsHeaders.SQS_SOURCE_DATA_HEADER] as? software.amazon.awssdk.services.sqs.model.Message)?.messageId()
+  private fun getMessageId(message: Message<in Any>): String? = (message.headers[SqsHeaders.SQS_SOURCE_DATA_HEADER] as? SqsMessage)?.messageId()
 
   private fun String?.toRetryProperties(dlqName: String?): Map<String, String> = this?.let { messageId ->
     mapOf(
