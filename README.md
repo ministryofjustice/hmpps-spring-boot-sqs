@@ -496,10 +496,30 @@ Class `HmppsQueueResource` provides the following endpoints, all under `/queue-a
 
 | Method | Path                            | Description                                                                                                 |
 |--------|----------------------------------|---------------------------------------------------------------------------------------------------------------|
-| `GET`  | `/get-dlq-messages/{dlqName}`    | Peek at (without removing) up to `maxMessages` (default 100) messages currently on the DLQ.                   |
+| `GET`  | `/get-dlq-messages/{dlqName}`    | Peek at (without removing) up to `maxMessages` (default 100, max 1000) messages currently on the DLQ.          |
+| `GET`  | `/search-dlq-messages/{dlqName}` | Peek at (without removing) up to `maxMessages` (default 100, max 1000) messages whose body contains, or whose `messageId` exactly matches, the `filter` text. |
+| `PUT`  | `/retry-dlq-messages/{dlqName}`  | Retry only the DLQ messages whose SQS `messageId` is in the `messageIds` list in the request body (max 100 ids). |
 | `PUT`  | `/retry-dlq/{dlqName}`           | Retry every message currently on the named DLQ (see [How retry actually works](#how-retry-actually-works)).   |
 | `PUT`  | `/retry-all-dlqs`                | Retry every DLQ configured in the application.                                                                 |
 | `PUT`  | `/purge-queue/{queueName}`       | Purge all messages from the named queue (works for both main queues and DLQs; the `audit` queue is excluded).  |
+
+##### Selectively retrying DLQ messages
+
+Sometimes you may need to retry a single message from a DLQ:
+
+1. Check the `*-sent-to-dlq` App Insights telemetry properties for your DLQ message to find its dlq name and messageId
+2. You can also search all messages on a DLQ to get the messageIds you wish to retry. Call 
+   `GET /queue-admin/search-dlq-messages/{dlqName}?filter=<text>` to find the messages you're interested in.
+3. Using the DLQ name and messageId(s), call `PUT /queue-admin/retry-dlq-messages/{dlqName}` with a JSON body of
+   `{"messageIds": ["id-1", "id-2"]}`.
+
+Both endpoints accept an optional `maxMessages` query parameter (default 100) that limits how many messages on the
+DLQ are scanned; it is capped at `MAX_DLQ_MESSAGES_LIMIT` (1000). `retry-dlq-messages` also limits `messageIds` to at
+most `MAX_RETRY_MESSAGE_IDS_LIMIT` (100) entries.
+
+The response from both `get-dlq-messages` and `search-dlq-messages` includes an `approximateReceiveCount` for each
+message (how many times SQS has attempted to deliver it), which can help identify messages that have been retried
+repeatedly without success.
 
 ##### How retry actually works
 

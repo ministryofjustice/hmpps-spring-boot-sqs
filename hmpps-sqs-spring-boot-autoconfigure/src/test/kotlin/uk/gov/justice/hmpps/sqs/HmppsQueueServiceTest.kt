@@ -311,6 +311,14 @@ class HmppsQueueServiceTest {
           GetQueueAttributesResponse.builder().attributes(mapOf(APPROXIMATE_NUMBER_OF_MESSAGES to "3")).build(),
         ),
       )
+      fun responseFor(i: Int) = CompletableFuture.completedFuture(
+        ReceiveMessageResponse.builder().messages(
+          Message.builder().body("""{"MessageId":"message-id-$i"}""")
+            .receiptHandle("message-$i-receipt-handle").messageId("external-message-id-$i").build(),
+        ).build(),
+      )
+      whenever(dlqSqs.receiveMessage(any<ReceiveMessageRequest>()))
+        .thenReturn(responseFor(1), responseFor(2), responseFor(3))
 
       val dlqResult = hmppsQueueService.getDlqMessages(
         GetDlqRequest(HmppsQueue("some queue id", queueSqs, "some queue name", dlqSqs, "some dlq name"), 10),
@@ -318,12 +326,13 @@ class HmppsQueueServiceTest {
 
       assertThat(dlqResult.messagesFoundCount).isEqualTo(3)
       assertThat(dlqResult.messagesReturnedCount).isEqualTo(3)
-      assertThat(dlqResult.messages[2].messageId).isEqualTo("external-message-id-1")
-      assertThat(dlqResult.messages[2].body["MessageId"]).isEqualTo("message-id-1")
+      assertThat(dlqResult.messages[2].messageId).isEqualTo("external-message-id-3")
+      assertThat(dlqResult.messages[2].body["MessageId"]).isEqualTo("message-id-3")
       verify(dlqSqs, times(3)).receiveMessage(
         check<ReceiveMessageRequest> {
           assertThat(it.queueUrl()).isEqualTo("dlqUrl")
           assertThat(it.visibilityTimeout()).isEqualTo(1)
+          assertThat(it.maxNumberOfMessages()).isEqualTo(1)
         },
       )
     }

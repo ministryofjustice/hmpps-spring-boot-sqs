@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
+import java.security.Principal
 
 @RestController
 @RequestMapping("/queue-admin")
@@ -48,6 +49,13 @@ class HmppsQueueResource(hmppsQueueService: HmppsQueueService) {
     hmppsReactiveQueueResource.getDlqMessages(dlqName, maxMessages)
   }
 
+  /*
+   * Searches DLQ messages by reading from the DLQ and returning message bodies matching the search text or matching on
+   * messageId.
+   *
+   * Note: as with getDlqMessages, messages read here are briefly invisible to other reads for ~1 second due to the
+   * visibility timeout used while scanning.
+   */
   @GetMapping("/search-dlq-messages/{dlqName}")
   @PreAuthorize("hasRole(@environment.getProperty('hmpps.sqs.queueAdminRole', 'ROLE_QUEUE_ADMIN'))")
   fun searchDlqMessages(
@@ -58,9 +66,12 @@ class HmppsQueueResource(hmppsQueueService: HmppsQueueService) {
     hmppsReactiveQueueResource.searchDlqMessages(dlqName, filter, maxMessages)
   }
 
+  /*
+   * Retry only the named messageIds from a DLQ, leaving every other message on the DLQ untouched.
+   */
   @PutMapping("/retry-dlq-messages/{dlqName}")
   @PreAuthorize("hasRole(@environment.getProperty('hmpps.sqs.queueAdminRole', 'ROLE_QUEUE_ADMIN'))")
-  fun retryDlqMessages(@PathVariable("dlqName") dlqName: String, @RequestBody request: RetryDlqMessagesBody) = runBlocking {
-    hmppsReactiveQueueResource.retryDlqMessages(dlqName, request)
+  fun retryDlqMessages(@PathVariable("dlqName") dlqName: String, @RequestBody request: RetryDlqMessagesBody, principal: Principal?) = runBlocking {
+    hmppsReactiveQueueResource.retryDlqMessages(dlqName, request, principal)
   }
 }
