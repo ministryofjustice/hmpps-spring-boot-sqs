@@ -52,9 +52,8 @@ class HmppsReactiveQueueResource(private val hmppsQueueService: HmppsQueueServic
     ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "$dlqName not found")
 
   /*
-   * Read-only/dry-run search of a DLQ's messages. Nothing is sent or deleted - this is intended to let an engineer
-   * find the messageId(s) of interest (e.g. via a substring filter matching a business entity ID in the message
-   * body, or by the exact messageId itself) before calling retryDlqMessages below with those exact IDs.
+   * Searches DLQ messages by reading from the DLQ and returning message bodies matching the search text or matching on
+   * messageId.
    *
    * Note: as with getDlqMessages, messages read here are briefly invisible to other reads for ~1 second due to the
    * visibility timeout used while scanning.
@@ -70,9 +69,7 @@ class HmppsReactiveQueueResource(private val hmppsQueueService: HmppsQueueServic
     ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "$dlqName not found")
 
   /*
-   * Retry only the named messageIds from a DLQ, leaving every other message on the DLQ untouched. Typically called
-   * with IDs obtained from searchDlqMessages above, or from the messageId logged in the enriched "sent-to-dlq"
-   * telemetry event (see HmppsErrorVisibilityHandler).
+   * Retry only the named messageIds from a DLQ, leaving every other message on the DLQ untouched.
    */
   @PutMapping("/retry-dlq-messages/{dlqName}")
   @PreAuthorize("hasRole(@environment.getProperty('hmpps.sqs.queueAdminRole', 'ROLE_QUEUE_ADMIN'))")
