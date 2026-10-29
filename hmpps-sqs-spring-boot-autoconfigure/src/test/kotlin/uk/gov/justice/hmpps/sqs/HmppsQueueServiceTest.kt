@@ -275,6 +275,38 @@ class HmppsQueueServiceTest {
       assertThat(result.notFoundMessageIds).containsExactly("target")
       verify(dlqSqs, times(4)).receiveMessage(any<ReceiveMessageRequest>())
     }
+
+    @Test
+    fun `should return an empty result if the queue has no dlq`() = runBlocking {
+      val result = hmppsQueueService.deleteDlqMessagesByIds(
+        DeleteDlqMessagesRequest(HmppsQueue("some queue id", queueSqs, "some queue name"), listOf("id1")),
+      )
+
+      assertThat(result).isEqualTo(DeleteDlqMessagesResult(0, 0, listOf(), listOf()))
+      verifyNoMoreInteractions(telemetryClient)
+    }
+
+    @Test
+    fun `should report a failed delete per message and carry on deleting the others`() = runBlocking {
+      val receives = receives("id1", "id2")
+      whenever(dlqSqs.receiveMessage(any<ReceiveMessageRequest>())).thenReturn(receives[0], receives[1])
+      whenever(dlqSqs.deleteMessage(any<DeleteMessageRequest>()))
+        .thenReturn(CompletableFuture.failedFuture(RuntimeException("SQS unavailable")))
+        .thenReturn(CompletableFuture.completedFuture(DeleteMessageResponse.builder().build()))
+
+      val result = hmppsQueueService.deleteDlqMessagesByIds(
+        DeleteDlqMessagesRequest(HmppsQueue("some queue id", queueSqs, "some queue name", dlqSqs, "some dlq name"), listOf("id1", "id2"), "someone"),
+      )
+
+      assertThat(result.failedMessageIds).containsExactly("id1")
+      assertThat(result.deletedMessageIds).containsExactly("id2")
+      assertThat(result.notFoundMessageIds).isEmpty()
+      verify(telemetryClient).trackEvent(
+        eq("DeleteDLQMessagesById"),
+        check { assertThat(it).containsEntry("messages-failed", "1").containsEntry("messages-deleted", "1").containsEntry("deleted-by", "someone") },
+        isNull(),
+      )
+    }
   }
 
   @Nested
