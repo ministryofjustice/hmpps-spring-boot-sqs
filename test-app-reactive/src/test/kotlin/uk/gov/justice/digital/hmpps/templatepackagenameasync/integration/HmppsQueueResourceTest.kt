@@ -11,7 +11,10 @@ import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import org.mockito.ArgumentCaptor
+import org.mockito.kotlin.any
+import org.mockito.kotlin.check
 import org.mockito.kotlin.eq
+import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
@@ -389,6 +392,117 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
   }
 
   @Nested
+  inner class DeleteDlqMessagesById {
+    @Test
+    fun `requires a valid authentication token`() {
+      webTestClient.put()
+        .uri("/queue-admin/delete-dlq-messages/any-queue")
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(mapOf("messageIds" to listOf("some-id")))
+        .exchange()
+        .expectStatus().isUnauthorized
+    }
+
+    @Test
+    fun `requires the correct role`() {
+      webTestClient.put()
+        .uri("/queue-admin/delete-dlq-messages/any-queue")
+        .headers { it.authToken(roles = listOf("WRONG_ROLE")) }
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(mapOf("messageIds" to listOf("some-id")))
+        .exchange()
+        .expectStatus().isForbidden
+    }
+
+    @Test
+    fun `should fail if dlq not found`() {
+      webTestClient.deleteDlqMessages(dlqName = "UNKNOWN_DLQ", expectedStatus = HttpStatus.NOT_FOUND)
+    }
+
+    @Test
+    fun `should delete only the requested messages, leaving the rest on the dlq`() {
+      val messageToDelete = SnsMessage(jsonString(HmppsEvent("id1", "test.type", "delete-me-marker")), "message-to-delete", messageAttributesWithEventType("test.type"))
+      val messageToLeave = SnsMessage(jsonString(HmppsEvent("id2", "test.type", "leave me")), "message-to-leave", messageAttributesWithEventType("test.type"))
+      sendToDlq(inboundSqsDlqClient, inboundDlqUrl, messageToDelete)
+      sendToDlq(inboundSqsDlqClient, inboundDlqUrl, messageToLeave)
+      awaitMessageCount(inboundSqsDlqClient, inboundDlqUrl, 2)
+
+      val searchResponse = webTestClient.searchDlqMessages(filter = "delete-me-marker")
+        .expectBody()
+        .jsonPath("messagesReturnedCount").isEqualTo(1)
+        .returnResult()
+      val messageIdToDelete = jsonMapper.readTree(searchResponse.responseBody).at("/messages/0/messageId").asText()
+      awaitMessageCount(inboundSqsDlqClient, inboundDlqUrl, 2, atMost = Duration.ofSeconds(3))
+
+      webTestClient.deleteDlqMessages(messageIds = listOf(messageIdToDelete))
+        .expectBody()
+        .jsonPath("messagesFoundCount").isEqualTo(2)
+        .jsonPath("messagesDeletedCount").isEqualTo(1)
+        .jsonPath("deletedMessageIds[0]").isEqualTo(messageIdToDelete)
+
+      awaitMessageCount(inboundSqsDlqClient, inboundDlqUrl, 1, atMost = Duration.ofSeconds(3))
+      assertThat(inboundSqsClient.countMessagesOnQueue(inboundQueueUrl).get()).isEqualTo(0)
+      runTest {
+        verify(inboundMessageServiceSpy, never()).handleMessage(any<HmppsEvent>())
+      }
+    }
+
+    @Test
+    fun `should report requested message ids that were not found on the dlq`() {
+      sendToDlq(inboundSqsDlqClient, inboundDlqUrl, SnsMessage(jsonString(HmppsEvent("id1", "test.type", "contents")), "message-id1", messageAttributesWithEventType("test.type")))
+      awaitMessageCount(inboundSqsDlqClient, inboundDlqUrl, 1)
+
+      webTestClient.deleteDlqMessages(messageIds = listOf("no-such-message-id"))
+        .expectBody()
+        .jsonPath("messagesFoundCount").isEqualTo(1)
+        .jsonPath("messagesDeletedCount").isEqualTo(0)
+        .jsonPath("notFoundMessageIds[0]").isEqualTo("no-such-message-id")
+
+      awaitMessageCount(inboundSqsDlqClient, inboundDlqUrl, 1, atMost = Duration.ofSeconds(3))
+    }
+
+    @Test
+    fun `should reject more than the maximum number of message ids`() {
+      webTestClient.deleteDlqMessages(messageIds = (1..101).map { "id-$it" }, expectedStatus = HttpStatus.BAD_REQUEST)
+    }
+
+    @Test
+    fun `should treat duplicate message ids as a single request`() {
+      sendToDlq(inboundSqsDlqClient, inboundDlqUrl, SnsMessage(jsonString(HmppsEvent("id1", "test.type", "contents")), "message-id1", messageAttributesWithEventType("test.type")))
+      awaitMessageCount(inboundSqsDlqClient, inboundDlqUrl, 1)
+      val searchResponse = webTestClient.searchDlqMessages().expectBody().returnResult()
+      val messageId = jsonMapper.readTree(searchResponse.responseBody).at("/messages/0/messageId").asText()
+      awaitMessageCount(inboundSqsDlqClient, inboundDlqUrl, 1, atMost = Duration.ofSeconds(3))
+
+      webTestClient.deleteDlqMessages(messageIds = listOf(messageId, messageId))
+        .expectBody()
+        .jsonPath("messagesDeletedCount").isEqualTo(1)
+        .jsonPath("deletedMessageIds.length()").isEqualTo(1)
+        .jsonPath("notFoundMessageIds.length()").isEqualTo(0)
+    }
+
+    @Test
+    fun `should record the identity of the caller against the delete telemetry event`() {
+      sendToDlq(inboundSqsDlqClient, inboundDlqUrl, SnsMessage(jsonString(HmppsEvent("id1", "test.type", "contents")), "message-id1", messageAttributesWithEventType("test.type")))
+      awaitMessageCount(inboundSqsDlqClient, inboundDlqUrl, 1)
+      val searchResponse = webTestClient.searchDlqMessages().expectBody().returnResult()
+      val messageId = jsonMapper.readTree(searchResponse.responseBody).at("/messages/0/messageId").asText()
+      awaitMessageCount(inboundSqsDlqClient, inboundDlqUrl, 1, atMost = Duration.ofSeconds(3))
+
+      webTestClient.deleteDlqMessages(messageIds = listOf(messageId))
+
+      verify(telemetryClient).trackEvent(
+        eq("DeleteDLQMessagesById"),
+        check {
+          assertThat(it["deleted-by"]).isNotBlank()
+          assertThat(it["message-ids"]).isEqualTo(messageId)
+        },
+        eq(null),
+      )
+    }
+  }
+
+  @Nested
   inner class RetryDlqMessagesById {
     @Test
     fun `requires a valid authentication token`() {
@@ -582,6 +696,18 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
     messageIds: List<String> = listOf("message-id"),
   ) = put()
     .uri("/queue-admin/retry-dlq-messages/$dlqName")
+    .headers { it.authToken() }
+    .contentType(MediaType.APPLICATION_JSON)
+    .bodyValue(mapOf("messageIds" to messageIds))
+    .exchange()
+    .expectStatus().isEqualTo(expectedStatus)
+
+  private fun WebTestClient.deleteDlqMessages(
+    dlqName: String = hmppsSqsPropertiesSpy.inboundQueueConfig().dlqName,
+    expectedStatus: HttpStatus = HttpStatus.OK,
+    messageIds: List<String> = listOf("message-id"),
+  ) = put()
+    .uri("/queue-admin/delete-dlq-messages/$dlqName")
     .headers { it.authToken() }
     .contentType(MediaType.APPLICATION_JSON)
     .bodyValue(mapOf("messageIds" to messageIds))
