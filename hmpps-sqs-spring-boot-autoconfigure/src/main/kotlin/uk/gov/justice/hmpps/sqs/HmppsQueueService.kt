@@ -93,7 +93,7 @@ open class HmppsQueueService(
 
   /**
    * Scans up to [scanLimit] messages on this queue's DLQ, one at a time, invoking [onMessage] for each distinct
-   * message encountered until it returns true (meaning "stop here") or [scanLimit] is reached.
+   * message encountered until it returns true (meaning "stop here") or [scanLimit] distinct messages have been seen.
    */
   private suspend fun HmppsQueue.scanDlqMessages(
     scanLimit: Int,
@@ -101,9 +101,10 @@ open class HmppsQueueService(
   ) {
     val maxConsecutiveEmptyReceives = 3 // retry to reduce chance of false-empty response
     val seenMessageIds = mutableSetOf<String>()
+    val maxConsecutiveDuplicateReceives = 3 // duplicate deliveries must not use up the scan limit, but must not loop forever either
     var consecutiveEmptyReceives = 0
-    var scanned = 0
-    while (scanned < scanLimit && consecutiveEmptyReceives < maxConsecutiveEmptyReceives) {
+    var consecutiveDuplicateReceives = 0
+    while (seenMessageIds.size < scanLimit && consecutiveEmptyReceives < maxConsecutiveEmptyReceives && consecutiveDuplicateReceives < maxConsecutiveDuplicateReceives) {
       val received = sqsDlqClient!!.receiveMessage(
         ReceiveMessageRequest.builder()
           .queueUrl(dlqUrl)
@@ -122,8 +123,12 @@ open class HmppsQueueService(
         continue
       }
       consecutiveEmptyReceives = 0
-      scanned++
-      if (seenMessageIds.add(received.messageId()) && onMessage(received)) return
+      if (!seenMessageIds.add(received.messageId())) {
+        consecutiveDuplicateReceives++
+        continue
+      }
+      consecutiveDuplicateReceives = 0
+      if (onMessage(received)) return
     }
   }
 

@@ -17,6 +17,8 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 import software.amazon.awssdk.services.sqs.SqsAsyncClient
+import software.amazon.awssdk.services.sqs.model.DeleteMessageRequest
+import software.amazon.awssdk.services.sqs.model.DeleteMessageResponse
 import software.amazon.awssdk.services.sqs.model.GetQueueAttributesRequest
 import software.amazon.awssdk.services.sqs.model.GetQueueAttributesResponse
 import software.amazon.awssdk.services.sqs.model.GetQueueUrlRequest
@@ -222,6 +224,56 @@ class HmppsQueueServiceTest {
 
         assertThat(result.messagesFoundCount).isEqualTo(2)
       }
+    }
+  }
+
+  @Nested
+  inner class DeleteDlqMessagesByIds {
+    private val queueSqs = mock<SqsAsyncClient>()
+    private val dlqSqs = mock<SqsAsyncClient>()
+
+    @BeforeEach
+    fun `stub dlq`() {
+      whenever(queueSqs.getQueueUrl(any<GetQueueUrlRequest>()))
+        .thenReturn(CompletableFuture.completedFuture(GetQueueUrlResponse.builder().queueUrl("queueUrl").build()))
+      whenever(dlqSqs.getQueueUrl(any<GetQueueUrlRequest>()))
+        .thenReturn(CompletableFuture.completedFuture(GetQueueUrlResponse.builder().queueUrl("dlqUrl").build()))
+      whenever(dlqSqs.getQueueAttributes(any<GetQueueAttributesRequest>())).thenReturn(
+        CompletableFuture.completedFuture(GetQueueAttributesResponse.builder().attributes(mapOf(APPROXIMATE_NUMBER_OF_MESSAGES to "2")).build()),
+      )
+      whenever(dlqSqs.deleteMessage(any<DeleteMessageRequest>()))
+        .thenReturn(CompletableFuture.completedFuture(DeleteMessageResponse.builder().build()))
+      hmppsQueueService = HmppsQueueService(telemetryClient, hmppsTopicFactory, hmppsQueueFactory, hmppsSqsProperties)
+    }
+
+    private fun receives(vararg ids: String) = ids.map { id ->
+      CompletableFuture.completedFuture(ReceiveMessageResponse.builder().messages(Message.builder().messageId(id).receiptHandle("handle-$id").build()).build())
+    }
+
+    @Test
+    fun `should still find the target when a non-target message is delivered more than once`() = runBlocking<Unit> {
+      val receives = receives("other", "other", "target")
+      whenever(dlqSqs.receiveMessage(any<ReceiveMessageRequest>())).thenReturn(receives[0], receives[1], receives[2])
+
+      val result = hmppsQueueService.deleteDlqMessagesByIds(
+        DeleteDlqMessagesRequest(HmppsQueue("some queue id", queueSqs, "some queue name", dlqSqs, "some dlq name"), listOf("target")),
+      )
+
+      assertThat(result.deletedMessageIds).containsExactly("target")
+      assertThat(result.notFoundMessageIds).isEmpty()
+      verify(dlqSqs).deleteMessage(DeleteMessageRequest.builder().queueUrl("dlqUrl").receiptHandle("handle-target").build())
+    }
+
+    @Test
+    fun `should stop scanning if the same message keeps being redelivered`() = runBlocking<Unit> {
+      whenever(dlqSqs.receiveMessage(any<ReceiveMessageRequest>())).thenReturn(receives("other").first())
+
+      val result = hmppsQueueService.deleteDlqMessagesByIds(
+        DeleteDlqMessagesRequest(HmppsQueue("some queue id", queueSqs, "some queue name", dlqSqs, "some dlq name"), listOf("target")),
+      )
+
+      assertThat(result.notFoundMessageIds).containsExactly("target")
+      verify(dlqSqs, times(4)).receiveMessage(any<ReceiveMessageRequest>())
     }
   }
 

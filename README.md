@@ -517,6 +517,11 @@ Both endpoints accept an optional `maxMessages` query parameter (default 100) th
 DLQ are scanned; it is capped at `MAX_DLQ_MESSAGES_LIMIT` (1000). `retry-dlq-messages` also limits `messageIds` to at
 most `MAX_RETRY_MESSAGE_IDS_LIMIT` (100) entries.
 
+**FIFO DLQs:** SQS only hands out the oldest message in each message group, and won't release the next one until that
+message has been deleted. This means that on a FIFO DLQ only the first message in each group can be found by
+`get-dlq-messages`, `search-dlq-messages` and `retry-dlq-messages`. A message queued behind another message in the same
+group is reported as not found until the earlier message has been retried (or removed).
+
 The response from both `get-dlq-messages` and `search-dlq-messages` includes an `approximateReceiveCount` for each
 message (how many times SQS has attempted to deliver it), which can help identify messages that have been retried
 repeatedly without success.
