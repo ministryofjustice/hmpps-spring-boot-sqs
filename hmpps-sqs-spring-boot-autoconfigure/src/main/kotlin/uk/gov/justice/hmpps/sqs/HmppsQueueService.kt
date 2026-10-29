@@ -62,6 +62,8 @@ open class HmppsQueueService(
 
   open suspend fun retryDlqMessagesByIds(request: RetryDlqMessagesRequest): RetryDlqMessagesResult = request.hmppsQueue.retryDlqMessagesByIds(request.messageIds, request.retriedBy)
 
+  open suspend fun deleteDlqMessagesByIds(request: DeleteDlqMessagesRequest): DeleteDlqMessagesResult = request.hmppsQueue.deleteDlqMessagesByIds(request.messageIds, request.deletedBy)
+
   open suspend fun retryAllDlqs() = hmppsQueues
     .map { hmppsQueue -> RetryDlqRequest(hmppsQueue) }
     .map { retryDlqRequest -> retryDlqMessages(retryDlqRequest) }
@@ -224,6 +226,41 @@ open class HmppsQueueService(
     return RetryDlqMessagesResult(messageCount, retriedIds.size, retriedIds, remainingIds.toList())
   }
 
+  private suspend fun HmppsQueue.deleteDlqMessagesByIds(messageIds: List<String>, deletedBy: String?): DeleteDlqMessagesResult {
+    if (sqsDlqClient == null || dlqUrl == null) return DeleteDlqMessagesResult(0, 0, listOf(), listOf())
+
+    val messageCount = sqsDlqClient.countMessagesOnQueue(dlqUrl!!).await()
+    if (messageIds.isEmpty()) return DeleteDlqMessagesResult(messageCount, 0, listOf(), listOf())
+
+    val remainingIds = messageIds.toMutableSet()
+    val deletedIds = mutableListOf<String>()
+
+    scanDlqMessages(scanLimit = messageCount) { msg ->
+      if (remainingIds.remove(msg.messageId())) {
+        sqsDlqClient.deleteMessage(
+          DeleteMessageRequest.builder()
+            .queueUrl(dlqUrl)
+            .receiptHandle(msg.receiptHandle())
+            .build(),
+        ).await()
+        deletedIds.add(msg.messageId())
+      }
+      remainingIds.isEmpty()
+    }
+
+    if (deletedIds.isNotEmpty()) {
+      log.info("For dlq $dlqName deleted ${deletedIds.size} of ${messageIds.size} requested messages: $deletedIds")
+      telemetryClient?.trackEvent(
+        "DeleteDLQMessagesById",
+        mapOf("dlq-name" to dlqName, "messages-requested" to "${messageIds.size}", "messages-deleted" to "${deletedIds.size}", "message-ids" to deletedIds.joinToString()) +
+          (deletedBy?.let { mapOf("deleted-by" to it) } ?: emptyMap()),
+        null,
+      )
+    }
+
+    return DeleteDlqMessagesResult(messageCount, deletedIds.size, deletedIds, remainingIds.toList())
+  }
+
   open suspend fun purgeQueue(request: PurgeQueueRequest): PurgeQueueResult = with(request) {
     val messageCount = sqsClient.countMessagesOnQueue(queueUrl).await()
     return if (messageCount > 0) {
@@ -256,6 +293,9 @@ data class DlqMessage(val body: Map<String, Any>, val messageId: String, val app
 
 data class RetryDlqMessagesRequest(val hmppsQueue: HmppsQueue, val messageIds: List<String>, val retriedBy: String? = null)
 data class RetryDlqMessagesResult(val messagesFoundCount: Int, val messagesRetriedCount: Int, val retriedMessageIds: List<String>, val notFoundMessageIds: List<String> = listOf())
+
+data class DeleteDlqMessagesRequest(val hmppsQueue: HmppsQueue, val messageIds: List<String>, val deletedBy: String? = null)
+data class DeleteDlqMessagesResult(val messagesFoundCount: Int, val messagesDeletedCount: Int, val deletedMessageIds: List<String>, val notFoundMessageIds: List<String> = listOf())
 
 data class PurgeQueueRequest(val queueName: String, val sqsClient: SqsAsyncClient, val queueUrl: String)
 data class PurgeQueueResult(val messagesFoundCount: Int)
