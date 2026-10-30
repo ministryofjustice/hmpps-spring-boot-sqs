@@ -1,6 +1,7 @@
 package uk.gov.justice.hmpps.sqs
 
 import kotlinx.coroutines.runBlocking
+import org.springframework.http.HttpStatus
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -9,11 +10,12 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.server.ResponseStatusException
 import java.security.Principal
 
 @RestController
 @RequestMapping("/queue-admin")
-class HmppsQueueResource(hmppsQueueService: HmppsQueueService) {
+class HmppsQueueResource(private val hmppsQueueService: HmppsQueueService) {
   private val hmppsReactiveQueueResource = HmppsReactiveQueueResource(hmppsQueueService)
 
   @PutMapping("/retry-dlq/{dlqName}")
@@ -74,4 +76,18 @@ class HmppsQueueResource(hmppsQueueService: HmppsQueueService) {
   fun retryDlqMessages(@PathVariable("dlqName") dlqName: String, @RequestBody request: RetryDlqMessagesBody, principal: Principal?) = runBlocking {
     hmppsReactiveQueueResource.retryDlqMessages(dlqName, request, principal)
   }
+
+  /*
+   * Delete only the named messageIds from a DLQ, leaving every other message on the DLQ untouched. Deleted messages are not retried.
+   */
+  @PutMapping("/delete-dlq-messages/{dlqName}")
+  @PreAuthorize("hasRole(@environment.getProperty('hmpps.sqs.queueAdminRole', 'ROLE_QUEUE_ADMIN'))")
+  fun deleteDlqMessages(@PathVariable("dlqName") dlqName: String, @RequestBody request: DeleteDlqMessagesBody, principal: Principal?) = runBlocking {
+    hmppsQueueService.findByDlqName(dlqName)
+      ?.let { hmppsQueue -> hmppsQueueService.deleteDlqMessagesByIds(DeleteDlqMessagesRequest(hmppsQueue, request.messageIds.validMessageIds(), principal?.name)) }
+      ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "$dlqName not found")
+  }
 }
+
+/** Request body for PUT /queue-admin/delete-dlq-messages/{dlqName} */
+data class DeleteDlqMessagesBody(val messageIds: List<String>)
