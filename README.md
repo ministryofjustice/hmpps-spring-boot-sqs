@@ -122,7 +122,7 @@ class EventListener(private val jsonMapper: JsonMapper) {
 ```
 
 That's it — you now also get, for free: a `HealthIndicator` for the queue/topic on your `/health` page, queue admin
-endpoints for retrying/purging/inspecting the DLQ, `SqsAsyncClient`/`SnsAsyncClient` beans (wired for LocalStack when 
+endpoints for retrying/deleting/purging/inspecting the DLQ (including [selectively retrying](#selectively-retrying-dlq-messages) or [deleting](#selectively-deleting-dlq-messages) individual DLQ messages by `messageId`), `SqsAsyncClient`/`SnsAsyncClient` beans (wired for LocalStack when 
 testing and for AWS in production), distributed tracing of the published/received messages, and configurable DLQ retry
 timing. Each of these is covered in detail in [Features](#features) below.
 
@@ -498,10 +498,11 @@ Class `HmppsQueueResource` provides the following endpoints, all under `/queue-a
 |--------|----------------------------------|---------------------------------------------------------------------------------------------------------------|
 | `GET`  | `/get-dlq-messages/{dlqName}`    | Peek at (without removing) up to `maxMessages` (default 100, max 1000) messages currently on the DLQ.          |
 | `GET`  | `/search-dlq-messages/{dlqName}` | Peek at (without removing) up to `maxMessages` (default 100, max 1000) messages whose body contains, or whose `messageId` exactly matches, the `filter` text. |
+| `PUT`  | `/delete-dlq-messages/{dlqName}` | Permanently delete only the DLQ messages whose SQS `messageId` is in the `messageIds` list in the request body (max 100 ids). |
 | `PUT`  | `/retry-dlq-messages/{dlqName}`  | Retry only the DLQ messages whose SQS `messageId` is in the `messageIds` list in the request body (max 100 ids). |
 | `PUT`  | `/retry-dlq/{dlqName}`           | Retry every message currently on the named DLQ (see [How retry actually works](#how-retry-actually-works)).   |
 | `PUT`  | `/retry-all-dlqs`                | Retry every DLQ configured in the application.                                                                 |
-| `PUT`  | `/purge-queue/{queueName}`       | Purge all messages from the named queue (works for both main queues and DLQs; the `audit` queue is excluded).  |
+| `PUT`  | `/purge-queue/{queueName}`       | Purge all messages from the named queue (works for both main queues and DLQs; the `audit` queue is excluded). To discard just one or a few DLQ messages use `delete-dlq-messages` instead. |
 
 ##### Selectively retrying DLQ messages
 
@@ -525,6 +526,30 @@ group is reported as not found until the earlier message has been retried (or re
 The response from both `get-dlq-messages` and `search-dlq-messages` includes an `approximateReceiveCount` for each
 message (how many times SQS has attempted to deliver it), which can help identify messages that have been retried
 repeatedly without success.
+
+##### Selectively deleting DLQ messages
+
+If a DLQ message should not be retried (e.g. it is poison data that can never be processed), delete just that message:
+
+1. Check the `*-sent-to-dlq` App Insights telemetry properties for your DLQ message to find its dlq name and messageId.
+2. You can also search all messages on a DLQ to get the messageIds you wish to delete. Call
+   `GET /queue-admin/search-dlq-messages/{dlqName}?filter=<text>` to find the messages you're interested in - this is a
+   safe dry-run to confirm exactly which message you are about to delete.
+3. Using the DLQ name and messageId(s), call `PUT /queue-admin/delete-dlq-messages/{dlqName}` with a JSON body of `{"messageIds": ["id-1", "id-2"]}`.
+
+**Deletion is permanent** - the message is removed from the DLQ and is not retried. Every other message is left untouched.
+The endpoint accepts at most `MAX_RETRY_MESSAGE_IDS_LIMIT` (100) distinct messageIds. The response contains:
+
+* `messagesFoundCount` - the approximate number of messages on the DLQ before deleting
+* `messagesDeletedCount` and `deletedMessageIds` - the messages that were deleted
+* `notFoundMessageIds` - requested ids that weren't found on the DLQ. As the DLQ is scanned using its approximate
+  message count, a message that is currently invisible (e.g. being read by another call) may be reported here; simply repeat the call.
+* `failedMessageIds` - requested ids that were found but that SQS failed to delete (see the application log for the error); these are still on the DLQ.
+
+As with retry, on a FIFO DLQ only the first message in each message group can be found, so a message queued behind another
+in the same group is reported in `notFoundMessageIds` until the earlier message has been deleted or retried.
+
+A `DeleteDLQMessagesById` telemetry event records the DLQ name, the deleted message ids and the caller (`deleted-by`).
 
 ##### How retry actually works
 

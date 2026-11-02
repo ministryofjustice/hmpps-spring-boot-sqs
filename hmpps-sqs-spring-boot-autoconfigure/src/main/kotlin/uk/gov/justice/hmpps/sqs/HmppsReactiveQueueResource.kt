@@ -80,7 +80,23 @@ class HmppsReactiveQueueResource(private val hmppsQueueService: HmppsQueueServic
   ) = hmppsQueueService.findByDlqName(dlqName)
     ?.let { hmppsQueue -> hmppsQueueService.retryDlqMessagesByIds(RetryDlqMessagesRequest(hmppsQueue, request.messageIds.validMessageIds(), principal?.name)) }
     ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "$dlqName not found")
+
+  /*
+   * Delete only the named messageIds from a DLQ, leaving every other message on the DLQ untouched. Deleted messages are not retried.
+   */
+  @PutMapping("/delete-dlq-messages/{dlqName}")
+  @PreAuthorize("hasRole(@environment.getProperty('hmpps.sqs.queueAdminRole', 'ROLE_QUEUE_ADMIN'))")
+  suspend fun deleteDlqMessages(
+    @PathVariable("dlqName") dlqName: String,
+    @RequestBody request: DeleteDlqMessagesBody,
+    principal: Principal?,
+  ) = hmppsQueueService.findByDlqName(dlqName)
+    ?.let { hmppsQueue -> hmppsQueueService.deleteDlqMessagesByIds(DeleteDlqMessagesRequest(hmppsQueue, request.messageIds.distinct().validMessageIds(), principal?.name)) }
+    ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "$dlqName not found")
 }
+
+/** Request body for PUT /queue-admin/delete-dlq-messages/{dlqName} */
+data class DeleteDlqMessagesBody(val messageIds: List<String>)
 
 /** Request body for PUT /queue-admin/retry-dlq-messages/{dlqName} */
 data class RetryDlqMessagesBody(val messageIds: List<String>)
