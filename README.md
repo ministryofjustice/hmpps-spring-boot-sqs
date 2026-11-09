@@ -191,12 +191,14 @@ To publish a message to a FIFO topic you must include a `MessageGroupId` — see
 ##### :warning: queueId and topicId Must Be All Lowercase And Alpha
 
 As we define the production queue and topic properties in environment variables that map to a complex object in
-`HmppsSqsProperties`, Spring is unable to handle a mixed case `queueId` or `topicId` and struggles with hyphens and
-underscores. Therefore please make the `queueId` and `topicId` a single word that is all lower case (or upper case
+`HmppsSqsProperties`, **Spring is unable to handle a mixed case `queueId` or `topicId` and struggles with hyphens and
+underscores**. Therefore please make the `queueId` and `topicId` a single word that is all lower case (or upper case
 when defining env vars in the Helm values files).
 
-E.g. I know you'd like to use property `hmpps.sqs.queues.my-service-queue.queueName`, but your life will be much
-easier if you name the property `hmpps.sqs.queues.myservicequeue.queueName`.
+E.g. I know you'd like to use property `hmpps.sqs.queues.my-service-queue.queueName` and corresponding helm-values env
+var `HMPPS_SQS_QUEUES_MY-SERVICE-QUEUE_QUEUE_NAME` (or maybe even `HMPPS_SQS_QUEUES_MY_SERVICE_QUEUE_QUEUE_NAME`), but
+your life will be much easier if you name the property `hmpps.sqs.queues.myservicequeue.queueName` and corresponding
+helm value `HMPPS_SQS_QUEUES_MYSERVICEQUEUE_QUEUE_NAME`.
 
 Note that the library's own validation (`HmppsSqsProperties`) only actively rejects a `queueId`/`topicId` that isn't
 lowercase — it doesn't reject hyphens or underscores outright. However, using them is still a real source of
