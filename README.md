@@ -195,7 +195,7 @@ As we define the production queue and topic properties in environment variables 
 underscores**. Therefore please make the `queueId` and `topicId` a single word that is all lower case (or upper case
 when defining env vars in the Helm values files).
 
-E.g. **Don't** put hyphens or underscores in queue name properties and helm values (`hmpps.sqs.queues.my-service-queue.queueName` and `HMPPS_SQS_QUEUES_MY-SERVICE-QUEUE_QUEUE_NAME` or `HMPPS_SQS_QUEUES_MY_SERVICE_QUEUE_QUEUE_NAME` will cause problems).
+E.g. **Don't** put hyphens or underscores in queue name properties and helm values (`hmpps.sqs.queues.my-service-queue.queueName` and `HMPPS_SQS_QUEUES_MY-SERVICE-QUEUE_QUEUE_NAME` or `HMPPS_SQS_QUEUES_MY_SERVICE_QUEUE_QUEUE_NAME` will cause problems). <br/>
 **Do** this instead: `hmpps.sqs.queues.myservicequeue.queueName` and corresponding helm value `HMPPS_SQS_QUEUES_MYSERVICEQUEUE_QUEUE_NAME`.
 
 Note that the library's own validation (`HmppsSqsProperties`) only actively rejects a `queueId`/`topicId` that isn't
