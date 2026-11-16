@@ -91,7 +91,7 @@ class HmppsReactiveQueueResource(private val hmppsQueueService: HmppsQueueServic
     @RequestBody request: DeleteDlqMessagesBody,
     principal: Principal?,
   ) = hmppsQueueService.findByDlqName(dlqName)
-    ?.let { hmppsQueue -> hmppsQueueService.deleteDlqMessagesByIds(DeleteDlqMessagesRequest(hmppsQueue, request.messageIds.validMessageIds(), principal?.name)) }
+    ?.let { hmppsQueue -> hmppsQueueService.deleteDlqMessagesByIds(DeleteDlqMessagesRequest(hmppsQueue, request.messageIds.distinct().validMessageIds(), principal?.name)) }
     ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "$dlqName not found")
 }
 

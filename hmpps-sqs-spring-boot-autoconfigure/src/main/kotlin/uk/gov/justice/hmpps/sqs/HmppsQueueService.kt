@@ -3,6 +3,7 @@ package uk.gov.justice.hmpps.sqs
 import com.google.gson.GsonBuilder
 import com.google.gson.ToNumberPolicy
 import com.microsoft.applicationinsights.TelemetryClient
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.future.await
 import org.slf4j.LoggerFactory
 import software.amazon.awssdk.services.sns.model.PublishRequest
@@ -239,31 +240,45 @@ open class HmppsQueueService(
 
     val remainingIds = messageIds.toMutableSet()
     val deletedIds = mutableListOf<String>()
+    val failedIds = mutableListOf<String>()
 
     scanDlqMessages(scanLimit = messageCount) { msg ->
       if (remainingIds.remove(msg.messageId())) {
-        sqsDlqClient.deleteMessage(
-          DeleteMessageRequest.builder()
-            .queueUrl(dlqUrl)
-            .receiptHandle(msg.receiptHandle())
-            .build(),
-        ).await()
-        deletedIds.add(msg.messageId())
+        try {
+          sqsDlqClient.deleteMessage(
+            DeleteMessageRequest.builder()
+              .queueUrl(dlqUrl)
+              .receiptHandle(msg.receiptHandle())
+              .build(),
+          ).await()
+          deletedIds.add(msg.messageId())
+        } catch (e: CancellationException) {
+          throw e
+        } catch (e: Exception) {
+          // report the failure per message so the caller still learns which messages were deleted
+          log.error("For dlq $dlqName failed to delete message ${msg.messageId()}", e)
+          failedIds.add(msg.messageId())
+        }
       }
       remainingIds.isEmpty()
     }
 
-    if (deletedIds.isNotEmpty()) {
-      log.info("For dlq $dlqName deleted ${deletedIds.size} of ${messageIds.size} requested messages: $deletedIds")
+    if (deletedIds.isNotEmpty() || failedIds.isNotEmpty()) {
+      log.info("For dlq $dlqName deleted ${deletedIds.size} and failed to delete ${failedIds.size} of ${messageIds.size} requested messages: deleted $deletedIds, failed $failedIds")
       telemetryClient?.trackEvent(
         "DeleteDLQMessagesById",
-        mapOf("dlq-name" to dlqName, "messages-requested" to "${messageIds.size}", "messages-deleted" to "${deletedIds.size}", "message-ids" to deletedIds.joinToString()) +
-          (deletedBy?.let { mapOf("deleted-by" to it) } ?: emptyMap()),
+        mapOf(
+          "dlq-name" to dlqName,
+          "messages-requested" to "${messageIds.size}",
+          "messages-deleted" to "${deletedIds.size}",
+          "messages-failed" to "${failedIds.size}",
+          "message-ids" to deletedIds.joinToString(),
+        ) + (deletedBy?.let { mapOf("deleted-by" to it) } ?: emptyMap()),
         null,
       )
     }
 
-    return DeleteDlqMessagesResult(messageCount, deletedIds.size, deletedIds, remainingIds.toList())
+    return DeleteDlqMessagesResult(messageCount, deletedIds.size, deletedIds, remainingIds.toList(), failedIds)
   }
 
   open suspend fun purgeQueue(request: PurgeQueueRequest): PurgeQueueResult = with(request) {
@@ -300,7 +315,13 @@ data class RetryDlqMessagesRequest(val hmppsQueue: HmppsQueue, val messageIds: L
 data class RetryDlqMessagesResult(val messagesFoundCount: Int, val messagesRetriedCount: Int, val retriedMessageIds: List<String>, val notFoundMessageIds: List<String> = listOf())
 
 data class DeleteDlqMessagesRequest(val hmppsQueue: HmppsQueue, val messageIds: List<String>, val deletedBy: String? = null)
-data class DeleteDlqMessagesResult(val messagesFoundCount: Int, val messagesDeletedCount: Int, val deletedMessageIds: List<String>, val notFoundMessageIds: List<String> = listOf())
+data class DeleteDlqMessagesResult(
+  val messagesFoundCount: Int,
+  val messagesDeletedCount: Int,
+  val deletedMessageIds: List<String>,
+  val notFoundMessageIds: List<String> = listOf(),
+  val failedMessageIds: List<String> = listOf(),
+)
 
 data class PurgeQueueRequest(val queueName: String, val sqsClient: SqsAsyncClient, val queueUrl: String)
 data class PurgeQueueResult(val messagesFoundCount: Int)

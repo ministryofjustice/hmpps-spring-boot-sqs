@@ -12,6 +12,7 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import org.mockito.ArgumentCaptor
 import org.mockito.kotlin.any
+import org.mockito.kotlin.check
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
@@ -444,7 +445,6 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
         .jsonPath("deletedMessageIds[0]").isEqualTo(messageIdToDelete)
 
       awaitMessageCount(inboundSqsDlqClient, inboundDlqUrl, 1, atMost = Duration.ofSeconds(3))
-      // deleted rather than retried
       assertThat(inboundSqsClient.countMessagesOnQueue(inboundQueueUrl).get()).isEqualTo(0)
       runTest {
         verify(inboundMessageServiceSpy, never()).handleMessage(any<HmppsEvent>())
@@ -468,6 +468,41 @@ class HmppsQueueResourceTest : IntegrationTestBase() {
     @Test
     fun `should reject more than the maximum number of message ids`() {
       webTestClient.deleteDlqMessages(messageIds = (1..101).map { "id-$it" }, expectedStatus = HttpStatus.BAD_REQUEST)
+    }
+
+    @Test
+    fun `should treat duplicate message ids as a single request`() {
+      sendToDlq(inboundSqsDlqClient, inboundDlqUrl, SnsMessage(jsonString(HmppsEvent("id1", "test.type", "contents")), "message-id1", messageAttributesWithEventType("test.type")))
+      awaitMessageCount(inboundSqsDlqClient, inboundDlqUrl, 1)
+      val searchResponse = webTestClient.searchDlqMessages().expectBody().returnResult()
+      val messageId = jsonMapper.readTree(searchResponse.responseBody).at("/messages/0/messageId").asText()
+      awaitMessageCount(inboundSqsDlqClient, inboundDlqUrl, 1, atMost = Duration.ofSeconds(3))
+
+      webTestClient.deleteDlqMessages(messageIds = listOf(messageId, messageId))
+        .expectBody()
+        .jsonPath("messagesDeletedCount").isEqualTo(1)
+        .jsonPath("deletedMessageIds.length()").isEqualTo(1)
+        .jsonPath("notFoundMessageIds.length()").isEqualTo(0)
+    }
+
+    @Test
+    fun `should record the identity of the caller against the delete telemetry event`() {
+      sendToDlq(inboundSqsDlqClient, inboundDlqUrl, SnsMessage(jsonString(HmppsEvent("id1", "test.type", "contents")), "message-id1", messageAttributesWithEventType("test.type")))
+      awaitMessageCount(inboundSqsDlqClient, inboundDlqUrl, 1)
+      val searchResponse = webTestClient.searchDlqMessages().expectBody().returnResult()
+      val messageId = jsonMapper.readTree(searchResponse.responseBody).at("/messages/0/messageId").asText()
+      awaitMessageCount(inboundSqsDlqClient, inboundDlqUrl, 1, atMost = Duration.ofSeconds(3))
+
+      webTestClient.deleteDlqMessages(messageIds = listOf(messageId))
+
+      verify(telemetryClient).trackEvent(
+        eq("DeleteDLQMessagesById"),
+        check {
+          assertThat(it["deleted-by"]).isNotBlank()
+          assertThat(it["message-ids"]).isEqualTo(messageId)
+        },
+        eq(null),
+      )
     }
   }
 
